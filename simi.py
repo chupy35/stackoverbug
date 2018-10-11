@@ -2,14 +2,19 @@ import gensim
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
+import re
 
+##For cleaning html tags##
+#def cleanhtml(raw_html):
+#  cleanr = re.compile('<.*?>')
+#  cleantext = re.sub(cleanr, '', raw_html)
+#  return cleantext
+
+##HTML CLEANED VERSION##
+#so1_text = cleanhtml(open('stackoverflowpostg.txt').read().decode('utf-8'))
+#so2_text = cleanhtml(open('stackoverflowpostf.txt').read().decode('utf-8'))
 
 #we open files with correct encoding
-#so1_file = open('stackoverflowpostg.txt', 'r')
-#so1_text = so1_file.read().decode('utf-8')
-#so2_file = open('stackoverflowpostf.txt', 'r')
-#so2_text = so1_file.read().decode('utf-8')
-
 so1_text = open('stackoverflowpostg.txt').read().decode('utf-8')
 so2_text = open('stackoverflowpostf.txt').read().decode('utf-8')
 
