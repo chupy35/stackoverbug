@@ -1,0 +1,245 @@
+Bug in Java regex implementation?
+
+
+Bug in Java regex implementation?
+Ask Question
+up vote
+27
+down vote
+favorite
+9
+
+I've identified some unexpected behavior in Java's regex implementation. When using java.util.regex.Pattern and java.util.regex.Matcher, the following regular expression does not match correctly on the input "Merlot" when using Matcher's find() method:
+
+((?:White )?Zinfandel|Merlot)
+
+If I change the order of the expressions inside the outermost matching group, Matcher's find() method does match.
+
+(Merlot|(?:White )?Zinfandel)
+
+Here is some test code that illustrates the problem.
+RegexTest.java
+
+import java.util.regex.*;
+
+public class RegexTest {
+    public static void main(String[] args) {
+        Pattern pattern1 = Pattern.compile("((?:White )?Zinfandel|Merlot)");
+        Matcher matcher1 = pattern1.matcher("Merlot");
+        // prints "No Match :("
+        if (matcher1.find()) {
+            System.out.println(matcher1.group(0));
+        } else {
+            System.out.println("No match :(");
+        }
+
+        Pattern pattern2 = Pattern.compile("(Merlot|(?:White )?Zinfandel)");
+        Matcher matcher2 = pattern2.matcher("Merlot");
+        // prints "Merlot"
+        if (matcher2.find()) {
+            System.out.println(matcher2.group(0));
+        } else {
+            System.out.println("No match :(");
+        }
+    }
+}
+
+The expected output is:
+
+Merlot
+Merlot
+
+But the actual output is:
+
+No Match :(
+Merlot
+
+I've verified this unexpected behavior exists in Java version 1.7.0_11 on Ubuntu linux and also Java version 1.6.0_37 on OSX 10.8.2. I reported this behavior as a bug to Oracle yesterday and got back an automated email telling me my bug report has been received and has an internal review ID of 2441589. I can't find my bug report when I search for that id in their bug database. (Can you hear the crickets?)
+
+Have I uncovered a bug in Java's presumably thoroughly tested and used regex implementation (hard to believe in 2013), or am I doing something wrong?
+java regex
+shareimprove this question
+edited Dec 19 '14 at 21:11
+vaxquis
+7,20753656
+asked Feb 5 '13 at 17:05
+Asaph
+122k18159175
+
+    What happens if you do this (((?:White )?Zinfandel)|Merlot) or this ((?:(?:White )?Zinfandel)|Merlot) ? – Lee Meador Feb 5 '13 at 17:11
+    Is it maybe a scoping issue? Does concatenation have precedence (as i would expect) over | (choice)? – G. Bach Feb 5 '13 at 17:12
+    2
+    Looks like matches() works but find() does not. – jdb Feb 5 '13 at 17:19
+    1
+    Here's the simplest regex I could find that fails the find: Pattern.compile("()?.|").matcher("").find() – matts Feb 5 '13 at 18:02
+    1
+    For what it's worth, this behavior also exists on Java version 1.7.0_21 on Windows 7. – Rob I May 16 '13 at 21:30
+
+show 2 more comments
+4 Answers
+active
+oldest
+votes
+up vote
+4
+down vote
+accepted
+
+It seems to be fixed in Java 1.8.
+
+Welcome to Scala version 2.11.0-20130930-063927-2bba779702 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0-ea).
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> import java.util.regex._
+import java.util.regex._
+
+scala> Pattern.compile("((?:White )?Zinfandel|Merlot)")
+res0: java.util.regex.Pattern = ((?:White )?Zinfandel|Merlot)
+
+scala> .matcher("Merlot")
+res1: java.util.regex.Matcher = java.util.regex.Matcher[pattern=((?:White )?Zinfandel|Merlot) region=0,6 lastmatch=]
+
+scala> .find()
+res2: Boolean = true
+
+shareimprove this answer
+answered Oct 2 '13 at 5:35
+som-snytt
+34.1k23096
+add a comment
+up vote
+8
+down vote
+
+The following:
+
+import java.util.regex.*;
+
+public class T {
+  public static void main( String args[] ) {
+    System.out.println( Pattern.compile("(a)?bb|c").matcher("c").find() );
+    System.out.println( Pattern.compile("(a)?b|c").matcher("c").find() );
+  }
+}
+
+prints
+
+false
+true
+
+on:
+
+    JDK 1.7.0_13
+    JDK 1.6.0_24
+
+The following:
+
+import java.util.regex.*;
+
+public class T {
+  public static void main( String args[] ) {
+    System.out.println( Pattern.compile("((a)?bb)|c").matcher("c").find() );
+    System.out.println( Pattern.compile("((a)?b)|c").matcher("c").find() );
+  }
+}
+
+prints:
+
+true
+true
+
+shareimprove this answer
+edited Feb 5 '13 at 18:26
+Dave Jarvis
+20.5k30129251
+answered Feb 5 '13 at 17:51
+Mikhail Vladimirov
+10.3k12429
+
+    That seems to confirm that this is a real bug. I would expect it to output true true. – Asaph Feb 5 '13 at 17:57
+    1
+    Pattern.compile("(a)?bb|c").matcher("c").matches() is true – jdb Feb 5 '13 at 18:14
+    @jdb: As you stated above, matches() works as expected. find() is where the problem is. Unfortunately, if you need to extract matched text, you must use find(). – Asaph Feb 5 '13 at 18:17
+    I mean it looks like a bug. – jdb Feb 5 '13 at 18:27
+    1
+    Here you go: Pattern.compile("((?:White )?Zin|Merlot)").matcher("Merlot").find() is true – jdb Feb 5 '13 at 18:30
+
+add a comment
+up vote
+2
+down vote
+
+I don't understand all that's going on, but I've been playing with your example to try to extract some diagnostic information you might be able to add to your bug report.
+
+First, if you use a possessive quantifier, it works but I don't know why:
+
+Pattern pattern1 = Pattern.compile("((?:White )?+Zinfandel|Merlot)");
+
+Also, if the first group in the choice is shorter than the second one, then it works either way:
+
+Pattern pattern1 = Pattern.compile("((?:White )?Zinf|Merlot)");
+
+Like I said, I don't really understand how this could be. None of these two findings make any sense to me but just thought I'd share...
+shareimprove this answer
+answered Feb 5 '13 at 18:51
+mprivat
+17.6k34056
+
+    3
+    In my test, it appears that the length of "Zinf"/"Zinfandel" is relevant to the size of the pattern space. If you run the full, original pattern against "Merlot blahblah", it maches for me. Perhaps reaching the end of pattern space causes it to prematurely exit. – cmonkey Feb 5 '13 at 18:59
+    1
+    Yeah you're right. I guess it's clearly a defect. – mprivat Feb 5 '13 at 19:21
+
+add a comment
+up vote
+2
+down vote
+
+The bug was obviously fixed in Java 8, and was resolved 'Won't Fix' as a backport to Java 7. However, as a workaround you can either use an independent (atomic) grouping for "White" or you can isolate the test case for "White Zinfandel" by wrapping it into a separate alternating test group.
+
+In your example have a non-capturing group inside the first capturing group with the following.
+
+Non-capturing group modifier (?:White)
+
+((?:White )?Zinfandel|Merlot)
+
+As a work around using an independent capturing group will succeed.
+
+Independent non-capturing group modifier (?>White)
+
+((?>White )?Zinfandel|Merlot)
+
+Recreating the test case for either an independent non-capturing group or group alternation in Java 1.7.0_71 works.
+
+java version "1.7.0_71"
+Java(TM) SE Runtime Environment (build 1.7.0_71-b14)
+Java HotSpot(TM) 64-Bit Server VM (build 24.71-b01, mixed mode)
+
+Independent Non-Capturing Group Or Group Alternation
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class RegexTest {
+
+    public static void main( String[] args ) {
+
+        Pattern independentNCG = Pattern.compile( "((?>White )?Zinfandel|Merlot)" );
+        Matcher independentNCGMatcher = independentNCG.matcher( "Merlot" );
+
+        Pattern alternateGroupPattern = Pattern.compile( "(((?:White )?Zinfandel)|Merlot)" );
+        Matcher alternateGroupMatcher = alternateGroupPattern.matcher( "Merlot" );
+
+        System.out.println( independentNCGMatcher.find() ? independentNCGMatcher.group( 0 ) : "No match found for Merlot" );
+        System.out.println( alternateGroupMatcher.find() ? alternateGroupMatcher.group( 0 ) : "No match found for Merlot" );
+
+    }
+}
+
+RETURNS
+
+Merlot
+Merlot
+
+

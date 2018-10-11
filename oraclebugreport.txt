@@ -1,0 +1,221 @@
+JDK-7189363 : Regex Pattern compilation buggy for special sequences
+
+    Type: Bug
+    Component: core-libs
+    Sub-Component: java.util.regex
+    Affected Version: 7
+
+    Priority: P4
+    Status: Closed
+    Resolution: Fixed
+    OS: linux
+    CPU: x86
+
+    Submitted: 2012-08-06
+    Updated: 2017-04-11
+    Resolved: 2012-09-05
+
+Versions (Unresolved/Resolved/Fixed)
+
+
+
+
+
+JDK 6 	JDK 7 	JDK 8
+6u181Fixed 	7u171Fixed 	8 b55Fixed
+Related Reports
+Duplicate :  
+	
+JDK-8169235 - Java REGEX match error
+Description
+
+FULL PRODUCT VERSION :
+java version "1.7.0"
+Java(TM) SE Runtime Environment (build 1.7.0-b147)
+Java HotSpot(TM) 64-Bit Server VM (build 21.0-b17, mixed mode)
+
+
+
+ADDITIONAL OS VERSION INFORMATION :
+Linux mazoli 2.6.25.20-0.7-default #1 SMP 2010-02-26 20:32:57 +0100 x86_64 x86_64 x86_64 GNU/Linux
+
+
+EXTRA RELEVANT SYSTEM CONFIGURATION :
+problem independent of system, network or environment
+
+A DESCRIPTION OF THE PROBLEM :
+Pattern.java compiles e.g. the pattern "(a)?bc|d" wrong. See explanation and example code down.
+
+The problem is independent from the operating system and java version (tested with jdk 1.5, 1.6 and 1.7). For example, i use code fragments and line numbers from Pattern.java in src.zip from jdk1.7.0_05 (64bit version)
+
+The bug can be tracked down to the
+
+private Node expr(Node end)
+
+method from Pattern.java. I will explain the bug using the example pattern "(a)?bc|d" from the demo code: The (head-) node of the first sequence "(a)?bc" returned from the
+
+            Node node = sequence(end);
+            Node nodeTail = root;      //double return
+
+call (lines 1964-1965) is an instance of Branch: This is, because the
+
+private Node group0()
+
+method converts the leading "(a)?" from a Node of type Ques into a Branch containing "(a)" as first branch and null as second (optional branch) (lines 2871-2885)
+
+        if (node instanceof Ques) {
+            Ques ques = (Ques) node;
+            if (ques.type == POSSESSIVE) {
+                root = node;
+                return node;
+            }
+            tail.next = new BranchConn();
+            tail = tail.next;
+            if (ques.type == GREEDY) {
+                head = new Branch(head, null, tail);
+            } else { // Reluctant quantifier
+                head = new Branch(null, head, tail);
+            }
+            root = tail;
+            return head;
+
+Back in the expr-method, prev is still null, so
+
+            if (prev == null) {
+                prev = node;
+                firstTail = nodeTail;
+
+in lines 1966-1968 stores this branch in the prev variable.
+
+Now, at second run through the loop, the sequence "d" will be returned as some kind of node. prev is not null now, so we reach
+
+                if (prev instanceof Branch) {
+                    ((Branch)prev).add(node);
+
+in lines 1984-1985. At this point, we should create a new branch, because this is the second sequence found. But the instanceof-check assumes, that this is the third or later sequence in the branch and adds the "d" sequence to the wrong Branch ...
+
+Possible solution: Don't use instanceof-check, but store branch information in some other local variable, e.g. see workaround below. (I commented the changes with // BEGIN CHANGE and // END CHANGE)
+
+
+
+STEPS TO FOLLOW TO REPRODUCE THE PROBLEM :
+run the PatternTest.java from source code below on any jdk
+
+ACTUAL -
+not found
+
+REPRODUCIBILITY :
+This bug can be reproduced always.
+
+---------- BEGIN SOURCE ----------
+/*
+ * Created on 06.08.2012
+ *
+ * author rene.mazala
+ */
+package test.java.util.regex;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class PatternTest {
+    public static void main(String[] args) {
+        final Pattern pattern = Pattern.compile("(a)?bc|d");
+        final Matcher matcher = pattern.matcher("d");
+        if (matcher.find()) {
+            // expected: find the "d"
+            System.out.println(matcher.group());
+        } else {
+            // not expected: matcher can't find the "d", because pattern is buggy
+            System.out.println("not found");
+        }
+    }
+}
+
+---------- END SOURCE ----------
+
+CUSTOMER SUBMITTED WORKAROUND :
+    private Node expr(Node end) {
+        Node prev = null;
+        Node firstTail = null;
+        Node branchConn = null;
+        // BEGIN CHANGE
+        Branch branch = null;
+        // END CHANGE
+
+        for (;;) {
+            Node node = sequence(end);
+            Node nodeTail = root;      //double return
+            if (prev == null) {
+                prev = node;
+                firstTail = nodeTail;
+            } else {
+                // Branch
+                if (branchConn == null) {
+                    branchConn = new BranchConn();
+                    branchConn.next = end;
+                }
+                if (node == end) {
+                    // if the node returned from sequence() is "end"
+                    // we have an empty expr, set a null atom into
+                    // the branch to indicate to go "next" directly.
+                    node = null;
+                } else {
+                    // the "tail.next" of each atom goes to branchConn
+                    nodeTail.next = branchConn;
+                }
+                // BEGIN CHANGE
+                if (branch != null) {
+                    branch.add(node);
+                // END CHANGE
+                } else {
+                    if (prev == end) {
+                        prev = null;
+                    } else {
+                        // replace the "end" with "branchConn" at its tail.next
+                        // when put the "prev" into the branch as the first atom.
+                        firstTail.next = branchConn;
+                    }
+                    // BEGIN CHANGE
+                    branch = new Branch(prev, node, branchConn);
+                    prev = branch;
+                    // END CHANGE
+                }
+            }
+            if (peek() != '|') {
+                // BEGIN CHANGE
+                if (branch != null) {
+                    return branch;
+                }
+                // END CHANGE
+                return prev;
+            }
+            next();
+        }
+    }
+
+Comments
+EVALUATION
+
+The submitter is correct that "if (prev instanceof Branch) {...}" in expr() is the root cause of the problem, because (a)? also returns as a Branch. The generated nodes are as
+
+java RegEx -find -flag 1000 "(a)?bc|d" "d"Pattern=<(a)?bc|d>
+
+Input  =<d>
+     1:  <Branch> (0)
+     2:    <Group1> (3)
+     3:      <Single  'a'> (4)
+     4:    </Group1> (6)
+         <Branch>
+         <branch ACCEPT(null)>
+         <Branch>
+     5:    <Single  'd'>         </Branch> (8)
+     6:  </Branch> (7)
+     7:  <Slice  "bc"> (8)
+     8:  <DONE> (0)
+    -------------------------------
+find:false
+
+The "|d" is inserted incorrectly into the (a)? branch with its own accept BranchConn (see 5:), so an interesting/confusing consequence is that while the "find" fails for "(a)?bc|d" and "d", "(a)?bc|d" actually matches "d" and "de" can be found for regex "(a)?bc|de".
+
+Anyway, thsi is the regression caused by the branch optimization we put into jdk6 for #5013651. The corresponding webrev backthen is http://cr.openjdk.java.net/~sherman/5013651_6271399_6342544/
