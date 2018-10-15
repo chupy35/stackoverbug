@@ -1,14 +1,18 @@
 import get_SOposts as stackoverflow
 import simi as similarity
 import get_GHissues as github
-# TODO: Import retrieve bug reports from GitHub
-github.get_gh_issues()
+
+gitissues=github.get_gh_issues()
+
 
 soPosts = stackoverflow.get_stackoverflow_posts()
-# TODO: get bug reports
 
 
 # For each stack overflow post, we compare to all bug reports and to the similarity
 for post in soPosts:
-	for bug in bugReports:
-		# TODO: call the similarity function
+	for bug in gitissues['items']:
+       print(bug['created_at'])
+       print(bug['comments_url'])
+       print(bug['title'])
+       print(bug['body'])
+
