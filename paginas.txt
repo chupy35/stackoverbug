@@ -1,2 +1,0 @@
-https://bugs.java.com/bugdatabase/view_bug.do?bug_id=7189363
-https://stackoverflow.com/questions/14712932/bug-in-java-regex-implementation
