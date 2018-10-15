@@ -15,50 +15,93 @@ import re
 #so2_text = cleanhtml(open('stackoverflowpostf.txt').read().decode('utf-8'))
 
 #we open files with correct encoding
-so1_text = open('stackoverflowpostg.txt').read().decode('utf-8')
-so2_text = open('stackoverflowpostf.txt').read().decode('utf-8')
+# so1_text = open('stackoverflowpostg.txt').read().decode('utf-8')
+# so2_text = open('stackoverflowpostf.txt').read().decode('utf-8')
 
-raw_documents = [so1_text, so2_text]
+# raw_documents = [so1_text, so2_text]
 
-print("Number of documents:",len(raw_documents))
+# print("Number of documents:",len(raw_documents))
 
-#we tokenize the documents
-gen_docs = [[w.lower() for w in word_tokenize(text)] 
-            for text in raw_documents]
-print(gen_docs)
+
+# #we tokenize the documents
+# gen_docs = [[w.lower() for w in word_tokenize(text)] 
+#             for text in raw_documents]
+# print(gen_docs)
+
 
 #we create de dictionary
-dictionary = gensim.corpora.Dictionary(gen_docs)
-print("Number of words in dictionary:",len(dictionary))
-for i in range(len(dictionary)):
-    print(i, dictionary[i])
+# dictionary = gensim.corpora.Dictionary(gen_docs)
+# print("Number of words in dictionary:",len(dictionary))
+# for i in range(len(dictionary)):
+#     print(i, dictionary[i])
 
 #we make the corpus (word repetition)
-corpus = [dictionary.doc2bow(gen_doc) for gen_doc in gen_docs]
-print(corpus)
+# corpus = [dictionary.doc2bow(gen_doc) for gen_doc in gen_docs]
+# print(corpus)
 
 #we generate tf_idf model
-tf_idf = gensim.models.TfidfModel(corpus)
-print(tf_idf)
-s = 0
-for i in corpus:
-    s += len(i)
-print(s)
+# tf_idf = gensim.models.TfidfModel(corpus)
+# print(tf_idf)
+# s = 0
+# for i in corpus:
+#     s += len(i)
+# print(s)
 
 # similarity measure object in tf-idf space.
-sims = gensim.similarities.Similarity('/home/chupy35/polymtl/dataminning/assigment',tf_idf[corpus],
-                                      num_features=len(dictionary))
-print(sims)
-print(type(sims))
+# sims = gensim.similarities.Similarity('/home/chupy35/polymtl/dataminning/assigment',tf_idf[corpus],
+#                                       num_features=len(dictionary))
+# print(sims)
+# print(type(sims))
 
 
-bugreport_file = open('oraclebugreport.txt', 'r')
-bugreport_txt = bugreport_file.read().decode('utf-8')
-query_doc = [w.lower() for w in word_tokenize(bugreport_txt)]
-print(query_doc)
-query_doc_bow = dictionary.doc2bow(query_doc)
-print(query_doc_bow)
-query_doc_tf_idf = tf_idf[query_doc_bow]
-print(query_doc_tf_idf)
-print("\n \n \n \n \n \n \n similarity: \n \n")
-print(sims[query_doc_tf_idf])
+# bugreport_file = open('oraclebugreport.txt', 'r')
+# bugreport_txt = bugreport_file.read().decode('utf-8')
+
+# query_doc = [w.lower() for w in word_tokenize(bugreport_txt)]
+# print(query_doc)
+
+# query_doc_bow = dictionary.doc2bow(query_doc)
+# print(query_doc_bow)
+
+# query_doc_tf_idf = tf_idf[query_doc_bow]
+# print(query_doc_tf_idf)
+# print("\n \n \n \n \n \n \n similarity: \n \n")
+# print(sims[query_doc_tf_idf])
+
+
+def tokenize (text):
+	return [w.lower() for w in word_tokenize(text)]
+
+def map_word_to_id (text):
+	return dictionary.doc2bow(text)
+
+def read_file(input_text):
+	return input_text.read().decode('utf-8')
+
+def preprocessing (input_file):
+	print "preprocessing"
+	file = read_file(input_file)
+	print file
+	#fileTokenized = tokenize (file)
+	#fileMapped = map_word_to_id(fileTokenized)
+	#return fileMapped
+
+
+def tfidf (text):
+	tf_idf = gensim.models.TfidfModel(text)
+	return tf_idf[text]
+
+
+# TODO: remove stopwords
+# TODO: remove punctuation
+# TODO: remove numbers
+# TODO: remove special characters
+# TODO: stemming
+# TODO: cosine similarity, jaccard, levenshtein
+
+
+if __name__ == '__main__':
+	bugreport_file = open('input_files/oraclebugreport.txt', 'r')
+
+	preProcessedText = preprocessing(bugreport_file)
+	#tfidf = tfidf (preProcessedText)
