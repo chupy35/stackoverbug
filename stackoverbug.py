@@ -1,7 +1,8 @@
 import get_SOposts as stackoverflow
 import simi as similarity
+import get_GHissues as github
 # TODO: Import retrieve bug reports from GitHub
-
+github.get_gh_issues()
 
 soPosts = stackoverflow.get_stackoverflow_posts()
 # TODO: get bug reports
