@@ -1,7 +1,6 @@
 from google.cloud import bigquery
 import os
 
-
 # sudo pip install --upgrade google-cloud-bigquery --ignore-installed six
 # Create Google Credentials: create the account key on google cloud: https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries#bigquery_simple_app_query-python
 # export GOOGLE_APPLICATION_CREDENTIALS="<FILE>.json"
@@ -18,6 +17,7 @@ def get_stackoverflow_posts ():
 	# WHERE p.PostTypeId = pt.Id and p.Id = c.PostId limit 10;
 	# """
 
+	# Query specific to Docker Project
 	get_SOPosts = """
 	SELECT DISTINCT p.*, pt.Type, c.Text, prgh.RepoName FROM `sotorrent-org.2018_09_23.Posts` as p, 
 	`sotorrent-org.2018_09_23.PostType` as pt, `sotorrent-org.2018_09_23.Comments` as c,
@@ -28,13 +28,16 @@ def get_stackoverflow_posts ():
 	query_job = client.query(get_SOPosts)
 	results = query_job.result()
 
-	for row in results:
-		print ">>> ID: ", row.Id
-		print ">>> Title: ", row.Title.encode("utf-8")
-		print ">>> Body: ", row.Body.encode("utf-8")
-		print ">>> Comments: ", row.Text.encode("utf-8"):
-		print ">>> RepoName: ", row.RepoName
-		print "\n\n"
+	# for row in results:
+	# 	print ">>> ID: ", row.Id
+	# 	print ">>> Title: ", row.Title.encode("utf-8")
+	# 	print ">>> Body: ", row.Body.encode("utf-8")
+	# 	print ">>> Comments: ", row.Text.encode("utf-8"):
+	# 	print ">>> RepoName: ", row.RepoName
+	# 	print "\n\n"
+
+	return results
+
 	
 def get_stackoverflow_posts_over_time ():
 	client = bigquery.Client()
@@ -53,12 +56,14 @@ def get_stackoverflow_posts_over_time ():
 	query_job = client.query(get_SOPostsOverTime)
 	results = query_job.result()
 
-	for row in results:
-		print ">>> ID: ", row.Id
-		print ">>> Comment: ", row.Comment
-		print "\n\n"
+	# for row in results:
+	# 	print ">>> ID: ", row.Id
+	# 	print ">>> Comment: ", row.Comment
+	# 	print "\n\n"
+
+	return results
 
 
 if __name__ == '__main__':
     get_stackoverflow_posts()
-   #get_stackoverflow_posts_over_time()
+   	get_stackoverflow_posts_over_time()
