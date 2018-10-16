@@ -1,15 +1,24 @@
 from google.cloud import bigquery
 import os
 
-# sudo pip install --upgrade google-cloud-bigquery --ignore-installed six
-# Create Google Credentials: create the account key on google cloud: https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries#bigquery_simple_app_query-python
-# export GOOGLE_APPLICATION_CREDENTIALS="<FILE>.json"
+"""
+How to run:
+1) sudo pip install --upgrade google-cloud-bigquery --ignore-installed six
+2) Create Google Credentials: create the account key on google cloud: https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries#bigquery_simple_app_query-python
+3) export GOOGLE_APPLICATION_CREDENTIALS="<FILE>.json"
+"""
 
 # Add the json file with the credentials here
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = ""
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/bigquery-b745e90937c4.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/chupytestcom-45254619180f.json"
+
+tags = ["docker", "angularjs", "reactjs", "tensorflow", "spring-boot", "elasticsearch", "elasticsearch-hadoop", "netty", "okhttp", "presto", "google-api-python-client", "ruby-on-rails"] 
 
 def get_stackoverflow_posts ():
+	print ">>>> GETTING STACKOVERBUG"
+
 	client = bigquery.Client()
+	allResults = []
 
 	# get_SOPosts = """
 	# SELECT p.*, pt.Type, c.Text FROM `sotorrent-org.2018_09_23.Posts` as p, 
@@ -18,25 +27,39 @@ def get_stackoverflow_posts ():
 	# """
 
 	# Query specific to Docker Project
-	get_SOPosts = """
-	SELECT DISTINCT p.*, pt.Type, c.Text, prgh.RepoName FROM `sotorrent-org.2018_09_23.Posts` as p, 
-	`sotorrent-org.2018_09_23.PostType` as pt, `sotorrent-org.2018_09_23.Comments` as c,
-	`sotorrent-org.2018_09_23.PostReferenceGH` as prgh
-	WHERE p.PostTypeId = pt.Id and p.Id = c.PostId and prgh.RepoName LIKE 'docker/docker.github.io';
-	"""
+	# get_SOPosts = """
+	# SELECT DISTINCT p.*, pt.Type, c.Text, prgh.RepoName FROM `sotorrent-org.2018_09_23.Posts` as p, 
+	# `sotorrent-org.2018_09_23.PostType` as pt, `sotorrent-org.2018_09_23.Comments` as c,
+	# `sotorrent-org.2018_09_23.PostReferenceGH` as prgh
+	# WHERE p.PostTypeId = pt.Id and p.Id = c.PostId and prgh.RepoName LIKE 'docker/docker.github.io';
+	# """
+	
+	for tag in tags: 
+		get_SOPosts = """
+			SELECT p.ParentId, p.Id, p.Title, p.Body, p.Tags, p.CreationDate FROM `sotorrent-org.2018_09_23.Posts` as p 
+			WHERE p.Tags LIKE '%s'
+			GROUP BY 1, 2, 3, 4, 5, 6
+			ORDER BY 1 desc
+			LIMIT 10;
+		"""
 
-	query_job = client.query(get_SOPosts)
-	results = query_job.result()
+		query_job = client.query(get_SOPosts % (tag))
+		results = query_job.result()
 
-	# for row in results:
-	# 	print ">>> ID: ", row.Id
-	# 	print ">>> Title: ", row.Title.encode("utf-8")
-	# 	print ">>> Body: ", row.Body.encode("utf-8")
-	# 	print ">>> Comments: ", row.Text.encode("utf-8"):
-	# 	print ">>> RepoName: ", row.RepoName
-	# 	print "\n\n"
+		print ">>>> DID QUERY"
+		for row in results:
+			allResults.append(row)
+			print "ENTROU NO FOR"
+			print ">>> ID: ", row.Id
+			print ">>> Parent ID: ", row.ParentId
+			print ">>> Title: ", row.Title.encode("utf-8")
+			print ">>> Body: ", row.Body.encode("utf-8")
+			print ">>> Tags: ", row.Tags.encode("utf-8")
+			print ">>> Creation Date: ", row.CreationDate
+			print "**********************************************************"
+			print "\n\n"
 
-	return results
+	return allResults
 
 	
 def get_stackoverflow_posts_over_time ():
@@ -63,7 +86,6 @@ def get_stackoverflow_posts_over_time ():
 
 	return results
 
-
 if __name__ == '__main__':
     get_stackoverflow_posts()
-   	get_stackoverflow_posts_over_time()
+   	#get_stackoverflow_posts_over_time()
