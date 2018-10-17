@@ -9,56 +9,35 @@ How to run:
 """
 
 # Add the json file with the credentials here
-#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/bigquery-b745e90937c4.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/chupytestcom-45254619180f.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/My Project-559e49148db1.json"
 
-tags = ["docker", "angularjs", "reactjs", "tensorflow", "spring-boot", "elasticsearch", "elasticsearch-hadoop", "netty", "okhttp", "presto", "google-api-python-client", "ruby-on-rails"] 
+tags = ["angularjs", "reactjs", "tensorflow", "spring-boot", "elasticsearch", "elasticsearch-hadoop", "netty", "okhttp", "presto", "google-api-python-client", "ruby-on-rails"] 
 
 def get_stackoverflow_posts ():
-	print ">>>> GETTING STACKOVERBUG"
-
 	client = bigquery.Client()
 	allResults = []
-
-	# get_SOPosts = """
-	# SELECT p.*, pt.Type, c.Text FROM `sotorrent-org.2018_09_23.Posts` as p, 
-	# `sotorrent-org.2018_09_23.PostType` as pt, `sotorrent-org.2018_09_23.Comments` as c 
-	# WHERE p.PostTypeId = pt.Id and p.Id = c.PostId limit 10;
-	# """
-
-	# Query specific to Docker Project
-	# get_SOPosts = """
-	# SELECT DISTINCT p.*, pt.Type, c.Text, prgh.RepoName FROM `sotorrent-org.2018_09_23.Posts` as p, 
-	# `sotorrent-org.2018_09_23.PostType` as pt, `sotorrent-org.2018_09_23.Comments` as c,
-	# `sotorrent-org.2018_09_23.PostReferenceGH` as prgh
-	# WHERE p.PostTypeId = pt.Id and p.Id = c.PostId and prgh.RepoName LIKE 'docker/docker.github.io';
-	# """
 	
 	for tag in tags: 
-		get_SOPosts = """
-			SELECT p.ParentId, p.Id, p.Title, p.Body, p.Tags, p.CreationDate FROM `sotorrent-org.2018_09_23.Posts` as p 
-			WHERE p.Tags LIKE '%s'
-			GROUP BY 1, 2, 3, 4, 5, 6
-			ORDER BY 1 desc
-			LIMIT 10;
-		"""
-
-		query_job = client.query(get_SOPosts % (tag))
+		get_SOPosts = "SELECT p.Id, p.ParentId, p.Title, p.Body, p.Tags FROM `sotorrent-org.2018_09_23.Posts` as p  WHERE p.Tags LIKE '<"+ tag +">' AND p.ParentId IS NULL ORDER BY p.Id ASC;"
+		query_job = client.query(get_SOPosts)
 		results = query_job.result()
 
-		print ">>>> DID QUERY"
 		for row in results:
-			allResults.append(row)
-			print "ENTROU NO FOR"
-			print ">>> ID: ", row.Id
-			print ">>> Parent ID: ", row.ParentId
-			print ">>> Title: ", row.Title.encode("utf-8")
-			print ">>> Body: ", row.Body.encode("utf-8")
-			print ">>> Tags: ", row.Tags.encode("utf-8")
-			print ">>> Creation Date: ", row.CreationDate
-			print "**********************************************************"
-			print "\n\n"
+			complete_post = ""
+			complete_post = str(row.Id) + "\n" + str(row.Title.encode("utf-8")) + "\n" + str(row.Body.encode("utf-8"))
 
+			get_comments = "SELECT p.Id, p.ParentId, p.Title, p.Body, p.Tags FROM `sotorrent-org.2018_09_23.Posts` as p WHERE p.parentId = "+ str(row.Id) +" ORDER BY p.Id ASC;"
+			query_job = client.query(get_comments)
+			results_comments = query_job.result()
+
+			for comment in results_comments:
+				complete_post = complete_post + "\n" + str(comment.Body.encode("utf-8"))
+			
+			# print ">>> Complete post: ", complete_post
+			# print "**********************************************************"
+			# print "\n\n"
+
+			allResults.append(complete_post)
 	return allResults
 
 	
@@ -78,11 +57,6 @@ def get_stackoverflow_posts_over_time ():
 
 	query_job = client.query(get_SOPostsOverTime)
 	results = query_job.result()
-
-	# for row in results:
-	# 	print ">>> ID: ", row.Id
-	# 	print ">>> Comment: ", row.Comment
-	# 	print "\n\n"
 
 	return results
 
