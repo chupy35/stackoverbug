@@ -1,8 +1,8 @@
 import gensim
-import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 import re
+from nltk.stem import PorterStemmer
 
 ##For cleaning html tags##
 #def cleanhtml(raw_html):
@@ -24,7 +24,7 @@ import re
 
 
 # #we tokenize the documents
-# gen_docs = [[w.lower() for w in word_tokenize(text)] 
+# gen_docs = [[w.lower() for w in word_tokenize(text)]
 #             for text in raw_documents]
 # print(gen_docs)
 
@@ -68,15 +68,21 @@ import re
 # print("\n \n \n \n \n \n \n similarity: \n \n")
 # print(sims[query_doc_tf_idf])
 
+def read_file(input_text):
+	return input_text.read().decode('utf-8')
 
 def tokenize (text):
 	return [w.lower() for w in word_tokenize(text)]
 
+#Dictionary Creation and stemming
+def stemdicreat (text):
+    dictionary = gensim.corpora.Dictionary(text)
+    for i in range(len(dictionary)):
+        dictionary[i]=PorterStemmer().stem(dictionary[i])
+    return dictionary
+
 def map_word_to_id (text):
 	return dictionary.doc2bow(text)
-
-def read_file(input_text):
-	return input_text.read().decode('utf-8')
 
 def preprocessing (input_file):
 	print "preprocessing"
@@ -86,21 +92,29 @@ def preprocessing (input_file):
 	#fileMapped = map_word_to_id(fileTokenized)
 	#return fileMapped
 
-
 def tfidf (text):
 	tf_idf = gensim.models.TfidfModel(text)
-	return tf_idf[text]
+    return gensim.similarities.Similarity('/usr/workdir/',tf_idf[corpus],
+                                      num_features=len(dictionary))
 
+def simprint (text, tf_idf):
+    query_doc_tf_idf = tf_idf[text]
+    return query_doc_tf_idk
 
-# TODO: remove stopwords
-# TODO: remove punctuation
-# TODO: remove numbers
-# TODO: remove special characters
-# TODO: stemming
-# TODO: cosine similarity, jaccard, levenshtein
+# remove punctuation and special characters
+def rempunct (text):
+    return cleanString = re.sub('\W+ ',' ', text )
 
+# TODO: stemmingi
+def stemmingi (text):
+    for i in range(len(text)):
+        return PorterStemmer().stem(text)
+     # TODO: cosine similarity, jaccard, levenshtein
 
 if __name__ == '__main__':
+:q
+:q
+:q
 	bugreport_file = open('input_files/oraclebugreport.txt', 'r')
 
 	preProcessedText = preprocessing(bugreport_file)
