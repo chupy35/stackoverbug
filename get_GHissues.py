@@ -1,6 +1,5 @@
 import json
 import requests
-from pprint import pprint
 import os
 
 def get_gh_issues():
@@ -8,13 +7,10 @@ def get_gh_issues():
     results=r.text
     data = json.loads(results)
 
-    for x in data['items']:
-        print(x['created_at'])
-        print(x['comments_url'])
-        print(x['title'])
-        print(x['body'])
-
-if __name__ == '__main__':
-    get_gh_issues()
-
+   # for x in data['items']:
+   #     print(x['created_at'])
+   #     print(x['comments_url'])
+   #     print(x['title'])
+   #     print(x['body'])
+    return data
 

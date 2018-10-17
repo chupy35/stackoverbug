@@ -2,7 +2,7 @@ import json
 
 #curl 'https://api.github.com/search/issues?q=bug+language:javascript+state:closed&sort=created&order=asc' > tmp.txt
 
-with open("java.txt") as f:
+with open("docker.json") as f:
 	data = json.load(f)
 
 dictionary = {}

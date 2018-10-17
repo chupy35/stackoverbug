@@ -1,5 +1,4 @@
-import gensim
-from nltk.corpus import stopwords
+import gensim from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 import re
 from nltk.stem import PorterStemmer
