@@ -28,7 +28,7 @@ def get_gh_issues(projects):
 
            for y in comments:
                commentsa = y['body'] + "\n"
-           return x['title'] + "\n" + x['number'] + "\n" + x['body'] + "\n" + commentsa
+    return x['title'] + "\n" + x['number'] + "\n" + x['body'] + "\n" + commentsa
 #           print("CREATED IN ---->   ", x['created_at'])
 #           print("CLOSED IN ---->   ", x['closed_at'])
 #           print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
