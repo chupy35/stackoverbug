@@ -28,8 +28,9 @@ def get_gh_issues(projects):
 
            for y in comments:
                commentsa = y['body'] + "\n"
-        issues[x] = x['number'] + "\n" + x['title'] + "\n" + x['body'] + "\n" + commentsa
-    pissues[p] = issues
+           issues.append(str(x['number']) + "\n" + x['title'] + "\n" + x['body'] + "\n" + commentsa)
+        pissues.append(issues)
+        print pissues
     return pissues
 
 #           print("CREATED IN ---->   ", x['created_at'])
@@ -45,4 +46,5 @@ def get_gh_issues(projects):
 #           print('*******************************************************************************************************')
 
 if __name__ == '__main__':
-    get_gh_issues(projects)
+    result = get_gh_issues(projects)
+
