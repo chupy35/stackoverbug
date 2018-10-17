@@ -92,9 +92,11 @@ def preprocessing (input_file):
 	#return fileMapped
 
 def tfidf (text):
-	tf_idf = gensim.models.TfidfModel(text)
-    return gensim.similarities.Similarity('/usr/workdir/',tf_idf[corpus],
-                                      num_features=len(dictionary))
+	return gensim.models.TfidfModel(text)
+
+def simmes(corpus, tf_idf, dic)
+    gensim.similarities.Similarity('/usr/workdir/',tf_idf[corpus],
+                                      num_features=len(dic))
 
 def simprint (text, tf_idf):
     query_doc_tf_idf = tf_idf[text]
