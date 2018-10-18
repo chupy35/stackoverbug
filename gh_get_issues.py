@@ -7,8 +7,13 @@ username = "isabellavieira"
 api_token = ""
 api_url_base = 'https://api.github.com/'
 
-projects = ["docker/docker.github.io", "rails/rails", "googleapis/google-api-python-client", "prestodb/presto", "square/okhttp", "netty/netty", "elastic/elasticsearch-hadoop", "elastic/elasticsearch", "spring-projects/spring-boot", "tensorflow/tensorflow", "facebook/react", "angular/angular.js"]
-labels = ['priority/P0-catastrophic', 'regression', '"type: bug"', 'bug', 'bug', 'defect', 'bug', '">bug"', '"type: bug"', '"type:bug/performance"', '"Type: Bug"', '"type: bug"']
+# projects = ["docker/docker.github.io", "rails/rails", "googleapis/google-api-python-client", "prestodb/presto", "square/okhttp", "netty/netty", "elastic/elasticsearch-hadoop", "elastic/elasticsearch", "spring-projects/spring-boot", "tensorflow/tensorflow", "facebook/react", "angular/angular.js"]
+# labels = ['priority/P0-catastrophic', 'regression', '"type: bug"', 'bug', 'bug', 'defect', 'bug', '">bug"', '"type: bug"', '"type:bug/performance"', '"Type: Bug"', '"type: bug"']
+
+
+projects = ["docker/docker.github.io"]
+labels = ['priority/P0-catastrophic']
+
 
 proj_lab = {}
 for i in range(len(projects)):
@@ -25,11 +30,12 @@ def check_limit_remaining ():
   result = result.split("\n")
   return result[7].split(":")[1]
 
-def get_gh_issues(projects):    
+def get_gh_issues():    
     pissues = []
     issues = []
     
     for p in projects:
+        issues = []
         text = 'https://api.github.com/search/issues?q=label:'+proj_lab[p]+'+state:closed+repo:'+p
         r = requests.get(text, auth=(username, api_token))
         results = r.text
@@ -42,6 +48,7 @@ def get_gh_issues(projects):
           comments = json.loads(com)
 
           for y in comments:
+            print "ISSUEEEES: ", y
             commentsa = commentsa + y['body']
 
           bug_report_content = str(x['number']) + "\n" + x['title'] + "\n" + x['body'] + "\n" + commentsa
@@ -50,7 +57,7 @@ def get_gh_issues(projects):
     return pissues
 
 if __name__ == '__main__':
-  #result = get_gh_issues(projects)
+  #result = get_gh_issuelis(projects)
   check_limit_remaining()
 
 
