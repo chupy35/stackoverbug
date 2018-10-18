@@ -3,7 +3,9 @@ import simi as similarity
 import gh_get_issues as github
 #soPosts = stackoverflow.get_stackoverflow_posts()
 
+
 gitissues=github.get_gh_issues()
+for x ingitissuess
 readed = similarity.read_file(gitissues)
 tokenized = similarity.tokenize(readed)
 stemdicted = similarity.stemdicreat(tokenized)
