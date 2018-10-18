@@ -16,8 +16,11 @@ tags = ["angularjs", "reactjs", "tensorflow", "spring-boot", "elasticsearch", "e
 def get_stackoverflow_posts ():
 	client = bigquery.Client()
 	allResults = []
+	tmpResult = []
 	
-	for tag in tags: 
+	for tag in tags: 		
+		tmpResult = []
+
 		get_SOPosts = "SELECT p.Id, p.ParentId, p.Title, p.Body, p.Tags FROM `sotorrent-org.2018_09_23.Posts` as p  WHERE p.Tags LIKE '<"+ tag +">' AND p.ParentId IS NULL ORDER BY p.Id ASC;"
 		query_job = client.query(get_SOPosts)
 		results = query_job.result()
@@ -36,8 +39,9 @@ def get_stackoverflow_posts ():
 			# print ">>> Complete post: ", complete_post
 			# print "**********************************************************"
 			# print "\n\n"
+			tmpResult.append(complete_post)
 
-			allResults.append(complete_post)
+		allResults.append(tmpResult)
 	return allResults
 
 	
@@ -61,5 +65,5 @@ def get_stackoverflow_posts_over_time ():
 	return results
 
 if __name__ == '__main__':
-    get_stackoverflow_posts()
+	allResults = get_stackoverflow_posts()
    	#get_stackoverflow_posts_over_time()
