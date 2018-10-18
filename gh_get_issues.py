@@ -47,13 +47,9 @@ def get_gh_issues():
           com = c.text
           comments = json.loads(com)
 
-          if comments["documentation_url"]:
-            print "Limit exceeded"
-            pass
-          else:
-            for y in comments:
-              print "ISSUEEEES: ", y
-              commentsa = commentsa + y['body']
+          for y in comments:
+            print "ISSUEEEES: ", y
+            commentsa = commentsa + y['body']
 
           bug_report_content = str(x['number']) + "\n" + x['title'] + "\n" + x['body'] + "\n" + commentsa
           issues.append(bug_report_content)
