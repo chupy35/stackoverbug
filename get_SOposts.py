@@ -40,6 +40,7 @@ def get_stackoverflow_posts ():
 			# print "**********************************************************"
 			# print "\n\n"
 			tmpResult.append(complete_post)
+			print "tmpResult: ", tmpResult
 
 		allResults.append(tmpResult)
 	return allResults
