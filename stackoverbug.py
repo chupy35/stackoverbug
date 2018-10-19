@@ -1,66 +1,23 @@
 import get_SOposts as stackoverflow
-import simi as similarity
-import gh_get_issues as github
+import get_gh_issues as github
+import similarity as similarity
+import preprocessing as preprocessing
 
-gitissues = github.get_gh_issues()
-soPosts = stackoverflow.get_stackoverflow_posts()
+# Get issues from GitHub
+#git_issues = github.get_gh_issues()
 
-# def traverse(o, tree_types=(list, tuple)):
-#     if isinstance(o, tree_types):
-#         for value in o:
-#             for subvalue in traverse(value, tree_types):
-#                 yield subvalue
-#     else:
-#         yield o
+# Get Stack Overflow posts from BigQuery
+#so_posts = stackoverflow.get_stackoverflow_posts()
 
-# For processing text
-def processText(text):
-    for value in traverse(text):
-        #readed = similarity.read_file(text)
-        tokenized = similarity.tokenize(readed)
-        return tokenized
+# Preprocess issues
+#preprocessed_git_issues = preprocessing.preprocessing(git_issues)
+
+# Preprocess Stack Overflow posts
+#preprocessed_so_posts = preprocessing.preprocessing(so_posts)
 
 
+teste = [["Buying! bug1. of", "Buyed? the bug2", "I bug3 bBg3"], ["BUG bug4", "bug5 bug5", "bug6 bug6"]]
+text = preprocessing.preprocessing(teste)
 
-for i in soPosts:
-    for j in soPosts:
-        print i
-
-
-
-# tokBugs = processText(gitissues)
-# for value in traverse(tokBugs):
-#     stemdicted = similarity.stemdicreat(tokBugs)
-#     corpused = similarity.map_word_to_id(stemdicted)
-#     tfidfed = similarity.tfidf(corpused)
-#     simed = similarity.simmes(corpused, tfidfed, stemdicted)
-
-# processSo = processText(soPosts)
-# for value in traverse(processSo):
-#     query_doc_bow = similarity.stemdicreat(processSo)
-#     query_doc_tf_idf = tfidfed[query_doc_bow]
-
-# print(simed[query_doc_tf_idf])
-
-
-# ###Process stackoverlow posts
-# #for value in traverse(soPosts):
-# #    sreaded = similarity.read_file(soPosts)
-# #    stokenized = similarity.tokenize(sreaded)
-# #    sstemdicted = similarity.stemdicreat(stokenized)
-# #    scorpused = similarity.map_word_to_id(sstemdicted)
-# #    stfidfed = similarity.tfidf(scorpused)
-
-# ##Comparing
-# for value in traverse(gitissues):
-#     ssimed = similarity.simmes(corpused, tfidfed, stemdicted)
-
-
-# # For each stack overflow post, we compare to all bug reports and to the similarity
-# #for post in soPosts:
-# #	for bug in gitissues['items']:
-# #            print(bug['created_at'])
-# #            print(bug['comments_url'])
-# #            print(bug['title'])
-# #            print(bug['body'])
-# #
+# Similarity
+similarity.tfidf(text)

@@ -1,11 +1,9 @@
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
-import gh_get_issues as github
+import get_gh_issues as github
 from nltk.corpus import stopwords
 import re
 from nltk.stem import PorterStemmer
-
-nltk.download('stopwords')
 
 def tokenize (text):
 	result = []
