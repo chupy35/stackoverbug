@@ -9,7 +9,8 @@ How to run:
 """
 
 # Add the json file with the credentials here
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/My Project-559e49148db1.json"
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/My Project-559e49148db1.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/chupytestcom-8a09729c6510.json"
 
 tags = ["docker", "ruby-on-rails", "netty", "elasticsearch","spring-boot",  "tensorflow", "reactjs", "angularjs"] 
 
@@ -21,7 +22,7 @@ def get_stackoverflow_posts ():
 	for tag in tags: 		
 		tmpResult = []
 
-		get_SOPosts = "SELECT p.Id, p.ParentId, p.Title, p.Body, p.Tags FROM `sotorrent-org.2018_09_23.Posts` as p  WHERE p.Tags LIKE '<"+ tag +">' AND p.ParentId IS NULL ORDER BY p.Id ASC;"
+		get_SOPosts = "SELECT p.Id, p.ParentId, p.Title, p.Body, p.CreationDate, p.Tags FROM `sotorrent-org.2018_09_23.Posts` as p  WHERE p.Tags LIKE '<"+ tag +">' AND p.ParentId IS NULL ORDER BY p.Id ASC;"
 		query_job = client.query(get_SOPosts)
 		results = query_job.result()
 
@@ -40,8 +41,11 @@ def get_stackoverflow_posts ():
 			# print "**********************************************************"
 			# print "\n\n"
 			tmpResult.append(complete_post)
-			print "tmpResult: ", tmpResult
-
+			print "Post id: ", row.Id                                              
+			print "Parent id: ", row.ParentId                                      
+			print "TAGS: ", tag                                                    
+			print "Creation Date: ", row.CreationDate                              
+			print "******************** \n"
 		allResults.append(tmpResult)
 	return allResults
 
