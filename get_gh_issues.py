@@ -7,10 +7,11 @@ username = ["chupy35", "isabellavieira", "Maryam-El"]
 api_tokens= []
 api_url_base = 'https://api.github.com/'
 
-projects = ["docker/docker.github.io", "rails/rails", "netty/netty",  "elastic/elasticsearch", "spring-projects/spring-boot", "tensorflow/tensorflow", "facebook/react", "angular/angular.js"]
+projects = ["docker/docker.github.io"]
+#projects = ["docker/docker.github.io", "rails/rails", "netty/netty",  "elastic/elasticsearch", "spring-projects/spring-boot", "tensorflow/tensorflow", "facebook/react", "angular/angular.js"]
 
-labels = ['priority/P0-catastrophic', 'regression', 'defect', '">bug"', '"type: bug"', '"type:bug/performance"', '"Type: Bug"', '"type: bug"']
-
+# labels = ['priority/P0-catastrophic', 'regression', 'defect', '">bug"', '"type: bug"', '"type:bug/performance"', '"Type: Bug"', '"type: bug"']
+labels = ['priority/P0-catastrophic']
 
 # projects = ["docker/docker.github.io"]
 # labels = ['priority/P0-catastrophic']
