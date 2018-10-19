@@ -45,6 +45,7 @@ def get_gh_issues():
     
     for p in projects:
         remaining = check_limit_remaining(key)
+        print "Remaining: ", remaining
         if remaining == 1:
           key = key+1
           if key == 3:
@@ -56,7 +57,9 @@ def get_gh_issues():
         results = r.text
         data = json.loads(results)
 
-        print "data: ", data
+        # print "*******************************************************\n"
+        # print "GITHUB ISSUE: ", data
+        # print "*******************************************************\n"
 
         for x in data['items']:
           commentsa = ""
@@ -65,8 +68,15 @@ def get_gh_issues():
           comments = json.loads(com)
 
           for y in comments:
-            print "ISSUEEEES: ", y
+            #print "ISSUEEEES: ", y
             commentsa = commentsa + y['body']
+
+          print "Bug report number: ", x['number']
+          print "State: ", x["state"]
+          print "Created date: ", x["created_at"]
+          print "Closed date: ", x["closed_at"]
+          print "*******************************************************\n"
+
 
           bug_report_content = str(x['number']) + "\n" + x['title'] + "\n" + x['body'] + "\n" + commentsa
           issues.append(bug_report_content)

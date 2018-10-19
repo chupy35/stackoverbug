@@ -10,7 +10,11 @@ How to run:
 
 # Add the json file with the credentials here
 #os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/My Project-559e49148db1.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/chupytestcom-8a09729c6510.json"
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/chupytestcom-8a09729c6510.json"
+
+# Explicitly use service account credentials by specifying the private
+# key file. All clients in google-cloud-python have this helper.
+client = bigquery.Client.from_service_account_json('/Users/isabellavieira/Downloads/chupytestcom-8a09729c6510.json')
 
 tags = ["docker"]
 #, "ruby-on-rails", "netty", "elasticsearch","spring-boot",  "tensorflow", "reactjs", "angularjs"] 
@@ -46,7 +50,7 @@ def get_stackoverflow_posts ():
 			print "Parent id: ", row.ParentId                                      
 			print "TAGS: ", tag                                                    
 			print "Creation Date: ", row.CreationDate                              
-			print "******************** \n"
+			print "*******************************************************\n"
 		allResults.append(tmpResult)
 	return allResults
 
