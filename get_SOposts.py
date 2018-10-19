@@ -11,7 +11,7 @@ How to run:
 # Add the json file with the credentials here
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/isabellavieira/Downloads/My Project-559e49148db1.json"
 
-tags = ["docker", "angularjs", "reactjs", "tensorflow", "spring-boot", "elasticsearch", "elasticsearch-hadoop", "netty", "okhttp", "prestodb", "google-api-python-client", "ruby-on-rails"] 
+tags = ["docker", "ruby-on-rails", "netty", "elasticsearch","spring-boot",  "tensorflow", "reactjs", "angularjs"] 
 
 def get_stackoverflow_posts ():
 	client = bigquery.Client()
