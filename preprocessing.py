@@ -9,7 +9,7 @@ def tokenize (text):
 	result = []
 	for i in range(len(text)):
 		for j in range(len(text[i])):
-			word_tokenized = word_tokenize(text[i][j])
+			word_tokenized = word_tokenize(text[i][j].decode("utf-8"))
 			result.append(word_tokenized)
 	return result
 
