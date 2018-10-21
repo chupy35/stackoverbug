@@ -5,7 +5,8 @@ import preprocessing as preprocessing
 
 #Get issues from GitHub
 print ">>> GETTING ISSUES FROM GITHUB <<<"
-git_issues = github.get_gh_issues()
+#git_issues = github.get_gh_issues()
+git_issues = github.read_issues()
 
 #Get Stack Overflow posts from BigQuery
 print ">>> GETTING SO POSTS FROM BIGQUERY <<<"

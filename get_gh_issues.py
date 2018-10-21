@@ -2,16 +2,17 @@ import json
 import requests
 import subprocess
 import os
+from os import walk
 
-username = ["chupy35", "isabellavieira", "Maryam-El"]
-api_tokens= []
+username = ["mpcrocha", "solencio123", "arkhoninfaustus"]
+api_tokens= ["b117803b4fea20b21f33108b9f3f163b45e61ddc", "57f2916b3a193302f2e9e60c30262527041e0068", "0c6cc4799d1a1817fa337cff7897d9abbd030626"]
 api_url_base = 'https://api.github.com/'
 
-projects = ["docker/docker.github.io"]
+projects = ["netty/netty"]
 #projects = ["docker/docker.github.io", "rails/rails", "netty/netty",  "elastic/elasticsearch", "spring-projects/spring-boot", "tensorflow/tensorflow", "facebook/react", "angular/angular.js"]
 
 # labels = ['priority/P0-catastrophic', 'regression', 'defect', '">bug"', '"type: bug"', '"type:bug/performance"', '"Type: Bug"', '"type: bug"']
-labels = ['priority/P0-catastrophic']
+labels = ['defect']
 
 # projects = ["docker/docker.github.io"]
 # labels = ['priority/P0-catastrophic']
@@ -50,6 +51,10 @@ def get_gh_issues():
         if remaining == 1:
           key = key+1
           if key == 3:
+
+
+
+
             key = 0
 
         issues = []
@@ -69,7 +74,7 @@ def get_gh_issues():
           comments = json.loads(com)
 
           for y in comments:
-            #print "ISSUEEEES: ", y
+            #print "ISSUEEEES: ", y 
             commentsa = commentsa + y['body']
 
           print "Bug report number: ", x['number']
@@ -84,8 +89,45 @@ def get_gh_issues():
         pissues.append(issues)
     return pissues
 
+
+def read_issues (): 
+
+  rootdir = "/Users/isabellavieira/Desktop/bug_reports/"
+  angular = []
+  jquery = []
+  bootstrap = []
+  allResults = []
+
+  for dirpath, dirnames, filenames in walk(rootdir):
+    for file in filenames:
+      file_directory = rootdir + file
+    
+      with open(file_directory, "r") as f: 
+        content =  f.readlines()
+
+        if file.startswith("angular"):
+          angular.append(content)
+        if file.startswith("jquery"):
+          jquery.append(content)
+        if file.startswith("bootstrap"):
+          bootstrap.append(content)
+
+    allResults.append(angular)
+    allResults.append(jquery)
+    allResults.append(bootstrap)
+
+
+    for i in range(len(allResults)):
+      for j in range(len(allResults)):
+        print "Result: ", allResults[i][j]
+        print "\n\n"
+
+    return allResults
+
 if __name__ == '__main__':
-  result = get_gh_issues()
+  #result = get_gh_issues()
   #check_limit_remaining()
+
+  read_issues()
 
 
