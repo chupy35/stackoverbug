@@ -1,0 +1,28 @@
+20748014 ElasticSearch pagination on multiple indexes
+
+I'm wondering if elasticsearch can paginate on a single multiple index query.
+
+What I am trying to do is:
+
+I have 2 indexes: tweets and users.
+
+I want to do a search like this
+
+    
+    
+    curl -XGET "http://localhost:9200/foo/tweets,users"
+    
+
+and want to paginate each index, say I want 3 tweets (from 0) and 2 users
+(from 0).
+
+Do you know if this is posible? maybe I have to change my structure, but I
+still cant think how to do this with a single call.
+
+Thanks in advance!
+
+Do an
+[msearch](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+multi-search.html)-request where you a search on `tweets` with `size` 3 and a
+search on `users` with a `size` of 2.
+

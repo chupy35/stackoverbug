@@ -1,0 +1,173 @@
+20373970 Mixed filters, using OR as well as AND, in ElasticSearch
+
+In your opinion what would be the best way to do the following?
+
+I want to filter an ElasticSearch query by several ranges that are grouped in
+an OR filter, and then by one final range that needs to be included as an AND
+filter. The explanation is a bit crappy but hopefully the pseudo-code below
+will help...
+
+Basically I tried structuring the following query:
+
+    
+    
+    {
+        "query":{
+            "multi_match":{
+                "query":"blue",
+                "fields":[
+                    "name"
+                ]
+            }
+        },
+        "sort":{
+            "_score":{
+                "order":"desc",
+                "missing":"_last"
+            }
+        },
+        "from":"0",
+        "size":"24",
+        "facets":{
+            "rating":{
+                "range":{
+                    "field":"rating",
+                    "ranges":[
+                        {
+                         "from":1
+                        },
+                        {
+                         "from":2
+                        },
+                        {
+                         "from":3
+                        },
+                        {
+                         "from":4
+                        }
+                    ]
+                }
+            },
+            "price":{
+                "range":{
+                    "field":"price",
+                    "ranges":[
+                        {
+                         "to":10
+                        },
+                        {
+                         "from":10,
+                         "to":100
+                        },
+                        {
+                         "from":100,
+                         "to":1000
+                        }
+                        {
+                         "from":1000
+                        }
+                    ]
+                }
+            }
+        },
+        "filter":{
+            "or":[
+                {
+                    "range":{
+                        "price":{
+                         "from":"10",
+                         "to":"100"
+                        }
+                    }
+                },
+                {
+                    "range":{
+                        "price":{
+                         "from":"100",
+                         "to":"1000"
+                        }
+                    }
+                }
+            ],
+            "and":{
+                "numeric_range":{
+                    "rating":{
+                        "gte":"4"
+                    }
+                }
+            }
+        }
+    }
+    
+
+This failed with the error that there was "No parser for element
+[numeric_range]". So I tried replacing:
+
+    
+    
+         "and":{
+            "numeric_range":{
+               "rating":{
+                  "gte":"4"
+               }
+            }
+         }
+    
+
+with:
+
+    
+    
+        "numeric_range":{
+           "rating":{
+              "gte":"4"
+           }
+        }
+    
+
+The query now returns results but it's returning results with prices in the
+ranges 10-100, 100-1000 and ANY results with a rating greater than 4 (even if
+their price is outside of the defined range).
+
+Any clues on how I could do this query? Do I need to be using a bool filter?
+
+Ah ha, figured it out, with the help of Boaz Leskes over on the ElasticSearch
+mailing list!
+
+It should be structured like this:
+
+    
+    
+    filter: {
+        bool: {
+            must: [
+                {
+                    "numeric_range":{
+                        "rating":{
+                            "gte":"4"
+                        }
+                    }
+                }
+            ],
+            should: [
+                {
+                    "range":{
+                        "price":{
+                            "from":"10",
+                            "to":"100"
+                        }
+                    }
+                },
+                {
+                    "range":{
+                        "price":{
+                            "from":"100",
+                            "to":"1000"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    
+

@@ -1,0 +1,56 @@
+24022630 How could I set up a ES cluster?
+
+I have a master node which ip is 192.168.1.101 and a non-master node which ip
+is 192.168.1.106. The two use the same version of ElasticSearch-1.2.0.
+
+But after I started the master node and the non-master node, then I got the
+following info:
+
+> [2014-06-04 02:38:49,350][INFO ][discovery.zen ] [node2] failed to send join
+request to master [[node1][TxZ5wuhnT1awPC1gEjYPdw][flyers-MacBook-
+Air.local][inet[/192.168.1.101:9300]]{master=true}], reason
+[org.elasticsearch.ElasticsearchTimeoutException: Timeout waiting for task.]
+
+Config of the master node:
+
+> cluster.name: mycluster  
+>  node.name: "node1"  
+>  node.master: true  
+>  node.data: true  
+>  index.number_of_shards: 5  
+>  index.number_of_replicas: 1  
+>  discovery.zen.ping.multicast.enabled: false  
+>  discovery.zen.ping.unicast.hosts: ["192.168.1.101"]
+
+Config of the non-master node:
+
+> cluster.name: mycluster  
+>  node.name: "node2"  
+>  node.master: false  
+>  node.data: true  
+>  index.number_of_shards: 5  
+>  index.number_of_replicas: 1  
+>  discovery.zen.ping.multicast.enabled: false  
+>  discovery.zen.ping.unicast.hosts: ["192.168.1.101"]
+
+I don't know why this exception happens. Please give me some tips. Thanks in
+advance.
+
+After I set **network.bind_host** 、 **network.publish_host** 、
+**network.host** to the IP that the node held，it worked. Very strange.
+
+I'd better change `["192.168.1.101"]` to `["192.168.1.101", "192.168.1.106"]`
+in both configurations.
+
+I had the same issue until I found out that my ES node did not bind to eth0 as
+expected but to eth2 instead. Of course this could not work because the
+registration response from the master node could not be sent to the IP address
+of my other network. I was able to fix this behaviour by setting the following
+parameter in my elasticsearch.yml (on the server which was not able to join
+the cluster)
+
+    
+    
+    network.publish_host: "_eth0:ipv4_"
+    
+

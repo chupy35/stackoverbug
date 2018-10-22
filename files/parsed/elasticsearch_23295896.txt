@@ -1,0 +1,216 @@
+23295896 Shingles in Elasticsearch, why does this example with custom analyzer
+fail?
+
+I rephrased my problem into a full curl recreation script. That way it might
+be easier to reproduce the problem (search fails with custom analyzer). I am
+using the latest ES version for this
+
+# Remove old data
+
+    
+    
+    curl -XDELETE "http://localhost:9200/test_shingling"
+    
+
+# Create index with settings
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/" -d '{
+      "settings": {
+        "index": {
+          "number_of_shards": 10,
+          "number_of_replicas": 1
+        },
+        "analysis": {
+          "analyzer": {
+            "ShingleAnalyzer": {
+              "tokenizer": "BreadcrumbPatternAnalyzer",
+              "filter": [
+                "standard",
+                "lowercase",
+                "filter_stemmer",
+                "filter_shingle"
+              ]
+            }
+          },
+          "filter": {
+            "filter_shingle": {
+              "type": "shingle",
+              "max_shingle_size": 2,
+              "min_shingle_size": 2,
+              "output_unigrams": false
+            },
+            "filter_stemmer": {
+              "type": "porter_stem",
+              "language": "English"
+            }
+          },
+          "tokenizer": {
+            "BreadcrumbPatternAnalyzer": {
+              "type": "pattern",
+              "pattern": " |\\$\\$\\$"
+            }
+          }
+        }
+      }
+    }'
+    
+
+# Define mapping
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/_mapping" -d '{
+      "item": {
+        "properties": {
+          "Title": {
+            "type": "string",
+            "search_analyzer": "ShingleAnalyzer",
+            "index_analyzer": "ShingleAnalyzer"
+          }
+        }
+      }
+    }'
+    
+
+# Create Document
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/" -d '{
+      "Title":"Kyocera Solar Panel Test"
+    }'
+    
+
+# Test Analyzer PASS
+
+    
+    
+    curl 'localhost:9200/test_shingling/_analyze?pretty=1&analyzer=ShingleAnalyzer' -d 'Kyocera Solar Panel Test'
+    
+
+# Wait for ES to be synced (aka refresh indices)
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/_refresh"
+    
+
+# Search "Kyocera Solar Panel Test" FAIL
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/_search?pretty=true" -d '{
+      "query": {
+        "term": {
+          "Title": "Kyocera Solar Panel Test"
+        }
+      }
+    }'
+    
+
+# Search "Solar Panel" FAIL
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/_search?pretty=true" -d '{
+      "query": {
+        "term": {
+          "Title": "Kyocera Solar Panel Test"
+        }
+      }
+    }'
+    
+
+# Search "Kyocera Solar Panel Test" FAIL
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/_search?pretty=true" -d '{
+      "query": {
+        "query_string": {
+          "default_field": "Title",
+          "query": "Kyocera Solar Panel Test"
+        }
+      }
+    }'
+    
+
+# Search "Solar Panel" FAIL
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/_search?pretty=true" -d '{
+      "query": {
+        "query_string": {
+          "default_field": "Title",
+          "query": "solar panel"
+        }
+      }
+    }'
+    
+
+I think that the search `query_string` considers `solar panel` as `solar` or
+`panel` by default and that you have to set it explicitly in the
+`query_string`. This is what's written in the [reference
+guide](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html).
+
+> default_operator :
+
+>
+
+> The **default operator** used if no explicit operator is specified. For
+example, with a default operator of OR, the query capital of Hungary is
+translated to capital OR of OR Hungary, and with default operator of AND, the
+same query is translated to capital AND of AND Hungary. The default value is
+OR.
+
+The term query will search for an exact match and won't apply ShingleAnalyzer
+to your query.
+
+So you have to use the match query, this will apply the Analyzer to your query
+string when searching.
+
+**Whole word search**
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/_search" -d'{
+        "query": {
+            "match": {
+                "Title": "Kyocera Solar Panel Test"
+            }
+        }
+    }'
+    
+
+**Partial Word search**
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/_search" -d'{
+        "query": {
+            "match": {
+                "Title": "Panel Test"
+            }
+        }
+    }'
+    
+
+**Another Partial word search**
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_shingling/item/_search" -d'{
+        "query": {
+            "match": {
+                "Title": "Solar Panel Test"
+            }
+        }
+    }'
+    
+
+Hope it helps..!
+

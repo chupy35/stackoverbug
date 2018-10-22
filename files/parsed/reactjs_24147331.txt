@@ -1,0 +1,311 @@
+24147331 React – the right way to pass form element state to sibling/parent
+elements?
+
+  * Suppose I have a React class P, which renders two child classes, C1 and C2. 
+  * C1 contains an input field. I'll refer to this input field as Foo. 
+  * My goal is to let C2 react to changes in Foo. 
+
+I've come up with two solutions, but neither of them feels quite right.
+
+First solution:
+
+  1. Assign P a state, `state.input`.
+  2. Create an `onChange` function in P, which takes in an event and sets `state.input`.
+  3. Pass this `onChange` to C1 as a `props`, and let C1 bind `this.props.onChange` to the `onChange` of Foo.
+
+This works. Whenever the value of Foo changes, it triggers a `setState` in P,
+so P will have the input to pass to C2.
+
+But it doesn't feel quite right for the same reason: I'm setting the state of
+a parent element from a child element. This seems to betray the design
+principle of React: single-direction data flow.  
+**Is this how I'm supposed to do it, or is there a more React-natural
+solution?**
+
+Second solution:
+
+Just put Foo in P.
+
+**But is this a design principle I should follow when I structure my
+app—putting all form elements in the`render` of the highest-level class?**
+
+Like in my example, if I have a large rendering of C1, I really don't want to
+put the whole `render` of C1 to `render` of P just because C1 has a form
+element.
+
+How should I do it?
+
+So, if I'm understanding you correctly, your first solution is suggesting that
+you're keeping state in your root component? I can't speak for the creators of
+React, but generally, I find this to be a proper solution.
+
+Maintaining state is one of the reasons (at least I think) that React was
+created. If you've ever implemented your own state pattern client side for
+dealing with a dynamic UI that has a lot of interdependent moving pieces, then
+you'll love React, because it alleviates a lot of this state management pain.
+
+By keeping state further up in the hierarchy, and updating it through
+eventing, your data flow is still pretty much unidirectional, you're just
+responding to events in the Root component, you're not really getting the data
+there via two way binding, you're telling the Root component that "hey,
+something happened down here, check out the values" or you're passing the
+state of some data in the child component up in order to update the state. You
+changed the state in C1, and you want C2 to be aware of it, so, by updating
+the state in the Root component and re-rendering, C2's props are now in sync
+since the state was updated in the Root component and passed along.
+
+    
+    
+    class Example extends React.Component {
+      constructor (props) {
+        super(props)
+        this.state = { data: 'test' }
+      }
+      render () {
+        return (
+          <div>
+            <C1 onUpdate={this.onUpdate.bind(this)}/>
+            <C2 data={this.state.data}/>
+          </div>
+        )
+      }
+      onUpdate (data) { this.setState({ data }) }
+    }
+    
+    class C1 extends React.Component {
+        render () {
+          return (
+            <div>
+              <input type='text' ref='myInput'/>
+              <input type='button' onClick={this.update.bind(this)} value='Update C2'/>
+            </div>
+          )
+        }
+        update () {
+          this.props.onUpdate(this.refs.myInput.getDOMNode().value)
+        }
+    })
+    
+    class C2 extends React.Component {
+        render () {
+          return <div>{this.props.data}</div>
+        }
+    })
+    
+    ReactDOM.renderComponent(<Example/>, document.body)
+    
+
+Having used React to build an app now, I'd like to share some thoughts to this
+question I asked half a year ago.
+
+I recommend you to read
+
+  * [Thinking in React](https://facebook.github.io/react/docs/thinking-in-react.html)
+  * [Flux](https://facebook.github.io/flux/)
+
+The first post is extremely helpful to understanding how you should structure
+your React app.
+
+Flux answers the question **why** should you structure your React app this way
+(as opposed to **how** to structure it). React is only 50% of the system, and
+with Flux you get to see the whole picture and see how they constitute a
+coherent system.
+
+Back to the question.
+
+As for my first solution, it is totally OK to let the **handler** go the
+reverse direction, as the **data** is still going single-direction.
+
+However, whether letting a handler trigger a setState in P can be right or
+wrong depending on your situation.
+
+If the app is a simple Markdown converter, C1 being the raw input and C2 being
+the HTML output, it's OK to let C1 trigger a setState in P, but some might
+argue this is not the recommended way to do it.
+
+However, if the app is a todo list, C1 being the input for creating a new
+todo, C2 the todo list in HTML, you probably want to handler to go two level
+up than P -- to the `dispatcher`, which let the `store` update the `data
+store`, which then send the data to P and populate the views. See that Flux
+article. Here is an example: [Flux -
+TodoMVC](https://github.com/facebook/flux/tree/master/examples/flux-todomvc)
+
+Generally, I prefer the way described in the todo list example. The less state
+you have in your app the better.
+
+You should learn Redux and ReactRedux library.It will structure your states
+and props in one store and you can access them later in your components .
+
+  1. The right thing to do is to have the **state in the parent component** , to avoid ref and what not
+  2. An issue is to avoid **constantly updating all children** when typing into a field
+  3. Therefore, each child should be a Component (as in not a PureComponent) and implement `shouldComponentUpdate(nextProps, nextState)`
+  4. This way, when typing into a form field, only that field updates
+
+The code below uses `@bound` annotations from **ES.Next** `babel-plugin-
+transform-decorators-legacy` of **BabelJS 6** and class-properties (the
+annotation sets this value on member functions similar to bind):
+
+    
+    
+    /*
+    © 2017-present Harald Rudell <harald.rudell@gmail.com> (http://www.haraldrudell.com)
+    All rights reserved.
+    */
+    import React, {Component} from 'react'
+    import {bound} from 'class-bind'
+    
+    const m = 'Form'
+    
+    export default class Parent extends Component {
+      state = {one: 'One', two: 'Two'}
+    
+      @bound submit(e) {
+        e.preventDefault()
+        const values = {...this.state}
+        console.log(`${m}.submit:`, values)
+      }
+    
+      @bound fieldUpdate({name, value}) {
+        this.setState({[name]: value})
+      }
+    
+      render() {
+        console.log(`${m}.render`)
+        const {state, fieldUpdate, submit} = this
+        const p = {fieldUpdate}
+        return (
+          <form onSubmit={submit}> {/* loop removed for clarity */}
+            <Child name='one' value={state.one} {...p} />
+            <Child name='two' value={state.two} {...p} />
+            <input type="submit" />
+          </form>
+        )
+      }
+    }
+    
+    class Child extends Component {
+      value = this.props.value
+    
+      @bound update(e) {
+        const {value} = e.target
+        const {name, fieldUpdate} = this.props
+        fieldUpdate({name, value})
+      }
+    
+      shouldComponentUpdate(nextProps) {
+        const {value} = nextProps
+        const doRender = value !== this.value
+        if (doRender) this.value = value
+        return doRender
+      }
+    
+      render() {
+        console.log(`Child${this.props.name}.render`)
+        const {value} = this.props
+        const p = {value}
+        return <input {...p} onChange={this.update} />
+      }
+    }
+    
+
+The first solution, with [keeping the state in parent
+component](https://kolosek.com/react-props-communication), is _the correct
+one_. However, for more complex problems, you should think about some _state
+management library_ , [redux](https://redux.js.org/) is the most popular one
+used with react.
+
+The concept of passing data from parent to child and vice versa is explained.
+
+    
+    
+    import React, { Component } from "react";
+    import ReactDOM from "react-dom";
+    
+    // taken refrence from https://gist.github.com/sebkouba/a5ac75153ef8d8827b98
+    
+    //example to show how to send value between parent and child
+    
+    //  props is the data which is passed to the child component from the parent component
+    
+    class Parent extends Component {
+      constructor(props) {
+        super(props);
+    
+        this.state = {
+          fieldVal: ""
+        };
+      }
+    
+      onUpdateParent = val => {
+        this.setState({
+          fieldVal: val
+        });
+      };
+    
+      render() {
+        return (
+          // To achieve the child-parent communication, we can send a function
+          // as a Prop to the child component. This function should do whatever
+          // it needs to in the component e.g change the state of some property.
+          //we are passing the function onUpdateParent to the child
+          <div>
+            <h2>Parent</h2>
+            Value in Parent Component State: {this.state.fieldVal}
+            <br />
+            <Child onUpdate={this.onUpdateParent} />
+            <br />
+            <OtherChild passedVal={this.state.fieldVal} />
+          </div>
+        );
+      }
+    }
+    
+    class Child extends Component {
+      constructor(props) {
+        super(props);
+    
+        this.state = {
+          fieldValChild: ""
+        };
+      }
+    
+      updateValues = e => {
+        console.log(e.target.value);
+        this.props.onUpdate(e.target.value);
+        // onUpdateParent would be passed here and would result
+        // into onUpdateParent(e.target.value) as it will replace this.props.onUpdate
+        //with itself.
+        this.setState({ fieldValChild: e.target.value });
+      };
+    
+      render() {
+        return (
+          <div>
+            <h4>Child</h4>
+            <input
+              type="text"
+              placeholder="type here"
+              onChange={this.updateValues}
+              value={this.state.fieldVal}
+            />
+          </div>
+        );
+      }
+    }
+    
+    class OtherChild extends Component {
+      render() {
+        return (
+          <div>
+            <h4>OtherChild</h4>
+            Value in OtherChild Props: {this.props.passedVal}
+            <h5>
+              the child can directly get the passed value from parent by this.props{" "}
+            </h5>
+          </div>
+        );
+      }
+    }
+    
+    ReactDOM.render(<Parent />, document.getElementById("root"));
+

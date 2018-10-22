@@ -1,0 +1,56 @@
+23605942 ElasticSearch MapperParsingException object mapping
+
+I folow a article about ElasticSearch and I try put this example on my engine.
+
+example:
+
+    
+    
+    curl -XPUT 'elasticsearch:9200/twitter/tweet/1' -d '{
+        "user": "david",
+        "message": "C'est mon premier message de la journée !",
+        "postDate": "2010-03-15T15:23:56",
+        "priority": 2,
+        "rank": 10.2
+    }'
+    
+
+I try to send this information across a bash file (I use Putty), but I have
+this errror:
+
+    
+    
+    {"error":"MapperParsingException[object mapping for [tweet] tried to parse as object, 
+      but got EOF, has a concrete value been provided to it?]","status":400}
+    
+
+I also try to see one error with "cat -e tweet.sh", but I don't understand why
+I've got this error.
+
+Thanks in advance.
+
+It's a type mismatching. I'm facing with such issue too. It looks like you try
+to index a value into an object mapped json. i.e., you indexed one time
+something like this:
+
+    
+    
+    {
+      "obj1": {
+        "field1": "value1"
+      }
+    }
+    
+
+and then index this:
+
+    
+    
+    {
+      "obj1": "value"
+    }
+    
+
+Check your existing mapping via `elasticsearch:9200/twitter/_mapping` and you
+will see if that one of the field was indexed as `object`
+

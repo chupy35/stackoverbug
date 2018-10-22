@@ -1,0 +1,64 @@
+18214156 Searching multiple fields in elasticsearch
+
+I'm indexing meta data on files and my mappings looks like this:
+
+    
+    
+    curl -XPUT "http://localhost:9200/myapp/" -d '
+    {
+        "mappings": {
+            "file": {
+                "properties": {
+                    "name": {
+                        "type": "string", "index": "not_analyzed"
+                    },
+                    "path": {
+                        "type": "string", "index": "not_analyzed"
+                    },
+                    "user": {
+                        "type": "string", "index": "not_analyzed"
+                    }
+                }
+            }
+        }
+    }
+    '
+    
+
+There are some other fields too, but they are not relevant to this question.
+Here 'name' is the name of a file, 'path' is the path to the file and user is
+the owner of that file. When indexing the data could look something like:
+
+    
+    
+    { name: 'foo', path: '/', user: 'dude' }
+    { name: 'bar', path: '/subfolder/', user: 'dude' }
+    { name: 'baz', path: '/', user: 'someotherdude' }
+    
+
+My question is how to build my query so that I can do folder listings given a
+path and a user. So searching for the user 'dude' and path '/' should result
+in 'foo'.
+
+You can use a [bool](http://www.elasticsearch.org/guide/reference/query-
+dsl/bool-query/) which allows you to specify the queries that must match to
+constitute a hit. Your query will look something like this
+
+    
+    
+    {
+        "query": {
+            "bool" : {
+                "must" : [ 
+                    { "match": { "user" : "dude" } },
+                    { "match": { "path" : "/" } }
+                ]
+             }
+        },
+        "fields": ["name"]
+    }
+    
+
+What this does is checks that there is an exact match for the term "dude" and
+path "/"
+

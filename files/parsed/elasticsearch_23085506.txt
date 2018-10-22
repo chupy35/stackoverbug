@@ -1,0 +1,75 @@
+23085506 Elasticsearch combine two different query types in one request
+
+I'm wondering if there is a possibility to combine two query types, in my case
+I need a **match** and **wildcard** query, each has to operate on a different
+field.
+
+The thing is, a document matches if the entity name (the document is the
+representation of the entity) matches the name with a wildcard at the end of
+the search term OR it matches if it is a exact match on one of the synonyms of
+the entity. Not both querys have to match, just one of them to consider the
+document as relevant.
+
+Currently I need two requests to archive this:
+
+Wildcard:
+
+    
+    
+    GET /name/type/_search
+    {
+       "query": {
+          "wildcard": {
+             "name": {
+                "value": "term*",
+                "boost": 2
+             }
+          }
+       }
+    }
+    
+
+Match:
+
+    
+    
+    GET /name/type/_search
+    {
+       "query": {
+          "match": {
+             "synonyms": "term"
+          }
+       }
+    }
+    
+
+Is there a way to do it with one request? All my tests failed.
+
+This is the one your are looking for..!
+
+    
+    
+    curl -XPOST "http://localhost:9200/try/_search" -d'
+    {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "wildcard": {
+                "name": {
+                  "value": "term*",
+                  "boost": 2
+                }
+              }
+            },
+            {
+              "match": {
+                "synonyms": "term"
+              }
+            }
+          ]
+        }
+      }
+    }'
+    
+

@@ -1,0 +1,27 @@
+13109029 Elastic Search in general
+
+I'm completely new to Elastic Search or to searching in general.  I tried to
+figure out how it is working but I'm not sure if I understood it right.
+
+Is it right, that I for example get a JSON with my data, I have to index it
+with elastic search and don't have to care about another database in general?
+I mean, I don't have to create a database by myself?
+
+I hope I could explain I am struggling with..
+
+Yes. Just send your document as a JSON structure and Elasticsearch will index
+it and will make it searchable.
+
+Question is: where does this doc come from? Is it from Twitter? From a
+database? From a user interface? To help you gathering these docs, you can use
+Elasticsearch Rivers.
+
+Yes, ElasticSearch can not only work without external database but even act as
+a database system itself in the sense that it may store the original JSON
+document that has been indexed. You can retrieve all the data you are sending
+to the server when the document has been found either by search query or by
+its ID as in normal key->value document database. The data is available in
+[_source](http://www.elasticsearch.org/guide/reference/mapping/source-
+field.html) field. This is not necessary for indexing and searching, and can
+be turned off for storage space conservation, but is turned on by default.
+

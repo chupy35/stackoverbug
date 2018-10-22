@@ -1,0 +1,13 @@
+23930320 ElasticSearch stored field
+
+Is is absurd to store some fields while `_source` is already enabled? In
+documentation of elasticsearch
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html) as it is specified fields are not stored by defult but we can
+retrieve them from `_source`, If we set a field as stored while `_source` is
+also enabled, will there be duplicate of this field?
+
+Yes it will be stored twice.Field store is used to speed up the process
+.Instead of fetching _source and fetch the field will be slower than stored
+fields.It will directly fetch data from stored field.
+

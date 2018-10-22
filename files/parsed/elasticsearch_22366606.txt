@@ -1,0 +1,25 @@
+22366606 ElasticSearch - specifying an exact port (no port range)
+
+I want to specify an exact port for ElasticSearch to use for HTTP traffic. How
+can I do so? In the config file, it says it listens to a port range by
+default. How can I restrict this port range to just 1 port?
+
+    
+    
+    Elasticsearch, by default, binds itself to the 0.0.0.0 address, and listens
+    on port [9200-9300] for HTTP traffic and on port [9300-9400] for node-to-node
+    communication. (the range means that if the port is busy, it will automatically
+    try the next port).
+    
+
+In config folder.. There is an file called "elasticsearch.Yml". In that
+Parameters for port are commented.. Just remove hash before http.port and add
+port value to it..
+
+    
+    
+        http.port : 5000
+    
+
+You can do this for both tcp and http
+

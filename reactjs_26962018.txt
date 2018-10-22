@@ -1,0 +1,4 @@
+26962018
+ReactTransitionGroup code explanation
+<p>I'm new to react and I am trying to get my head around the code in ReactTransitionGroup and I am confused as to Why performEnter is called in <a href="https://github.com/facebook/react/blob/81d4d7bf242bba3b5e10ff12d224d49dac181f35/src/addons/transitions/ReactTransitionGroup.js#L94" rel="nofollow">componentDidUpdate</a> and not componentDidMount.  My understanding of componentDidUpdate is that it is called after render and when the state has altered.  </p>&#xA;&#xA;<p>So I'm confused as to why it is called here. </p>&#xA;
+<p><code>performEnter</code> animates the child, and children are animated in and out when they appear in or disappear from the parent component on <em>subsequent</em> renders—they're not animated if they're already contained in the parent upon the first render.</p>&#xA;

@@ -1,0 +1,131 @@
+18010752 How to setup ElasticSearch cluster with auto-scaling on Amazon EC2?
+
+There is a great tutorial [elasticsearch on
+ec2](https://web.archive.org/web/20150109115804/http://www.elasticsearch.org/tutorials/elasticsearch-
+on-ec2 "elasticsearch on ec2") about configuring ES on Amazon EC2. I studied
+it and applied all recommendations.
+
+Now I have AMI and can run any number of nodes in the cluster from this AMI.
+Auto-discovery is configured and the nodes join the cluster as they really
+should.
+
+The question is **How to configure cluster in way that I can automatically
+launch/terminate nodes depending on cluster load?**
+
+For example I want to have only 1 node running when we don't have any load and
+12 nodes running on peak load. But wait, if I terminate 11 nodes in cluster
+what would happen with shards and replicas? **How to make sure I don't lose
+any data in cluster if I terminate 11 nodes out of 12 nodes?**
+
+I might want to configure [S3
+Gateway](http://www.elasticsearch.org/guide/reference/modules/gateway/s3/ "s3
+gateway") for this. But all the gateways except for local are deprecated.
+
+There is an article in the manual about [shards
+allocation](http://www.elasticsearch.org/guide/reference/index-
+modules/allocation/ "allocation"). May be I'm missing something very basic but
+I should admit I failed to figure out if it **is possible to configure one
+node to always hold all the shards copies**. My goal is to make sure that if
+this would be the only node running in the cluster we still don't lose any
+data.
+
+The only solution I can imagine now is to configure index to have 12 shards
+and 12 replicas. Then when up to 12 nodes are launched every node would have
+copy of every shard. But I don't like this solution cause I would have to
+reconfigure cluster if I might want to have more then 12 nodes on peak load.
+
+Auto scaling doesn't make a lot of sense with ElasticSearch.
+
+Shard moving and re-allocation is not a light process, especially if you have
+a lot of data. It stresses IO and network, and can degrade the performance of
+ElasticSearch badly. (If you want to limit the effect you should throttle
+cluster recovery using settings like
+cluster.routing.allocation.cluster_concurrent_rebalance,
+indices.recovery.concurrent_streams, indices.recovery.max_size_per_sec . This
+will limit the impact but will also slow the re-balancing and recovery).
+
+Also, if you care about your data you don't want to have only 1 node ever. You
+need your data to be replicated, so you will need at least 2 nodes (or more if
+you feel safer with a higher replication level).
+
+Another thing to remember is that while you can change the number of replicas,
+you can't change the number of shards. This is configured when you create your
+index and cannot be changed (if you want more shards you need to create
+another index and reindex all your data). So your number of shards should take
+into account the data size and the cluster size, considering the higher number
+of nodes you want but also your minimal setup (can fewer nodes hold all the
+shards and serve the estimated traffic?).
+
+So theoretically, if you want to have 2 nodes at low time and 12 nodes on
+peak, you can set your index to have 6 shards with 1 replica. So on low times
+you have 2 nodes that hold 6 shards each, and on peak you have 12 nodes that
+hold 1 shard each.
+
+But again, I strongly suggest rethinking this and testing the impact of shard
+moving on your cluster performance.
+
+In cases where the elasticity of your application is driven by a variable
+query load you could setup ES nodes configured to not store any data
+(node.data = false, http.enabled = true) and then put them in for auto
+scaling. These nodes could offload all the HTTP and result conflation
+processing from your main data nodes (freeing them up for more indexing and
+searching).
+
+Since these nodes wouldn't have shards allocated to them bringing them up and
+down dynamically shouldn't be a problem and the auto-discovery should allow
+them to join the cluster.
+
+I think this is a concern in general when it comes to employing auto-scalable
+architecture to meet temporary demands, but data still needs to be saved. I
+think there is a solution that leverages EBS
+
+  * map shards to specific EBS volumes. Lets say we need 15 shards. We will need 15 EBS Volumes
+
+  * amazon allows you to mount multiple volumes, so when we start we can start with few instances that have multiple volumes attached to them
+
+  * as load increase, we can spin up additional instance - upto 15.
+
+The above solution is only advised if you know your max capacity requirements.
+
+I would be tempted to suggest solving this a different way in AWS. _I dont
+know what ES data this is or how its updated etc..._ Making a lot of
+assumptions I would put the ES instance behind a ALB (app load balancer) I
+would have a scheduled process that creates updated AMI's regularly (if you do
+it often then it will be quick to do), then based on load of your single
+server I would trigger more instances to be created from the latest instance
+you have available. Add the new instances to the ALB to share some of the
+load. As this quiet down I would trigger the termination of the temp
+instances. If you go this route here are a couple more things to consider
+
+  * Use spot instances since they are cheaper and if it fits your use case
+  * The "T" instances dont fit well here since they need time to build up credits
+  * Use lambdas for the task of turning things on and off, if you want to be fancy you can trigger it based on a webhook to the aws gateway
+  * Making more assumptions about your use case, consider putting a Varnish server in front of your ES machine so that you can more cheaply provide scale based on a cache strategy (lots of assumptions here) based on the stress you can dial in the right TTL for cache eviction. Check out the soft-purge feature for our ES stuff we have gotten a lot of good value from this.
+  * if you do any of what i suggest here make sure to make your spawned ES instances report any logs back to a central addressable place on the persistent ES machine so you don't lose logs when the machines die
+
+I can give you an alternative approach using aws elastic search service(it
+will cost little bit more than normal ec2 elasticsearch).Write a simple script
+which continuously monitor the load (through api/cli)on the service and if the
+load goes beyond the threshold, programatically increase the nodes of your aws
+elasticsearch-service cluster.Here the advantage is aws will take care of the
+scaling(As per the documentation they are taking a snaphost and launching a
+completely new cluster).This will work for scale down also.
+
+Regarding Auto-scaling approach there is some challenges like shard movement
+has an impact on the existing cluster, also we need to more vigilant while
+scaling down.You can find a good article on scaling down
+[here](https://blog.mapillary.com/tech/2017/01/12/scaling-down-an-
+elasticsearch-cluster.html) which I have tested.If you can do some kind of
+intelligent automation of the steps in the above link through some
+scripting(python, shell) or through automation tools like Ansible, then the
+scaling in/out is achievable.But again you need to start the scaling up well
+before the normal limits since the scale up activities can have an impact on
+existing cluster.
+
+**Question:** is possible to configure one node to always hold all the shards
+copies?
+
+**Answer:** Yes,its possible by explicit shard routing.More details
+[here](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-
+reroute.html)
+

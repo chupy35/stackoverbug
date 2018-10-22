@@ -1,0 +1,38 @@
+17245581 ElasticSearch: Replicas of shards only?
+
+I have 2 nodes in my ElasticSearch cluster with 1 index. The index is setup to
+have 5 shards, and 1 replica. I want all 5 shards to be in 1 node, with a
+replica of each in another node. I don't want ElasticSearch to distribute
+those 5 shards equally among the 2 nodes (and distribute the replicas equally
+as well).
+
+In other words, I want 1 node to act strictly as a backup, holding ALL the
+replicas. Is this possible with ElasticSearch? If so, what settings do I need
+to configure?
+
+AFAIK - Master-slave cannot be done just by using Elastic Search.
+
+Elastic search by design uses a different strategy for resilience (node-node).
+Here is a document explaining the difference -
+
+[http://translate.google.com/translate?hl=en&sl=zh-
+CN&u=http://www.elasticsearch.cn/guide/concepts/scaling-
+lucene/replication/&prev=/search%3Fq%3Dmaster%2Bslave%2Belasticsearch](http://translate.google.com/translate?hl=en&sl=zh-
+CN&u=http://www.elasticsearch.cn/guide/concepts/scaling-
+lucene/replication/&prev=/search%3Fq%3Dmaster%2Bslave%2Belasticsearch)
+
+Note - the original document is in elasticsearch.cn, couldn't locate the
+corresponding English document.
+
+The master-slave concept is something that Solr supports.
+
+That being said, if you need a master-slave setup, I would think of using
+something like a load-balancer to isolate the 'master' and 'replica' instance
+of ES.
+
+Also note - you can configure ES to have just worker nodes (that do not hold
+data, but just process search request).
+
+More about it here
+-<http://www.elasticsearch.org/guide/reference/modules/node/>
+

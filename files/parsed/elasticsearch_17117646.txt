@@ -1,0 +1,67 @@
+17117646 Unable to get the min_score search criteria working in ElasticSearch
+0.90.0
+
+We've been having some trouble getting min_score to work.
+
+We have two types. There is user_meta, the parent index type. There is also
+the child index, user_perk (specified below.)
+
+The query returns both the right documents and accurate scores for those
+documents, but when I add a min_score >= 1, it returns no data.
+
+Another weird behavior is that changing the boost value in constant_score does
+not change the score that is returned. For example, if I have a boost value of
+1 and a document that has a score of 29, that document will also have a score
+of 29 if I set a boost value of 0.1.
+
+Very confused here. Are we doing something wrong?
+
+Thanks! Jieren
+
+**Mapping for child document**
+
+    
+    
+    {
+        "user_perk": {
+            "_parent" : {"type" : "user_meta"},
+            "type": "object",
+            "index_analyzer": "keyword",
+            "search_analyzer": "keyword",
+            "properties": {
+                "quest_id": {"type": "string"},
+                "ks_uid": {"type": "string"},
+                "status": {"type": "string"},
+                "action_dt" : {"type": "date", "format": "YYYYMMdd"}
+            }
+        }
+    }
+    
+
+**Query**
+
+    
+    
+    {
+      "min_score": 5,
+      "query": {
+        "has_child": {
+          "type": "user_perk",
+          "score_type": "sum",
+          "query": {
+            "constant_score": {
+              "boost": 1,
+              "filter": {
+                "term": {
+                  "status": "claimed"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+min_score is not >= 1, but > 1. Put min_score: 0 and it should work.
+

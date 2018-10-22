@@ -1,0 +1,143 @@
+21116803 ElasticSearch: No filter registered for [match]]
+
+I'm trying to do this query to my ElasticSearch Server.
+
+    
+    
+    {
+        "query" : {
+            "match" : {
+                "name" : "network"
+            }
+        },
+        "facets" : {
+            "departments" : { 
+                "terms" : {
+                    "field" : "department_name"
+                } 
+            }
+        },
+    
+        "filter" : {
+            "bool": {
+                "should": [
+                    { "match" : {"department_name" : "book"}},
+                    { "match" : {"department_name" : "electronics"}}]            
+            }   
+        }
+    }
+    
+
+Basically, I wish to retrieve all the products that match "network" in its
+name, but filtering only to those which `department_name` matches either
+`book` or `electronics`. When I perform this query, I receive this error
+message.
+
+    
+    
+    curl -X POST "http://localhost:9200/products/_search?pretty=true" -d '{
+        "query" : {
+            "match" : {
+                "name" : "network"
+            }
+        },
+        "facets" : {
+            "departments" : { 
+                "terms" : {
+                    "field" : "department_name"
+                } 
+            }
+        },
+    
+        "filter" : {
+            "bool": {
+                "should": [
+                    { "match" : {"department_name" : "book"}},
+                    { "match" : {"department_name" : "electronics"}}]            
+            }   
+        }
+    }
+    '
+    
+    {
+      "error" : "SearchPhaseExecutionException[Failed to execute phase [query], all shards failed; shardFailures {[EaNRci0OSIqpA2EAPwAA6w][products][4]: SearchParseException[[products][4]: query[name:network],from[-1],size[-1]: Parse Failure [Failed to parse source [{\n    \"query\" : {\n        \"match\" : {\n            \"name\" : \"network\"\n        }\n    },\n    \"facets\" : {\n        \"departments\" : { \n            \"terms\" : {\n                \"field\" : \"department_name\"\n            } \n        }\n    },\n\n    \"filter\" : {\n        \"bool\": {\n            \"should\": [\n                { \"match\" : {\"department_name\" : \"book\"}},\n                { \"match\" : {\"department_name\" : \"electronics\"}}]            \n        }   \n    }\n}\n]]]; nested: QueryParsingException[[products] No filter registered for [match]]; }{[EaNRci0OSIqpA2EAPwAA6w][products][0]: SearchParseException[[products][0]: query[name:network],from[-1],size[-1]: Parse Failure [Failed to parse source [{\n    \"query\" : {\n        \"match\" : {\n            \"name\" : \"network\"\n        }\n    },\n    \"facets\" : {\n        \"departments\" : { \n            \"terms\" : {\n                \"field\" : \"department_name\"\n            } \n        }\n    },\n\n    \"filter\" : {\n        \"bool\": {\n            \"should\": [\n                { \"match\" : {\"department_name\" : \"book\"}},\n                { \"match\" : {\"department_name\" : \"electronics\"}}]            \n        }   \n    }\n}\n]]]; nested: QueryParsingException[[products] No filter registered for [match]]; }{[EaNRci0OSIqpA2EAPwAA6w][products][1]: SearchParseException[[products][1]: query[name:network],from[-1],size[-1]: Parse Failure [Failed to parse source [{\n    \"query\" : {\n        \"match\" : {\n            \"name\" : \"network\"\n        }\n    },\n    \"facets\" : {\n        \"departments\" : { \n            \"terms\" : {\n                \"field\" : \"department_name\"\n            } \n        }\n    },\n\n    \"filter\" : {\n        \"bool\": {\n            \"should\": [\n                { \"match\" : {\"department_name\" : \"book\"}},\n                { \"match\" : {\"department_name\" : \"electronics\"}}]            \n        }   \n    }\n}\n]]]; nested: QueryParsingException[[products] No filter registered for [match]]; }{[EaNRci0OSIqpA2EAPwAA6w][products][2]: SearchParseException[[products][2]: query[name:network],from[-1],size[-1]: Parse Failure [Failed to parse source [{\n    \"query\" : {\n        \"match\" : {\n            \"name\" : \"network\"\n        }\n    },\n    \"facets\" : {\n        \"departments\" : { \n            \"terms\" : {\n                \"field\" : \"department_name\"\n            } \n        }\n    },\n\n    \"filter\" : {\n        \"bool\": {\n            \"should\": [\n                { \"match\" : {\"department_name\" : \"book\"}},\n                { \"match\" : {\"department_name\" : \"electronics\"}}]            \n        }   \n    }\n}\n]]]; nested: QueryParsingException[[products] No filter registered for [match]]; }{[EaNRci0OSIqpA2EAPwAA6w][products][3]: SearchParseException[[products][3]: query[name:network],from[-1],size[-1]: Parse Failure [Failed to parse source [{\n    \"query\" : {\n        \"match\" : {\n            \"name\" : \"network\"\n        }\n    },\n    \"facets\" : {\n        \"departments\" : { \n            \"terms\" : {\n                \"field\" : \"department_name\"\n            } \n        }\n    },\n\n    \"filter\" : {\n        \"bool\": {\n            \"should\": [\n                { \"match\" : {\"department_name\" : \"book\"}},\n                { \"match\" : {\"department_name\" : \"electronics\"}}]            \n        }   \n    }\n}\n]]]; nested: QueryParsingException[[products] No filter registered for [match]]; }]",
+      "status" : 400
+    }
+    
+
+I suppose the key here is `QueryParsingException[[products] No filter
+registered for [match]]`, but cannot understand what's wrong here.
+
+`match` is a query, not a filter.
+
+You probably want the `term`-filter in this case.
+
+# Elasticsearch Advanced Filtering
+
+### Here's a way you can use match inside of a bool:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": { //THIS IS THE MAIN SEARCH BLOCK FOR ALL RESULTS
+            "match": { 
+              "title": { 
+                "query": "[MAIN_SEARCH_TERM]", 
+                "minimum_should_match": "75%"
+              }
+            }
+          },
+          "filter": {
+            "bool": {
+              "must": [
+                {
+                  "range": { //THIS FILTERS BY DATES GRATER THAN [SOME_DATE]
+                    "date": {
+                      "gte":"[SOME DATE]"
+                    }
+                  }
+                },
+                {
+                  "geo_distance": { //THIS FILTERS BY GEO POINTS WITHIN [DISTANCE] of [LATITUDE], [LONGITUDE]
+                    "distance": "[DISTANCE](mi, km)",
+                    "location": {
+                      "lat":"[LATITUDE]",
+                      "lon":"[LONGITUDE]"
+                    }
+                  }
+                }
+              ],
+              "should": [
+                {
+                  "query": { //THIS FILTERS BY ANOTHER [MATCH_TERM] AND ADDS BOOST TO THAT TERM, YOU CAN USE MULTIPLE OF THESE WITH DIFFERENT [BOOST_INT]
+                    "match": { 
+                      "[PROPERTY]": {
+                        "query": "[MATCH_TERM]",
+                        "boost": [BOOST_INT]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+
+Reference Link:
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/query-time-
+boosting.html>
+
+Before using geo_point matching and date range filtering, make sure you
+understand _mapping:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping.html>
+
+For anyone coming across this who migrated up major version(s) to elastic
+search 5, this filtered query is now depreciated and you should use a bool
+query instead. <https://discuss.elastic.co/t/no-query-registered-for-
+filter/49602>
+

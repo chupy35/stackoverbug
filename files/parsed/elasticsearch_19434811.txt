@@ -1,0 +1,79 @@
+19434811 How can I add filter to Completion Suggester in ElasticSearch?
+
+Does anyone know how to add filter to suggester?
+
+This works very well:
+
+    
+    
+    {
+    "headline-suggest" : {
+        "text" : "n",
+        "completion" : {
+            "field" : "headline_suggest"
+        }
+    }
+    
+
+but I want force ElasticSearch to build list of suggestions from subset of
+data, like:
+
+    
+    
+    {
+    "headline-suggest" : {
+        "text" : "n",
+        "completion" : {
+            "field" : "headline_suggest"
+        }
+    },
+    "filter" : {
+        "term" : { "mydifferentfield" : "someword" }
+    }
+    }
+    
+
+How can I achieve it?
+
+(I'm using elasticsearch 0.90.5)
+
+i am not really sure about that, but i think that you can not filter a suggest
+request in elasticsearch.
+
+from what i read this is due to the kind of data structure it is stored in.
+elasticsearch calculates statistical data on the terms to suggest at index
+time and uses those for the suggest operations.
+
+did you try performing a normal query in combination with a suggest? maybe
+there is a different outcome to that?
+
+    
+    
+    curl -s -XPOST 'localhost:9200/_search' -d '{
+      "query" : {
+        ...
+      },
+      "suggest" : {
+        ...
+      }
+    }'
+    
+
+There is no way to filter on your completion.  As javanna said, Completion
+feature is built on FST at indexing time, so you couldn't use filter here.
+
+To do it, you could play around with ngram/edge ngram. Let read here to get
+basic idea: <http://jontai.me/blog/2013/02/adding-autocomplete-to-an-
+elasticsearch-search-application/>
+
+As per version 1.2.0, you can add context to your suggester and obtain
+filtered suggestions.
+
+[Introductory blog
+post](http://www.elasticsearch.org/blog/elasticsearch-1-2-adding-context-
+suggestions)
+
+[Full
+Docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/suggester-
+context.html)
+

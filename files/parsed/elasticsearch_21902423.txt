@@ -1,0 +1,234 @@
+21902423 how to create query which can calculate time difference?
+
+I have and index with following documents:
+
+    
+    
+    {name: 'Device1', type: 'start', 'eventTime': '2013-02-19 12:00:00'}
+    {name: 'Device2', type: 'start', 'eventTime': '2013-02-19 12:02:00'}
+    {name: 'Device1', type: 'stop', 'eventTime': '2013-02-19 12:45:00'}
+    {name: 'Device2', type: 'stop', 'eventTime': '2013-02-19 12:50:00'}
+    
+
+I would like to create a query which will return for me a new field with time
+differences between eventTime's, faceted by device name and regards with field
+type. For the example it should be:
+
+    
+    
+    {name: 'Device1', 'type': 'it really doesnt matter', eventTime: 'also doesnt matter', duration: '00:45:00'}
+    {name 'Device2', 'type': 'it really doesnt matter', eventTime: 'also doesnt matter', duration: '00:48:00'}
+    
+
+Is it possible with elastic search query language?
+
+I don't believe this is possible with the way you have each document
+currently. If you store the documents as:
+
+    
+    
+    {name: 'Device1', startTime: '2013-02-19 12:00:00', endTime: '2013-02-19 12:45:00'}
+    {name: 'Device2', startTime: '2013-02-19 12:02:00', endTime: '2013-02-19 12:50:00'}
+    
+
+You could then return a [script
+field](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-script-fields.html) which is the time difference.
+
+    
+    
+    {    
+      "query" : {
+        ...
+      },
+      "script_fields" : {
+        "timedifference" : {
+          "script" : "doc['endTime'].value - doc['startTime'].value"
+        }
+      }
+    }
+    
+
+You can take a look at the
+[elapsed](https://www.elastic.co/guide/en/logstash/current/plugins-filters-
+elapsed.html) logstash filter.
+
+For your use case, you'll have to tag the start document with a _start_tag_
+and stop document with _end_tag_. You can use 'name' as unique id field.
+
+Hope that helps!
+
+Searching for the same thing,
+[here](https://stackoverflow.com/a/37359000/2161698) I found a good example to
+answer this question, using elapsed filters as Ana said, and combining it with
+the aggregate filter.
+
+The idea is to measure the time of each stage and then aggregate the timing
+information between events into a new event.
+
+So following the example provided in the link, if you have this logs:
+
+>
+
+>     2016-05-19T02:55:29.003 00e02f2f-32d5-9509-870a-f80e54dc8775
+system1Enter
+
+>     2016-05-19T02:55:29.200 00e02f2f-32d5-9509-870a-f80e54dc8775 system1Exit
+
+>     2016-05-19T02:55:29.205 00e02f2f-32d5-9509-870a-f80e54dc8775
+system2Enter
+
+>     2016-05-19T02:55:29.453 00e02f2f-32d5-9509-870a-f80e54dc8775 system2Exit
+
+>  
+
+We define three elapsed filters (one for each stage in1, 1->2 and in2) and
+then three aggregate filters in order to sum all the timing information.
+
+    
+    
+    filter {
+      grok {
+        match => ["message", "%{TIMESTAMP_ISO8601:timestamp} %{UUID:messageId} %{WORD:event}"]
+        add_tag => [ "%{event}" ]
+      }
+      date {
+        match => [ "timestamp", "ISO8601"]
+      }
+      # Measures the execution time of system1
+      elapsed {
+        unique_id_field => "messageId"
+        start_tag => "system1Enter"
+        end_tag => "system1Exit"
+        new_event_on_match => true
+        add_tag => ["in1"]
+      }
+      # Measures the execution time of system2
+      elapsed {
+        unique_id_field => "messageId"
+        start_tag => "system2Enter"
+        end_tag => "system2Exit"
+        new_event_on_match => true
+        add_tag => ["in2"]
+      }
+      # Measures the time between system1 and system2
+      elapsed {
+        unique_id_field => "messageId"
+        start_tag => "system1Exit"
+        end_tag => "system2Enter"
+        new_event_on_match => true
+        add_tag => ["1->2"]
+      }
+      # Records the execution time of system1
+      if "in1" in [tags] and "elapsed" in [tags] {
+        aggregate {
+          task_id => "%{messageId}"
+          code => "map['report'] = [(event['elapsed_time']*1000).to_i]"
+          map_action => "create"
+        }
+      }
+      # Records the time between system1 and system2
+      if "1->2" in [tags] and "elapsed" in [tags] {
+        aggregate {
+          task_id => "%{messageId}"
+          code => "map['report'] << (event['elapsed_time']*1000).to_i"
+          map_action => "update"
+        }
+      }
+      # Records the execution time of system2
+      if "in2" in [tags] and "elapsed" in [tags] {
+        aggregate {
+          task_id => "%{messageId}"
+          code => "map['report'] << (event['elapsed_time']*1000).to_i; event['report'] = map['report'].join(':')"
+          map_action => "update"
+          end_of_task => true
+        }
+      }
+    }
+    
+
+After the first two events, you'll get a new event which shows that 197ms have
+been spent in system1:
+
+    
+    
+    {
+                     "@timestamp" => "2016-05-21T04:20:51.731Z",
+                           "tags" => [ "elapsed", "elapsed_match", "in1" ],
+                   "elapsed_time" => 0.197,
+                      "messageId" => "00e02f2f-32d5-9509-870a-f80e54dc8775",
+        "elapsed_timestamp_start" => "2016-05-19T00:55:29.003Z"
+    }
+    
+
+Again, all credits go to the autor of the original answer :)
+
+You can use scripted_metric to get the duration.
+
+    
+    
+    {
+      "size": 0,
+      "aggs": {
+        "d_ids": {
+          "terms": {
+            "field": "name.keyword",
+            "size": 10
+          },
+              "aggs": {
+                "duration": {
+                  "scripted_metric": { 
+                    "map_script": "if (doc.type.value == \"stop\") { params._agg.end = doc.eventTime.value; } else { params._agg.start = doc.eventTime.value; }",
+                    "reduce_script": "long start = 0; long end = 0; for(h in params._aggs) { if(h.start != null) { start = h.start; } if (h.end != null) { end = h.end; } } return (end - start);"
+                  }
+                }
+              }
+        }
+      }
+    }
+    
+
+Here is the response from the above query:
+
+    
+    
+    {
+      "took": 1,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 4,
+        "max_score": 0,
+        "hits": []
+      },
+      "aggregations": {
+        "d_ids": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Device1",
+              "doc_count": 2,
+              "duration": {
+                "value": 2700000
+              }
+            },
+            {
+              "key": "Device2",
+              "doc_count": 2,
+              "duration": {
+                "value": 2880000
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+The durations are in milliseconds
+

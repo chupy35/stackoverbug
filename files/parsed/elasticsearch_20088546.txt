@@ -1,0 +1,34 @@
+20088546 How to search fields with '-' characters in elastic search
+
+I am new to elastic search. I have got following document where one of the
+field "eventId" has "-" in value. When i try to search with complete value of
+eventId, i don't get any results.
+
+    
+    
+    Sample Document app/event
+     {
+         "tags": {}
+             "eventId": "cc98d57b-c6bc-424c-b54c-df1e3df0d942",
+     }
+    
+
+I haven't created any explicit settings for my index. Thanks.
+
+you should check if the tokenizer splits your value into multiple fields.
+Maybe your value is stored as 5 fields: "cc98d57b", "c6bc", "424c", "b54c" and
+"df1e3df0d942"
+
+You can analyze that with the 'Kopf' Plugin
+(<https://github.com/lmenezes/elasticsearch-kopf>).
+
+If that is your problem you should change your field mapping, so that the
+value is not analyzed ("index" : "not_analyzed").
+
+For an example how to set that mapping see here: [Elasticsearch mapping
+settings 'not_analyzed' and grouping by field in
+Java](https://stackoverflow.com/questions/25620471/elasticsearch-mapping-
+settings-not-analyzed-and-grouping-by-field-in-java)
+
+After that, you should be able to search for your specific value.
+

@@ -1,0 +1,58 @@
+25186101 Exclude setting on integer field in term query
+
+My documents contain an integer array field, storing the id of tags describing
+them. Given a specific tag id, I want to extract a list of top tags that occur
+most frequently together with the provided one.
+
+I can solve this problem associating a _term aggregation_ over the tag id
+field to a _term filter_ over the same field, but the list I get back
+obviously always starts with the album id I provide: all documents matching my
+filter have that tag, and it is thus the first in the list.
+
+I though of [using the `exclude`
+field](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html#_filtering_values) to avoid
+creating the problematic bucket, but as I'm dealing with an integer field,
+that seems not to be possible: this query
+
+    
+    
+    {
+      "size": 0,
+      "query": {
+        "term": {
+          "tag_ids": "00001"
+        }
+      },
+      "aggs": {
+        "tags": {
+          "terms": {
+            "size": 3,
+            "field": "tag_ids",
+            "exclude": "00001"
+          }
+        }
+      }
+    }
+    
+
+returns an error saying that `Aggregation [tags] cannot support the
+include/exclude settings as it can only be applied to string values`.
+
+Is it possible to avoid getting back this bucket?
+
+It's supposed to be fixed since version 1.5.0.  Look at this:
+<https://github.com/elasticsearch/elasticsearch/pull/7727>
+
+While it is enroute to being fixed: My workaround is to have the aggregation
+use a script instead of direct access to the field, and let that script use
+the value as string. Works well and without measurable performance loss.
+
+This is, as of Elasticsearch 1.4, a shortcoming of ES itself.
+
+After the [community
+proposed](http://github.com/elasticsearch/elasticsearch/issues/7714) this
+change, [the functionality has been
+added](https://github.com/elasticsearch/elasticsearch/pull/7727) and will be
+included in Elasticsearch 1.5.0.
+

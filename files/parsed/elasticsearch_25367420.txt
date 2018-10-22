@@ -1,0 +1,75 @@
+25367420 Elasticsearch - Why is it recommended to use 50% of available memory
+for the heap?
+
+I know that ES recommends 50% of available memory for the heap, but something
+about that is confusing me: On a 2GB system, that would give 1GB for ES and
+1GB for the OS.
+
+Why on a 8GB system, do we need then to reserve 4GB for the OS rather than 1GB
+as on the smaller system?
+
+P.S. I was debating whether this question belongs on StackOverflow or
+ServerFault. If this is the wrong place to post it, just mention it in the
+comments and I will move it.
+
+So first off keep in mind that the 50% of available memory is a good rule of
+thumb for starting things out, not carved in stone. It's assumed that as you
+gain experience with your specific environment, document volume, usage
+patterns, etc. that you can and will change this.
+
+Everything not assigned to the JVM heap with be available to the OS, for both
+running processes and for caching the file system (which is important for ES
+performance). So if you set the heap too high (which some have done
+previously) you can end up starving the OS of memory, which can leave little
+for file system caching and in extreme cases can cause memory exhaustion,
+which under Linux can cause the OOM killer to be invoked.
+
+It's generally assumed that as you increase server size you are increasing
+both your heap requirements AND your process running and file system cache
+requirements, so the rule of thumb stays constant at 50%. Nothing magic about
+it, just a ratio that people have found to be a good first starting point.
+Generally though if you need a larger server due to memory constraints you
+need both more heap AND OS memory so just keeping it at 50% to start makes
+good sense.
+
+In actual production usage what you want to do is start at 50% and then
+measure heap usage, memory usage by the elasticsearch process and whether or
+not the OOM killer ever gets invoked. For many users, particularly on larger
+instances, the 50% heap allocation can be overkill. It all depends on your
+usage. Fortunately ES has pretty good stats info on heap usage right out of
+the box
+(<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+nodes-stats.html>).
+
+For what it's worth on our production systems we try to keep our ES using
+about 75% of allocated heap which we default to 50% of memory. Anything above
+that and we get concern that a surge in indexing/big queries/etc could blow
+the heap - much below that and we're concerned that we're wasting memory in
+the heap that could be used for file system caching.
+
+Historically, most of elasticsearch's JVM heap usage is due to query filters
+and field data (facets/aggregations/sorting) and there weren't lots of
+safeguards in place to prevent OOM(this has changed).
+
+In order to actually perform searches elasticsearch uses mmap'ed files and
+completely bypasses the JVM heap and hands off management of this to the OS
+disk cache, which does an amazing job of using every teeny bit of memory
+available to the OS and if you starve this your performance will suffer.
+
+With recent updates, field data can now be stored directly to disk via
+doc_values. This tradeoffs the amount of data you can facet/aggregate/sort on
+with the speed as doc_values end up being a little slower than a pure in
+memory solution, YMMV.
+
+My general recommendation post 1.x elasticsearch is to allocate 2-4GB to the
+JVM and ensure that you plan ahead and use doc_values on any high cardinality
+fields you plan to aggregate with.
+
+So, the 50% number really is no longer valid, especially if your server is
+more than 64GB, as you really don't want to a heap that can't use
+CompressedOops (<https://blog.codecentric.de/en/2014/02/35gb-heap-less-32gb-
+java-jvm-memory-oddities/>).
+
+Here is some great reading why you should love the disk cache:
+<http://kafka.apache.org/documentation.html#persistence>
+

@@ -1,0 +1,73 @@
+23366602 Default index analyzer in elasticsearch
+
+I am facing a problem with elasticsearch where I dont want my indexed term to
+be analyzed. But the elasticsearch has some default setting which is
+tokenizing it on space.  Therefore my facet query is not returning the result
+I want.
+
+I read that `"index" : "not_analyzed"` in properties of index type should
+work. But the problem is that I dont know my document structure before hand. I
+would be indexing random MySQL databases to elasticsearch without knowing the
+table structure.
+
+How can I setup elasticsearch such that by default it uses `"index" :
+"not_analyzed"` until otherwise asked for. Thanks
+
+PS: I am using java if I can directly use any API for it I would love it.
+
+I'd use dynamic templates - it should do what you are looking for:
+
+    
+    
+    {
+        "testtemplates" : {
+            "dynamic_templates" : [
+                {
+                    "template1" : {
+                        "match" : "*",
+                        "match_mapping_type" : "string",
+                        "mapping" : {
+                            "type" : "string",
+                            "index" : "not_analyzed"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    
+
+More on this approach here:
+
+<https://www.elastic.co/guide/en/elasticsearch/guide/current/custom-dynamic-
+mapping.html#dynamic-templates>
+
+**Important:** If someone suggest this approach to solve the _not_analyzed_
+issue, it will not work! _keyword_ analyzer does some analyzing on the data
+and convert the data to small letters.
+
+e.g.  `Data: ElasticSearchRocks ==> Keyword Analyzer: elasticsearchrocks`
+
+Try it yourself with analyzing query and see it happening.
+
+    
+    
+    curl -XPUT localhost:9200/testindex -d '{
+        "index" : {
+            "analysis" : {
+                "analyzer" : {
+                    "default" : {
+                        "type" : "keyword"
+                    }
+                }
+           }
+        }
+    }'
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+keyword-analyzer.html>
+
+add `index.analysis.analyzer.default.type: keyword` in your
+`elasticsearch.yml`.
+

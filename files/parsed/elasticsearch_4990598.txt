@@ -1,0 +1,31 @@
+4990598 How to get all the values from an search result
+
+I am new to Elastic Search. Is there any way to get all the search results for
+a search keyword? Elastic Search is limited to 10 or else we can set the size
+but we need to get the size??
+
+Yes, the default number of search results is 10.
+
+You need to [set the `size`
+parameter](http://www.elasticsearch.org/guide/reference/api/search/from-
+size.html) on the query.
+
+I don't think you an say "all results", though, there must always be a size
+limit.
+
+If you use the JAVA API you can simple get the total hit number from the
+SearchResponse
+
+    
+    
+    SearchRequestBuilder srb = ..
+    SearchResponse sr = srb.execute().actionGet();
+    long totalHits = sr.getHits().getTotalHits();
+    
+
+You can do this in couple of steps using some code
+
+  1. Fix a size say `1000` and get all 1000 records.
+  2. Identify from `hits.total` whether size is smaller than 1000. (if small then you got all the records :) )
+  3. Otherwise use [from and size](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-from-size.html) to provide `1001` in from and `total` as size from previous query to get full result.
+

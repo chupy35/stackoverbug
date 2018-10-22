@@ -1,0 +1,3 @@
+30241923
+Joins in elastic search
+<p>I have two documents with the following structures</p>&#xA;&#xA;<pre><code>Shipment_received : &#xA;    {&#xA;    Some  header level detail&#xA;    "ItemId" : "I1",&#xA;    "Quantity" : Q1&#xA;    "Vendor" : "V1"&#xA;   }&#xA;&#xA;shipment_Ordered :  {&#xA;    Some header level details&#xA;    "ItemId" : "I2"&#xA;    "Quantity" : Q2&#xA;    "Vendor":"V1" &#xA;}&#xA;</code></pre>&#xA;&#xA;<p>For a given vendor I want to find the average difference in the Order Quantity and the received quantity. How can this be done using elastic search ?</p>&#xA;

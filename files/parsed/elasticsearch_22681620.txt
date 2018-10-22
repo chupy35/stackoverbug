@@ -1,0 +1,35 @@
+22681620 Is there anyway to create alias on query search?
+
+I want to create an alias on top of this. Index - test, Type - type
+
+    
+    
+    POST /test/type/_search
+    {
+        "query": {
+        "match": {
+            "brand_name": "xyz"
+            }
+       }    
+    }
+    
+
+But I don't see anyway of doing it,since Elasticsearch aliases can only be
+created on filters and when I try with term filter,I don't get the results
+which I want.Any trick to achieve this ?
+
+You can use a [query
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-filter.html) to use any query as a filter:
+
+    
+    
+    "filter" : {
+      "query" : {
+        "match" : {
+          "brand_name" : "xyz"
+        }
+      }
+    }
+    
+

@@ -1,0 +1,80 @@
+15814220 Elastic Search: Make pretty format as the default
+
+Is there a way to make the JSON output of `curl` commands Pretty printed by
+default? That is, without specifying the option of `?pretty=true` to the curl
+URL, is it possible to display the output pretty printed everytime?
+
+In most cases, you use REST API from other products (JQuery, PHP, Perl,
+Ruby...). These frameworks don't need to have pretty input. So, I assume that
+in 99% of the requests you don't want to _slow_ your requests by pretty
+rendering JSON.
+
+IMHO, you only need pretty print when doing debug or in dev mode.
+
+An option could be to have it as an elasticsearch property in
+`elasticsearch.yml` file. [Open an
+issue](https://github.com/elasticsearch/elasticsearch/issues/new) for it?
+
+I was able to accomplish this by adding a new alias to my .bashrc (or
+.bash_profile on a mac):
+
+    
+    
+    alias pp='python -mjson.tool'
+    
+
+Then, after reloading the .bashrc / .bash_profile configuration by opening a
+new terminal or by running
+
+    
+    
+    $ source ~/.bashrc
+    
+
+you can pipe curl output to the 'pp' alias as follows:
+
+    
+    
+    $ curl -XGET http://localhost:9200/_search | pp
+    
+
+Source: <http://ruslanspivak.com/2010/10/12/pretty-print-json-from-the-
+command-line/>
+
+ElasticSearch has no such permanent setting and I don't want such. Quite often
+I see that developers forget to undo such settings in production and then
+overall product performance is degraded. Similar example is leaving DEBUG
+logging enabled which is very popular performance killer.
+
+You have plenty of tools to ease your development:
+
+  * [RestClient‎](https://addons.mozilla.org/pl/firefox/addon/restclient/) Firefox plugin
+  * [ElasticSearch Head] - excellent ES admin which even pretty formats your input
+
+plus earlier mentioned ElasticShell.
+
+However if you really really want to make it in `curl` here is simple trick
+I've just made. Run this in your bash shell or script:
+
+    
+    
+    curl() { `which curl` $@ | python -mjson.tool ; } 
+    
+
+And you use curl as before:
+
+    
+    
+    curl http://localhost:9200/
+    
+
+To undo:
+
+    
+    
+    unset -f curl
+    
+
+Of course it would be better to name the function as `ppcurl` if you don't
+like above :)
+

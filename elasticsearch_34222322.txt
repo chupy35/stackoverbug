@@ -1,0 +1,4 @@
+34222322
+Search with hyphen, without and with a space
+<p>How can I tokenize a hyphenated term such that I can search using the following acceptance criteria:</p>&#xA;&#xA;<ul>&#xA;<li>with a hyphen (co-trimoxazole)</li>&#xA;<li>without a hyphen (cotrimoxazole)</li>&#xA;<li>with a space (co trimoxazole)</li>&#xA;</ul>&#xA;&#xA;<p>I managed to use the standard analyzer which tokenizes on hyphens both on the index side and query side which allows me to search on:</p>&#xA;&#xA;<ul>&#xA;<li>cotrimoxazole</li>&#xA;<li>co-trimoxazole</li>&#xA;</ul>&#xA;&#xA;<p>but not</p>&#xA;&#xA;<ul>&#xA;<li>co trimoxazole</li>&#xA;</ul>&#xA;
+<p>I would suggest usage of <a href="https://github.com/yakaz/elasticsearch-analysis-combo/" rel="nofollow">combo analyzers</a>.&#xA;Here create 2 analyzer , one which tokenizes based on standard analyzer and other based on white space.</p>&#xA;&#xA;<p>This should work fine for you.</p>&#xA;

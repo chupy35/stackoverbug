@@ -1,0 +1,108 @@
+26383015 Conditional mixins in React?
+
+Is it possible to build the mixin array for a React component based on a prop?
+
+I have one component with a prop that may take one of two values. Based on
+this, I need radically different behavior from one of my mixins. I'd like to
+separate this mixin into two separate files rather than having monstrous
+conditional statements everywhere, but I can't find an easy way to do this.
+Any tips?
+
+No, it's not possible. Without knowing anymore, it sounds like you might want
+to explore the idea of creating different components and conditionally using
+the right one from the parent. You could even wrap this up and hide that from
+consumers if you want.
+
+Natively no, it's better to build separate components depending on the
+conditions. However there is a 3rd party component called [react-mixin-
+manager](https://github.com/jhudson8/react-mixin-manager) that can do dynamic
+mixins based on conditions and mixins that accept parameters. However I
+haven't used it, so I can't really vouch it and I don't recommend using it on
+a production site, but feel free to play around with that
+
+As mentioned by others, this is probably a terrible idea, but in the spirt of
+"anything is possible", here it goes.
+
+First we need to define an interface for testing a prop. It's fully flexibly,
+with a convenience default.
+
+    
+    
+    var hasOwn = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
+    function testProps(obj, thisArg){
+        return Object.keys(obj).every(function(propName){
+            var test = obj[propName], prop = thisArg.props[propName];
+            if (typeof test === "function"){
+                return test(prop);
+            }
+            else {
+                return prop === test;
+            }
+        });
+    }
+    
+
+An example of what you'd pass to that is `{foo: true, bar: odd}` where odd
+returns true if a number is odd. When called with `<Component foo={true}
+bar={7} />` the mixin would be 'active'.
+
+Using that, we can define a function which takes an array of `{mixin: mixin,
+condition: tests}`, where tests is in the aforementioned format.
+
+    
+    
+    function conditionalizeMixins(mixins){
+       var proxyMixin = {};
+    
+       var runMixins = function(lifeCycleKey){
+          return function(){
+              var component = this, args = arguments;
+              var result;
+    
+              mixins.forEach(function(mixin){
+                  if (testProps(mixin.condition, component)) {
+                      result = mixin.mixin[lifeCycleKey].apply(component, args);
+                  }
+              });
+              return result;
+          }
+       }
+    
+       mixins.forEach(function(mixin){
+          Object.keys(mixin.mixin).forEach(function(key){
+             if (proxyMixin[key]) return;
+             proxyMixin[key] = runMixins(key);
+          });
+       });
+    
+       return proxyMixin;
+    }
+    
+
+Now we can define our mixins like so:
+
+    
+    
+      mixins: [conditionalizeMixins([
+        {
+           mixin: myMixin,
+           condition: {foo: true, bar: false}
+        },
+        {
+           mixin: myMixin,
+           condition: {foo: false, num: function(x){return x%2===1}}
+        }
+      ])]
+    
+
+See if there's a way to split this into two components, rather than a single
+component. That's likely the best way to go about this.
+
+Notes about the above code:
+
+  * performance isn't great, but could be optimized
+  * if multiple conditional mixins define, e.g., getInitialState, only the last active one is used
+  * it hides errors, e.g. if you define doFoo which returns a string, and none of the mixins are active, it'll silently return undefined
+
+[jsbin](http://jsbin.com/fidomoroyidi/3/edit)
+

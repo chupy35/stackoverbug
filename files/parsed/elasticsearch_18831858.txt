@@ -1,0 +1,48 @@
+18831858 Can elasticsearch return multiple value fields in a single facet?
+
+I am looking for a way to create a facet such that I can essentially return
+two values for one key.
+
+For instance, I am attempting to retrieve both an amount and schedule
+properties of an object. I attempted to use a computed value script, but the
+calculations that have to be done using the two objects are date based, and
+require an external library to perform them.
+
+Basically, something along the lines of:
+
+    
+    
+    "theFacet": {
+          "terms_stats": {
+            "key_field": "someKeyProbablyADate",
+            "value_field": "amount",
+            "value_field": "simpleSchedule"
+          }
+        }
+    
+
+Workarounds are also appreciated. Perhaps some way to return a new dynamic
+object with both fields?
+
+Sounds like you want to pre-process your data before you index it into a
+single field, then facet on that.
+
+Something among the line of a single string containing key#amount#schedule
+
+Then when you get the faceting results back you can split it up again and run
+whatever logic you want.
+
+Try combining different fields with a `script` element. For example:
+
+    
+    
+    "facets": {
+      "facet-name": {
+        "terms": {
+          "field": "some-field",
+          "script": "_source['another-field'] + '/' + term
+        }
+      }
+    }
+    
+

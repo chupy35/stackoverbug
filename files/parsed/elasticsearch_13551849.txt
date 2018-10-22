@@ -1,0 +1,53 @@
+13551849 Regarding elastic search memory usage
+
+I am currently using elasticsearch 0.9.19. The machine I am using is having
+around 300GB disk space and the RAM on it is around 23GB. I have allocated
+around 10GB of ram to elastic search. My operations are write intensive. They
+are around `1000docs/s`. I am only running elastic search on the machine and
+no other process. The doc size is not large. They are small only with not more
+than 10 fields. The elastic search is being run only on one machine with 1
+shard and 0 replicas.
+
+The memory used, starts increasing very rapidly when I am sending `1000
+docs/s`. Though I have allocated 10GB RAM only to elastic search but still
+almost 21 GB ram gets consumed and eventually the elastic search process
+results in out of heap space. Later I need to clear the OS cache to free all
+the memory. Even when I stop sending elastic search, `1000docs/s` then also
+the memory does not get automatically cleared.
+
+So For e.g If I am running elastic search with around `1000doc/s` write
+operations then, I found that it went to 18 GB Ram usage very quickly and
+later when I reduced my write operations to only 10 docs/s then also the
+memory used still shows around 18 GB. Which I think should come down with
+decrease in the number of write operations. I am using Bulk API for performing
+my write operations with size of 100 docs per query. The data is coming from 4
+machines when the write operations are around 1000docs/sec
+
+These are the figures which I am getting after doing top
+
+**Mem: 24731664k total, 18252700k used, 6478964k free, 322492k buffers**
+
+**Swap: 4194296k total, 0k used, 4194296k free, 8749780k cached**
+
+**PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND**
+
+**1004 elastics 20 0 10.7g 8.3g 10m S 1 35.3 806:28.69 java**
+
+Please tell if any one has any idea, what could be the reason for this. I have
+to stop my application because of this issue. I think I am missing any
+configuration. I have already read all the cache related documentations for
+the elastic search over here
+<http://www.elasticsearch.org/guide/reference/index-modules/cache.html>
+
+I have also tried clearing cache using clear cache API and also tried flush
+api. But didnot got any improvement.
+
+Thanks in advance.
+
+To summarize the answer on the mailing list thread: the problem was that the
+Ruby client wasn't able to throttle its inserts, and Lucene memory usage does
+grow as large numbers of documents are added. I think there may also be an
+issue with commit frequency: it's important to commit from time to time in
+order to flush newly added documents to disk. Is the OP still having the
+problem? If not, could you post the solution?
+

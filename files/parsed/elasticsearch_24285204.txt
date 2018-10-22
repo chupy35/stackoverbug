@@ -1,0 +1,80 @@
+24285204 Different Elasticsearch results for the same query
+
+I've setup Elasticsearch with 1 cluster á 4 nodes. Number of shards per index:
+1; Number of replicas per index: 3
+
+When I call a simple query like the following one multiple times I get
+different results (different total hits and different top 10 documents):
+
+    
+    
+    http://localhost:9200/index_name/_search?q=term
+    
+
+Different data on each shard? I like to have all shards up to date. What can I
+do?
+
+This is the result of /_cluster/health:
+
+    
+    
+    {
+      "cluster_name" : "secret",
+      "status" : "green",
+      "timed_out" : false,
+      "number_of_nodes" : 4,
+      "number_of_data_nodes" : 4,
+      "active_primary_shards" : 24,
+      "active_shards" : 96,
+      "relocating_shards" : 0,
+      "initializing_shards" : 0,
+      "unassigned_shards" : 0
+    }
+    
+
+As a temporary solution I rebuild the index through Ruby gem tire:
+ModelName.rebuild_index
+
+But I need a long-term solution.
+
+This is because you don't have specified `sort` order and `size`. So every
+time you query you get random first 10 records as default `size` for result
+set by elasticsearch server is `10`.
+
+You can add sorting in following way with curl,
+
+    
+    
+    curl -XPOST 'localhost:9200/_search' -d '{
+     "query" : {
+       ...
+      },
+       "sort" : [
+         {"price" : {"order" : "asc", "mode" : "avg"}}
+       ]
+    }'
+    
+
+Check
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-sort.html) for for more info specially `from` and `size` with sort
+which is most mostly used for pagination.
+
+**update:**
+
+Though default sort is `score DESC` sometime it not works when records don't
+have relevant _score, as per
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/_sorting.html#_sorting>
+
+[This question](https://stackoverflow.com/questions/41909205/different-
+results-for-same-query-in-elasticsearch-cluster) helped me, as the answer
+says,
+
+> One of the possible reasons could be distributed IDF, by default Elastic
+uses local IDF on each shard, to save some performance which will lead to
+different idfs across the cluster.
+
+ES doc
+[here](https://www.elastic.co/guide/en/elasticsearch/guide/current/relevance-
+is-broken.html)
+

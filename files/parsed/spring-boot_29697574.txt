@@ -1,0 +1,25 @@
+29697574 Writing a JSF based spring boot app so that it can also run on a Java
+EE app server without change
+
+Spring boot is great - we have an app that runs standalone fine, using JAXRS
+2, JSF 2.1.6. They versions are irrelevant really, other than they are under
+our control.
+
+Our corporate deployments are on fully blown Java EE app servers though, so we
+don't have the option of deploying the app to something simple such as Tomcat
+or even as a jar with embedded Tomcat.
+
+Trying to get a Spring boot app to work on these ends up being a world of
+pain, as the Java EE app server will either stop you completely or partially
+from using different versions of jars to the ones it ships with.
+
+So my question is, is there a magic bullet that allows Spring boot apps to
+fully blown app servers like WildFly,Glassfish etc. Or what are the general
+approaches to getting around this issue?
+
+The only one I can think of is to code the application to exactly the same
+spec as the app server, and then use Maven profiles to ship the jars for the
+embedded up, but to have them as provided when using them in an app server. Of
+course this immediately takes away the advantage of Spring not being tied down
+to a particular version of Java EE.
+

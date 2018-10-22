@@ -1,0 +1,114 @@
+25361574 ElasticSearch: Updating nested document in array
+
+Given the document
+
+    
+    
+    curl -XPUT 'localhost:9200/test/me/here' -d '{
+      "top" : [
+        { "searchkey" : "change"},
+        { "searchkey" : "keep"}
+      ]
+    }'
+    
+
+I need an update query that will add new field to sub-document with
+`searchkey` equal to `change` and will keep any other sub-document intact. The
+expected result is then:
+
+    
+    
+    {
+      "top" : [
+        { "searchkey" : "change", "newfield" : "newvalue"},
+        { "searchkey" : "keep"}
+      ]
+    }
+    
+
+Running query that selects inner document by index works, but I do not know
+the inner order in advance and it is quite fragile anyways:
+
+    
+    
+    curl -XPOST 'localhost:9200/test/me/here/_update' -d '{
+        "script" : "ctx._source.top[0].newfield = v",
+        "params" : {
+          "v" : "newvalue"
+        }
+    }'
+    
+
+Is there a way to tell ES to add the new field to the inner document that
+matches some condition? Something like:
+
+    
+    
+    curl -XPOST 'localhost:9200/test/me/here/_update' -d '{
+        "script" : "ctx._source.top[ctx._source.top.searchkey == s].newfield = v",
+        "params" : {
+          "s" : "change",
+          "v" : "newvalue"
+        }
+    }'
+    
+
+Or, will I do better and save some headache if I eliminate the array and
+transform the document to:
+
+    
+    
+    {
+    "change" : {},
+    "keep" : {}
+    }
+    
+
+You can use the update with script. See example:
+
+    
+    
+    PUT test/data/3/
+    {
+       "source": [
+         {
+           "name": "A",
+           "count": 1
+         },
+         {
+           "name": "B",
+           "count": 2
+         },
+         {
+           "name": "c",
+           "count": 3
+         }
+       ]
+    }
+    
+    GET test/data/3
+    
+    POST test/data/3/_update
+    {
+     "script": " for (int i = 0; i < source.size(); i++) {boolean f = false;for (int j = 0; j < ctx._source.source.size(); j++) {if (ctx._source.source[j].name == source[i].name) {ctx._source.source[j].count = source[i].count;f=true;break;}}\nif(!f){ctx._source.source.add(source[i]);}}",
+     "params": {
+       "source": [
+         {
+           "name": "A",
+           "count": 10
+         },
+         {
+           "name": "B",
+           "count": 30
+         },
+         {
+           "name": "D",
+           "count": 50
+         }
+       ]
+     }
+    }
+    
+    GET test/data/3
+    
+

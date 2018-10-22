@@ -1,0 +1,91 @@
+15577120 ElasticSearch: How do I delete index entries from head?
+
+I want to delete index entries directly from MOBZ's ElasticSearch head (web
+UI).
+
+I tried a DELETE query in the "Any Request" section with the following:
+
+    
+    
+    {"query":{"term":{"supplier":"ABC"}}}
+    
+
+However, all I get in return is:
+
+    
+    
+    {
+    ok: true
+    acknowledged: true
+    }
+    
+
+and the entries do not get deleted.
+
+What am I doing wrong?
+
+I'd issue a search request first, to verify that the documents you want
+deleted are actually being returned by your query.
+
+It's impossible to give clear help, since there are many things that could be
+going wrong, but here are some possible probelems:
+
+  * You don't have the correct index/type specified in the ES Head query
+  * You need to specify the index and type on the second input box, not the first. The first line is meant for the host address and automatically adds a trailing slash
+  * You need to use the Delete command from the dropdown
+  * The analyzer of your fields is altering the field text in a way that it isn't being found by the Term query.
+
+In all likelihood, it is the last option. If you haven't specified an
+analyzer, the default one that ES picks is the Standard analyzer, which
+includes a lowercase filter. The term "ABC" is therefore never indexed,
+instead "abc" is indexed.
+
+Term query is not analyzed at all, so case sensitivity is important.
+
+If those tips don't help, post up your mapping and some sample data, and we
+can probably help better.
+
+You should have removed the "query" from your post data. You only need it for
+_search, and you should be using the _query entrypoint for delete. In that
+case it is obvious the post is only a query, thus making it redendant (and
+actually irrelevant) to explicitly state it's a query.
+
+That is:
+
+    
+    
+    curl -XPOST 'localhost:9200/myindex/mydoc/_search' -d 
+    '{"query":{"term":{"supplier":"ABC"}}}'
+    
+
+will work fine for search. But to delete by query, if you try:
+
+    
+    
+    curl -XDELETE 'localhost:9200/myindex/mydoc/_query' -d 
+    '{"query":{"term":{"supplier":"ABC"}}}'
+    
+
+it won't work (note the change in entry point to _query, as well as switch
+CURL parameter to delete). You need to call:
+
+    
+    
+    curl -XDELETE 'localhost:9200/myindex/mydoc/_query' -d 
+    '{"term":{"supplier":"ABC"}}'
+    
+
+Let me know if this helps.
+
+If you want to do it in HEAD:
+
+  1. put `/stock/one/_query` in the any request text box next to the drop-box of "GET/PUT/POST/DELETE"
+
+  2. choose DELETE in the drop-down menu
+
+  3. the request body should be `{"term":{"vendor":"Socks"}}`
+
+Your problem was that you used a request body of:
+`{"query":{"term":{"vendor":"Socks"}}}` That is fine for search, but not for
+delete.
+

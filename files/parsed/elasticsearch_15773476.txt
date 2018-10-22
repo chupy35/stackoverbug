@@ -1,0 +1,24 @@
+15773476 elasticsearch client thread safety
+
+I am writting a query plugin, that will build the query for given keywords and
+pass it to elastic search client to process.
+
+My handler class extends BaseRestHandler, and I've the Client object being
+injected in my handler's constructor.
+
+    
+    
+    @Inject
+    protected QueryHandler(Settings settings, Client client, RestController controller) {
+        super(settings, client);
+        controller.registerHandler(GET, "/_query/{queryBuilder}", this);
+    }
+    
+
+I was wondering if it's thread safe to use the same client object in
+handleRequest() method?
+
+It looks like any implementation of the client is thread safe. Check out
+@kimchy's answer here: <http://elasticsearch-users.115913.n3.nabble.com/Is-
+NodeClient-thread-safe-td2816264.html>
+

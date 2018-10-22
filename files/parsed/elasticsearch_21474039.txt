@@ -1,0 +1,32 @@
+21474039 Multiple routing field in elasticsearch
+
+I am a newbie to elasticsearch. i need a clarification. i can understand how
+routing works, but I have a question.
+
+Can i create routing for an document with multiple field. if yes, can i search
+the  data using single routing value. Can any on provide any example about it.
+
+Imagine I have 5 fields: `[username,id,age,dept,salary]`. Now i need to create
+a routing value for this document. Can I do so using the `username` and `id`
+field?
+
+Thanks in advance.
+
+In answer to your question: no, you can't automatically use multiple fields
+for a routing value when indexing a document. You can choose one and only one
+field, and that field must contain a single value.
+
+However, you could manually concatenate the `username` and `id` field and pass
+it in the indexing request:
+
+    
+    
+    PUT /index/type/id?routing=username_id
+    { body }
+    
+
+That said, routing is a feature for more advanced users. It is very useful but
+does make life more complicated. You say that you're a newbie, so I'd suggest
+not playing with routing just yet. That can follow when you're running a 50
+node cluster.
+

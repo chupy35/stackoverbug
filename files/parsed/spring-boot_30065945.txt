@@ -1,0 +1,64 @@
+30065945 @ConditionalOnProperty conditionally works
+
+I have code like the following:
+
+    
+    
+    @Scheduled(cron = "${cron.foo.bar}")
+    @ConditionalOnProperty(name="cron.foo.bar.enabled", relaxedNames = false)
+    public void parseFooBar() {
+    ... blah blah blah ...
+    }
+    
+
+In my properties file, I have:
+
+    
+    
+    cron.foo.bar=1 * * * * ?
+    cron.foo.bar.enabled=false
+    
+
+This does not work, and parseFooBar gets executed every minute on the 1st
+second.
+
+However, if I add the field:
+
+    
+    
+    @Value("${cron.foo.bar.enabled}")
+    private String enabledProp;
+    
+
+so that I can do a log and see what it is, parseFooBar does NOT get executed.
+Removing the injected String once again sees parseFooBar execute. What am I
+doing wrong?
+
+Edit: This is using Spring 4.1.5, Spring Boot 1.2.1, and JDK 8
+
+Edit 2: moving the annotation to the type also works. (without having to force
+the @Value). But the annotation is both a Method and a Type annotation? It
+gives me a little more flexibility to do it on the method...
+
+A condition in Spring Framework is used to control whether or not a component
+is registered in the application context. From the javadoc of `@Conditional`:
+
+> The `@Conditional` annotation may be used in any of the following ways:
+
+>
+
+>   * as a type-level annotation on any class directly or indirectly annotated
+with `@Component`, including `@Configuration` classes
+
+>   * as a meta-annotation, for the purpose of composing custom stereotype
+annotations
+
+>   * as a method-level annotation on any `@Bean` method
+
+>
+
+When the condition is declared on `parseFooBar` it has no effect as it's not a
+`@Bean` method. It works as you expect when you declare it on the type as it
+then makes the component conditional such that it's not registered in the
+application context when the property doesn't match.
+

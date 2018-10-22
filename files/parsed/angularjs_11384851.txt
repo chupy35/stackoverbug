@@ -1,0 +1,129 @@
+11384851 Router and refresh multiples ng-inludes
+
+I start with code:
+
+    
+    
+    when('/admin', {
+        templateUrl: 'partials/admin/layout.html',
+        controller: AdminCtrl
+    })
+    when('/admin/products', {
+        templateUrl: '????',
+        controller: AdminProductsCtrl
+    })
+    
+
+Template "tree":
+
+    
+    
+    index.html ---> <div ng-view/>
+    ---layout.html ---> <div ng-include=menu/> and <div ng-include=body/>
+    ------menu.html 
+    ------products.html 
+    
+
+Actually I do this:
+
+    
+    
+    function AdminCtrl($scope) {
+         $scope.menu = 'partials/admin/menu.html';
+    }
+    
+    function AdminProductsCtrl($scope) {
+        $scope.menu = 'partials/admin/menu.html';
+        $scope.body = 'partials/admin/products/index.html';
+    }
+    
+
+The point is: What I put in '????', if I put layout.html this work fine, but I
+like just "refresh" ng-include=body. I think that my concepts about Angularjs
+is wrong.
+
+Other problem is, when AdminProductsCtrl "take the control" of layout.html I
+miss the AdminCtrl $scope, this implicates repeat all AdminCtrl $scope in
+AdminProductsCtrl $scope (for example $scope.menu).
+
+Thanks a lot, and sorry for "my english".
+
+**UPDATE**
+
+After think.. and think... I understanding that routes not apply for my app,
+then I manage all functionality under one url 'site.com/#/admin'. The
+menu.html is manage for AdminMenuCtrl, this controller contains a model for
+each 'ng-include' and contains one method for each menu entry. When the user
+click a menu entry, the associate method in the $scope replace
+$scope.includes.body with the 'new' html. The partial cointains your ng-
+controller.
+
+This works fine by now :D. And the best is that I don't need use $rootScope.
+
+The new problem is a bit more complicated, the ng-include require a tag (i.e
+DIV) and ng-controller too. Then my design is affected for this. In code
+language:
+
+DESING:
+
+    
+    
+    <div>MENU-HTML</div>
+    <div>BODY-HTML</div>
+    
+
+TEMPLATE:
+
+    
+    
+    <div ng-include="menu"></div>
+    <div ng-include="body"></div>
+    
+
+AFTER RETRIEVE PARTIALS:
+
+    
+    
+    <div ng-include="menu"><div ng-controller="MenuCtrl">MENU-HTML</div></div>
+    <div ng-include="body"><div ng-controller="ListProductsCtrl">BODY-HTML</div></div>
+    
+
+THE IDEAL THING:
+
+1 - ng-include don't 'include' into the DIV, instead 'replace' the DIV.
+
+2 - ng-controller DIV is replaced for nothing in the DOM.
+
+It's possible now with angular? Is a bad approach this idea? The point 2 with
+$route is possible, not with ng-controller directive.
+
+I believe you are correct in your example you would set `????` to
+`layout.html` but the idea is to have different views based on the route so
+pointing to the same `layout.html` is not ideal.
+
+If you are trying to keep a static menu on all pages I would add the menu to
+your `index.html` and then choose a different templateUrl for each route (ie
+`/admin` goes to `partials/admin.html` and `/admin/products` goes to
+`partials/products.html`) and not use the ngInclude.
+
+I'm new to AngularJS but I'm getting the impression that you generally want to
+use ngView with routes to templateUrls OR use ngInclude (possibly with
+[ngSwitch](http://docs.angularjs.org/api/ng.directive%3angSwitch)) if you want
+to roll your own view switching. I'm sure there are times when using both is
+appropriate but as a newbie it confuses me somewhat. Resident experts please
+correct me if I'm wrong!
+
+For your second issue there might be some helpful information
+[here](https://groups.google.com/d/topic/angular/XwFp-6mSV2g/discussion) and
+[here](https://groups.google.com/d/topic/angular/S30ixG28ip4/discussion) for
+tips on sharing the same model across multiple controllers but you probably
+don't need to for your example.
+
+An alternative is to use a string constant path to your partial in layout.html
+and remove the references to `$scope.menu` in your controller code by using:
+
+    
+    
+    <div ng-include="'partials/admin/menu.html'"/>
+    
+

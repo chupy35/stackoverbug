@@ -1,0 +1,116 @@
+22275602 How to apply a size for ElasticSearch filtered query?
+
+For regular query size works ok:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "size": 2
+    }
+    
+
+returns 2 results. But when I try to add a filter by geo_polygon:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "geo_polygon": {
+              "coordinate": {
+                "points": {
+                  "points": [
+                    [
+                      -84.293222919922,
+                      33.865223592668
+                    ],
+                    [
+                      -84.293222919922,
+                      33.632776407332
+                    ],
+                    [
+                      -84.482737080078,
+                      33.632776407332
+                    ],
+                    [
+                      -84.482737080078,
+                      33.865223592668
+                    ],
+                    [
+                      -84.293222919922,
+                      33.865223592668
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "size": 2
+    }
+    
+
+it always returns 10 results and looks like it ignores "size" parameter
+completely. Are there are any specific approaches to make "size" work for
+filtered query?
+
+MacOS,
+
+elasticsearch
+
+    
+    
+    version: {
+        number: 1.0.1
+        lucene_version: 4.6
+    }
+    
+
+This works fine in version 1.2.1 running on Ubuntu:
+
+    
+    
+    {
+      "from": 0,
+      "size": 100,
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            ...blah...
+          }
+        }
+      }
+    }
+    
+
+It seems this also works if you put the size parameter inside the query
+parameter.
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            ...blah...
+          }
+        },
+        "size": 100
+      }
+    }
+    
+

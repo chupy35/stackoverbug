@@ -1,0 +1,18 @@
+24016375 To get all rows from ElasticSearch query
+
+I have searched for answer to this several times and have found same question
+here also. But none really answers the question. I know how to use size
+parameter in ES queries. But If I don't know the size and I want to get ALL
+records of ES query (not just default 10 or even 50 000 records (with size),
+etc). Desperately I have also tried to use size=* and size=0, if that could
+pass the limit and return unlimited amount of rows.
+
+Pagination (that ES suggests) also doesn't help, because that is not suitable
+for the job.
+
+You need the [count
+api](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+count.html). Do your query against the count api, get the number of results,
+then set this number as your limit for the query, then run this against the
+normal search api to get all of your results.
+

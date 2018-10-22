@@ -1,0 +1,43 @@
+15594749 path_hierarchy in elasticsearch
+
+Is it possible to use the path_hierarchy tokenizer with paths that have
+whitespace in them and have it create tokens based only on the delimiter not
+the whitespace? For example,
+
+"/airport/hangar 1"
+
+would be tokenized as
+
+"airport", "hangar 1",
+
+not
+
+"airport", "hangar", "1"?
+
+The path_hierarchy tokenizer works perfectly fine with paths that have
+whitespaces:
+
+    
+    
+    curl "localhost:9200/_analyze?tokenizer=path_hierarchy&pretty=true" -d "/airport/hangar 1"
+    {
+      "tokens" : [ {
+        "token" : "/airport",
+        "start_offset" : 0,
+        "end_offset" : 8,
+        "type" : "word",
+        "position" : 1
+      }, {
+        "token" : "/airport/hangar 1",
+        "start_offset" : 0,
+        "end_offset" : 17,
+        "type" : "word",
+        "position" : 1
+      } ]
+    }
+    
+
+However, based on your example, you might need to use the
+[pattern](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/pattern-tokenizer.html) tokenizer instead.
+

@@ -1,0 +1,90 @@
+21462186 Get child where parent id using java api
+
+I have "organizations" index structure :
+
+    
+    
+    {
+     "organization" : {
+        "properties" : {
+            "id" : { "type" : "long" },
+            "name" : { "type" : "string" }
+        }
+     }
+    }
+    
+
+and another index "campaigns" :
+
+    
+    
+    {
+     "campaign" : {
+        "properties" : {
+            "id" : { "type" : "long" },
+            "name" : { "type" : "string" }
+        },  
+        "_parent" : {
+             "type" : "organization"
+        }
+     }
+    }
+    
+
+when i search in campaigns that has specific organization id :
+
+    
+    
+    QueryBuilder qb = QueryBuilders.boolQuery()
+                    .must(QueryBuilders.hasParentQuery(SearchEntityEnum.ORGANIZATION.getType(), QueryBuilders.queryString("*" + keyword.replaceAll(" ", "* *") + "*").field(SearchEntityFieldNames.CommonFieldNames.NAME)
+                    .analyzeWildcard(true)));
+            SearchResponse response = client.prepareSearch(SearchEntityEnum.CAMPAIGN.getIndex())
+                    .setTypes(SearchEntityEnum.CAMPAIGN.getType())
+                    .setSearchType(SearchType.QUERY_AND_FETCH)
+                    .setQuery(qb)
+                    .execute().actionGet();
+    
+
+This error occur :
+
+> `org.elasticsearch.action.search.SearchPhaseExecutionException: Failed to
+execute phase [query_fetch], all shards failed; shardFailures
+{[-RCGH_JbTmeTGDSvWp9_wA][campaigns][2]: SearchParseException[[campaigns][2]:
+from[-1],size[-1]: Parse Failure [Failed to parse source
+[{"query":{"bool":{"must":{"has_parent":{"query":{"query_string":{"query":"**","fields":["name"],"analyze_wildcard":true}},"parent_type":"organization"}}}}}]]];
+nested: QueryParsingException[[campaigns] [has_parent] query configured
+'parent_type' [organization] is not a valid type];
+}{[-RCGH_JbTmeTGDSvWp9_wA][campaigns][1]: SearchParseException[[campaigns][1]:
+from[-1],size[-1]: Parse Failure [Failed to parse source
+[{"query":{"bool":{"must":{"has_parent":{"query":{"query_string":{"query":"**","fields":["name"],"analyze_wildcard":true}},"parent_type":"organization"}}}}}]]];
+nested: QueryParsingException[[campaigns] [has_parent] query configured
+'parent_type' [organization] is not a valid type];
+}{[-RCGH_JbTmeTGDSvWp9_wA][campaigns][4]: SearchParseException[[campaigns][4]:
+from[-1],size[-1]: Parse Failure [Failed to parse source
+[{"query":{"bool":{"must":{"has_parent":{"query":{"query_string":{"query":"**","fields":["name"],"analyze_wildcard":true}},"parent_type":"organization"}}}}}]]];
+nested: QueryParsingException[[campaigns] [has_parent] query configured
+'parent_type' [organization] is not a valid type];
+}{[-RCGH_JbTmeTGDSvWp9_wA][campaigns][0]: SearchParseException[[campaigns][0]:
+from[-1],size[-1]: Parse Failure [Failed to parse source
+[{"query":{"bool":{"must":{"has_parent":{"query":{"query_string":{"query":"**","fields":["name"],"analyze_wildcard":true}},"parent_type":"organization"}}}}}]]];
+nested: QueryParsingException[[campaigns] [has_parent] query configured
+'parent_type' [organization] is not a valid type];
+}{[-RCGH_JbTmeTGDSvWp9_wA][campaigns][3]: SearchParseException[[campaigns][3]:
+from[-1],size[-1]: Parse Failure [Failed to parse source
+[{"query":{"bool":{"must":{"has_parent":{"query":{"query_string":{"query":"**","fields":["name"],"analyze_wildcard":true}},"parent_type":"organization"}}}}}]]];
+nested: QueryParsingException[[campaigns] [has_parent] query configured
+'parent_type' [organization] is not a valid type]; }`
+
+I believe (might be wrong) that you should define `campaigns` as a `type`
+within `organizations` index. also you should set `routing` to `true` to make
+this works.
+
+I had the same problem yesterday. I found out that the parent and child types
+both need to be in the same index in order for the parent to be visible to the
+child.
+
+In this example, `organization` and `campaign` are different types in
+different indexes. You will need to create one index with both of these types
+defined within it. Everything else I believe is good here so let me know if
+you have any further issues.
+

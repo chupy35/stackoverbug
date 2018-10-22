@@ -1,0 +1,45 @@
+23636266 Using inner objects in Elastic search or not?
+
+Is there a specific recommendation why or why not to use inner objects in the
+mapping structure of Elastic search.
+
+Should we use in the JSON (and thus also in the mapping and the query):
+
+    
+    
+    "author":{
+        "id":"12345679",
+        "firstName":"John",
+        "lastName":"Doe"
+     }
+    
+
+OR
+
+    
+    
+    "authorId":"12345679",
+    "authorFirstName":"John",
+    "authorLastName":"Doe"
+    
+
+I know we can use both, but are there any differences to be expected when
+analyzing, indexing, searching ?
+
+All feedback welcome !
+
+Under the hood, Inner Objects are flattened into the same Lucene document as
+their root object. This is in contrast to a **nested** mapping which are
+treated as related, but separate, documents in Lucene. This matters when you
+have two different sub-objects with the same attribute name...
+
+Say you had a book object with an Author and an Editor, each of which has a
+first name... With a sub object, a search of firstName:Bob AND lastName:Smith
+would return a book that had an author of Bob Jones and an editor of Joe
+Smith. Using a nested type you wouldn't match either of those documents.
+
+So to your point, flattening your document structure would work in most cases
+(it's what is done behind the scenes anyhow, so there's not much difference).
+You just need to be aware that "nested" is also an option if you need more
+semantics -- i.e. search for smith in all lastName fields.
+

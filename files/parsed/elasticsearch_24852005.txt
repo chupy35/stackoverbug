@@ -1,0 +1,22 @@
+24852005 Elasticsearch: how can I filter on a boolean field
+
+I am new to Elasticsearch. I have a mapping which has a boolean field.
+
+I need to filter on this field, and I am not sure which filter to use. Based
+on my research, I probably should use term filter. Is this correct? To me, the
+term filter seems to be designed for string fields.
+
+Thanks!
+
+Yes, a term filter is the correct choice:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-term-filter.html>
+
+Think of the boolean field as containing either the term T or the term F, so a
+term filter is appropriate.
+
+See these two discussions: <http://elasticsearch-
+users.115913.n3.nabble.com/Which-filter-could-be-used-on-boolean-field-
+td4035426.html> and <http://elasticsearch-users.115913.n3.nabble.com/Simple-
+equality-filter-td3063743.html>
+

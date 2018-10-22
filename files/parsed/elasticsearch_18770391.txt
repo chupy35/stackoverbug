@@ -1,0 +1,33 @@
+18770391 if is match on keyword in title, the result is in first order
+
+I am really new in elasticsearch and I would like to ask you, hwo do this. For
+example, I have the documents
+
+    
+    
+    { "title": "car", "description" : "something"}
+    { "title": "cat", "description" : "car"}
+    
+
+and I need if someone searches for term "car" to have in first order documents
+containing this term in title and then other.
+
+Thanks.
+
+You can use a
+[multi_match](http://www.elasticsearch.org/guide/reference/query-dsl/multi-
+match-query/) query that queries multiple fields (title and description),
+giving a different weight to them.
+
+    
+    
+    {
+        "query" : {
+            "multi_match" : {
+                "query" : "car",
+                "fields" : [ "title^2", "description" ]
+            }
+        }
+    }
+    
+

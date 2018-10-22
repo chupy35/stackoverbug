@@ -1,0 +1,61 @@
+12648842 Directive with async data from $resource no initializing properly
+
+I'm trying to create a simple carousel. Source images are got through
+`$resource`. I need a kind of watch expression that notify that data has
+changed. I need to initialize the gallery with the first photo contained in
+the array located in ng-model attribute once I have this data.
+
+The code:
+
+    
+    
+    app.directive('ngCarousel', function() {
+    
+        var template =  //...;
+    
+        return {
+            restrict: 'E',
+            require: 'ngModel',
+            scope: {data:'='},
+            compile:function(tElement, tAttrs, transclude) {
+                tElement.html(template);
+    
+                //...
+    
+                return function(scope, element, attrs, ctrl) {
+    
+                    //...
+    
+                    attrs.$watch(scope.$modelValue, function() {
+                        //initialize the template
+                    })
+                }
+            }
+        }
+    });
+    
+
+> I need a kind of watch expression that notify that data has changed.
+
+Add a callback to your $resource query. I.e., instead of (I'm guessing here,
+since you didn't provide any code showing how you are using $resource)
+
+    
+    
+    $scope.image1 = MyResourceWrapper.query()
+    
+
+do this instead:
+
+    
+    
+    MyResourceWrapper.query( function(data) {
+       // Now you know the data has arrived.  Initialize your gallery, etc.
+       ...
+    }
+    
+
+* * *
+
+See also <http://angular-ui.github.com/bootstrap/#/carousel>
+

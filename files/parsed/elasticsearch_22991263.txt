@@ -1,0 +1,20 @@
+22991263 is there a way to find out the max theoritical score from an
+elasticsearch query?
+
+I have a search that's purely based on attributes rather than any text
+searching. I'd like to know if there's a way to interpret the scores returned
+from elasticsearch in such a way as to determine if a match is good or not (or
+how good it is on a scale of 0-100)..
+
+The scores obviously change based on the query - if I ask for things that have
+5 attributes using an OR search - those that have all 5 get a highscore,
+whilst those with 1 get a lower score (which is fine..) - I'd like to know if
+there's an easy way to ask ES: `given this query, what's the max score
+anything could give me?`
+
+I could do things like say that this result is a 90% match to your query, this
+one is a 50% match. Rather than this one scored 1.746373..
+
+I'd rather not be double checking each result against the search to work this
+out..
+

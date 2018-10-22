@@ -1,0 +1,84 @@
+24371439 Elasticsearch: get a list of indexes
+
+Is it possible to get a list of indexes that match a certain pattern e.g
+
+this is how to get a list of indexes:
+
+    
+    
+    curl -XGET 'localhost:9200/_stats/'
+    
+
+but I couldn't find a way of filter them so that this list would only include
+only indexes witch match "my_index_nr_1*" where "*" would be a wild card
+
+### Solution
+
+After using ES for quite a while here is what I use now, hope it will help
+someone else:
+
+    
+    
+    curl -XGET '/_cat/indices/my_index_nr_1*'
+    
+
+You can also add `?v` at the end which will give you headers of each column in
+result.
+
+This should work :
+
+    
+    
+    curl -XGET 'http://localhost:9200/my_index_nr_1*/_stats'
+    
+
+There is a neat trick using the _aliases command that when combined with a
+wildcard (`my_index_nr_1*` below) will only show you matching index names and
+associated indexes:
+
+    
+    
+    curl -XGET 'http://localhost:9200/my_index_nr_1*/_aliases?pretty'
+    
+
+The result I get is:
+
+    
+    
+    {
+      "my_index_nr_1_test" : {
+        "aliases" : { }
+      }
+    }
+    
+
+Very helpful when you have a lot of indexes on a cluster but don't want to see
+all the other stats information.
+
+For humans, the best answer is the modified summary:
+
+    
+    
+    curl -XGET localhost:9200/_cat/indices/my_index_nr_1*?v
+    
+
+For machines, the best answer is likely a variation of (`?pretty` is there for
+you to see its output):
+
+    
+    
+    curl -XGET localhost:9200/my_index_nr_1*/_settings?pretty
+    
+
+This will get the list of all indices that match, with their settings. The
+`_aliases` answer above is just a variation of this request. You can even trim
+the request down to:
+
+    
+    
+    curl -XGET localhost:9200/my_index_nr_1*?pretty
+    
+
+However, this will respond with both the settings, aliases, and mappings of
+each index.
+

@@ -1,0 +1,17 @@
+23919296 How is Elastic Search sorting when no sort option specified and no
+search query specified
+
+I wonder how Elastic search is sorting (on what field) when no search query is
+specified (I just filter on documents) and no sort option specified. It looks
+like sorting is than random ... Default sort order is _score, but score is
+always 1 when you do not specify a search query ...
+
+You got it right. Its then more or less random with score being 1. You still
+get consistent results as far as I remember. You have the "same" when you get
+results in SQL but don't specify `ORDER BY`.
+
+Score is mainly used for sorting, Score is calculated by lucene score
+calculating using several constraints,For more info **[refer
+here](http://technyvorous.wordpress.com/elastic-search/scoring-in-elastic-
+search/)** .
+

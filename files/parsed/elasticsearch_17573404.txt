@@ -1,0 +1,106 @@
+17573404 Serverside random does not work with scroll
+
+I use the following script to create server side random order of retrieving
+documents:
+
+    
+    
+    curl -POST 'http://localhost:9200/my_index/my_type/_search' -d '
+    {
+        "sort": {
+            "_script": {
+                "params": {},
+                "type": "number",
+                "order": "desc",
+                "script": "Math.random()"
+            }
+        },
+        "query": {
+            "match_all": {}
+        },
+        "fields": [
+            "field1",
+            "field2"
+        ]
+    }'
+    
+
+This script works fine using a regular search.
+
+But If I try to scroll through this, using `search_type=scan` the score seems
+to be always 0.0 for some reason, and I get the original insertion order.
+
+The order I'm following is according to the docs. First, I call:
+
+    
+    
+    curl -POST 'http://localhost:9200/my_index/my_type/_search?pretty=true&search_type=scan&scroll=10m&size=4' -d '
+        {
+            "sort": {
+                "_script": {
+                    "params": {},
+                    "type": "number",
+                    "order": "desc",
+                    "script": "Math.random()"
+                }
+            },
+            "query": {
+                "match_all": {}
+            },
+            "fields": [
+                "field1",
+                "field2"
+            ]
+        }'
+    
+
+and then:
+
+    
+    
+    curl -XGET 'http://localhost:9200/_search/scroll?pretty=true&scroll=10m&scroll_id=<the-previously-returned-id-here>
+    
+
+What am I doing wrong?
+
+`scan` is a special search type that is optimized for getting back very large
+result lists. As a result of such optimization, the `scan` search type doesn't
+support any sorting. So, in your case sort parameters are simply ignored. In
+order to get sorted results back you need to use some other search type that
+supports sorting. The default search type `query_then_fetch` should work as
+long as sort values will fit into memory for all records in your result list.
+A side effect of using `query_then_fetch` is that sorting will be executed on
+each page and therefore it has to be consistent between calls:
+
+    
+    
+    curl -POST 'http://localhost:9200/my_index/my_type/_search?pretty=true&scroll=10m&size=4' -d '
+    {
+        "sort": {
+            "_script": {
+                "params": {},
+                "type": "number",
+                "order": "desc",
+                "script": "(doc[\"_uid\"].value + salt).hashCode()",
+                "params": {
+                    "salt": "some_random_string"
+                }
+            }
+        },
+        "query": {
+            "match_all": {}
+        },
+        "fields": [
+            "field1",
+            "field2"
+        ]
+    }'
+    
+
+After first query standard scroll request can be used to page through results.
+
+    
+    
+    curl -XGET 'http://localhost:9200/_search/scroll?pretty=true&scroll=10m&scroll_id=<the-previously-returned-id-here>
+    
+

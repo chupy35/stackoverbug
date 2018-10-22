@@ -1,0 +1,314 @@
+20998617 no results elasticsearch when query by multi_field
+
+I have the following mapping on my index in elasticsearch.
+
+    
+    
+    {
+    "mail": {
+        "properties": {
+            "project": {
+                "type": "string",
+                "index": "not_analyzed",
+                "null_value": "na",
+                "include_in_all": "false"
+            },
+            "mailbox": {
+                "type": "string",
+                "index": "not_analyzed",
+                "null_value": "#na",
+                "store" : "yes"
+            },
+            "path": {
+                "type": "string",
+                "index": "not_analyzed",
+                "null_value": "#na",
+                "store" : "yes"
+            },
+            "messageid": {
+                "type": "string",
+                "index": "not_analyzed",
+                "null_value": "na",
+                "include_in_all": "false"
+            },
+            "nodeid":
+            {
+                "type": "string",
+                "index": "not_analyzed",
+                "null_value": "na",
+                "include_in_all": "false",
+                "store" : "yes"
+            },
+            "replyto": {
+                "type": "string",
+                "index": "not_analyzed",
+                "null_value": "na",
+                "include_in_all": "false"
+            },
+            "references": {
+                "type": "string",
+                "index": "not_analyzed",
+                "null_value": "na",
+                "include_in_all": "false"
+            },
+            "subject": {
+                "boost": "3.0",
+                "type": "string",
+                "term_vector": "with_positions_offsets",
+                "analyzer": "snowball"
+            },
+            "from": {
+                "type": "nested",
+                "properties": {
+                    "name": {
+                        "type" : "multi_field",
+                        "fields" : {
+                            "name" : {"type" : "string", "analyzer" : "standard", "index" : "analyzed"},
+                            "untouched" : {"type" : "string", "index" : "not_analyzed"}
+                        }
+                    },
+                    "address": {
+                        "type": "string",
+                        "analyzer": "analyzer_email"
+                    },
+                    "nodeid": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    },
+                    "facet": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    }
+                }
+            },
+            "to": {
+                "type": "nested",
+                "properties":{
+                    "name": {
+                        "type": "string",
+                        "analyzer":"analyzer_keyword"
+                    },
+                    "address": {
+                        "type": "string",
+                        "analyzer": "analyzer_email"
+                    },
+                    "nodeid": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    },
+                    "facet": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    }
+                }
+            },
+            "cc": {
+                "type": "nested",
+                "properties":{
+                    "name": {
+                        "type": "string",
+                        "analyzer":"analyzer_keyword"
+                    },
+                    "address": {
+                        "type": "string",
+                        "analyzer": "analyzer_email"
+                    },
+                    "nodeid": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    },
+                    "facet": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    }
+                }
+            },
+            "bcc": {
+                "type": "nested",
+                "properties":{
+                    "name": {
+                        "type": "string",
+                        "analyzer":"analyzer_keyword"
+                    },
+                    "address": {
+                        "type": "string",
+                        "analyzer": "analyzer_email"
+                    },
+                    "nodeid": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    },
+                    "facet": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    }
+                }
+            },
+            "message_snippet": {
+                "type": "string",
+                "index": "no",
+                "include_in_all": "false"
+            },
+            "text_messages": {
+                "type": "string",
+                "store": "yes",
+                "term_vector": "with_positions_offsets",
+                "analyzer": "snowball"
+            },
+            "html_messages": {
+                "type": "string",
+                "store": "yes",
+                "term_vector": "with_positions_offsets",
+                "analyzer": "snowball"
+            },
+            "message_attachments": {
+                "dynamic": "true",
+                "properties":{
+                    "filename":{
+                        "type": "string",
+                        "store": "yes"
+                    },
+                    "content":{
+                        "type": "string",
+                        "store": "yes",
+                        "term_vector": "with_positions_offsets",
+                        "analyzer": "snowball"
+                    },
+                    "hash":{
+                        "type": "string",
+                        "store": "yes",
+                        "analyzer": "analyzer_keyword"
+                    },
+                    "nodeid":{
+                        "type": "string"
+                    }
+                }
+            },
+            "date": {
+                "type": "date"
+            },
+            "entities": {
+                "type": "nested",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "analyzer": "analyzer_keyword"
+                    },
+                    "type": {
+                        "type": "string",
+                        "analyzer": "analyzer_keyword"
+                    },
+                    "nodeid":{
+                        "type": "string"
+                    },
+                    "facet": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "store" : "yes"
+                    }
+                }
+            }
+        }
+    }
+    }
+    
+
+And I try searching on the mail.from.name field with the following query, but
+I doesn't give me any results.
+
+    
+    
+     {
+     "query": {
+     "nested": {
+      "path": "from",
+      "query": {
+        "term": {
+          "name": "mark"
+        }
+      }
+     }
+    }
+    }
+    
+
+What is wrong about my mapping or query?
+
+A sample document looks like this
+
+    
+    
+    {
+      "project": "test",
+      "mailbox": "test.pst",
+      "messageid": "5e667f7f-4421-4836-91f3-8b5216c04839",
+      "nodeid": "671",
+      "subject": "No Subject",
+      "from": [
+        {
+          "name": "Mike Johnson",
+          "address": "mike@gmail.com",
+          "nodeid": "3",
+          "facet": "Mike Johnson"
+        }
+      ],
+      "to": [
+        {
+          "name": "John Doe",
+          "address": "JDoe@gmail.com",
+          "nodeid": "367",
+          "facet": "John Doe"
+        }
+      ],
+      "cc": [],
+      "bcc": [],
+      "textbody": "this is a test email with no further lines of text",
+      "htmlbody": "",
+      "snippet": "",
+      "transmitted": "",
+      "replyto": "",
+      "references": "",
+      "attachments": [],
+      "entities": [
+        {
+          "name": "google",
+          "type": "organization",
+          "nodeid": "656",
+          "facet": "google"
+        }
+      ],
+      "domains": [
+        "google.com"
+      ],
+      "path": ""
+    }
+    
+
+You need to address the [nested
+objects](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-nested-query.html) name in your query again
+
+    
+    
+    {
+        "query": {
+            "nested": {
+                "path": "from",
+                "query": {
+                    "term": {
+                        "from.name": "mike"
+                    }
+                }
+            }
+        }
+    }
+    
+

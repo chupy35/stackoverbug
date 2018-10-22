@@ -1,0 +1,72 @@
+12966908 cannot get count of items for ng-repeat pagination
+
+I am trying to implement pagination in my `ng-repeat` template, and I am using
+the code that I found in [How to do paging in
+AngularJS?](https://stackoverflow.com/questions/10816073/how-to-do-paging-in-
+angularjs), namely, this: <http://jsfiddle.net/dalcib/J3fjc/>.
+
+my code is almost the same as that in this jsfiddle example, except for
+instead of using hard coded values, I use an injected service that fetches
+data from a url that returns json.
+
+the problem that I am having is that the length of the collection is always
+zero in the jsfiddle code, and I do not know why because I am a newbie. here
+is the relevant code:
+
+    
+    
+    ...
+    collection = scope.$eval(rhs),
+    count = collection.length;
+    
+
+`count` is always zero. It looks like the code is executed before the response
+from the service is received.
+
+can anyone help?
+
+You don't need to use $eval().  
+$eval is to take a string and get the object with this name.  
+What you can do is only to associate to a scope variable your json object that
+you get in the Service or in the Resource.  
+In ng-repeat you use his scope variable .
+
+    
+    
+    function gridCtrl($scope, sameResource) {
+          sameResource.query( function (todos) {
+                 $scope.todos = todos;
+           }
+    }
+    
+
+In the view
+
+    
+    
+    <div ng-repeat="todo in todos"> ...
+    
+
+Sounds to me like you're looking for $index.
+
+for example:
+
+    
+    
+    <html ng-app>
+      <head></head>
+      <body ng-init="poops = ['fat tony','the turdis','hershey squirts']">
+        <div ng-repeat="poo in poops">{{ poo + "/" + $index}}</div>
+      </body>
+    </html>
+    
+
+outputs:
+
+    
+    
+    fat tony/0
+    the turdis/1
+    hershey squirts/2
+    
+

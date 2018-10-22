@@ -1,0 +1,67 @@
+24073835 What's the minimum number of nodes that assures the state of the
+cluster is green?
+
+I have a cluster of two nodes, and set the configs for shard number and
+replica number as following:
+
+> index.number_of_shards: 10  
+>  index.number_of_replicas: 1
+
+The master node is elected automatically.
+
+Before I index data, the state of the cluster is green. After I index data,
+the state of the cluster becomes yellow. Some replica shards are not
+allocated.
+
+But if I add another node and now the cluster consists of three nodes, then I
+index data and the state of the cluster becomes green.
+
+The version of ES that I use is 1.1.
+
+Question 1:  
+If the replica number is 1, do I have to have at least 3 nodes to assure the
+state of the cluster is green?
+
+Question 2:  
+I have observed that one (not the master node) of the three nodes just has
+primary nodes. What's the mechanism ES uses to allocate primary/replia shards?
+
+Thanks in advance.
+
+**UPDATE**
+
+The first problem is caused by different versions of ES. In my previous test,
+one node use ES-1.1.1 and the other uses ES-1.1.2. After every node of the
+cluster uses the same version of ES, then the first problem disappears.
+
+**_Answer 1)_** If you mention
+
+    
+    
+     index.number_of_shards: 10
+     index.number_of_replicas: 1
+    
+
+It means your index is split into 10 shards and 1 replica means there is one
+replica shard for each shard of index.therefore you will have 20 shards
+totally.
+
+IN ES the primary shard and replica shard are not allocated in same node.So if
+you have 1 replica you must have 2 nodes to keep the node status green.
+
+    
+    
+     Number of nodes to keep the cluster state green=NO of replica+1
+    
+
+**_Answer 2)_** Among shards of index, ES choose one primary shards where
+writes are done.It is not necessary, that master node should contain primary
+shard.Shards are distributed among nodes.If a node fails that contains primary
+shard ,then corresponding replica shard become as primary.You data will be
+saved.
+
+To understand basics of ES
+[**Refer**](http://technyvorous.wordpress.com/elastic-search/)
+
+HOpe it Helps..!
+

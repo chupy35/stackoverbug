@@ -1,0 +1,29 @@
+23158641 ElasticSearch: Can I write query-time plugin like in Solr?
+
+In Solr, I was able to write some query-time plugin to do some kind of query
+rewriting (generating sub queries and so on) but in ElasticSearch I can't find
+anything similar here. For example, in Solr I created a plugin which creates a
+OR sub query with low multiplicative boosting to the original query (by
+default the original query is AND). The point here is to show AND results
+first followed by OR results since running OR query alone doesn't guarantee
+results with all query word show up first.
+
+Here is an example:
+
+  * Let's say I have a query 'A B C'
+  * This plugin will be converting this query into the following:
+    * AND(A,B,C) + OR(A,B,C)*0.000001
+
+I achieved this by writing a simple runtime plugin in Solr but no idea how to
+do this in ElasticSearch.
+
+Any pointer would be appreciated.
+
+If you are looking into boosting you don't need to write a plugin, just play
+around with the query DSL (bool query with should clauses) or the
+[function_score
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.x/query-
+dsl-function-score-query.html) for more advanced usecases. If that's not
+enough you can always write your own query through a plugin, but that's for
+even more advanced usecases, you usually don't need to do that.
+

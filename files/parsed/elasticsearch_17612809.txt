@@ -1,0 +1,65 @@
+17612809 Find only youngest element in array
+
+does somebody know if there is a way to build a elasticsearch query which
+sorts an array by date and queries only the youngest item? To demonstrate what
+I mean, here is an example of my data:
+
+    
+    
+        [{
+        _id: "51cd3ae45b99bd960ee0b425",
+        name: "Example entry",
+        documents: [
+            {
+                title: "Document Title 1",
+                subDocuments: [
+                    {
+                        date: "Mon Jul 08 2013 12:14:04 GMT+0200 (CEST)",
+                        title: "start working"
+                    },
+                    {
+                        date: "Fri Jul 11 2013 12:14:04 GMT+0200 (CEST)",
+                        title: "finished"
+                    },
+                    {
+                        date: "Thu Jul 10 2013 12:14:04 GMT+0200 (CEST)",
+                        title: "working"
+                    }
+                ]
+            }
+        ]
+    }, {
+        _id: "51cd3ae45b99bd960ee0b426",
+        name: "Example entry 2",
+        documents: [
+            {
+                title: "Document Title 1",
+                subDocuments: [
+                    {
+                        date: "Mon Jul 08 2013 12:14:04 GMT+0200 (CEST)",
+                        title: "start working"
+                    },
+                    {
+                        date: "Fri Jul 11 2013 12:14:04 GMT+0200 (CEST)",
+                        title: "working"
+                    }
+                ]
+            }
+        ]
+    }]
+    
+
+In this data I want to query for the value "working". As you can see the first
+document has the sub document title finished in his last status so this
+document is not to be allowed in the result set.
+
+Could anybody give me a hint how to build up the query so that my requirements
+are met? Or is this impossible at this time and has to be developed in the
+client code?
+
+Thanks and Greetings Kersten
+
+I've managed this with editing my data. I just copy the last status to a own
+property. But I think this might be the solution:
+<https://github.com/elasticsearch/elasticsearch/issues/3022>
+

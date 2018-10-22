@@ -1,0 +1,63 @@
+16963670 How to index the following for multifaceting in elasticsearch?
+
+If I have a People collection. Each person may have multiple hobbies. (e.g.
+Running, Climbing, Swimming, Jumping Jacks).
+
+How would I index a single person with all those attrubutes such that I could
+apply a facet to them? Could someone provide a sample oh how data should be
+indexed given the following:
+
+    
+    
+    Person | Hobbies
+    Joe | Chess, Jumping Jacks, Swimming
+    
+    Person | Hobbies
+    Bob | Rowing
+    
+
+And how I would go about being able to get facets for "hobbies" key? (note
+that "Jumping Jacks" is a single value, but whitespace separated word.
+
+If you both want to search on the hobbies field and make a facet on it, you
+need to use a
+[multi_field](http://www.elasticsearch.org/guide/reference/mapping/multi-
+field-type/). That's how you can index the same field in different ways.
+Usually the version for search needs to be tokenized and at least lowercased,
+plus language dependent analysis if you want, while the facet version doesn't
+even need to be analyzed since the facet entries need to be the same that you
+had in your source documents.
+
+    
+    
+    {
+        "people" : {
+            "properties" : {
+                "hobbies" : {
+                    "type" : "multi_field",
+                    "fields" : {
+                        "hobbies" : {"type" : "string", "index" : "analyzed"},
+                        "facet" : {"type" : "string", "index" : "not_analyzed"}
+                    }
+                }
+            }
+        }
+    }
+    
+
+The above mapping would create two different fields for the same `hobbies`
+field as input. The first one, which you can refer to in your queries just
+using the `hobbies` name using the default [standard
+analyzer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/standard-analyzer/); the second one is not analyzed and can
+be used for the facet. You can refer to it as `hobbies.facet`.
+
+As a result you can search for `jumping`and find a match, but your facet will
+look like the following:
+
+Chess (1)  
+Jumping Jacks (1)  
+Swimming (1)  
+Hobbies (1)  
+Rowing (1)
+

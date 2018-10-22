@@ -1,0 +1,39 @@
+22203594 spring-boot-starter versus spring-boot-starter-xxx
+
+I noticed that the **Spring Boot Sample Data Redis** declares the following
+dependencies:
+
+    
+    
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.data</groupId>
+        <artifactId>spring-data-redis</artifactId>
+    </dependency>
+    
+
+See here for **full POM** : <https://github.com/spring-projects/spring-
+boot/blob/v1.0.0.RC4/spring-boot-samples/spring-boot-sample-data-
+redis/pom.xml>
+
+I see no mention of the `<artifactId>spring-boot-starter-redis</artifactId>`
+
+**My question is:** when do I use `spring-boot-starter` **versus** `spring-
+boot-starter-xxx` where `xxx` is the name of the project (here Redis)?
+
+The answer to the specific question: `spring-boot-starter` is a baseline for
+the others, and for standalone (non-web) apps that don't use any other Spring
+components - it has basic support for Spring, Logging, and Testing, but
+nothing else (no webapp features, no database etc.). Since all the other
+starters depend on it, once you use another one you can remove the vanilla
+starter. EDIT: see here <https://github.com/spring-projects/spring-
+boot/commit/77fd127e09963a844f8fb4e574e1f0d9d3424d4e>.
+
+Up to you on the redis starter, but I would use the starter if it exists,
+since it will typically cut down on the number of dependencies you need to
+declare. The redis one actually doesn't add a lot of value (hence it didn't
+exist until recently), but it probably ought to be used in the sample.
+

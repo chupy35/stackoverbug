@@ -1,0 +1,29 @@
+24988574 elasticsearch - breaking english compound words?
+
+I'm looking for a filter in elasticsearch that will let me break english
+compound words into their constituent parts, so for example for a term like
+`eyewitness`, `eye witness` and `eyewitness` as queries would both match
+`eyewitness`. I noticed the [compound
+word](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+compound-word-tokenfilter.html) filter, but this requires explicity defining a
+word list, which I couldn't possibly come up with on my own.
+
+First, you need to ask yourself if you really need to break the compound
+words. Consider a simpler approach like using ["edge
+n-grams"](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+edgengram-tokenizer.html) to hit in the leading or trailing edges. It would
+have the side effect of loosely hitting on fragments like "ey", but maybe that
+would be acceptable for your situation.
+
+If you do need to break the compounds, and want to explicitly index the word
+fragments, the you'll need to get a word list. You can download a list English
+words, [one example is here](http://www-personal.umich.edu/~jlawler/wordlist).
+The dictionary word list is used to know which fragments of the compound words
+are actually words themselves. This will add overhead to your indexing, so be
+sure to test it. An example showing the usage is
+[here](http://mgranstrom.com/elasticsearch/2013/06/09/analyzing-compund-words-
+with-elasticearch.html).
+
+If your text is German, consider <https://github.com/jprante/elasticsearch-
+analysis-decompound>
+

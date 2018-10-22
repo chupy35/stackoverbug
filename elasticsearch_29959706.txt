@@ -1,0 +1,3 @@
+29959706
+All documents with a field in result which states if each query exists in the doc
+<p>I want to query elasticsearch to fetch all the documents in index with extra information. Example below:&#xA;Suppose I have multiple queries having one/multiple terms like "A B C", "D", "F G", and I want all the documents in the index with information for each query stating whether the query(exact match) exists in the document. </p>&#xA;

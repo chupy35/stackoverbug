@@ -1,0 +1,42 @@
+25102967 Groovy Template Engine rendering contents
+
+I'm trying to separate some contents in the body section of my _layout.tpl_.
+For instance, I have carousel slider in my _index.tpl_ , but it's not
+necessary to include it inside the _login.tpl_. Moreover, I need to add
+another page specific contents too. So, _layout.tpl_ , and _index.tpl_ are
+like in the following:
+
+**layout.tpl**
+
+    
+    
+      body {
+        headerContents()
+        div(class:'container') {
+            div(class:'row') {
+                div(class:'col-lg-12') {
+                    content()
+                }
+            }
+        }
+      }
+    
+
+**index.tpl**
+
+    
+    
+    layout 'layouts/layout.tpl',
+    title:'Home',
+    headerContents: contents {
+       h1('Test Header')
+    }
+    content: contents {
+       h1('Test Content')
+    }
+    
+
+But `h1('Test Content)` cannot be rendered. I checked the docs but I couldn't
+find anything about how to render two different contents. Does template engine
+support to do this or not?
+

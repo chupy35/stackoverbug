@@ -1,0 +1,86 @@
+19426361 Nested query in elasticsearch
+
+Im having problem getting a nested query working with elasticsearch (If i
+remove one of the query-strings it works). the problem I am trying to solve is
+that i have a document (Closure) containing a list of closures. And I want to
+search for a value in the list of closures where another value is meet by a
+condition. That is only take value from a closures where argan=1
+
+    
+    
+    {"query":{
+      "bool":{
+         "must":[
+            {
+               "nested":{
+                  "query":{
+                     "query_string":{
+                        "default_field": "closures.rating",
+                        "query": "5"
+                     },"query_string": {
+                        "default_field": "closure.argang",
+                        "query": "1"
+                     } 
+                  },
+                  "path":"closures"
+               }
+           }
+         ]
+      }
+    }}
+    
+
+Im getting this error-response;
+
+    
+    
+         {
+          "error": "SearchPhaseExecutionException[Failed to execute phase [query], all shards       failed; shardFailures {[O3wmPzFbTY6VkgvJOchpBQ][bransch_test][2]: SearchParseException[[bransch_test][2]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n   \"query\":{\n      \"bool\":{\n         \"must\":[\n            {\n               \"nested\":{\n                  \"query\":{\n                     \"query_string\":{\n                        \"default_field\": \"closures.rating\",\n                        \"query\": \"5\"\n                     },\"query_string\": {\n                        \"default_field\": \"closure.argang\",\n                        \"query\": \"1\"\n                     } \n                  },\n                  \"path\":\"closures\"\n               }\n           }\n         ]\n      }\n   }\n}]]]; nested: QueryParsingException[[bransch_test] [_na] query malformed, no field after start_object]; }{[O3wmPzFbTY6VkgvJOchpBQ][bransch_test][3]: SearchParseException[[bransch_test][3]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n   \"query\":{\n      \"bool\":{\n         \"must\":[\n            {\n               \"nested\":{\n                  \"query\":{\n                     \"query_string\":{\n                        \"default_field\": \"closures.rating\",\n                        \"query\": \"5\"\n                     },\"query_string\": {\n                        \"default_field\": \"closure.argang\",\n                        \"query\": \"1\"\n                     } \n                  },\n                  \"path\":\"closures\"\n               }\n           }\n         ]\n      }\n   }\n}]]]; nested: QueryParsingException[[bransch_test] [_na] query malformed, no field after start_object]; }{[O3wmPzFbTY6VkgvJOchpBQ][bransch_test][4]: SearchParseException[[bransch_test][4]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n   \"query\":{\n      \"bool\":{\n         \"must\":[\n            {\n               \"nested\":{\n                  \"query\":{\n                     \"query_string\":{\n                        \"default_field\": \"closures.rating\",\n                        \"query\": \"5\"\n                     },\"query_string\": {\n                        \"default_field\": \"closure.argang\",\n                        \"query\": \"1\"\n                     } \n                  },\n                  \"path\":\"closures\"\n               }\n           }\n         ]\n      }\n   }\n}]]]; nested: QueryParsingException[[bransch_test] [_na] query malformed, no field after start_object]; }{[O3wmPzFbTY6VkgvJOchpBQ][bransch_test][0]: SearchParseException[[bransch_test][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n   \"query\":{\n      \"bool\":{\n         \"must\":[\n            {\n               \"nested\":{\n                  \"query\":{\n                     \"query_string\":{\n                        \"default_field\": \"closures.rating\",\n                        \"query\": \"5\"\n                     },\"query_string\": {\n                        \"default_field\": \"closure.argang\",\n                        \"query\": \"1\"\n                     } \n                  },\n                  \"path\":\"closures\"\n               }\n           }\n         ]\n      }\n   }\n}]]]; nested: QueryParsingException[[bransch_test] [_na] query malformed, no field after start_object]; }{[O3wmPzFbTY6VkgvJOchpBQ][bransch_test][1]: SearchParseException[[bransch_test][1]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n   \"query\":{\n      \"bool\":{\n         \"must\":[\n            {\n               \"nested\":{\n                  \"query\":{\n                     \"query_string\":{\n                        \"default_field\": \"closures.rating\",\n                        \"query\": \"5\"\n                     },\"query_string\": {\n                        \"default_field\": \"closure.argang\",\n                        \"query\": \"1\"\n                     } \n                  },\n                  \"path\":\"closures\"\n               }\n           }\n         ]\n      }\n   }\n}]]]; nested: QueryParsingException[[bransch_test] [_na] query malformed, no field after start_object]; }]",
+          "status": 400
+         }
+    
+
+My mapping looks like this.
+
+    
+    
+    {
+    "closure": {
+      "properties": {
+         "name": {
+            "type": "string"
+         },
+         "closures": {
+            "type": "nested",
+            "properties": {
+               "argang": {
+                  "type": "string"
+               },
+               "rating": {
+                  "type": "string"
+               }
+            }
+         },
+         "coadr": {
+            "type": "string"
+         },
+         "telnr": {
+            "type": "string"
+         }
+      }
+    }
+    }
+    
+
+Annyone have any idea on what im doing wrong?
+
+Your query is not a valid query. You need to use a proper compound query to
+combine other queries together, you can't just use a comma and add another
+query where only one is supported.
+
+You can for instance use a bool query and have two must clauses, pretty much
+your two query_string. Or maybe you can even switch to using filters, and have
+a filtered query. I'd have a look at the examples on this article:
+<http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-children-and-
+nested-documents/>.
+

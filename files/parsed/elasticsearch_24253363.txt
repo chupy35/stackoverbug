@@ -1,0 +1,89 @@
+24253363 NullPointerException in ElasticSearch bulk update
+
+I'm trying to add a suggest field to documents in my ES index using bulk
+update but I keep getting a NullPointerException as the response. Here is an
+example of what I am trying to do:
+
+using ES 1.1.1
+
+command using curl:
+
+    
+    
+    curl -s -XPOST "http://www.example.com/test_index/entity/_bulk" --data-binary @tmp
+    
+
+inside tmp file:
+
+    
+    
+    {"update": {"_type": "entity", "_id": "fbf804af945d13d9b7c076948bc1bd19", "_index": "test_index"}}
+    {"lang": "js", "params": {"input_name": {"input": ["calcium"]}}, "routing": "434750445cdc9cea954399185e4b3da8", "script": "ctx._source.suggest = input_name"}
+    
+
+I get this response back:
+
+    
+    
+    {"error":"NullPointerException[null]","status":500}
+    
+
+But it works fine if I do a normal update:
+
+    
+    
+    curl -s -XPOST "http://www.example.com/test_index/entity/fbf804af945d13d9b7c076948bc1bd19/_update?routing=434750445cdc9cea954399185e4b3da8" --data-binary @tmp
+    
+    {
+      "script": "ctx._source.suggest = input_name",
+      "params": {
+          "input_name": {
+              "input": [
+                 "calcium"
+              ]
+           }
+       }
+    }
+    
+
+Here's what the mapping for entity looks like:
+
+    
+    
+    entity: {
+        _parent: {
+           type: post
+        }
+        _routing: {
+           required: true
+        }
+        properties: {
+           suggest: {
+              type: completion
+              analyzer: simple
+              payloads: false
+              preserve_separators: true
+              preserve_position_increments: true
+              max_input_length: 50
+           }
+           type: {
+              type: string
+              index: not_analyzed
+              store: true
+           }
+           value: {
+              type: string
+              index: not_analyzed
+              store: true
+           }
+        }
+    }
+    
+
+In your index mappings, you set routing to required so in the cmd part of your
+update you need to specify the routing parameter:
+
+`{"update": {"_type": "entity", "_id": "fbf804af945d13d9b7c076948bc1bd19",
+"_index": "test_index", **** --> "routing: "fbf804af945d13d9b7c076948bc1bd19"
+}}`
+

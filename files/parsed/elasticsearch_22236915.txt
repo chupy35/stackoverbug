@@ -1,0 +1,41 @@
+22236915 ElasticSearch - how to SUM function_score by field
+
+I have a query that is using function_score to rank the results. Here is a
+sample of what is returned:
+
+    
+    
+     {
+        "_index": "clone",
+        "_type": "authEvent",
+        "_id": "6431823",
+        "_score": 4.8,
+        "fields": {
+           "authInput.uID": "MPXWDKW2P",
+           "authResult.productValue": 1,
+           "authInput.userName": "F936F3AA-E26C-48DB-BDBC-44956B634260",
+           "authResult.authEventDate": "2014-02-27T09:29:30.703125-06:00",
+           "authResult.rulesFailed": [
+              "AuthCountByUser"
+           ]
+        }
+     }
+    
+
+What I want to is take the results and run the equivalent of this SQL
+statement:
+
+    
+    
+    SELECT TOP 20 "authInput.userName", SUM("_score")
+    FROM foo
+    GROUP BY "authInput.userName"
+    ORDER BY SUM("_score") DESC
+    
+
+How can I do this with ES? NOTE: I'm using ES 0.9x, we will be moving to 1.0.0
+soon but we have not yet.
+
+Use a facet query to get the total of the amount returned in the query where
+the facet contains the field where you need the count
+

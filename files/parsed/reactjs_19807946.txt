@@ -1,0 +1,78 @@
+19807946 Why is React's filesize so big given its small API?
+
+Here are the numbers
+
+  * min+gzip 26k 
+  * gzip 90k 
+  * original 450+k
+
+And React doesn't have many features in it's documentation. Why is it so big?
+
+I have a feeling that it's the implementation of lightweight DOM. But I want
+to be sure.
+
+React does quite a bit! The biggest nonobvious part of React is probably the
+events system -- not only does React implement its own event dispatching and
+bubbling, it normalizes common events across browsers so that you don't need
+to worry as much about it. For example,
+[SelectEventPlugin](https://github.com/facebook/react/blob/28eddd16700d5c086c6235b3be9c1674a2fa3a4a/src/eventPlugins/SelectEventPlugin.js)
+is a built-in event "plugin" which provides an `onSelect` event which behaves
+the same way in all browsers.
+
+The **virtual DOM** implementation does take a decent amount of code as well;
+a lot of effort is spent on performance optimization, which is why the
+unminified version includes **ReactPerf** , which is a tool for measuring
+rendering performance. In updating the DOM, React also does some convenient
+things for you like maintaining any input selection and keeping the current
+scroll position the same.
+
+React also has a few other tricks up its sleeve. One of the coolest is that it
+fully supports rendering a component to an HTML string even if you don't have
+a browser environment, so you can send down a page that works even before JS
+is loaded.
+
+* * *
+
+What are you comparing React against? `react-15.0.2.min.js` is `43k
+(gzipped)`, but jQuery is 33k while `ember-2.6.0.prod.js` is `363k (also
+gzipped)`. Obviously these frameworks don't do exactly the same things but
+they do have a lot of overlap, so I think the comparison is reasonable.
+
+If you're worried about download size, I wouldn't worry too much about JS code
+contributing to that. Here's an ad which I see on the right side of my Stack
+Overflow page right now:
+
+![](https://static.adzerk.net/Advertisers/9ab0362823a548228a99dd813b6c6f37.png)
+
+Its download size is 95k -- I wouldn't think twice about including an image
+like that in a page because (even if I was worried about performance) there
+are usually so many other performance-related things to fix that are more
+lucrative.
+
+* * *
+
+In short, I don't think React is that big, and what size it does have comes
+from the many small things it does to help you out. You cite React's small API
+as a reason that React's code should be small, but a better question might be,
+"How is React's API able to be so simple given all the things it does for
+you?"
+
+…but that's a totally separate question. :) Hope I answered your question --
+happy to expand if I didn't.
+
+A couple of thoughts.. I had some of the same concerns with it's size, but
+after using it, no joke, I would use it if it was 5MB in size. It's just that
+good. That said, I did decide to reduce as many dependencies on other
+libraries as possible. I was using jquery for two things.. ajax and the
+automatic ajax response and request handling (beforeSend, etc) that would
+handle when a token was in a response after login, and then make sure every
+ajax request added it to the Authorization header before sending. I replaced
+this with a super small simple bit of native javascript. Works great. Also, I
+was trying to use _underscore. I've replaced it with lodash, which is smaller
+and faster, although presently I am not using it so may remove it altogether.
+
+Here is one article, of many on google, that I found that has some
+alternatives using native JS over jquery.
+
+<http://www.sitepoint.com/jquery-vs-raw-javascript-1-dom-forms/>
+

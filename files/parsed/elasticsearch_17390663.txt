@@ -1,0 +1,161 @@
+17390663 not_analyzed for a nested type on ElasticSearch?
+
+i have a problem regarding performing facet search on a nested object.
+
+Take for example i have the following document:
+
+    
+    
+    tags: [
+       {
+           tag: "tag0",
+           tag_url: "http://xxxxxxx.com/tag/tag0/"
+       },
+       {
+           tag: "tag1",
+           tag_url: "http://xxxxxx.com/tag/tag1/"
+       }
+    ],
+    
+    categories: [
+        {
+            category: "cat0",
+            category_url: "http://xxxxxx.com/category/cat0/"
+        },
+        {
+            category: "cat1",
+            category_url: "http://xxxxxx.com/category/cat1/"
+        }
+    ],
+    
+
+and i want to perform a facet on `tags.tag` and `tags.tag_url`
+
+And so i what mapping do i use in order to create `index:not_analyzed` for the
+nested fields ?
+
+I have tried this mapping:
+
+    
+    
+        mapping_data[mapping_name]["properties"] = {
+            "tags.tag" : {
+                "type": "multi_field",
+                    "fields" : {
+                        "tags.tag": {"type" : "string", "index" : "analyzed", "store": "yes"},
+                        "untouched" : {"type" : "string", "index" : "not_analyzed"}
+                    }
+            },
+            "tags.tag_url" : {
+                "type": "multi_field",
+                    "fields" : {
+                        "tags.tag_url": {"type" : "string", "index" : "analyzed", "store": "yes"},
+                        "untouched" : {"type" : "string", "index" : "not_analyzed"}
+                    }
+            },
+            "categories.category" : {
+                "type": "multi_field",
+                    "fields" : {
+                        "categories.category": {"type" : "string", "index" : "analyzed", "store": "yes"},
+                        "untouched" : {"type" : "string", "index" : "not_analyzed"}
+                    }
+            }, 
+            "categories.category_url" : {
+                "type": "multi_field",
+                    "fields" : {
+                        "categories.category_url": {"type" : "string", "index" : "analyzed", "store": "yes"},
+                        "untouched" : {"type" : "string", "index" : "not_analyzed"}
+                    }
+            },
+    
+    }
+    
+
+and
+
+    
+    
+    mapping_data[mapping_name]["properties"] = {
+            "tags" : {
+                "type": "nested"
+            },
+    
+            "categories" : {
+                "type": "nested"
+            }, 
+    }
+    
+
+But it does not give me the required result.
+
+Using `type:nested`, still tokenizes the nested field, while `type:
+multi_field` cannot be expressed such that the nested field is `not_analyzed`.
+( note that i used `tags.tag` in the `multi_field` variation, but to no avail.
+)
+
+So, how to i express the mapping to achieve facet for nested documents ?
+
+PS: <http://www.elasticsearch.org/guide/reference/mapping/nested-type/> and
+<http://www.elasticsearch.org/guide/reference/mapping/nested-type/> did not
+produce the outcome i need as i do not have the value_field.
+
+The following is the json mapping that you should be using for the `tags`
+nested field:
+
+    
+    
+    {
+        "type" : {
+            "properties" : {
+                "tags" : {
+                    "type": "nested",
+                    "properties" : {
+                        "tag" : {
+                            "type": "multi_field",
+                            "fields" : {
+                                "tag": {"type" : "string", "index" : "analyzed", "store": "yes"},
+                                "untouched" : {"type" : "string", "index" : "not_analyzed"}
+                            }
+                        },
+                        "tag_url" : {
+                            "type": "multi_field",
+                            "fields" : {
+                                "tag_url": {"type" : "string", "index" : "analyzed", "store": "yes"},
+                                "untouched" : {"type" : "string", "index" : "not_analyzed"}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+It's perfectly fine to define a nested object that contains properties, which
+can be of whatever type, in your case `multi_field`.
+
+You can then make the desired facet on the `tags.untouched` field like this:
+
+    
+    
+    {
+        "query" : {
+          "match_all" : {} 
+        },
+        "facets": {
+          "tags": {
+            "terms": {
+              "field": "tags.tag.untouched",
+              "size": 10
+            },
+            "nested" : "tags"
+          }
+        }
+    }
+    
+
+I tested this with the latest version of elasticsearch. Keep in mind that the
+way nested facets are made has changed since 0.90. Have a look at [this
+issue](https://github.com/elasticsearch/elasticsearch/issues/2606) to know
+more.
+

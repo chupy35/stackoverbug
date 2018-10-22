@@ -1,0 +1,97 @@
+24776706 Elasticsearch rescore all results ignoring base score
+
+I'm trying to rescore my results with the following query:
+
+    
+    
+    POST /archive/item/_search
+    {
+        "query": {
+            "multi_match": {
+                "fields": ["title", "description"],
+                "query": "1 złoty",
+                "operator": "and"
+            }
+        },
+        "rescore": {
+            "window_size": 50,
+            "query": {
+                "rescore_query": {
+                    "multi_match": {
+                        "type": "phrase",
+                        "fields": ["title", "description"],
+                        "query": "1 złoty",
+                        "slop": 10
+                    }
+                },
+                "query_weight": 0,
+                "rescore_query_weight": 1
+            }
+        }
+    }
+    
+
+I'm doing this because I want to score by proximity mainly.  Also, I want to
+ignore source field length impact on the score. Am I doing this right? If not,
+what's the best practice here?
+
+And the second question. Why `window_size` is needed anyway? I don't want top
+results only.  The main query atcs like a filter, so all the results it
+returns are relevant.  I quess something like `"window_size": "all"` would be
+perfect, but I couldn't find anything in the docs.
+
+To answer your second question, the reason it's needed is because it's
+designed to be for top results only. Basically it's a cost issue - the
+assumption is that the secondary algorithm is more expensive so it was only
+designed to be run on the top results. There's more discussion about this
+here:
+
+<https://github.com/elasticsearch/elasticsearch/issues/2640>
+
+and here:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-rescore.html>
+
+Personally I think the "all" option is a great idea, maybe you should open an
+issue on github?
+
+If you want to score with proximity match all results returned by some other
+filter this should do:
+
+    
+    
+    {
+      "query": {
+        "filtered" : {
+          "query" : {
+            "multi_match": {
+              "type": "phrase",
+              "fields": ["title", "description"],
+              "query": "1 złoty",
+              "slop": 10
+            }
+          },
+          "filter" : {
+            "query": {
+              "multi_match": {
+                "fields": ["title", "description"],
+                "query": "1 złoty",
+                "operator": "and"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+According to [this](https://stackoverflow.com/a/17765757/808271), the filter
+is run before the query, so the performance shouldn't be bad as well. What's
+more you don't score twice, because filters don't calculate scores. Another
+advantage is that filters can be cached which should speed things
+significantly.
+
+Keep in mind that I did short tests only, mostly focusing on syntax not
+results. You might want to double check it.
+

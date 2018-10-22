@@ -1,0 +1,17 @@
+22981627 What is a cluster health in Elasticsearch?
+
+I'm new to Elastic Search, and I'm trying to figure out what does the cluster
+health represent. I have looked through the
+[references](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index.html)
+and [ES definitive
+guide](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/index.html)
+but I can't find the answer.
+
+This is described in the [cluster health api
+page](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+health.html). The status is the key piece of information to look for.
+
+  * Red = One or more primary shards are missing 
+  * Yellow = All primary shards are allocated but replicas are not 
+  * Green = All primary and replica shards have been allocated
+

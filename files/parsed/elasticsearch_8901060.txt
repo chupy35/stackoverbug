@@ -1,0 +1,154 @@
+8901060 elasticsearch query string format
+
+I am using
+
+    
+    
+    SearchBuilder.searchSource.query(query_string).buildAsBytes() 
+    
+
+to perform the query string on elasticsearch servers.
+
+The problem is that I dont know what is the correct format of query string.
+For instance, I want to find all documents with `country` field to be `US`, I
+can use the restful api of
+
+    
+    
+    http://my.elastic.search.server/foo/dummy/_search?q=country:US
+    
+
+to get what I need. But in terms of java api, I tried `country:US`,
+`q=country:US`, and `{\"country\":\"US\"}`, but each time I got back
+`SearchPhaseExecutionException`.
+
+ElasticSearch's documentation does not shed any lights on what could be the
+format of query string in this case, and I have exhausted Google results
+related to this topic. Can someone help me on this? Thanks!
+
+Based upon your REST query the equivalent according to the [Search Java
+API](http://www.elasticsearch.org/guide/reference/java-api/search.html) would
+be:
+
+    
+    
+    SearchResponse response = client.prepareSearch("foo")
+        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+        .setQuery(termQuery("country", "US"))
+        .execute()
+        .actionGet();
+    
+
+You could also use a pure query string as in your REST example:
+
+    
+    
+        .setQuery(queryString("country:US"))
+    
+
+The best reference is the Javadoc available in the [Maven
+repository](https://oss.sonatype.org/content/repositories/releases/org/elasticsearch/elasticsearch).
+
+OK. seems like I need to pass in a more contrived json string
+
+{ "query_string" : { "default_field": "anotherFoo", "query": "this AND that OR
+there" } }
+
+It is useful in that I can pass in pure Lucene-style query against
+elasticsearch.
+
+I've written an overview on this topic recently:
+
+<http://karussell.wordpress.com/2012/01/19/birds-eye-view-on-elasticsearch-
+its-query-dsl/>
+
+Its an old question but as I struggled quite a bit with similar query , I
+thought I would add my two cents. First of all I could not find
+
+    
+    
+    SearchBuilder.searchSource.query(query_string).buildAsBytes() 
+    
+
+As mentioned in the original question any more in ES java API.
+
+My request body looked like
+
+    
+    
+    {
+      "query": {
+        "query_string": {
+          "default_field": "file",
+          "query": "Java"
+        }
+      },
+      "highlight": {
+        "fields": {
+          "file": {
+    
+          }
+        }
+      }
+    }
+    
+
+I found this can be done in following two ways
+
+    
+    
+        String queryString = "{" 
+                + "\"query_string\": " 
+                    + "{"
+                        + "\"default_field\":"
+                    + " \"file\","
+                            + " \"query\": \"Email OR @gmail.com @yahoo.com\""
+                            + "}"
+                            + "}";
+    
+
+> **First Approach**
+
+    
+    
+    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();        
+        searchSourceBuilder.query(queryString); //or searchSourceBuilder.query(queryString).buildAsBytes();
+    
+        SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder( ESConnectionFactory.INSTANCE.getClient()) ;
+        searchRequestBuilder.internalBuilder(searchSourceBuilder).setIndices("resume")
+        .setTypes("docs").addHighlightedField("file");
+    
+
+> **Second Approach**
+
+    
+    
+    SearchRequestBuilder searchRequestBuilder = client.prepareSearch()
+                    .setIndices("resume")
+                    .setTypes("docs").setQuery(queryString).addHighlightedField("file");
+    
+
+And then standard
+
+    
+    
+    SearchResponse response = searchRequestBuilder.execute().actionGet();
+    
+
+Keys things to note
+
+  1. **Do not add "query" in the queryString**
+  2. **Do not add highlighted fields in query string. Use addHighlightedField**
+
+I feel this should work.
+
+    
+    
+    QueryBuilder qb = QueryBuilders.queryStringQuery("pattern").field("field to search");
+    SearchRequestBuilder sreq = client.prepareSearch("INDEX").setTypes("TYPE").setQuery(qb);
+    SearchResponse response = sreq
+                    .setFrom("From page")
+                    .setSize("size")
+                    .execute().actionGet();
+    
+

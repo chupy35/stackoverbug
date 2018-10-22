@@ -1,0 +1,166 @@
+25397702 Match_all with filter on percolator not working as expected
+
+Elasticsearch v1.1.1
+
+I am getting an unexpected result from a percolator. I have broken it down to
+it's simplest parts and am still getting weird results.
+
+Firstly I create a new index with mapping:
+
+    
+    
+    PUT /test1
+    {
+       "mappings": {
+          "product": {
+             "properties": {
+                "subject": {
+                   "type": "nested",
+                   "properties": {
+                      "code": {
+                         "type": "string"
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+Then I create two objects for testing:
+
+    
+    
+    PUT /test1/product/12345
+    {
+        "subject": {
+            "code": "FA"
+        }
+    }
+    
+    PUT /test1/product/12346
+    {
+        "subject": {
+            "code": "BA"
+        }
+    }
+    
+
+Then I create a query that I would expect to match on the second record only:
+
+    
+    
+    GET /test1/product/_search
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": []
+             },
+             "filter": {
+                "bool": {
+                   "must_not": [
+                      {
+                         "query": {
+                            "nested": {
+                               "path": "subject",
+                               "query": {
+                                  "prefix": {
+                                     "subject.code": "fa"
+                                  }
+                               }
+                            }
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    }
+    
+
+So far everything is working as expected. The query returns the second record,
+the first one being excluded by the filter.
+
+I then use the same query to create a percolator:
+
+    
+    
+    PUT /test1/.percolator/TEST
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": []
+             },
+             "filter": {
+                "bool": {
+                   "must_not": [
+                      {
+                         "query": {
+                            "nested": {
+                               "path": "subject",
+                               "query": {
+                                  "prefix": {
+                                     "subject.code": "fa"
+                                  }
+                               }
+                            }
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    }
+    
+
+And test against both records:
+
+    
+    
+    GET /test1/product/12345/_percolate
+    
+    GET /test1/product/12346/_percolate
+    
+
+They both return the same result:
+
+    
+    
+    {
+       "took": 1,
+       "_shards": {
+          "total": 5,
+          "successful": 5,
+          "failed": 0
+       },
+       "total": 1,
+       "matches": [
+          {
+             "_index": "test1",
+             "_id": "TEST"
+          }
+       ]
+    }
+    
+
+I have tested this without a nested object and it operates as I would expect.
+At first I thought perhaps the match_all was doing something strange to the
+percolator but when it wasn't a nested object it worked fine.
+
+So my question is, am I missing something obvious? Is this expected behaviour
+and I have just missed it in the documentation, or is this a bug?
+
+I understand I could easily create this query in a different way (and am open
+to some suggestions) however I am building them programatically so the bool
+structure seems the best option. I have also tried using a "not" filter with a
+nested "or" filter with the same result.
+
+Turns out this was a bug. It is fixed in version 1.2.2.
+
+More info: <https://github.com/elasticsearch/elasticsearch/issues/6540>
+

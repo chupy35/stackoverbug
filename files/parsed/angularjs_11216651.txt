@@ -1,0 +1,122 @@
+11216651 "Computed Properties" in AngularJS
+
+I recently chose AngularJS over ember.js for a project I am working on, and
+have been very pleased with it so far. One nice thing about ember is its built
+in support for "computed properties" with automatic data binding. I have been
+able to accomplish something similar in Angular with the code below, but am
+not sure if it is the best way to do so.
+
+    
+    
+    // Controller
+    angular.module('mathSkills.controller', [])
+      .controller('nav', ['navigation', '$scope', function (navigation, $scope) {
+        // "Computed Property"
+        $scope.$watch(navigation.getCurrentPageNumber, function(newVal, oldVal, scope) {
+          scope.currentPageNumber = newVal;
+        });
+        $scope.totalPages = navigation.getTotalPages();
+      }]);
+    
+    // 'navigation' service
+    angular.module('mathSkills.services', [])
+      .factory('navigation', function() {
+        var currentPage = 0,
+            pages = [];
+    
+        return {
+          getCurrentPageNumber: function() {
+            return currentPage + 1;
+          },
+          getTotalPages: function() {
+            return pages.length;
+          }
+        };
+      });
+    
+    // HTML template
+    <div id=problemPager ng-controller=nav>
+      Problem {{currentPageNumber}} of {{totalPages}}
+    </div>
+    
+
+I would like for the UI to update whenever the `currentPage` of the
+`navigation` service changes, which the above code accomplishes.
+
+Is this the best way to solve this problem in AngularJS? Are there
+(significant) performance implications for using `$watch()` like this? Would
+something like this be better accomplished using custom events and `$emit()`
+or `$broadcast()`?
+
+I think I found the answer. This example can be dramatically simplified to:
+
+    
+    
+    // Controller
+    angular.module('mathSkills.controller', [])
+      .controller('nav', ['navigation', '$scope', function (navigation, $scope) {
+        // Property is now just a reference to the service's function.
+        $scope.currentPageNumber = navigation.getCurrentPageNumber;
+        $scope.totalPages = navigation.getTotalPages();
+      }]);
+    
+    // HTML template
+    // Notice the first binding is to the result of a function call.
+    <div id=problemPager ng-controller=nav>
+      Problem {{currentPageNumber()}} of {{totalPages}}
+    </div>
+    
+
+While your self-answer works, it doesn't actually implement computed
+properties. You simply solved the problem by calling a function in your
+binding to force the binding to be greedy. I'm not 100% sure it'd work in all
+cases, and the greediness might have unwanted performance characteristics in
+some situations.
+
+I worked up a solution for a computed properties w/dependencies similar to
+what EmberJS has:
+
+    
+    
+    function ngCreateComputedProperty($scope, computedPropertyName, dependentProperties, f) {
+      function assignF($scope) {
+        var computedVal = f($scope);
+        $scope[computedPropertyName] = computedVal;
+      };
+    
+      $scope.$watchCollection(dependentProperties, function(newVal, oldVal, $scope) {
+        assignF($scope);
+      });
+      assignF($scope);
+    };
+    
+    // in some controller...
+    ngCreateComputedProperty($scope, 'aSquared', 'a',     function($scope) { return $scope.a * $scope.a } );
+    ngCreateComputedProperty($scope, 'aPlusB',   '[a,b]', function($scope) { return $scope.a + $scope.b } );
+    
+
+See it live: <http://jsfiddle.net/apinstein/2kR2c/3/>
+
+It's worth noting that $scope.$watchCollection is efficient -- I verified that
+"assignF()" is called only once even if multiple dependencies are changed
+simultaneously (same $apply cycle). "
+
+Note that with ECMAScript 5 you can now also do something like this:
+
+    
+    
+    // Controller
+    angular.module('mathSkills.controller', [])
+      .controller('nav', function(navigation, $scope) {
+        $scope.totalPages = navigation.getTotalPages();
+        Object.defineProperty($scope, 'currentPageNumber', {
+          get: function() {
+            return navigation.getCurrentPageNumber();
+          }
+        });
+      ]);
+    
+    //HTML
+    <div ng-controller="nav">Problem {{currentPageNumber}} of {{totalPages}}</div>
+    
+

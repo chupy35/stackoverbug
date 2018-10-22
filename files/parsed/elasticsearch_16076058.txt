@@ -1,0 +1,18 @@
+16076058 Exclude some characters from asciifolding conversion
+
+I have setup a analyzer with asciifolding filter.
+
+This filter replaces the letter ç=>c and ñ=>n. I need to keep the original ç
+and ñ in the token.
+
+Is there a way to setup a exception in the asciifolding filter? If not, I can
+use a char_filter to do what asciifolding filter do for accents and not for ç
+and ñ or there is a better approach?
+
+I didn't find any configuration for exceptions in asciifolding, so I have
+setup a char_filter with the mappings I need and apply in my analyzer (without
+asciifolding):
+
+char_filter: { my_map: { type: "mapping", mappings: [ "á" => "a", "à" => "a"
+.... ] } }
+

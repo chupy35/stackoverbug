@@ -1,0 +1,4 @@
+32681725
+how to exclude meta data from elasticsearch results?
+<p>Is it possible to exclude this meta data information from the API call? &#xA;I agree this is useful, however, I'm not using that information in anyway for regular transactions.</p>&#xA;&#xA;<p><a href="https://i.stack.imgur.com/6GfYF.png" rel="nofollow noreferrer"><img src="https://i.stack.imgur.com/6GfYF.png" alt="enter image description here"></a></p>&#xA;
+<p>You can use <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#_response_filtering" rel="nofollow">response filtering</a> for that.</p>&#xA;

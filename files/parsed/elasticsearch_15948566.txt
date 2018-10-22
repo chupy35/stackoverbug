@@ -1,0 +1,61 @@
+15948566 Using missing and exists filter together in single query
+
+I am trying to get a query which can return a json which satisfies both
+conditions of a filtering. I am trying to get a response which has feed
+containing one field named "test1" and it should also be missing a field
+"test2", Ive tried the query
+
+    
+    
+    {
+     "query": {
+      "filtered": {
+      "query": {
+        "match_all": {}
+       },
+          "filter": {
+             "missing": {
+            "field": "test2"
+           },
+           "exists": {
+             "field": "test1"
+           }
+          }
+        }
+      } 
+    }
+    
+
+The above query returns all the fields which has the field "test1" and it also
+returns feeds which are missing field "test2", I am trying to narrow down the
+response as I only want feeds satisfying both conditions.
+
+You can combine two or more filters using [bool
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/bool-filter/):
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "bool": {
+              "must": [{
+                "missing": {
+                  "field": "test2"
+                }
+              }, {
+                "exists": {
+                  "field": "test1"
+                }
+              }]
+            }
+          }
+        }
+      }
+    }
+    
+

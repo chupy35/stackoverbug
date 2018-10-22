@@ -1,0 +1,62 @@
+16308786 ElasticSearch not mapping JODA time format
+
+I am indexing tweets, and would like to map the created_at field to a date. An
+example date looks like this:
+
+    
+    
+    'created_at': 'Wed Sep 21 05:19:16 +0000 2011'
+    
+
+which using the JODA time format, I figured out to be:
+
+    
+    
+    "format" : "EEE MMM dd HH:mm:ss +SSSS yyyy",
+    
+
+However, when trying to index a new tweet I get the following error:
+
+    
+    
+    {u'status': 400, u'error': u'RemoteTransportException[[Rattler][inet[/192.155.85.243:9301]][index]]; nested: MapperParsingException[Failed to parse [created_at]]; nested: MapperParsingException[failed to parse date field [2013-04-30 20:34:43], tried both date format [yyyyMMdd HH:mm:ss], and timestamp number]; nested: IllegalArgumentException[Invalid format: "2013-04-30 20:34:43" is malformed at "-04-30 20:34:43"]; '}
+    
+
+I've tried changing the date format to use
+
+    
+    
+    yyyy-MM-dd HH:mm:ss
+    EEE, dd MMM yyyy HH:mm:ss Z
+    EEE dd MMM yyyy HH:mm:ss Z
+    EEE MMM dd HH:mm:ss +0000 yyyy
+    
+
+, and several other variations to just see, and no luck. I'm using the
+following call to create an initial tweet document:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/twitter/tweet/1' -d '{
+        "tweet" : {
+            "properties" : {
+                "created_at" : {"type" : "date", "format" : "EEE dd MMM yyyy HH:mm:ss Z"}
+            }
+        }
+    }'
+    
+
+Any help is greatly appreciated!
+
+The Joda time format you specified is not completely correct. S is for
+fraction of second, not timezone as you wanted. Also the "+" sign is included
+in the timezone parser.
+
+I managed to parse the twitter date format in elasticsearch with this format
+specifier:
+
+    
+    
+    "format": "EE MMM d HH:mm:ss Z yyyy"
+    
+

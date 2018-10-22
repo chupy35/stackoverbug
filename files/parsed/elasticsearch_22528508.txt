@@ -1,0 +1,72 @@
+22528508 Deleting documents in multiple indices from elasticsearch
+
+I'm trying to delete all documents of a certain type across multiple indices
+(documents are created by logstash so there is an index for each day).
+
+I've tried this:
+
+    
+    
+    DELETE _all/_query?q=type:iss
+    
+
+The result looks something like:
+
+    
+    
+    {
+       "_indices": {
+          "logstash-2014.01.18": {
+             "_shards": {
+                "total": 5,
+                "successful": 0,
+                "failed": 5
+             }
+          },
+       "_indices": {
+          "logstash-2014.01.18": {
+             "_shards": {
+                "total": 5,
+                "successful": 2,
+                "failed": 3
+             }
+          },
+         ...
+    }
+    
+
+Every time I run it I get a different number of successes/failures in each
+index. The 1st query above initially seemed to work. If I look in
+elasticsearch-head and Kibana it seems like at least some of the documents
+have been deleted. However if I then query for them:
+
+    
+    
+    POST _search {"query":{"match":{"type":"iis"}}}
+    
+
+or
+
+    
+    
+    GET _search?q=type:iis
+    
+
+it still returns all results. I don't believe this is a caching problem as
+I've done everything possible to try to ensure that isn't the case (cleared
+browser data, restarted elasticsearch/server etc).
+
+I also tried:
+
+    
+    
+    DELETE _all/iis/_query {"query":{"match_all":{}}}
+    
+
+Again I get the inconsistent success/failure results but it does seem to have
+deleted documents when I run the search queries again. It only seems to be
+deleting a few every time though.
+
+Why is this so inconsistent and what can I do to get this working
+consistently?
+

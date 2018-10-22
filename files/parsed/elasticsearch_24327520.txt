@@ -1,0 +1,24 @@
+24327520 What are the differences between fieldquery vs termquery in
+elasticsearch?
+
+What are the differences and similarities between fieldquery and termquery
+
+    
+    
+        FilterBuilders.queryFilter(QueryBuilders.fieldQuery("truckName", "joshi"));
+        FilterBuilders.queryFilter(QueryBuilders.termQuery("truckName", "joshi"));
+    
+
+Both returning same results. Please give an examples
+
+A term query is looking for an exact match of a terms field without doing any
+analysis of the parameter.
+
+It looks like the fieldQuery (from
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/query-dsl-
+field-query.html>) is a simple form of query_string on a specific field, so it
+would be doing analysis.
+
+The two would act the same for single word "truckName", but the termQuery
+would be faster.
+

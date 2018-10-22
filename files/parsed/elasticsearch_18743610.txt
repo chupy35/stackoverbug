@@ -1,0 +1,17 @@
+18743610 Exact match on some fields and "fuzzy" search on others?
+
+I am attempting to create a query to exactly match on a few fields, such as
+`account_id` and `from_addresses` (which is an array), while also fuzzy
+matching on another field such as `message_content`. What is the best way to
+do this?
+
+I have tried a Bool query with a few `must` and `should` parameters but can't
+seem to get it working.
+
+I believe what you want to do it to use Filters. More specifically, an AND
+filter. So your query `message_content`, but filter by `account_id` and
+`from_addresses`.
+
+I don't know which library you are using, so I can't really provide any code
+examples.
+

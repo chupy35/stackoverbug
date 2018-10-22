@@ -1,0 +1,8 @@
+15854512 When should you do an elasticsearch flush?
+
+I've seen it recommended when you're doing an upgrade of elasticsearch, and my
+understanding is that it removes what ever part of your index that may be in
+memory.
+
+Is this correct? When else would you want to do a flush?
+

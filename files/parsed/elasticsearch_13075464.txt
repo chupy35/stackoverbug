@@ -1,0 +1,82 @@
+13075464 How to write fast Elastic Search queries
+
+Is there a guide to writing the ES queries - what to do, what to avoid, this
+sort of stuff. The official site describes all various ways to search, but
+provides little giudance as to when select what.
+
+In my particular instance I have a list of providers, each one has a name an
+address and a number of IDs. I want to give the user a box he can type in
+anything he knows about the provider and run search based on whatever is
+provided. Essentially I would like to match every word from the box against
+the records (documents) in the index.
+
+For the end user this should look like a simple keyword search.
+
+Matching should cover exact matches, wild card matches, phonetic matches,
+synonyms (for names). Also some fuzziness should be included too.
+
+The official site describes various ways to do that, but how to combine them
+together? For instance to support wild card search do I use wild card query,
+or do I index it with the NGram and do just text query?
+
+With the SQL queries a certain way to get this sort of information is to check
+the execution plan for the query. If the SQL optimizer tells you that it will
+use table scan against a table of considerable size, you know you should
+change your query, or, may be, add an index. AFAIK there is no equivalent for
+this powerful feature in ES and I am not even sure if it is possible to build
+it.
+
+But at least some generic considerations...? Pretty please...
+
+There is not a best way to go about doing things, because a lot of times it
+depends on what you are indexing, and how you map your data into variables
+within Elasticsearch.
+
+Some rule of thumb that you should look out for:
+
+a. Faceted Queries in Elasticsearch work in sequences:
+
+    
+    
+    {   
+     "query": {
+       // data will be searched from this block first //
+     }, "facets": {
+       // after the data is received, it will be processed into facets //
+     }
+    }
+    
+
+Hence if your query size is huge, you are going to slow down your query
+further by faceting. Monitor the results of your query.
+
+b. Filters vs Queries
+
+Filters do a subset of your queries, meaning it will take the entire result of
+what your query is, and then filter out what you do want or what you do not
+want.
+
+Queries are usually direct searches for data.
+
+Hence, if you can make your query as specific as possible before you do a
+filter, it should yield faster results.
+
+c. Queries are cached; running them again and again will generally yield
+faster responses. The [Warmers
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+warmers.html) should be able to make your queries even quicker if you are
+always going to use the same set of queries
+
+Again, all these are rule of thumbs and cannot be followed strictly, because
+what you index into specific variables will affect processing times. A string
+is different from long types, and strings with analyzers are different from
+non-analyzers. What you need to do is probably to experiment with your queries
+to get a better judgement.
+
+One correction from the above - Filters are cacheable by ES, and not queries.
+Queries does the extra step of relevance scoring & full text search. So, where
+ever full text search is not needed using filter is advised.
+
+Also, design your mappings with correct index values (not_analyzed, no,
+analyzed)
+

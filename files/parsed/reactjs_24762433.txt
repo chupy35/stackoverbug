@@ -1,0 +1,105 @@
+24762433 React renderComponent replace DOM
+
+JSX code:
+
+    
+    
+    var App = React.createClass({
+      render: function() {
+        return <div className="darken">hello world</div>
+      }
+    });
+    React.renderComponent(<App/>, document.querySelector('.main'))
+    
+
+HTML:
+
+    
+    
+    <body>
+      <header>welcome</header>
+      <div class="main"></div>
+    </body>
+    
+
+`React.renderComponent` will append rendered JSX to `<div class="main">`.
+Output of HTML will be:
+
+    
+    
+    <body>
+      <header>welcome</header>
+      <div class="main">
+        <div class="darken">hello world</div>
+      </div>
+    </body>
+    
+
+Is it possible `React.renderComponent` replace `<div class="main">`, so what I
+expect like this:
+
+    
+    
+    <body>
+      <header>welcome</header>
+      <div class="darken">hello world</div>
+    </body>
+    
+
+Sure, just use:
+
+    
+    
+    React.render(<App/>, document.body);
+    
+
+Was having a problem getting my component to render in React 0.14.0. My
+solution was make sure your scripts have a special type:
+
+    
+    
+    <script type="text/babel" src='js/app.js'></script>
+    
+
+Include these three libraries:
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.0/react.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.0/react-dom.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    
+
+Then use `ReactDOM.render()`:
+
+    
+    
+    ReactDOM.render(<Timer start={Date.now()} />, document.getElementById('app'));
+    
+
+I'm not even using ES6 or a build system. Simple solution to get text on the
+screen with react.js
+
+Had a similar problem and this is what I came up with. Replace it with a
+simple span tag so it doesn't affect your styling.
+
+    
+    
+    const appContainer = document.createElement('span')
+    const mainEl = document.querySelector('.main')
+    mainEl.parentNode.replaceChild(appContainer, mainEl)
+    React.renderComponent(<App/>, mainEl)
+    
+
+Which will produce
+
+    
+    
+    <body>
+      <header>welcome</header>
+      <span> <!-- this acts as the container for react -->
+        <div class="darken">hello world</div>
+      </span>
+    </body>
+    
+

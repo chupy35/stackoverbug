@@ -1,0 +1,74 @@
+10631006 Filtered search in elasticsearch
+
+I am new to elasticsearch and I would like to do a filtered search:  A part of
+my mapping is like this:
+
+    
+    
+      "_index" : "project", 
+      "_type" : "flat_order", 
+      "_id" : "795", 
+      "_score" : 2.1372108, 
+      "fields" : { 
+        "status" : "canceled", 
+        "created_at" : "2012-01-04 12:48:48", 
+        "updated_at" : "2012-02-21 07:19:35" 
+      } 
+    }, { 
+      "_index" : "project", 
+      "_type" : "flat_order", 
+      "_id" : "803", 
+      "_score" : 2.1372108, 
+      "fields" : { 
+        "status" : "canceled", 
+        "created_at" : "2012-01-04 12:50:54", 
+        "updated_at" : "2012-02-21 07:19:35" 
+      } 
+    
+
+I want all the indices having created_at in a range `gte:"2012-01-01
+00:00:00",lte:"2012-02-01 00:00:00"`, and having `status :"cancelled" or
+"confirmed"`.
+
+Thanks in advance
+
+got the solution:
+
+    
+    
+    $ curl -X GET http://localhost:9200/project/flat_order/_search?pretty=true -d '{
+      "fields": [
+        "created_at",
+        "status"
+      ],
+      "query": {
+        "filtered": {
+          "query": {
+            "range": {
+              "create‌​d_at": {
+                "gte": "2012-01-01 00:00:00",
+                "lte": "2012-02-01 00:00:00"
+              }
+            }
+          },
+          "filter": {
+            "or": [
+              {
+                "term": {
+                  "status": "canceled"
+                }
+              },
+              {
+                "term": {
+                  "status": "con‌​firmed"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+'
+

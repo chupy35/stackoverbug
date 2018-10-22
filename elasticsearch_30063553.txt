@@ -1,0 +1,4 @@
+30063553
+Using script without disabling "script.disable_dynamic" in elasticsearch
+<p>I want to use a single script , but i dont want to disable script.disable_dynamic&#xA;Disabling this would be an invitation for hackers to bring my machine down.&#xA;Is there any way , i can achieve this ?</p>&#xA;
+<p>There are 2 ways to achieve this - </p>&#xA;&#xA;<ol>&#xA;<li>Copy your scripts under config/scripts folder - This way the scripts would be pre compiled and you can access them using their name. You can read more info <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html" rel="nofollow">here</a>. </li>&#xA;<li>You can write the java code for the script functionality and package it as a plugin.</li>&#xA;</ol>&#xA;&#xA;<p>You can read more about the same <a href="http://blog.qbox.io/introduction-to-elasticsearch-scripting" rel="nofollow">here</a>. </p>&#xA;

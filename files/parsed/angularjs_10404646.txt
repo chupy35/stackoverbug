@@ -1,0 +1,35 @@
+10404646 Selecting among dependencies in Angularjs in production
+
+All the DI documentation in Angular seems to be based on the idea that you
+want the system implementation of a service when the code is production and
+when you are running automated tests, you want to select among several mock
+implementations.
+
+No, I have several working implementations of a dependency and I want to
+choose one (based typically on the URL). How do I do that?
+
+  1. put your dependencies into separate module. Fore example serviceA.impl1 and serviceA.impl2
+  2. create the application level module but add dependencies based on URL
+
+    
+    
+    angular.module('impl1', [])....
+    angular.module('impl2', [])....
+    
+    var deps = [];
+    if (location.match(...) {
+      deps.push('impl1')
+    } else {
+      deps.push('impl2')
+    }
+    
+    angular.module('myApp', deps);
+    
+
+then in your index.html do
+
+    
+    
+      <html ng-app="myApp">
+    
+

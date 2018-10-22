@@ -1,0 +1,69 @@
+24957448 How to return number of matches according to specific term in search
+query?
+
+In my search query I have this:
+
+    
+    
+    ...
+    term: { CategoryId: [1,2,3] }
+    ...
+    
+
+I need to return how many matches were found for each category. For now just
+`total` number of matches is returned. Is it possible? I think this might be
+related to `aggregation`, however I can't find the right solution...
+
+A sample query can be,
+
+    
+    
+    POST /test/products/_search
+    {
+       "size": 0,
+       "aggs": {
+          "category": {
+             "terms": {
+                "field": "category"
+             }
+          }
+       }
+    }
+    
+
+so response is as,
+
+    
+    
+    {
+       "took": 2,
+       "timed_out": false,
+       "_shards": {
+          "total": 5,
+          "successful": 5,
+          "failed": 0
+       },
+       "hits": {
+          "total": 10,
+          "max_score": 0,
+          "hits": []
+       },
+       "aggregations": {
+          "category": {
+             "buckets": [
+                {
+                   "key": "1",
+                   "doc_count": 10
+                },
+                {
+                   "key": "2",
+                   "doc_count": 12
+                }
+             ]
+          }
+       }
+    }
+    
+
+Which gives no of documents for each category.  Hope this helps!!
+

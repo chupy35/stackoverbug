@@ -1,0 +1,22 @@
+19543247 ElasticSearch — boosting relevance based on position of query words
+in the searched string
+
+Need to find a way in ElasticSearch to boost the relevance of a document based
+on the position of the query words in the searched string. for example, for
+query: "QUERY" the result:
+
+    
+    
+    'QUERY bla bla bla'
+    
+
+will be favored over:
+
+    
+    
+    'bla bla bla QUERY'
+    
+
+Take a look at the function score query, that might be useful for your
+problem: <http://www.elasticsearch.org/blog/0-90-4-released/#function_score>
+

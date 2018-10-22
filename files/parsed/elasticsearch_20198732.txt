@@ -1,0 +1,134 @@
+20198732 Elasticsearch: choose TOP N documents and apply query
+
+I'm sorry I'm not good at English, please understand it.
+
+Let's assume I have such data:
+
+    
+    
+    title    category    price
+    book1      study     10
+    book2      cook      20
+    book3      study     30
+    book4      study     40
+    book5      art       50
+    
+
+I can do "search books in 'study' category and sort them by price-descending
+order". Result would be:
+
+    
+    
+    book4 - book3 - book1
+    
+
+However, I couldn't find a way to do "search books in 'study' category AMONG
+the books of TOP 40% in price". (I wish 'TOP 40% in price' is correct
+expression) In this case, result should be "book4" only, because "category
+search" would be performed for only book5 and book4.
+
+At first, I thought I could do it by
+
+  1. sort all documents by price
+  2. select TOP 40%
+  3. post another query for category search among them
+
+But now, I still have no idea how I can post a query among "part of
+documents", not all documents. After 2, I'd have a list of documents in TOP
+40%. But how can I make a query which is applied to just them?
+
+I realized that I don't know even "search TOP n%" in elasticsearch. Is there a
+way that is better than "sort all and select first n%"?
+
+Any advice would be appreciated. And this is my first question in
+stackoverflow. If my question is violating any rule of here, please tell me so
+that I can know it and apology.
+
+If your data is [normally
+distributed](http://en.wikipedia.org/wiki/Normal_distribution), or some other
+statistical distribution from which you can make sense of the data, you can
+probably do this in two queries.
+
+You can take a look at the data in histogram form by doing:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "facets": {
+        "stats": {
+          "histogram": {
+            "field": "price",
+            "interval": 100
+          }
+        }
+      }
+    }
+    
+
+I usually take this data into a spreadsheet to chart it and do other
+statistical analysis on it. "interval" above will need to be some reasonable
+value, 100 might not be the right fit.
+
+The is just to decide how to code the intermediate step. Provided the data is
+normally distributed you can then get the statistical information about the
+collection using this query:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "facets": {
+        "stats": {
+          "statistical": {
+            "field": "price"
+          }
+        }
+      }
+    }
+    
+
+The above gives you an output that looks like this:
+
+    
+    
+    count: 819517
+    total: 24249527030
+    min: 32
+    max: 53352
+    mean: 29590.023184387876
+    sum_of_squares: 875494716806082
+    variance: 192736269.99554798
+    std_deviation: 13882.94889407679
+    
+
+(the above is not based on your data sample, but just sample of available data
+I have to demonstrate statistical facet usage.)
+
+So now that you know all of that, you can start applying your knowledge of
+statistics to the problem at hand. That is, find the Z score at the 60th
+percentile and find the location of the representative data point based on
+that.
+
+How your final query looks like this:
+
+    
+    
+    {
+      "query": {
+        "range": {
+          "talent_profile": {
+            "gte": 40,
+            "lte": 50
+          }
+        }
+      }
+    
+
+the lte is going to be from the "max" from the stats facet and the gte is
+going to be from your intermediate analysis.
+

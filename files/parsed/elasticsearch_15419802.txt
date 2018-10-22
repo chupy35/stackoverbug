@@ -1,0 +1,26 @@
+15419802 Extract properties from indexed data in elasticsearch
+
+I have trouble understanding the possibilities of tokenizers and analyzers in
+Elasticsearch.
+
+Suppose there is a set of indexed data of products. Each product has a field
+with a description text. In the description a color is named.
+
+Is it possible to use one of the built in analyzers or a custom
+tokenizer/analyzer to extract that color information (eg. based on a set of
+keywords [red,green,blue,yellow etc.]) and attach that new color information
+as a separate field to the product?
+
+Would be a nice feature to augment incoming data with generic properties (eg.
+colors, material etc.)
+
+The process you describe has more to do with entity recognition. There are
+different libraries that do that give a text:
+[OpenNLP](http://opennlp.apache.org/), [UIMA](http://uima.apache.org/) and
+more.
+
+You might want to have a look at the [elasticsearch OpenNLP
+plugin](https://github.com/spinscale/elasticsearch-opennlp-plugin), which does
+exactly what you want: detects entities and adds corresponding fields to the
+incoming documents.
+

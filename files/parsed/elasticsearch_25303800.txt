@@ -1,0 +1,146 @@
+25303800 ElasticSearch - prefix with space and filtering
+
+My ElasticSearch server contains documents of the following form:
+
+    
+    
+    {
+        "_index": "xindex",
+        "_type": "xtype",
+        "_id": "1100",
+        "_score": 3.00010,
+        "_source": {
+            "_id": "2333345",
+            "field1": "11111111111111",
+            "field2": "y",
+            "name": "hello world",
+        }
+    }
+    
+
+I need to get all the documents with _name_ prefix "hello wo" and _field2_
+"y". Tried a lot of queries and none have worked. There are all kind of
+solutions for the prefix with space issue, but when adding the
+filtering/another query for field2, results get corrupted.
+
+Thanks.
+
+You can achieve this in 3 steps :
+
+  1. Change your mapping of field **name** to **not_analyzed**
+  2. Use a **match_phrase_prefix** query (documentation [here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-match-query.html#_match_phrase_prefix))
+  3. Filter this query results by wrapping it in a **filtered** query and use a **term** filter on the field2 with value "y"
+
+You can see it working with the following dataset :
+
+    
+    
+    PUT test/prefix/_mapping
+    {
+      "properties": {
+        "name":{
+          "type": "string",
+          "index": "not_analyzed"
+        }
+      }
+    }
+    
+    //should match
+    PUT test/prefix/2333345
+    {
+      "field1": "11111111111111",
+      "field2": "y",
+      "name": "hello world"
+    }
+    
+    //should match    
+    PUT test/prefix/1112223
+    {
+      "field1": "22222222222222",
+      "field2": "y",
+      "name": "hello wombat"
+    }
+    
+    //should not match (field2 value is different)
+    PUT test/prefix/4445556
+    {
+      "field1": "33333333333333",
+      "field2": "z",
+      "name": "hello world"
+    }
+    
+    //should not match (second word not starting with wo)
+    PUT test/prefix/4445556
+    {
+      "field1": "33333333333333",
+      "field2": "y",
+      "name": "hello zombie"
+    }
+    
+
+Then, the query is :
+
+    
+    
+    GET test/prefix/_search
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_phrase_prefix" : {
+            "name" : "hello wo"
+            }
+          },
+          "filter": {
+            "term": {
+              "field2": "y"
+            }  
+          }
+        } 
+      }
+    }
+    
+
+which outputs the documents 1112223 and 2333345 as expected :
+
+    
+    
+    {
+       "took": 20,
+       "timed_out": false,
+       "_shards": {
+          "total": 5,
+          "successful": 5,
+          "failed": 0
+       },
+       "hits": {
+          "total": 2,
+          "max_score": 1.592944,
+          "hits": [
+             {
+                "_index": "test",
+                "_type": "prefix",
+                "_id": "2333345",
+                "_score": 1.592944,
+                "_source": {
+                   "field1": "11111111111111",
+                   "field2": "y",
+                   "name": "hello world"
+                }
+             },
+             {
+                "_index": "test",
+                "_type": "prefix",
+                "_id": "1112223",
+                "_score": 1.592944,
+                "_source": {
+                   "field1": "22222222222222",
+                   "field2": "y",
+                   "name": "hello wombat"
+                }
+             }
+          ]
+       }
+    }
+    
+

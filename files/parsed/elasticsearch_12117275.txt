@@ -1,0 +1,214 @@
+12117275 How to match on prefix in Elasticsearch
+
+let's say that in my elasticsearch index I have a field called "dots" which
+will contain a string of punctuation separated words (e.g.
+"first.second.third").
+
+I need to search for e.g. "first.second" and then get all entries whose "dots"
+field contains a string being exactly "first.second" or starting with
+"first.second.".
+
+I have a problem understanding how the text querying works, at least I have
+not been able to create a query which does the job.
+
+You should use a commodin chars to make your query, something like this:
+
+    
+    
+    $ curl -XGET http://localhost:9200/myapp/index -d '{
+        "dots": "first.second*"
+    }'
+    
+
+more examples about the syntax at:
+<http://lucene.apache.org/core/old_versioned_docs/versions/2_9_1/queryparsersyntax.html>
+
+Have a look at [prefix
+queries](http://www.elasticsearch.org/guide/reference/query-dsl/prefix-
+query.html).
+
+    
+    
+    $ curl -XGET 'http://localhost:9200/index/type/_search' -d '{
+        "query" : {
+            "prefix" : { "dots" : "first.second" }
+        }
+    }'
+    
+
+Elasticsearch has [Path Hierarchy
+Tokenizer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/pathhierarchy-tokenizer.html) that was created exactly for
+such use case. Here is an example of how to set it for your index:
+
+    
+    
+    # Create a new index with custom path_hierarchy analyzer 
+    # See http://www.elasticsearch.org/guide/reference/index-modules/analysis/pathhierarchy-tokenizer.html
+    curl -XPUT "localhost:9200/prefix-test" -d '{
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "prefix-test-analyzer": {
+                        "type": "custom",
+                        "tokenizer": "prefix-test-tokenizer"
+                    }
+                },
+                "tokenizer": {
+                    "prefix-test-tokenizer": {
+                        "type": "path_hierarchy",
+                        "delimiter": "."
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "doc": {
+                "properties": {
+                    "dots": {
+                        "type": "string",
+                        "analyzer": "prefix-test-analyzer",
+                        //"index_analyzer": "prefix-test-analyzer", //deprecated
+                        "search_analyzer": "keyword"
+                    }
+                }
+            }
+        }
+    }'
+    echo
+    # Put some test data
+    curl -XPUT "localhost:9200/prefix-test/doc/1" -d '{"dots": "first.second.third"}'
+    curl -XPUT "localhost:9200/prefix-test/doc/2" -d '{"dots": "first.second.foo-bar"}'
+    curl -XPUT "localhost:9200/prefix-test/doc/3" -d '{"dots": "first.baz.something"}'
+    curl -XPOST "localhost:9200/prefix-test/_refresh"
+    echo
+    # Test searches. 
+    curl -XPOST "localhost:9200/prefix-test/doc/_search?pretty=true" -d '{
+        "query": {
+            "term": {
+                "dots": "first"
+            }
+        }
+    }'
+    echo
+    curl -XPOST "localhost:9200/prefix-test/doc/_search?pretty=true" -d '{
+        "query": {
+            "term": {
+                "dots": "first.second"
+            }
+        }
+    }'
+    echo
+    curl -XPOST "localhost:9200/prefix-test/doc/_search?pretty=true" -d '{
+        "query": {
+            "term": {
+                "dots": "first.second.foo-bar"
+            }
+        }
+    }'
+    echo
+    curl -XPOST "localhost:9200/prefix-test/doc/_search?pretty=true&q=dots:first.second"
+    echo
+    
+
+There is also a much easier way, as pointed out in elasticsearch
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-text-query.html#_text_phrase_prefix):
+
+just use:
+
+    
+    
+    {
+        "text_phrase_prefix" : {
+            "fieldname" : "yourprefix"
+        }
+    }
+    
+
+or since 0.19.9:
+
+    
+    
+    {
+        "match_phrase_prefix" : {
+            "fieldname" : "yourprefix"
+        }
+    }
+    
+
+instead of:
+
+    
+    
+    {   
+        "prefix" : { 
+            "fieldname" : "yourprefix" 
+    }
+    
+
+I was looking for a similar solution - but matching only a prefix. I found
+@imtov's [answer](https://stackoverflow.com/a/12127065/3508719) to get me
+almost there, but for one change - switching the analyzers around:
+
+    
+    
+    "mappings": {
+        "doc": {
+            "properties": {
+                "dots": {
+                    "type": "string",
+                    "analyzer": "keyword",
+                    "search_analyzer": "prefix-test-analyzer"
+                }
+            }
+        }
+    }
+    
+
+instead of
+
+    
+    
+    "mappings": {
+        "doc": {
+            "properties": {
+                "dots": {
+                    "type": "string",
+                    "index_analyzer": "prefix-test-analyzer",
+                    "search_analyzer": "keyword"
+                }
+            }
+        }
+    }
+    
+
+This way adding:
+
+    
+    
+    '{"dots": "first.second"}'
+    '{"dots": "first.third"}'
+    
+
+Will add only these full tokens, without storing `first`, `second`, `third`
+tokens.
+
+Yet searching for either
+
+    
+    
+    first.second.anyotherstring
+    first.second
+    
+
+will correctly return only the first entry:
+
+    
+    
+    '{"dots": "first.second"}'
+    
+
+Not exactly what you asked for but somehow related, so I thought could help
+someone.
+

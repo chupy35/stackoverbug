@@ -1,0 +1,40 @@
+9746916 Can I use another prefix instead of `ng` with angularjs?
+
+I'm newbie to angularjs. When I read the docs, I found it uses `ng` as prefix
+of attributes:
+
+    
+    
+    <body ng:controller="PhoneListCtrl">
+      <ul>
+        <li ng:repeat="phone in phones">
+          {{phone.name}}
+          <p>{{phone.snippet}}</p>
+        </li>
+      </ul>
+    </body>
+    
+
+I want to know if I can modify it as another word, such as `x`? Since I think
+`x` is much easier to type than `ng`.
+
+Since **v1.0.0rc1** , these are all equivalent:
+
+    
+    
+    <div ng-show="isVisible">Using ng-show</div>
+    <div ng:show="isVisible">Using ng:show</div>
+    <div data-ng-show="isVisible">Using data-ng-show</div>
+    <div x-ng-show="isVisible">Using x-ng-show</div>
+    <div class="ng-show:isVisible">Using class="ng-show:isVisible"</div>
+    
+
+Here's working fiddle: <http://jsfiddle.net/vojtajina/Fgf3Q/>
+
+However, the main reason behind this was allowing valid html. So, you ca use
+`x-*` prefix for your custom directives, but not for Angular ones.
+
+Check out [docs](http://docs-
+next.angularjs.org/api/angular.module.ng.$compileProvider.directive) for more
+info.
+

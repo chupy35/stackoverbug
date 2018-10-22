@@ -1,0 +1,136 @@
+12553617 How can I set a dynamic model name in AngularJS?
+
+I want to populate a form with some dynamic questions (fiddle
+[here](http://jsfiddle.net/2AwLM/19/)):
+
+    
+    
+    <div ng-app ng-controller="QuestionController">
+        <ul ng-repeat="question in Questions">
+            <li>
+                <div>{{question.Text}}</div>
+                <select ng-model="Answers['{{question.Name}}']" ng-options="option for option in question.Options">
+                </select>
+            </li>
+        </ul>
+    
+        <a ng-click="ShowAnswers()">Submit</a>
+    </div>
+    ​
+    function QuestionController($scope) {
+        $scope.Answers = {};
+    
+        $scope.Questions = [
+        {
+            "Text": "Gender?",
+            "Name": "GenderQuestion",
+            "Options": ["Male", "Female"]},
+        {
+            "Text": "Favorite color?",
+            "Name": "ColorQuestion",
+            "Options": ["Red", "Blue", "Green"]}
+        ];
+    
+        $scope.ShowAnswers = function()
+        {
+            alert($scope.Answers["GenderQuestion"]);
+            alert($scope.Answers["{{question.Name}}"]);
+        };
+    }​
+    
+
+Everything works, except the model is literally Answers["{{question.Name}}"],
+instead of the evaluated Answers["GenderQuestion"]. How can I set that model
+name dynamically?
+
+<http://jsfiddle.net/DrQ77/>
+
+You can simply put javascript expression in `ng-model`.
+
+What I ended up doing is something like this:
+
+In the controller:
+
+    
+    
+    link: function($scope, $element, $attr) {
+      $scope.scope = $scope;  // or $scope.$parent, as needed
+      $scope.field = $attr.field = '_suffix';
+      $scope.subfield = $attr.sub_node;
+      ...
+    
+
+so in the templates I could use totally dynamic names, and not just under a
+certain hard-coded element (like in your "Answers" case):
+
+    
+    
+    <textarea ng-model="scope[field][subfield]"></textarea>
+    
+
+Hope this helps.
+
+To make the answer provided by @abourget more complete, the value of
+scopeValue[field] in the following line of code could be undefined. This would
+result in an error when setting subfield:
+
+    
+    
+    <textarea ng-model="scopeValue[field][subfield]"></textarea>
+    
+
+One way of solving this problem is by adding an attribute ng-
+focus="nullSafe(field)", so your code would look like the below:
+
+    
+    
+    <textarea ng-focus="nullSafe(field)" ng-model="scopeValue[field][subfield]"></textarea>
+    
+
+Then you define nullSafe( field ) in a controller like the below:
+
+    
+    
+    $scope.nullSafe = function ( field ) {
+      if ( !$scope.scopeValue[field] ) {
+        $scope.scopeValue[field] = {};
+      }
+    };
+    
+
+This would guarantee that scopeValue[field] is not undefined before setting
+any value to scopeValue[field][subfield].
+
+Note: You can't use ng-change="nullSafe(field)" to achieve the same result
+because ng-change happens after the ng-model has been changed, which would
+throw an error if scopeValue[field] is undefined.
+
+You can use something like this `scopeValue[field]`, but if your field is in
+another object you will need another solution.
+
+To solve all kind of situations, you can use this directive:
+
+    
+    
+    this.app.directive('dynamicModel', ['$compile', '$parse', function ($compile, $parse) {
+        return {
+            restrict: 'A',
+            terminal: true,
+            priority: 100000,
+            link: function (scope, elem) {
+                var name = $parse(elem.attr('dynamic-model'))(scope);
+                elem.removeAttr('dynamic-model');
+                elem.attr('ng-model', name);
+                $compile(elem)(scope);
+            }
+        };
+    }]);
+    
+
+Html example:
+
+    
+    
+    <input dynamic-model="'scopeValue.' + field" type="text">
+    
+

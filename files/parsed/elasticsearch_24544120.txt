@@ -1,0 +1,68 @@
+24544120 elasticsearch - confused on how to searching items that a field
+contains string
+
+This query is returning fine only one item "steve_jobs".
+
+    
+    
+    {
+      "query": {
+        "constant_score": {
+          "filter": {
+            "term": {
+              "name":"steve_jobs"
+            }
+          }
+        }
+      }
+    }
+    
+
+So, now I want to get all people with name prefix `steve_`. So I try this:
+
+    
+    
+    {
+      "query": {
+        "constant_score": {
+          "filter": {
+            "term": {
+              "name": "steve_"
+            }
+          }
+        }
+      }
+    }
+    
+
+This is returning nothing. Why?
+
+I'm confused about when to use term query / term filter / terms filter /
+querystring query.
+
+What you need is [Prefix
+Query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-prefix-query.html).
+
+If you are indexing your document like so:
+
+    
+    
+    POST /testing_nested_query/class/
+    {
+        "name": "my name is steve_jobs"
+    }
+    
+
+And you are using the default analyzer, then the problem is that the term
+`steve_jobs` will be indexed as one term. So your Term Query will never be
+able to find any docs matching the term `steve` as there is no term like in
+the index. Prefix Query helps you solve your problem by searching for a prefix
+in all the indexed terms.
+
+You can solve the same problem by making your custom analyzers (read
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+custom-analyzer.html) and
+[this](http://www.smashew.com/2013/07/25/elasticsearch-custom-analyzer/)) so
+that `steve_jobs` is stored as `steve` and `jobs`.
+

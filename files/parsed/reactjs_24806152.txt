@@ -1,0 +1,83 @@
+24806152 How to implement one way binding in react.js?
+
+I want to implement one way binding in react.js.
+
+I have **chatHistory** variable:
+
+    
+    
+       var chatHistory = [{ Author: "Daniel Lo Nigro", Text: "Hello ReactJS.NET World!" },
+          { Author: "Pete Hunt", Text: "This is one comment" },
+          { Author: "Jordan Walke", Text: "This is *another* comment" }];
+    
+
+and I want react to update the **DOM** if **chatHistory** variable will
+change.
+
+Here is the code I have:
+
+    
+    
+    var converter = new Showdown.converter();
+    var Comment = React.createClass({
+        displayName: 'Comment',
+        render: function () {
+            var rawMarkup = converter.makeHtml(this.props.children.toString());
+            return (
+              React.DOM.div({ className: "comment" },
+                React.DOM.h2({ className: "commentAuthor" },
+                  this.props.author
+                ),
+                React.DOM.span({ dangerouslySetInnerHTML: { __html: rawMarkup } })
+            )
+          );
+        }
+    });
+    
+    var CommentList = React.createClass({
+        displayName: 'CommentList',
+        render: function () {
+            var commentNodes = chatHistory.map(function (comment) {
+                return Comment({ author: comment.Author }, comment.Text);
+            });
+            return (
+              React.DOM.div({ className: "commentList" },
+                commentNodes
+              )
+          );
+        }
+    });
+    
+    var CommentBox = React.createClass({
+        displayName: 'CommentBox',
+        render: function () {
+            return (
+              React.DOM.div({ className: "commentBox" },
+                React.DOM.h1(null, "Comments"),
+                CommentList()
+              )
+          );
+        }
+    });
+    
+    React.renderComponent(CommentBox(),document.getElementById('content'));
+    
+
+React change the DOM only after calling
+`React.renderComponent(CommentBox(),document.getElementById('content'));` and
+not automatically via one way binding.
+
+How to force react to refresh DOM when **chatHistory** variable changes?
+
+React has two methods which can force a re-render - forceUpdate() and
+setState();
+
+setState is probably the method you'll want to use.
+
+<http://facebook.github.io/react/docs/component-api.html#setstate>
+
+This part of the React tutorial explains using setState pretty well with
+dynamically updating the model data via ajax
+
+<http://facebook.github.io/react/docs/tutorial.html#fetching-from-the-server>
+

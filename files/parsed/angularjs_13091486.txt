@@ -1,0 +1,51 @@
+13091486 Angular.js adding values to an modelarray with ng-init
+
+I'm new to Angular and still learning. I read alot about generating static
+HTML with a CMS but then transform this into Angular Models/Scopes to then
+process it further and further.
+
+Now I'm trying to add values to a array of a model in the ng-init directive
+like this:
+
+    
+    
+    <div ng-init="art[0].anzahl=3">...</div>
+    <div ng-init="art[1].anzahl=2">...</div>
+    <div ng-init="art[2].anzahl=9">...</div>
+    
+
+But it won't work, does anyone can see my dumb mistake or am I totaly wrong
+about how I use ng-init?
+
+Here's the link to the complete example: <http://jsfiddle.net/Preexo/xVUty/>
+
+Thanks for any help in advance :)
+
+You'll need to make sure your `art` array is declared first (uncommenting out
+your commented code) before you try and set default values using `ngInit`. See
+[this fiddle](http://jsfiddle.net/xVUty/2/) as an example.
+
+    
+    
+    $scope.art = [
+        {'anzahl': 0},
+        {'anzahl': 0},
+        {'anzahl': 0}        
+    ];
+    
+    $scope.addOne = function(artIndex) {
+        $scope.art[artIndex].anzahl += 1;
+    }
+    
+
+**Update: here are some other options**
+
+1) In case this helps at all with your understanding you can use an `ng-
+repeat` and declare default values in your controller code for `anzahl` like
+in [this fiddle](http://jsfiddle.net/fzDjr/). This will reduce the code in the
+markup and move the declaration of the model into the controller which can be
+cleaner depending on what you're going for.
+
+2) If you still wanted to use `ngInit` you can push each item into the `art`
+array in your markup like in [this fiddle](http://jsfiddle.net/HAj3q/).
+

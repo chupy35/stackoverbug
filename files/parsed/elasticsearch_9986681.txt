@@ -1,0 +1,22 @@
+9986681 How to implement the statistical facet together with the histogram
+facet or the date histogram facet in ElasticSearch?
+
+In this documentation regarding [statistical facet in
+ElasticSearch](http://www.elasticsearch.org/guide/reference/api/search/facets/statistical-
+facet.html), at the bottom of the page, it seems to imply that we can
+implement the histogram facet but it does not teach us how.
+
+Could anyone tell me how do you implement statistical facet along with the
+histogram facet and the date histogram facet with examples?
+
+The reference to the histogram facet at the bottom of the statistical facet
+page seems to be just a copy and paste error. It should read "In order to
+implement the _statistical_ facet,..."
+
+Examples of histogram and date histogram facets can be found here:
+
+<http://www.elasticsearch.org/guide/reference/api/search/facets/histogram-
+facet.html>
+<http://www.elasticsearch.org/guide/reference/api/search/facets/date-
+histogram-facet.html>
+

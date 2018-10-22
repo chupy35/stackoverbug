@@ -1,0 +1,243 @@
+21439013 Elasticsearch: Influence scoring with custom score field in document
+
+I have a set of words extracted out of text through NLP algos, with associated
+score for each word in every document.
+
+For example :
+
+    
+    
+    document 1: {  "vocab": [ {"wtag":"James Bond", "rscore": 2.14 }, 
+                              {"wtag":"world", "rscore": 0.86 }, 
+                              ...., 
+                              {"wtag":"somemore", "rscore": 3.15 }
+                            ] 
+                }
+    
+    document 2: {  "vocab": [ {"wtag":"hiii", "rscore": 1.34 }, 
+                              {"wtag":"world", "rscore": 0.94 },
+                              ...., 
+                              {"wtag":"somemore", "rscore": 3.23 } 
+                            ] 
+                }
+    
+
+I want `rscore`s of matched `wtag` in each document to affect the `_score`
+given to it by ES, maybe multiplied or added to the `_score`, to influence the
+final `_score` (in turn, order) of the resulting documents. Is there any way
+to achieve this?
+
+I think that `script_score` function is what you need
+([doc](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html#_script_score)).
+
+Function score queries were introduced in 0.90.4 if you are using an older
+version check [custom score
+queries](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-custom-score-query.html)
+
+Have a look at the [delimited payload token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+delimited-payload-tokenfilter.html) which you can use to store the scores as
+payloads, and at [text scoring in
+scripts](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+advanced-scripting.html#_term_positions_offsets_and_payloads) which gives you
+access to the payloads.
+
+UPDATED TO INCLUDE EXAMPLE
+
+First you need to setup an analyzer which will take the number after `|` and
+store that value as a _payload_ with each token:
+
+    
+    
+    curl -XPUT "http://localhost:9200/myindex/" -d'
+    {
+      "settings": {
+        "analysis": {
+          "analyzer": {
+            "payloads": {
+              "type": "custom",
+              "tokenizer": "whitespace",
+              "filter": [
+                "lowercase",
+                " delimited_payload_filter"
+              ]
+            }
+          }
+        }
+      },
+      "mappings": {
+        "mytype": {
+          "properties": {
+            "text": {
+              "type": "string",
+              "analyzer": "payloads",
+              "term_vector": "with_positions_offsets_payloads"
+            }
+          }
+        }
+      }
+    }'
+    
+
+Then index your document:
+
+    
+    
+    curl -XPUT "http://localhost:9200/myindex/mytype/1" -d'
+    {
+      "text": "James|2.14 Bond|2.14 world|0.86 somemore|3.15"
+    }'
+    
+
+And finally, search with a `function_score` query that iterates over each
+term, retrieves the payload and incorporates it with the `_score`:
+
+    
+    
+    curl -XGET "http://localhost:9200/myindex/mytype/_search" -d'
+    {
+      "query": {
+        "function_score": {
+          "query": {
+            "match": {
+              "text": "james bond"
+            }
+          },
+          "script_score": {
+            "script": "score=0; for (term: my_terms) { termInfo = _index[\"text\"].get(term,_PAYLOADS ); for (pos : termInfo) { score = score +  pos.payloadAsFloat(0);} } return score;",
+            "params": {
+              "my_terms": [
+                "james",
+                "bond"
+              ]
+            }
+          }
+        }
+      }
+    }'
+    
+
+The script itself, when not compressed into one line, looks like this:
+
+    
+    
+    score=0; 
+    for (term: my_terms) { 
+        termInfo = _index['text'].get(term,_PAYLOADS ); 
+        for (pos : termInfo) { 
+            score = score +  pos.payloadAsFloat(0);
+        } 
+    } 
+    return score;
+    
+
+**Warning:** accessing payloads has a significant performance cost, and
+running scripts also has a performance cost. You may want to experiment with
+it using dynamic scripts as above, then rewrite the script as a native Java
+script when you're satisfied with the result.
+
+Another way of approaching this would be to use nested documents:
+
+First setup the mapping to make `vocab` a nested document, meaning that each
+`wtag`/`rscore` document would be indexed internally as a separate document:
+
+    
+    
+    curl -XPUT "http://localhost:9200/myindex/" -d'
+    {
+      "settings": {"number_of_shards": 1}, 
+      "mappings": {
+        "mytype": {
+          "properties": {
+            "vocab": {
+              "type": "nested",
+              "fields": {
+                "wtag": {
+                  "type": "string"
+                },
+                "rscore": {
+                  "type": "float"
+                }
+              }
+            }
+          }
+        }
+      }
+    }'
+    
+
+Then index your docs:
+
+    
+    
+    curl -XPUT "http://localhost:9200/myindex/mytype/1" -d'
+    {
+      "vocab": [
+        {
+          "wtag": "James Bond",
+          "rscore": 2.14
+        },
+        {
+          "wtag": "world",
+          "rscore": 0.86
+        },
+        {
+          "wtag": "somemore",
+          "rscore": 3.15
+        }
+      ]
+    }'
+    
+    curl -XPUT "http://localhost:9200/myindex/mytype/2" -d'
+    {
+      "vocab": [
+        {
+          "wtag": "hiii",
+          "rscore": 1.34
+        },
+        {
+          "wtag": "world",
+          "rscore": 0.94
+        },
+        {
+          "wtag": "somemore",
+          "rscore": 3.23
+        }
+      ]
+    }'
+    
+
+And run a `nested` query to match all the nested documents and add up the
+values of `rscore` for each nested document which matches:
+
+    
+    
+    curl -XGET "http://localhost:9200/myindex/mytype/_search" -d'
+    {
+      "query": {
+        "nested": {
+          "path": "vocab",
+          "score_mode": "sum",
+          "query": {
+            "function_score": {
+              "query": {
+                "match": {
+                  "vocab.wtag": "james bond world"
+                }
+              },
+              "script_score": {
+                "script": "doc[\"rscore\"].value"
+              }
+            }
+          }
+        }
+      }
+    }'
+    
+
+You can use the `field_value_factor` function:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-
+function-score-query.html#function-field-value-factor>
+

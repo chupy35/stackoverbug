@@ -1,0 +1,74 @@
+12761834 Select New DOM elements created by Angularjs ng-repeat
+
+I am using Angularjs for a web application. I have tried searching to find a
+solution to my problem, and it seems that Angularjs do not facilitate an easy
+way to access newly created DOM elements within ng-Repeat.
+
+I have prepared a jsfiddle to show the actual problem. here is the link:
+<http://jsfiddle.net/ADukg/956/>
+
+Please let me know how to select the new DOM element within ng-repeat.
+
+To expand on my comment, I have updated your fiddle to show a simple
+implentation of a directive that alerts the class of the element.
+
+<http://jsfiddle.net/ADukg/994/>
+
+Original comment:
+
+Regarding dom manipulation in the controller, it [says
+here](https://groups.google.com/forum/?fromgroups=#!topic/angular/u52B5bVzdqs)
+that you should not do it at all. It should go in a directive. The controller
+should only contain business logic.
+
+Why it doesn't work, I don't know, but it's probably because angular is still
+running its own stuff at this point in time.
+
+There are two ways to do this:
+
+**1 ng-init**
+
+    
+    
+    function controller($scope) {
+      $scope.items = [{id: 1, name: 'one'}, {id: 2, name: 'two'}];
+    
+      $scope.initRepeaterItem(index, item) {
+        console.log('new repeater item at index '+index+':', item);
+      }
+    }
+    
+    
+    
+    <ul>
+      <li ng-repeat="item in items" ng-init="initRepeaterItem($index, item)"></li>
+    </ul>
+    
+
+  
+**2 MutationObserver** _slightly more complex_  
+Do this inside a directive, on the element whose parent gets new children
+(`<ul>` in this case)
+
+    
+    
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        // you get notified about DOM mutations here
+        // check mutation.type if it was an insertion
+        console.log(mutation.target.nodeName, mutation.type, mutation);
+      });
+    });
+    
+    var config = {childList: true, attributes: false, characterData: false, 
+      subtree: false, attributeOldValue: false, characterDataOldValue: false};
+    
+    observer.observe(element[0], config);
+    
+    
+    
+    **Demo**              <http://plnkr.co/h6kTtq>
+    **Documentation**     <https://developer.mozilla.org/en/docs/Web/API/MutationObserver>
+    **Browser support**   <http://caniuse.com/mutationobserver>
+    
+

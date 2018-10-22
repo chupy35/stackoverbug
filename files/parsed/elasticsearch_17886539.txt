@@ -1,0 +1,19 @@
+17886539 Is it possible to run two nodes in elasticsearch but only allow
+querying on one?
+
+We have an elastic search cluster set up with two nodes. We want the second
+node only for replication as load isn't enough to warrant a second node. All
+primary shards are on the master.
+
+Now here's the problem, every _other_ query gets forwarded to the secondary
+node. As a result, query times are doubled. I expect this is due to
+elasticsearch's load balancing.
+
+Is there a way to prevent queries from being delegated?
+
+If you specify `preference=_local` on the search request url, the request will
+be executed on the node that received the request (assuming that this node has
+required shards allocated on it). See
+<http://www.elasticsearch.org/guide/reference/api/search/preference/> for more
+information.
+

@@ -1,0 +1,138 @@
+21373293 ElasticSearch... Not So Elastic?
+
+I have used this method to build Elastic Search Clusters in the cloud. It
+works 30%-50% of the time.
+
+I start with 2 centos nodes in 2 servers in Digital Oceans Cloud. I then
+install ES and set the same cluster name in each config/elasticsearch.yml.
+Then I also set (uncomment):
+
+    
+    
+    discovery.zen.ping.multicast.enabled: false
+    
+
+as well as set and uncomment:
+
+    
+    
+    discovery.zen.ping.unicast.hosts: ['192.168.10.1:9300', '192.168.10.2:9300']
+    
+
+in each of the 2 servers. [SO Reference
+here](https://stackoverflow.com/questions/21195116/elastic-search-clustering-
+in-the-cloud)
+
+Then, to give ES the benefit of the doubt, I `service iptables stop`, then
+restart the service on each node. Sometimes the servers see each other and I
+get a """cluster""" out of elasticsearch, sometimes if not most, the servers
+dont see each other even though multicast is disabled and specific ip
+addresses are given in the unicast hosts array that have NO firewall on, and
+point to each other.
+
+WHY ES Community? Why does a _hello world_ equivalent of elastic search prove
+to be inelastic to say the least (Let me openly and readily admit this MUST be
+user error/idiocy else no one would use this technology).
+
+At first I was trying to build a simple 4 node cluster, but goodness gracious
+the issues that came along with that before indexing a single document were
+ridiculous. I had a 0% success rate. Some nodes saw some other nodes (via head
+and paramedic) while others had 'dangling indices' and 'unassigned indexes'.
+When I googled this I found tons of relevent/similar issues and no workable
+answers.
+
+Can someone send me an example of how to build an elastic search cluster, that
+works?
+
+> @Ben_Lim's Answer: Did everyone who needs this as a resource get that? I
+took 1 node (This is not for Prod) Server1 and changed the following in
+/config/elasticsearch.yml settings:
+
+>
+
+>   1. uncomment node.master: true
+
+>
+
+>   2. uncomment and set network.host: 192.XXX.1.10
+
+>
+
+>   3. uncomment transport.tcp.port: 9300
+
+>
+
+>   4. uncomment discovery.zen.ping.multicast.enabled: false
+
+>
+
+>   5. uncomment and set discovery.zen.ping.unicast.hosts:
+["192.XXX.1.10:9300"]
+
+>
+
+>
+
+>
+
+> That sets the master, okay, then in each subsequent node (example above)
+that wants to join --
+
+>
+
+>   1. uncomment node.master: false
+
+>
+
+>   2. uncomment and set network.host: 192.XXX.1.11
+
+>
+
+>   3. uncomment transport.tcp.port: 9301
+
+>
+
+>   4. uncomment discovery.zen.ping.multicast.enabled: false
+
+>
+
+>   5. uncomment and set discovery.zen.ping.unicast.hosts:
+["192.XXX.1.10:9300"]
+
+>
+
+>
+
+>
+
+> Obviously make sure all nodes have same cluster name and you iptables
+firewalls etc are setup right.
+
+    
+    
+    NOTE AGAIN -- This is not for prod, but a way to start testing ES in Cloud, you can tighten up the screws from here 
+    
+
+The most probable problem you met is the 9300 port is used by other
+application or the master node is not started at port 9300 , therefore they
+can't communicate with each other.
+
+When you start 2 ES nodes to build up an cluster, one node must be elected to
+Master node. The master node will have a communication address: hostIP:post.
+For example:
+
+    
+    
+    [2014-01-27 15:15:44,389][INFO ][cluster.service          ] [Vakume] new_master [Vakume][FRtqGG4xSKGbM_Yw9_oBLg][inet[/10.0.0.10:9302]], reason: zen-disco-join (elected_as_master)
+    
+
+When you need to start another node to build up a cluster, you can try to
+specific the master IP:port, like the example above you need to set
+
+    
+    
+    discovery.zen.ping.unicast.hosts: ["10.0.0.10:9302"]
+    
+
+Then the second node can find the master node and join the cluster.
+

@@ -1,0 +1,35 @@
+26470030 How can I access query parameters for the Health endpoint?
+
+I'm trying to pass a query parameter to the health endpoint. Is this possible?
+For example, `http://localhost/health?id=asdfasdf`
+
+I want to access the id in the health() method.
+
+    
+    
+    @Override
+    public Health health() {
+       //access id here.
+    }
+    
+
+Thanks,
+
+Jerry
+
+A Spring Boot endpoint is designed to be exposed to clients via a number of
+different techniques. For example both HTTP and JMX are supported out of the
+box. This means that using something that's HTTP-specific in an endpoint isn't
+a good idea.
+
+That said, if you _really_ want to provide a `HealthIndicator` that's HTTP-
+specific you should be able to use Spring's `RequestContextHolder` to get hold
+of a `ServletRequestAttributes` instance for the current request. From there
+you can access the `HttpServletRequest` and call `getQueryString()`:
+
+    
+    
+    String queryString = (((ServletRequestAttributes) RequestContextHolder
+                .getRequestAttributes()).getRequest().getQueryString());
+    
+

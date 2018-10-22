@@ -1,0 +1,45 @@
+19435310 Why those ElasticSearch queries doesn't return the same results?
+
+This request returns object:
+
+    
+    
+    {
+    "query" : {
+        "match" : {
+            "docId" : "56696636"
+        }
+    }
+    }
+    
+
+But this returns nothing:
+
+    
+    
+    {
+    "query" : 
+    {
+        "bool" : 
+        {
+            "must" : 
+                {
+                    "ids" : 
+                    {
+                        "type" : "docId",
+                        "values" : [ "56696636" ]
+                    }
+                }
+        }
+    }
+    }
+    
+
+I'm new in ElasticSearch, but in my opinion both of them should return the
+same. Why they don't?
+
+(I'm using elasticsearch 0.90.5)
+
+Sorry, I missed this part of documentation : ids query can be used only to
+search by ID
+

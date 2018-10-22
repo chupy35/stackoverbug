@@ -1,0 +1,6 @@
+19112625 Frequent Update with ElasticSearch
+
+If my application requires frequent update of the data (say every 1 min), is
+relying on ElasticSearch update too expensive when compared with another
+option like MongoDB?
+

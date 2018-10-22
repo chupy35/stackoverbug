@@ -1,0 +1,385 @@
+20602010 JSP file not rendering in Spring Boot web application
+
+I have a Spring Boot web application up and running using embedded Tomcat (the
+default). When it serves up JSP files as part of rendering the view I
+specified in my controller, the JSPs are not being rendered as such, and
+instead print out the contents. For example:
+
+**index.jsp**
+
+    
+    
+    <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+    <!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>Test</body>
+    </html>
+    
+
+When the view is rendered in the browsers, the contents above are displayed,
+instead of the expected contents:
+
+    
+    
+    Test
+    
+
+Make sure that your `pom.xml` specifies the Tomcat JSP dependency as follows:
+
+    
+    
+    <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-jasper</artifactId>
+        <scope>provided</scope>
+    </dependency>
+    
+
+It seems that embedded Tomcat treats the JSP rendering as optional.
+
+As mentioned below, this JAR is sometimes necessary as well:
+
+    
+    
+    <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>jstl</artifactId>
+        <scope>provided</scope>
+    </dependency>
+    
+
+(I added provided since this JAR should be included by the servlet container.
+
+You will need not one but two dependencies (jasper and jstl) in your `pom.xml`
+for this to work.
+
+    
+    
+       <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
+    </dependencies>
+    
+
+Better you can use gradle (which is catching up over Maven). Use this
+dependency in build.gradle file.
+
+> //Required dependency for JSP
+
+    
+    
+    providedRuntime 'org.apache.tomcat.embed:tomcat-embed-jasper'
+    
+
+Worked for me too but, I had to remove
+
+    
+    
+    <scope>provided</scope>
+    
+    <dependency>
+      <groupId>org.apache.tomcat.embed</groupId>
+      <artifactId>tomcat-embed-jasper</artifactId>
+    </dependency>
+    
+
+For me worked the same like Dan mentioned. Removing the **provided** scope.
+
+    
+    
+    <dependency>
+      <groupId>org.apache.tomcat.embed</groupId>
+      <artifactId>tomcat-embed-jasper</artifactId>
+    </dependency>
+    
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>jstl</artifactId>
+    </dependency>
+    
+
+Thanks guy's!
+
+I resolved my issue when in addition to described before:
+
+    
+    
+    <dependency>
+           <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+           <scope>provided</scope>
+    </dependency>
+    
+
+`added ViewResolver: `
+
+    
+    
+    @Configuration
+    @ComponentScan
+    @EnableWebMvc
+    public class SpringServletConfig {
+        @Bean
+        public InternalResourceViewResolver resolver() {
+            InternalResourceViewResolver vr = new InternalResourceViewResolver();
+            vr.setPrefix("/WEB-INF/jsps/");
+            vr.setSuffix(".jsp");
+            return vr;
+        }
+    }
+    
+
+from: [Why does Spring MVC respond with a 404 and report "No mapping found for
+HTTP request with URI [...] in
+DispatcherServlet"?](https://stackoverflow.com/questions/41577234/why-does-
+spring-mvc-respond-with-a-404-and-report-no-mapping-found-for-http-
+req/42785538)
+
+I faced the issue like printed the jsp file name in the browser instead of its
+contents.
+
+By adding the below snippet for jsp page rendering in pom.xml , it renders
+properly.
+
+    
+    
+    <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-jasper</artifactId>
+    </dependency>
+    
+
+I think you missed some configuration because it is easy to integrate JSP just
+follow below steps
+
+1 - tomcat-embad-jasper dependency
+
+    
+    
+    <dependency>
+          <groupId>org.apache.tomcat.embed</groupId>
+          <artifactId>tomcat-embed-jasper</artifactId>
+          <scope>provided</scope>
+    </dependency>
+    
+
+2 - Add below configuration is application.properties
+
+    
+    
+    spring.mvc.view.prefix: /
+    spring.mvc.view.suffix: .jsp
+    
+
+That's it still have some doubt then check it out below link
+
+[Spring Boot and JSP Integration](https://www.youtube.com/watch?v=r3iy9XHwGQA)
+
+Just change the dependency
+
+    
+    
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    
+
+to
+
+    
+    
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+    
+        </dependency>
+    
+
+Full gradle setup for Spring-Boot with Spring-MVC and with embedded Tomcat
+server:
+
+build.gradle
+
+    
+    
+    buildscript {
+        ext {
+            springBootVersion = '1.5.8.RELEASE'
+        }
+        repositories {
+            mavenCentral()
+        }
+        dependencies {
+            classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        }
+    }
+    
+    
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    
+    
+    //WEB-MVC
+    compile 'org.springframework.boot:spring-boot-starter-web:1.5.8.RELEASE'
+    compile 'org.apache.tomcat.embed:tomcat-embed-jasper:9.0.1'
+    compile 'javax.servlet:jstl:1.2'
+    
+
+App.class
+
+    
+    
+    @SpringBootApplication
+    public final class App {
+    
+        public static void main(final String[] args) {
+            new SpringApplicationBuilder(App.class)
+                    .build(args)
+                    .run();
+        }
+        @Bean
+        public ViewResolver viewResolver() {
+             final InternalResourceViewResolver r = new InternalResourceViewResolver();
+             r.setPrefix("/WEB-INF/jsp/");
+             r.setSuffix(".jsp");
+             return r;
+        }
+    
+    }
+    
+
+Sometimes tomcat-embed-jasper not available so need to remove provided from
+the maven dependency of tomcat-embed-jasper.
+
+eg.
+
+    
+    
+    <dependency>
+       <groupId>org.apache.tomcat.embed</groupId>
+       <artifactId>tomcat-embed-jasper</artifactId>
+       <!--scope>provided</scope-->
+    </dependency>
+    
+
+If you want to use 1.5.8.RELEASE or similar, then, runable example and its
+explanation is in here <https://www.surasint.com/spring-boot-jsp/>
+
+You just need this in pom.xml
+
+http://maven.apache.org/xsd/maven-4.0.0.xsd"> 4.0.0 org.springframework.boot
+spring-boot-starter-parent 1.5.8.RELEASE
+
+    
+    
+    <groupId>com.surasint.example</groupId>
+    <artifactId>spring-boot-02</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+    <properties>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- JSP -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- jstl for jsp -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+    
+
+And this in application.properties
+
+    
+    
+    spring.mvc.view.prefix: /WEB-INF/jsp/
+    spring.mvc.view.suffix: .jsp
+    
+
+Then you keep your jsp in the /WEB-INF/jsp/ folder.
+
+This is the controller.
+
+    
+    
+    package com.surasint.example.web.controller;
+    
+    import org.springframework.stereotype.Controller;
+    import org.springframework.web.bind.annotation.GetMapping;
+    
+    import java.util.Date;
+    import java.util.Map;
+    
+    @Controller
+    public class TestController {
+    
+        @GetMapping("/testjsp")
+        public String list(Map<String, Object> model) {
+            model.put("this_time",new Date().toString());
+            return "testjsp-view";
+        }
+    }
+    
+    
+    
+    <servlet>
+      <servlet-name>appServlet</servlet-name>
+      <servlet-class>org.springframework.web.servlet.DispatcherSe rvlet</servlet-class>
+      <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+    <servlet-mapping>
+      <servlet-name>appServlet</servlet-name>
+      <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+    
+      I took the * off so it was just  from web.xml
+    
+    
+    <servlet>
+      <servlet-name>appServlet</servlet-name>
+      <servlet-class>org.springframework.web.servlet.DispatcherSe rvlet</servlet-class>
+      <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+    <servlet-mapping>
+      <servlet-name>appServlet</servlet-name>
+      <url-pattern>/</url-pattern>
+    </servlet-mapping>
+    
+

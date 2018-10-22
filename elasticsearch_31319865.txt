@@ -1,0 +1,4 @@
+31319865
+Co-locating related entities on the same shard
+<p>How does one co-locate related entities on different indexes (or even different types on the same index), so that they are both on the same shard?</p>&#xA;&#xA;<p>For example, lets say that there are two entity types:</p>&#xA;&#xA;<pre><code>Customer&#xA;&#xA;Orders&#xA;</code></pre>&#xA;&#xA;<p>In order to enhance performance, all <code>Orders</code> entities related to a specific customer should be located on the same shard as the <code>Customer</code> entity itself.</p>&#xA;&#xA;<p>How is this done?</p>&#xA;&#xA;<p>Thanks</p>&#xA;
+<p>You should explicitly add a <a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/routing-value.html" rel="nofollow">routing value</a> when you index each document so that they are stored on the same shard. This is only possible if the types exist in the same index.</p>&#xA;

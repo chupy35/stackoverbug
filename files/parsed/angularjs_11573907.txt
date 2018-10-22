@@ -1,0 +1,35 @@
+11573907 Trying to add a "Like" count for a song with AngularJS
+
+Currently off the EmberJS wagon for now, and checking out AngularJS. I was
+trying to create a list of song titles with a "Like" link next to them. When
+you click on "Like" a count for the number of likes is listed next to the song
+title. Here's my jsfiddle and thanks for your help!
+<http://jsfiddle.net/stevenng/SpQH5/7/>
+
+Making your $scope.like function do this will work
+(<http://jsfiddle.net/SpQH5/9/>):
+
+    
+    
+    $scope.like = function (song) {
+        song.like += 1;
+    };
+    
+
+Due to Angular's data-binding `{{song.like}}` is automatically updated in the
+DOM when `song.like` is incremented.
+
+* * *
+
+Note you can also accomplish this without a scope function by incrementing
+`song.like` in the `ng-click` directly like in [this
+fiddle](http://jsfiddle.net/SpQH5/15/):
+
+    
+    
+      <div class="song" ng-repeat="song in songs">
+        <a href="#" ng-click="song.like = song.like + 1">like</a> ({{song.like}}) 
+        <h3>{{song.title}}</h3>
+      </div>
+    
+

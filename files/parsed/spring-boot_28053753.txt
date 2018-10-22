@@ -1,0 +1,261 @@
+28053753 Spring boot server port range setting
+
+Is it possible to set an acceptable range for the server.port in the
+application.yml file for a spring boot application.
+
+I have taken to setting server.port=0 to get an automatically assigned port
+rather than a hard coded one.
+
+Our network ops people want to restrict the available range for this port
+assignment.
+
+Any idea?
+
+Just implement `EmbeddedServletContainerCustomizer`
+<http://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-
+developing-web-applications.html#boot-features-programmatic-embedded-
+container-customization>
+
+Of course you can make improvements to `public static boolean available(int
+port)` below that checks availability of the port because some ports though
+available are sometimes denied like port 1024, OS dependent, also range can be
+read from some properties file but not with Spring because range is set before
+context is loaded, but that should not be a problem, I put everything in one
+file to show approach not to make it look pretty
+
+    
+    
+    @Configuration
+    @ComponentScan
+    @EnableAutoConfiguration
+    
+    
+    public class DemoApplication {
+    
+        private static final int MIN_PORT = 1100; // to by set according to your
+        private static final int MAX_PORT = 9000; // needs or uploaded from
+        public static int myPort; // properties whatever suits you
+    
+        public static void main(String[] args) {
+    
+        int availablePort = MIN_PORT;
+        for (availablePort=MIN_PORT; availablePort < MAX_PORT; availablePort++) {
+            if (available(availablePort)) {
+    
+                break;
+            }
+        }
+        if (availablePort == MIN_PORT && !available(availablePort)) {
+            throw new IllegalArgumentException("Cant start container for port: " + myPort);
+    
+        }
+        DemoApplication.myPort = availablePort;
+    
+        SpringApplication.run(DemoApplication.class, args);
+    }
+    
+        public static boolean available(int port) {
+            System.out.println("TRY PORT " + port);
+            // if you have some range for denied ports you can also check it
+            // here just add proper checking and return 
+            // false if port checked within that range
+            ServerSocket ss = null;
+            DatagramSocket ds = null;
+            try {
+                ss = new ServerSocket(port);
+                ss.setReuseAddress(true);
+                ds = new DatagramSocket(port);
+                ds.setReuseAddress(true);
+                return true;
+            } catch (IOException e) {
+            } finally {
+                if (ds != null) {
+                    ds.close();
+                }
+    
+                if (ss != null) {
+                    try {
+                        ss.close();
+                    } catch (IOException e) {
+                        /* should not be thrown */
+                    }
+                }
+            }
+    
+            return false;
+        }
+    
+    }
+    
+
+and this is most important part:
+
+    
+    
+    @Component
+    class CustomizationBean implements EmbeddedServletContainerCustomizer {
+    
+        @Override
+        public void customize(ConfigurableEmbeddedServletContainer container) {
+    
+            container.setPort(DemoApplication.myPort);
+    
+        }
+    
+    }
+    
+
+Following both user1289300 and Dave Syer, I used the answers to formulate one
+solution. It is supplied as a configuration that reads from the
+application.yml file for the server section. I supplied a port range min and
+max to choose from. Thanks again
+
+    
+    
+        @Configuration
+    
+
+@ConfigurationProperties("server") public class EmbeddedServletConfiguration{
+
+    
+    
+    /*
+        Added EmbeddedServletContainer as Tomcat currently. Need to change in future if  EmbeddedServletContainer get changed
+     */
+    private final int MIN_PORT = 1100;
+    private final int MAX_PORT = 65535;
+    /**
+     * this is the read port from the applcation.yml file
+     */
+    private int port;
+    /**
+     * this is the min port number that can be selected and is filled in from the application yml fil if it exists
+     */
+    private int maxPort = MIN_PORT;
+    
+    /**
+     * this is the max port number that can be selected and is filled
+     */
+    private int minPort = MAX_PORT;
+    
+    /**
+     * Added EmbeddedServletContainer as Tomcat currently. Need to change in future if  EmbeddedServletContainer get changed
+     *
+     * @return the container factory
+     */
+    @Bean
+    public EmbeddedServletContainerFactory servletContainer() {
+        return new TomcatEmbeddedServletContainerFactory();
+    }
+    
+    @Bean
+    public EmbeddedServletContainerCustomizer containerCustomizer() {
+            return new EmbeddedServletContainerCustomizer() {
+            @Override
+            public void customize(ConfigurableEmbeddedServletContainer container) {
+                // this only applies if someone has requested automatic port assignment
+                if (port == 0) {
+                    // make sure the ports are correct and min > max
+                    validatePorts();
+                    int port = SocketUtils.findAvailableTcpPort(minPort, maxPort);
+                    container.setPort(port);
+                }
+               container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404"));
+               container.addErrorPages(new ErrorPage(HttpStatus.FORBIDDEN, "/403"));
+    
+            }
+        };
+    }
+    
+    /**
+     * validate the port choices
+     * - the ports must be sensible numbers and within the alowable range and we fix them if not
+     * - the max port must be greater than the min port and we set it if not
+     */
+    private void validatePorts() {
+        if (minPort < MIN_PORT || minPort > MAX_PORT - 1) {
+            minPort = MIN_PORT;
+        }
+    
+        if (maxPort < MIN_PORT + 1 || maxPort > MAX_PORT) {
+            maxPort = MAX_PORT;
+        }
+    
+        if (minPort > maxPort) {
+            maxPort = minPort + 1;
+        }
+    }
+    
+
+}
+
+With this solution, the application choosing her own Port. I don't understand
+why it get "-1", because it runs perfect.
+
+    
+    
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+    import org.springframework.beans.factory.annotation.Value;
+    import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
+    import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
+    import org.springframework.context.annotation.Configuration;
+    import org.springframework.util.SocketUtils;    
+    
+    @Configuration
+    
+       class PortRangeCustomizerBean implements EmbeddedServletContainerCustomizer 
+    {
+    
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    
+    @Value("${spring.port.range.min}")
+    private int MIN_PORT;
+    
+    @Value("${spring.port.range.max}")
+    private int MAX_PORT;
+    
+    @Override
+    public void customize(ConfigurableEmbeddedServletContainer container) {
+        int port = SocketUtils.findAvailableTcpPort(MIN_PORT, MAX_PORT);
+        logger.info("Started with PORT:\t " + port);
+        container.setPort(port);
+    }
+    
+
+}
+
+There is challenges in spring boot project, we can not add this feature to
+spring boot at the moment, If you have any solution please contribute.
+
+[Spring boot server port range support Pull
+Request](https://github.com/spring-projects/spring-boot/pull/9403)
+
+We have done this in Spring Boot 1.5.9 using
+EmbeddedServletContainerCustomizer and something as follows:
+
+    
+    
+    @Bean
+    public EmbeddedServletContainerCustomizer containerCustomizer() {
+        return (container -> {
+            try {
+    
+                // use defaults if we can't talk to config server
+                Integer minPort = env.getProperty("minPort")!=null ? Integer.parseInt(env.getProperty("minPort")) : 7500;
+                Integer maxPort = env.getProperty("maxPort")!=null ? Integer.parseInt(env.getProperty("maxPort")) : 9500;
+                int port = SocketUtils.findAvailableTcpPort(minPort,maxPort);
+                System.getProperties().put("server.port", port);
+                container.setPort(port);
+            } catch (Exception e) {
+                log.error("Error occured while reading the min & max port form properties : " + e);
+                throw new ProductServiceException(e);
+            }
+    
+        });
+    }
+    
+
+However this does not seem to be possible in Spring Boot 2.0.0.M7 and we are
+looking for an alternative way.
+

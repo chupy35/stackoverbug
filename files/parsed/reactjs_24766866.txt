@@ -1,0 +1,34 @@
+24766866 ReactJs: Set data- attributes on elements without JSX
+
+React supports data-* and aria-* attributes on elements. When using the
+component API, I would guess these attributes could be set just like the rest:
+
+    
+    
+    React.DOM.div({style: {...}, dataMyFoo: 'bar'}, ...)
+    
+
+Nope. That doesn't work. The `dataMyFoo` attribute is silently ignored. I read
+somewhere that these need to be all lowercase. How about:
+
+    
+    
+    React.DOM.div({style: {...}, datamyfoo: 'bar'}, ...)
+    
+
+Again, silently ignored.
+
+Is this possible? If so, what is the secret? I spent quite a while searching
+without finding the answer.
+
+The answer, it turns out, is to use hyphen-separated all lowercase names for
+the data attribute, like so:
+
+    
+    
+    React.DOM.div({style: {...}, 'data-my-foo': 'bar'}, ...)
+    
+
+Note that you must quote the attribute name in this case, since hyphens are
+not allowed in identifiers in Javascript.
+

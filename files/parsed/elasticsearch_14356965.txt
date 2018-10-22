@@ -1,0 +1,11 @@
+14356965 eleastic search 10 hits only
+
+I am using elasticsearch for the first time but when I do a search I am
+getting a JSON response from elastic search which gives me the first 10
+results. How do I then request the next 10 results and so on?
+
+Ive looked on the API but this dosn't give much insight.
+
+You can use `size` and `from` parameter -
+<http://www.elasticsearch.org/guide/reference/api/search/from-size.html>
+

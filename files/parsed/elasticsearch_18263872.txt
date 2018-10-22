@@ -1,0 +1,25 @@
+18263872 transport_address not matching unicast host values in elasticsearch
+
+Hi Elastic Search users,
+
+We are seeing a rather strange issue. I have reviewed the email archives and I
+do not see this issue addressed already. We have
+discovery.zen.ping.multicast.enabled: false in our elasticsearch.yml. The
+cluster comes up and the state is green, and the nodes are aware of each
+other.
+
+The strangeness is that the transport_address value returned in the cluster
+state query does not match the values in discovery.zen.ping.unicast.hosts - it
+is using a different interface on the machines.
+
+Does anyone have any insight?
+
+Values in `discovery.zen.ping.unicast.hosts` are used only for initial
+discovery. In other words they are used by a node to find other nodes in the
+cluster. An interface that a particular node is binding to or publishing for
+other nodes to use doesn't depend on `discovery.zen.ping.unicast.hosts` but
+instead it is controlled by `network.host`, `network.bind_host` and
+`network.publish_host` settings. See the
+[network](http://www.elasticsearch.org/guide/reference/modules/network/)
+section of Elasticsearch guide for more information.
+

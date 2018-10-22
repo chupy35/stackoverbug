@@ -1,0 +1,30 @@
+24647410 How to insert data into the index in ElasticSearch using Java
+
+I am new to the Elastic Search. I had done insert, update and search through
+using CURL. I need to know how can I implement this by using java. Are there
+any methods?
+
+Thank you
+
+I will give you an example from elasticsearch official documentation :
+
+    
+    
+    import static org.elasticsearch.common.xcontent.XContentFactory.*;
+    
+    IndexResponse response = client.prepareIndex("twitter", "tweet", "1")
+        .setSource(jsonBuilder()
+                    .startObject()
+                        .field("user", "kimchy")
+                        .field("postDate", new Date())
+                        .field("message", "trying out Elasticsearch")
+                    .endObject()
+                  )
+        .execute()
+        .actionGet();
+    
+
+For more details please check the official [Elasticsearch Java API
+page](http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/index.html).
+

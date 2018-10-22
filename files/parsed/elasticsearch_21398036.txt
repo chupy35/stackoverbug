@@ -1,0 +1,30 @@
+21398036 elasticsearch : Class not found exception
+
+My elastic search is running.
+
+But when I do this :
+
+    
+    
+    curl -XPUT "http://127.0.0.1:9200/movies/movie/1" -d'
+     {
+         "title": "The Godfather",
+         "director": "Francis Ford Coppola",
+         "year": 1972
+     }'
+    
+
+This error is coming.
+
+{"error":"IndexCreationException[[movies] failed to create index]; nested:
+NoClassDefFoundError[Could not initialize class
+org.elasticsearch.index.codec.postingsformat.PostingFormats]; ","status":500}
+
+It could happen if you mix jar files and bring other Lucene dependencies then
+the ones required or if you only add elasticsearch jar to your Java project.
+
+It's hard to say here as we don't know how you installed elasticsearch and
+which version you are using.
+
+Same command works fine for me.
+

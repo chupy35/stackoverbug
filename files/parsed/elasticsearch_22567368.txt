@@ -1,0 +1,80 @@
+22567368 Elasticsearch - indexing and searching on postal addresses
+
+I am creating an elasticsearch index from a database table using the jdbc-
+river plugin, which is touching a customer table joined with a customer's
+address table, a one-to-many relationship
+
+Currently, the database has separate fields for address information into
+street1, street2, street3, city, state, zip respectively
+
+here is a snippet of the search i conduct on customers and their addresses, i
+am conducting a boolean query that should multi-match on the street fields,
+and match queries on the others, minimum should match of 3
+
+    
+    
+       "query": {
+          "bool": {
+             "should": [
+                {
+                   "match": {
+                      "FIRST_NAME": {
+                         "query": "James"
+                      }
+                   }
+                },
+                {
+                   "match": {
+                      "LAST_NAME": "Smith"
+                   }
+                },
+            {
+               "multi_match": {
+                  "query": "10020 Pacific Mesa",
+                  "fields": [
+                     "STREET1",
+                     "STREET2",
+                     "STREET3"
+                  ]
+               }
+            },
+            {
+               "match": {
+                  "CITY": "San Diego"
+               }
+            },
+            {
+               "match": {
+                  "STATE_CODE": "CA"
+               }
+            },
+            {
+                   "match": {
+                      "ZIPCODE": "92121"
+                   }
+                }
+             ],
+             "minimum_should_match": "3"
+          }
+       }
+    }
+    
+
+While this works, it can provide high scores for customers who match the first
+name, city and zipcode, as they have met the criteria of minimum 3 matches
+
+My question is, how can I improve on this setup?
+
+Ideas/Questions i had were:
+
+  1. is it an issue of boosting , say street over state/zip?
+  2. Should i be ignoring state altogether, since zip should correlate to state anyways?
+  3. Should i just be indexing all of the street fields together as one rather than performing a multi-match on three fields
+  4. Is match good enough, or should i be looking into creating synonyms , as user input could be "112 Second Ave" versus "112 **2nd** Avenue"
+
+I honestly am just looking for suggestions and guides for making the highest
+quality search, I attempted looking for examples but found no relevant info
+regarding postal address indexing
+
+Anyways, thanks for your time
+

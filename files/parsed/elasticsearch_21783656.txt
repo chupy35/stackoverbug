@@ -1,0 +1,85 @@
+21783656 Searching all fields in a nested object in ElasticSearch
+
+Suppose I have a record that looks like this:
+
+    
+    
+    {
+        "title": "Random title",
+        "authors": [
+            {
+                "first": "Jordan",
+                "last": "Reiter"
+                … more fields here …
+            },
+            {
+                "first": "Joe",
+                "last": "Schmoe"
+                … more fields here …
+            },
+        ] 
+    }
+    
+
+I would like users to be able to search records by author, and if they enter
+the full query Jordan Reiter it pulls up this record (and others where at
+least one of the authors matches these fields.
+
+I don't want the user to have to specify the first/last field and I won't
+necessarily know if they are searching `Jordan Reiter` `Reiter Jordan` or even
+`J Reiter` so ideally I'd like to match all of these cases while still
+filtering it so that, for example, none of these records match:
+
+    
+    
+    {
+        "title": "About Jordan Reiter",
+        "authors": [
+            {
+                "first": "Susan",
+                "last": "Schmusan"
+                … more fields here …
+            }
+        ] 
+    }
+    
+    
+    {
+        "title": "Completely different authors",
+        "authors": [
+            {
+                "first": "Robert",
+                "last": "Jordan"
+                … more fields here …
+            },
+            {
+                "first": "Samuel",
+                "last": "Reiter"
+                … more fields here …
+            },
+        ] 
+    }
+    
+
+Just starting out in ElasticSearch so if there's a basic concept I'm missing
+let me know.
+
+I'm planning on having the authors field be a nested type.
+
+multi match query on first and last, I guess:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-multi-match-query.html> (with phrase_prefix clause, perhaps) wrapped into
+a nested query:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-nested-query.html>
+
+And you have to provide a mapping that would explicitly specify that your
+"authors" is a nested type:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+nested-type.html>
+
+If you don't map authors as a nested type, then ElasticSearch will internally
+create a long list of all "first" and a long list of all "last" values, so you
+would not be able to match on a combination of a specific "first" and "last"
+field.
+

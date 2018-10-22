@@ -1,0 +1,59 @@
+21341234 How to achieve where in query in elastic search
+
+I just successfully imported my data to ES, e,g. It looks like this:
+
+    
+    
+    "activity": 'viewed',
+    "sessionId": "000000143198107b3fe510b041138cd33fdd9252aab9808c",
+    "campaign_id":""
+    ,
+    
+    "activity": 'campaign_viewed',
+    "sessionId": "000000143198107b3fe510b041138cd33fdd9252aab9808c",
+    "campaign_id":"my_campaign"
+    
+
+As you can see, the two entries has the same `sessionId`, and since the second
+entry has a `campaign_id`, i will assume the first activity(viewed) is also
+generated from the campaign. So how can i do count like: (count the activities
+that are generated from campaign):
+
+    
+    
+    count(activity)
+    where sessionId in (select sessionid from index where campaign_id="m_campaign") ?
+    
+
+or to put in another way:
+
+> "count all the activities within the same session only if in this session
+there is an 'activity=campaign_viewed'.
+
+I know ES will have aggregation available soon. but not sure whether that
+would solve this kind of issue.
+
+P.S. The possible solution I am thinking of is: 1\. get data into bucket by
+sessionId, meantime doing count, and max on the campaignId field so that i can
+have group of data like:
+
+    
+    
+    6, session1, my_campaign_1
+    5, session2, my_campaign_1
+    6, session1, null (assume its the result of max on empty string) 
+    
+
+2 then do another aggregation on the campaign_d field of the bucket data
+generated in step1 and exclude all those data whose campaign_id is null. the
+the final result would be:
+
+    
+    
+    11, my_campiagn_1
+    
+
+But I am not sure whether this could be done in ES.
+
+Thanks much! Chen
+

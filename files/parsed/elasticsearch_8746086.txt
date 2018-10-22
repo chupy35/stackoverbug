@@ -1,0 +1,60 @@
+8746086 debugging elasticsearch
+
+I'm using tire and elasticsearch. The service has started using port 9200.
+However, it was returning 2 errors:
+
+    
+    
+    "org.elasticsearch.search.SearchParseException: [countries][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{"query":{"query_string":{"query":"name:"}}}]]"
+    
+
+and
+
+    
+    
+    "Caused by: org.apache.lucene.queryParser.ParseException: Cannot parse 'name:': Encountered "<EOF>" at line 1, column 5."
+    
+
+So, I reinstalled elasticsearch and the service container. Service starts
+fine.
+
+Now, when I search using tire I get no results when results should appear
+_and_ I don't receive _any_ error messages.
+
+Does anybody have any idea how I might find out what is wrong, let alone fix
+it?
+
+first of all, **you don't need to reindex anything** , in the usual cases. It
+depends how you installed and configured _elasticsearch_ , but when you
+install and upgrade eg. with
+[_Homebrew_](https://github.com/mxcl/homebrew/blob/master/Library/Formula/elasticsearch.rb),
+the data are persisted safely.
+
+Second, **no need to reinstall** anything. The error you're seeing means just
+what it says on the tin: `SearchParseException`, ie. your query is invalid:
+
+    
+    
+    {"query":{"query_string":{"query":"name:"}}}
+    
+
+Notice that you didn't pass any query string for the name qualifier. You have
+to pass something, eg:
+
+    
+    
+    {"query":{"query_string":{"query":"name:foo"}}}
+    
+
+or, in Ruby terms:
+
+    
+    
+    Tire.index('test') { query { string "name:hey" } }
+    
+
+See [this update to the Railscasts episode on
+Tire](https://github.com/karmi/railscasts-
+episodes/commit/a2e45741d7e2ed82dffc88b6e2512655106f35a7) for an example how
+to catch errors due to incorrect Lucene queries.
+

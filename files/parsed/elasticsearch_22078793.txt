@@ -1,0 +1,137 @@
+22078793 ElasticSearch filter by array item
+
+I have the following record in ES:
+
+    
+    
+    "authInput" : {
+        "uID" : "foo",
+        "userName" : "asdfasdfasdfasdf",
+        "userType" : "External",
+        "clientType" : "Unknown",
+        "authType" : "Redemption_regular",
+        "uIDExtensionFields" : 
+        [
+            {
+                "key" : "IsAccountCreation",
+                "value" : "true"
+            }
+        ],
+        "externalReferences" : []
+    }
+    
+
+"uIDExtensionFields" is an array of key/value pairs. I want to query ES to
+find all records where:
+
+  1. "uIDExtensionFields.key" = "IsAccountCreation"
+  2. AND "uIDExtensionFields.value" = "true"
+
+This is the filter that I think I should be using but it never returns any
+data.
+
+    
+    
+    GET devdev/authEvent/_search
+    {
+       "size": 10,
+        "filter": {
+            "and": {
+               "filters": [
+                  {
+                      "term": {
+                         "authInput.uIDExtensionFields.key" : "IsAccountCreation"
+                      }
+                  },
+                  {
+                   "term": {
+                      "authInput.uIDExtensionFields.value": "true"
+                   }   
+                  }
+               ]
+            }
+        }
+    }
+    
+
+Any help you guys could give me would be much appreciated.
+
+Cheers!
+
+**UPDATE: WITH THE HELP OF THE RESPONSES BELOW HERE IS HOW I SOLVED MY
+PROBLEM:**
+
+  1. lowercase the value that I was searching for. (changed "IsAccoutCreation" to "isaccountcreation")
+  2. Updated the mapping so that "uIDExtensionFields" is a nested type
+  3. Updated my filter to the following:
+
+_
+
+    
+    
+    GET devhilden/authEvent/_search
+    {
+       "size": 10,
+       "filter": {
+          "nested": {
+             "path": "authInput.uIDExtensionFields",
+             "query": {
+                "bool": {
+                   "must": [
+                      {
+                         "term": {
+                            "authInput.uIDExtensionFields.key": "isaccountcreation"
+                         }
+                      },
+                      {
+                         "term": {
+                            "authInput.uIDExtensionFields.value": "true"
+                         }
+                      }                  
+                   ]
+                }
+             }
+          }
+       }
+    }
+    
+
+There are a few things probably going wrong here.
+
+First, as mconlin points out, you probably have a mapping with the standard
+analyzer for your key field. It'll lowercase the key. You probably want to
+specify `"index": "not_analyzed"` for the field.
+
+Secondly, you'll have to use nested mappings for this document structure and
+specify the key and the value in a nested filter. That's because otherwise,
+you'll get a match for the following document:
+
+    
+    
+    "uIDExtensionFields" : [
+        {
+            "key" : "IsAccountCreation",
+            "value" : "false"
+        },
+        {
+            "key" : "SomeOtherField",
+            "value" : "true"
+        }
+    ]
+    
+
+Thirdly, you'll want to be using the `bool`-filter's `must` and not `and` to
+ensure proper cachability.
+
+Lastly, you'll want to put your filter in the `filtered`-query. The top-level
+filter is for when you want hits to be filtered, but facets/aggregations to
+not be. That's why it's renamed to `post_filter` in 1.0.
+
+Here's a few resources you'll want to check out:
+
+  * [Troubleshooting Elasticsearch searches, for Beginners](https://www.found.no/foundation/beginner-troubleshooting/) covers the first two issues.
+
+  * [Managing Relations in ElasticSearch](http://euphonious-intuition.com/2013/02/managing-relations-in-elasticsearch/) covers nested docs (and parent/child)
+
+  * [all about elasticsearch filter bitsets](http://www.elasticsearch.org/blog/all-about-elasticsearch-filter-bitsets/) covers `and` vs. `bool`.
+

@@ -1,0 +1,74 @@
+23475877 Elasticsearch: sum of each element of array
+
+I'm trying to use an elasticsearch aggregation to 'merge' an array of integers
+based on a set of filters. I have documents that look like:
+
+    
+    
+    {
+      "arr": [5, 4, 3, 2, 1],
+      "name": "test"
+    }
+    {
+      "arr": [4, 3, 2, 1, 0],
+      "name": "test"
+    }
+    {
+      "arr": [1, 0, 0, 0, 0],
+      "name": "test"
+    }
+    
+
+I want to use an aggregation (or some other es method) to return
+
+    
+    
+    {
+      "arr": [10, 7, 5, 3, 1]
+    }
+    
+
+The aggregation that has come the closest is
+
+    
+    
+    {
+      "size":0,
+      "aggs": {
+        "sum_by_index": {
+            "filter": {
+              "terms": {
+                "name": ["test"]
+              }
+            }
+          },
+          "aggs": {
+            "names": {
+              "terms": {
+                "field": "name"
+              },
+              "aggs": {
+                "arrs": {
+                  "terms": {
+                    "field": "arr"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+But this results in a sum per _value_ in the array, where I want the sum per
+_index_ of the array. Thoughts anyone?
+
+You can use `_source` in scripting to achieve the same.By default `groovy` is
+supported.
+
+    
+    
+     "script" : "_source.arr?.sum(0)"
+    
+

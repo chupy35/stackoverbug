@@ -1,0 +1,101 @@
+27667516 Spring Boot AutoConfiguration Order
+
+I am having some trouble getting some Spring configuration to be applied in
+the desired order with Spring Boot in a multi-module Maven project.
+
+I have modules A and B that are written by me and a dependency on a third
+party module that I have no control over in module C (dependencies are as
+follows: A depends on C, B depends on A)
+
+In module A I have a class annotated with `@Configuration` and also
+`@AutoConfigureBefore(ClassFromModuleD.class)`. In module B I have another
+class annotated with `@Configuration` and also
+`@AutoConfigureBefore(ClassFromModuleA.class)`
+
+I was hoping that this would result in the bean definitions in my module B
+being configured first, followed by beans in my module A configuration class
+then finally the ones in C.
+
+I also tried adding a `META-INF/spring.factories` file to both module A and B
+which declares the single configuration file present in its own module. E.g.
+for module A
+
+`org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.exmaple.moduleAConfiguration`
+
+and in module B:
+
+`org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.exmaple.moduleBConfiguration`
+
+I am not seeing the desired order of configuration, in fact, it seems to be
+the exact opposite to what I want. I have used logging statements and a
+debugger to step through and it seems the config from Module C is applied
+first, followed by A then finally B.
+
+Could anyone point out what I may have missed or if there is another way to do
+this? thanks very much in advance.
+
+Spring AutoConfiguration is used to provide a basic configuration if certain
+classes are in the classpath or not.
+
+This is used e.g. to provide a basic Jpa configuration if Hibernate is on the
+classpath.
+
+If you want to configure the order in which beans are instantiated by spring
+you can use
+
+    
+    
+    @DependsOn("A") 
+    public class B{
+    ...    
+    }
+    
+
+This would create bean "A", than "B".
+
+However, the order you desire may not be possible. You wrote :
+
+> A depends on C, B depends on A
+
+If 'depends on' means : A needs C to be instantiated,  the beans must be
+created in the following order :
+
+  1. C - because C depends on nothing
+  2. A - because A depends on C, which is already created.
+  3. B - because B depends on A, which is already created.
+
+Spring automatically detects the dependencies by analyzing the bean classes.
+
+If A has an autowired property or an cosntructor argument of type C, spring
+'knows' that it must instantiate C before A.
+
+In most cases this works good.
+
+In some cases spring cannot 'guess' the dependencies and creates beans in an
+unwanted order. Than you can 'inform' spring through the @DependsOn annotation
+about the dependency. Spring will try to change the order accordingly.
+
+In your case, if the dependencies you described are not visible for spring,
+and the dependencies are not needed to create the beans, you can try to change
+the order with @DependsOn :
+
+> A depends on C, B depends on A
+
+Could be achieved with
+
+    
+    
+    @DependsOn("C") 
+    public class A{
+       ...    
+    }
+    
+    @DependsOn("A") 
+    public class B{
+       ...    
+    }
+    
+    // C comes from another module
+    // and no need to annotate
+    
+

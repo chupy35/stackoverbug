@@ -1,0 +1,89 @@
+22230009 Elasticsearch match on property that has multiple values (array)
+
+I have an index like this
+
+    
+    
+     {
+                "_index": "entities",
+                "_type": "names",
+                "_id": "0000230799",
+                "_score": 1,
+                "_source": {
+                   "FIRST_NAME": [
+                      "Deborah",
+                      "Debbie"
+                   ],
+                   "LAST_NAME": "Jones"
+                }
+             }
+    
+
+I attempt to do a match query on the name, but unless the first name is exact,
+no hits return
+
+I would expect the below query to generate at least one hit and score it, am i
+wrong about that?
+
+    
+    
+    curl -XPOST 'http://localhost:9200/entities/names/_search?pretty=true' -d '
+    
+    {
+     "query": { 
+    
+                "match":{
+                    "FIRST_NAME":"Deb"
+                    }
+            }
+    
+    }'
+    
+
+my mappings are
+
+    
+    
+        {
+       "entities": {
+          "mappings": {
+             "names": {
+                "_parent": {
+                   "type": "entity"
+                },
+                "_routing": {
+                   "required": true
+                },
+                "properties": {
+                   "FIRST_NAME": {
+                      "type": "string"
+                   },
+                   "LAST_NAME": {
+                      "type": "string"
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+The issue here isn't related to multiple values, but your assumption that the
+`match`-query will match anything that starts with your input. It does not.
+
+In the match-family of queries there's the
+[`match_phrase_prefix`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-match-query.html#_match_phrase_prefix) that can be worth checking out. It
+is explained in a bit more detail here:
+<http://www.elasticsearch.org/blog/starts-with-phrase-matching/>
+
+There is also the
+[`prefix`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-prefix-query.html)-query, but note that it does not do any text analysis.
+
+For a general introduction to text analysis, I can recommend these two
+articles:
+
+  * <https://www.found.no/foundation/text-analysis-part-1/>
+  * <https://www.found.no/foundation/text-analysis-part-2/>
+

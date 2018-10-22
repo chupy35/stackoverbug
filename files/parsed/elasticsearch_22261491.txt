@@ -1,0 +1,211 @@
+22261491 What is the equivallent of SELECT TOP N in ElasticSearch?
+
+Assume the following schema:
+
+    
+    
+    {
+      "document" : {
+        "properties" : {
+          "DocumentTitle" : {"type":"string", "index":"not_analyzed", "analyzer":"keyword", "store":true },
+          "ReceptionDate" : {"type":"date", "format":"yyyy-MM-dd HH:mm", "store":true }
+        }
+      }
+    }
+    
+
+What i am trying to do is to fetch TOP 5 documents by reception date (thus 5
+most recent documents) however i want them to be sorted by another field
+(DocumentTitle) so simply sorting by date and limiting to 5 results is not
+enough.
+
+Is this possible through 1 query or multiple queries are required ?
+
+**UPDATE (as per Sidharthan request):**
+
+I am coming from RDMS world where this is a very common issue, solved using
+TOP or group by statements. Thus, I expected this would be a simple yes/no
+response whether ElasticSearch supports such functionality (TOP) or not.
+
+I created the demo data below to help you better understand my issue:
+
+    
+    
+    PUT http://localhost:9200/custom/
+    
+    POST http://localhost:9200/custom/document/_mapping
+    POST data:
+    {
+        "document" : {
+             "properties":{
+                 "DocumentTitle": { "type": "string", "store": true },
+                 "ReceptionDate": { "type": "date", "format" : "yyyy-MM-dd'T'HH:mmZ", "store": true }
+            }
+        }
+    }
+    
+    POST http://localhost:9200/custom/document/
+    POST data:
+    {
+        "DocumentTitle":"A.PDF",
+        "ReceptionDate":"2001-01-01T00:00+0000"
+    }
+    
+    
+    POST http://localhost:9200/custom/document/
+    POST data:
+    {
+        "DocumentTitle":"B.PDF",
+        "ReceptionDate":"2002-01-01T00:00+0000"
+    }
+    
+    POST http://localhost:9200/custom/document/
+    POST data:
+    {
+        "DocumentTitle":"C.PDF",
+        "ReceptionDate":"2003-01-01T00:00+0000"
+    }
+    
+    
+    POST http://localhost:9200/custom/document/
+    POST data:
+    {
+        "DocumentTitle":"D.PDF",
+        "ReceptionDate":"2004-01-01T00:00+0000"
+    }
+    
+    POST http://localhost:9200/custom/document/
+    POST data:
+    {
+        "DocumentTitle":"E.PDF",
+        "ReceptionDate":"2005-01-01T00:00+0000"
+    }
+    
+    POST http://localhost:9200/custom/document/
+    POST data:
+    {
+        "DocumentTitle":"F.PDF",
+        "ReceptionDate":"2006-01-01T00:00+0000"
+    }
+    
+    POST http://localhost:9200/custom/document/
+    POST data:
+    {
+        "DocumentTitle":"G.PDF",
+        "ReceptionDate":"2006-01-01T00:00+0000"
+    }
+    
+
+The result of Sidharthan's proposal is (i used URI search for shorter size in
+the post):
+
+    
+    
+    GET http://localhost:9200/custom/document/_search?q=DocumentTitle:*&sort=ReceptionDate:desc,DocumentTitle:asc&fields=ReceptionDate,DocumentTitle&size=5&pretty=true
+    
+
+\-- RESPONSE --
+
+    
+    
+    {
+      "took" : 10,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 7,
+        "max_score" : null,
+        "hits" : [ {
+          "_index" : "custom",
+          "_type" : "document",
+          "_id" : "v6gLeB9kSOCc5OgoTLT6BA",
+          "_score" : null, "_source" : {
+        "DocumentTitle":"F.PDF",
+        "ReceptionDate":"2006-01-01T00:00+0000"
+    },
+          "sort" : [ 1136073600000, "f.pdf" ]
+        }, {
+          "_index" : "custom",
+          "_type" : "document",
+          "_id" : "DJGivLtOQsW6DAGA5wgQzA",
+          "_score" : null, "_source" : {
+        "DocumentTitle":"G.PDF",
+        "ReceptionDate":"2006-01-01T00:00+0000"
+    },
+          "sort" : [ 1136073600000, "g.pdf" ]
+        }, {
+          "_index" : "custom",
+          "_type" : "document",
+          "_id" : "ic3v37xGQtydrjb-RaJl4g",
+          "_score" : null, "_source" : {
+        "DocumentTitle":"E.PDF",
+        "ReceptionDate":"2005-01-01T00:00+0000"
+    },
+          "sort" : [ 1104537600000, "e.pdf" ]
+        }, {
+          "_index" : "custom",
+          "_type" : "document",
+          "_id" : "kCcgoiodQKuxsD9n6ZGifw",
+          "_score" : null, "_source" : {
+        "DocumentTitle":"D.PDF",
+        "ReceptionDate":"2004-01-01T00:00+0000"
+    },
+          "sort" : [ 1072915200000, "d.pdf" ]
+        }, {
+          "_index" : "custom",
+          "_type" : "document",
+          "_id" : "jUYP0d3pSmSjlMqw3TsS1Q",
+          "_score" : null, "_source" : {
+        "DocumentTitle":"C.PDF",
+        "ReceptionDate":"2003-01-01T00:00+0000"
+    },
+          "sort" : [ 1041379200000, "c.pdf" ]
+        } ]
+      }
+    }
+    
+
+This is perfectly **correct result set in terms of data contained**. **BUT**
+it is in the **wrong order**.
+
+I need these items **ordered by DocumentTitle ONLY (C, D, E, F, G)**.
+
+Unless ES supports some kind of TOP, i think the only solution is to fetch the
+resultset ordered by ReceptionDate and then do manually the ordering in the
+client as kielni suggested.
+
+Use sort for both fields. First sort by `ReceptionDate` and then sort by
+`DocumentTitle`.  Try
+
+    
+    
+    {
+      "sort": [
+        {
+          "ReceptionDate": {
+            "order": "desc"
+          }
+        },
+        {
+          "DocumentTitle": "asc"
+        }
+      ],
+      "query": {
+        "term": {
+          "user": "kimchy"
+        }
+      },
+      "size": 5
+    }
+    
+
+As it seems this is not possible with ES currently.
+
+I ll proceed with fetching the result set and apply order in the client.
+
+Thank you all.
+

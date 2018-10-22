@@ -1,0 +1,130 @@
+20447087 Elasticsearch query_string exact match
+
+I have an index containing `field` video with value `1.flv`. If I do the
+following query:
+
+    
+    
+    "query": {
+        "query_string": {
+            "query": "2.flv"
+        }
+    }
+    
+
+query still returns all records with 1.flv.
+
+Can anyone point me to right solution?
+
+Here is sample data returned for 1.flv (as you can see, nothing contains
+2.flv!)
+
+    
+    
+      "hits" : {
+        "total" : 8,
+        "max_score" : 0.625,
+        "hits" : [ {
+          "_index" : "videos",
+          "_type" : "comment",
+          "_id" : "_meta",
+          "_score" : 0.625,
+          "fields" : {
+            "video" : "1.flv",
+            "body" : "Really?"
+          }
+        }, {
+          "_index" : "videos",
+          "_type" : "comment",
+          "_id" : "0fYsYOTHT7O-7P6CVi7l3w",
+          "_score" : 0.625,
+          "fields" : {
+            "video" : "1.flv",
+            "body" : "fadsfasfas"
+          }
+        }, {
+          "_index" : "videos",
+          "_type" : "comment",
+          "_id" : "O9VjgFdmQra6hYxwMdGuTg",
+          "_score" : 0.48553526,
+          "fields" : {
+            "video" : "1.flv",
+            "body" : "Search is hard. Search should be easy."
+          }
+        }, {
+          "_index" : "videos",
+          "_type" : "comment",
+          "_id" : "A6k3FEKKSzKTSAVIT-4EbA",
+          "_score" : 0.48553526,
+          "fields" : {
+            "video" : "1.flv",
+            "body" : "Really?"
+          }
+        }, {
+          "_index" : "videos",
+          "_type" : "comment",
+          "_id" : "eFnnM4PrTSyW6wfxHWdE8A",
+          "_score" : 0.48553526,
+          "fields" : {
+            "video" : "1.flv",
+            "body" : "Hello!"
+          }
+        }, {
+          "_index" : "videos",
+          "_type" : "comment",
+          "_id" : "ZogAiyanQy6ddXA3o7tivg",
+          "_score" : 0.48553526,
+          "fields" : {
+            "video" : "1.flv",
+            "body" : "dcxvxc"
+          }
+        }, {
+          "_index" : "videos",
+          "_type" : "comment",
+          "_id" : "O0HcT7aGTrqKQxF25KsOwQ",
+          "_score" : 0.37158427,
+          "fields" : {
+            "video" : "1.flv",
+            "body" : "Hello!"
+          }
+        }, {
+          "_index" : "videos",
+          "_type" : "comment",
+          "_id" : "l2d53OFITb-etooWEAI0_w",
+          "_score" : 0.37158427,
+          "fields" : {
+            "video" : "1.flv",
+            "body" : "dasdas"
+          }
+        } ]
+      }
+    }
+    
+
+What you're seeing is the result of the standard tokenizer (part of the
+default/standard analyzer), which tokenizes on among other things, the period
+character (`.`). See [this
+play](https://www.found.no/play/gist/7890922#analysis) for a quick example of
+how it's analyzed.
+
+There's many ways to accomplish what you want with Elasticsearch, such as
+updating the mapping and changing the analyzer for the `video` field to for
+example the `keyword` analyzer as mentioned above, possibly using a multi
+field type, configuring the field mapping as `index: not_analyzed`, etc, but a
+simple solution that might work well enough for you is to make sure the `AND`
+operator is being used.
+
+By default, the [query string
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html) uses the `OR` operator:
+
+> `default_operator`: The default operator used if no explicit operator is
+specified. For example, with a default operator of OR, the query capital of
+Hungary is translated to capital OR of OR Hungary, and with default operator
+of AND, the same query is translated to capital AND of AND Hungary. The
+default value is OR.
+
+So, either be explicit with the operator or set it as the default. [This
+play](https://www.found.no/play/gist/7890922) also shows both these techniques
+in action (Search #1 and Search #2-tabs in the bottom right pane).
+

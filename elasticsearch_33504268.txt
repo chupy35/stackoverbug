@@ -1,0 +1,3 @@
+33504268
+UNABLE TO ACCESS POS_OBJECT.endOffset using _OFFSETS
+<p>When using _OFFSETS in my script and "with_positions_offsets" in my mappings I'm unable to get any values for POS_OBJECT.endOffset however if I use _OFFSETS and specify "index_options":"offsets" in my mappings file I am able to get at the values. Why is this the case? I was under the impression that "with_positions_offsets" would store positions and offsets in the index.</p>&#xA;

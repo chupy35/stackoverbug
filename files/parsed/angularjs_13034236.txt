@@ -1,0 +1,57 @@
+13034236 passing data from list view to detail view in angular.js
+
+I have a typical CRUD app with separate routes and controllers for the list
+view as well as the detail views.
+
+The data for the list is retrieved using a `$resource`.
+
+Currently in my detail view controller I fetch the item from the server using
+the `$resource` which results in an extra http request.
+
+Instead, since in my list controller I already have the item that I am
+editing, I would like to pass this item from the list controller to the detail
+controller.
+
+But I do not know how. I can make one single controller for both views but
+this does not seem right.
+
+Please help.
+
+You can use a service to share data between controllers:
+
+exemple: <https://groups.google.com/d/msg/angular/IjKY_CRyRno/kP0M_LTzOTkJ>
+
+or a fiddle I wrote some time ago: <http://jsfiddle.net/XqDxG/169/>
+
+    
+    
+    myModule.factory('mySharedService', function($rootScope) {
+        var sharedService = {};
+        sharedService.data = {};
+        sharedService.data.message = '';
+    
+        return sharedService;
+    });
+    
+    function ControllerZero($scope, sharedService) {
+        // expose service data to angular scope
+        $scope.sharedData = sharedService.data;
+    
+        $scope.handleClick = function(msg) {
+            sharedService.data.message = msg;            
+        };
+    
+        $scope.$watch('sharedData.message', function(msg) {
+            $scope.message = msg;
+        });
+    }
+    
+    function ControllerOne($scope, sharedService) {
+        $scope.sharedData = sharedService.data;
+    
+        $scope.$watch('sharedData.message', function() {
+            $scope.message = 'ONE: ' + sharedService.data.message;
+        });
+    }
+    
+

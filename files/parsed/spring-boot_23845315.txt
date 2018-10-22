@@ -1,0 +1,12 @@
+23845315 Spring Boot Actuator in the traditional container
+
+Can we use the Spring Boot Actuator in the traditional shared container within
+the context of an application? If so, how would be the configuration look
+like?
+
+I have tried it by bootstrapping `EndpointWebMvcAutoConfiguration`. However,
+could not map mvc urls.
+
+There's nothing stopping you from just using it as a dependency. Any Spring
+Boot app should be able to use actuator features out of the box.
+

@@ -1,0 +1,93 @@
+15483714 Search for parts of a list in elasticsearch
+
+Say I have a list of book titles, and i want to find which of them exists in
+my index.
+
+the mapping is:
+
+    
+    
+    "book": {
+        "properties": {
+                      "title":{"type":"string"}, 
+                      "author":{"type":"string"}}}
+    
+
+I could iterate and check each one with
+
+    
+    
+    curl -XPOST 'localhost:9200/myindex/book/_search' 
+    -d '{"query":{"match":{"title":"my title"}}}
+    
+
+But assuming the list of titles i long, how can I do this in bulk and get a
+list of which ones got a hit?
+
+Run several `match` queries against your title field, combining them with a
+`bool` query:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/myindex/book/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "bool" : {
+             "should" : [
+                {
+                   "match" : {
+                      "title" : "Title one"
+                   }
+                },
+                {
+                   "match" : {
+                      "title" : "Title two"
+                   }
+                },
+                {
+                   "match" : {
+                      "title" : "Title three"
+                   }
+                }
+             ]
+          }
+       }
+    }
+    '
+    
+
+Of course, a `match` query will match on any books whose `title` field
+contains one word in the query string, so you may want to use `match_phrase`
+instead:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/myindex/book/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "bool" : {
+             "should" : [
+                {
+                   "match_phrase" : {
+                      "title" : "Title one"
+                   }
+                },
+                {
+                   "match_phrase" : {
+                      "title" : "Title two"
+                   }
+                },
+                {
+                   "match_phrase" : {
+                      "title" : "Title three"
+                   }
+                }
+             ]
+          }
+       }
+    }
+    '
+    
+
+This will search for the exact phrase: the same words in the same order.
+

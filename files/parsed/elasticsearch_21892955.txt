@@ -1,0 +1,138 @@
+21892955 Elasticsearch : Query string on field
+
+Can someone tell if I am right/wrong to check if title field contains Item
+
+    
+    
+    curl -XGET "http://localhost:9200/myapp/item/_search" -d'
+    {
+        "query": {
+            "query_string": { 
+               "query": "title:Item"
+            }
+        }
+    }'
+    
+
+EDIT
+
+I have a title like this "Economics and statistics"
+
+**This one returns a record**
+
+    
+    
+    curl -XGET "http://localhost:9200/myapp/item/_search" -d'
+    {
+        "query": {
+            "query_string": { 
+               "query": "title:*statistics*"
+            }
+        }
+    }'
+    
+
+**This one does not return anything**
+
+    
+    
+    curl -XGET "http://localhost:9200/myapp/item/_search" -d'
+    {
+        "query": {
+            "query_string": { 
+               "query": "title:statistics"
+            }
+        }
+    }'
+    
+
+**This one does not return anything either (strange)**
+
+    
+    
+    curl -XGET "http://localhost:9200/myapp/item/_search" -d'
+    {
+        "query": {
+            "query_string": { 
+               "query": "title:*Economics*"
+            }
+        }
+    }'
+    
+
+The doc says :
+
+where the status field **_contains_** active
+
+    
+    
+    status:active
+    
+
+Your query looks good. but you can also achieve same by below query.
+
+    
+    
+    curl -XGET "http://localhost:9200/myapp/item/_search" -d'
+    {
+       "query": {
+          "term": {
+             "title": {
+                "value": "Item"
+             }
+          }
+       }
+    }'
+    
+
+While looking into elasticsearch query optimizations stuff I found suggestion
+to avoid to use of `query_string` until it is necessary. also `query_string`
+is not cached by default.
+
+[Reference Article](http://euphonious-intuition.com/2013/02/five-things-i-
+learned-from-elasticsearch-training/)
+
+For beginner like me facing issues with ES : Be really careful on how you map
+/ tokenize your data. "not_analyzed" does not mean what I thought it meant and
+that lead me to the issue above.
+
+    
+    
+    you can mention a particular field in default_field
+    
+    {
+        "query_string" : {
+            "default_field" : "content",
+            "query" : "this AND that OR thus"
+        }
+    }
+    
+    if you want to specify more than one field then 
+    
+    {
+        "query_string" : {
+            "fields" : ["content", "name"],
+            "query" : "this AND that"
+        }
+    }
+    
+    
+    
+    curl -XGET "http://localhost:9200/myapp/item/_search" -d'
+    {
+        "query": {
+            "match": { 
+               "title": "statistics"
+            }
+        }
+    }'
+    
+
+This would be enough if you want to search exact terms(not exact content of
+the field). Try to avoid the usage of wildcards as it is expensive. For
+searching with a fraction of word in a field, you have to modify the mapping
+as of your need.
+
+Check your mapping and see the type of field **title** . If it is
+not_analyzed, re-index it to be **analyzed** (by default).
+

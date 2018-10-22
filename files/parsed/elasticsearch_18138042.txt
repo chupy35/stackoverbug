@@ -1,0 +1,61 @@
+18138042 Exact (not substring) matching in Elasticsearch
+
+`{"query":{ "match" : { "content" : "2" } }}` matches all the documents whole
+content contains the number 2, however I would like the content to be exactly
+2, no more no less - think of my requirement in a spirit of Java's
+String.equals.
+
+Similarly for the second query I would like to match when the document's
+content is exactly '3 3' and nothing more or less. `{"query":{ "match" : {
+"content" : "3 3" } }}`
+
+How could I do exact (String.equals) matching in Elasticsearch?
+
+Without seeing your index type mapping and sample data, it's hard to answer
+this directly - but I'll try.
+
+Offhand, I'd say this is similar to this answer here
+(<https://stackoverflow.com/a/12867852/382774>), where you simply set the
+`content` field's `index` option to `not_analyzed` in your mapping:
+
+    
+    
+    "url" : {
+        "type" : "string", 
+        "index" : "not_analyzed"
+    }
+    
+
+Edit: I wasn't clear enough with my original answer, shown above. I did not
+mean to imply that you should add the example code to your _query_ , I meant
+that you need to specify in your index type _mapping_ that the `url` field is
+of type `string` and it is indexed but not analyzed (`not_analyzed`).
+
+This tells Elasticsearch to not bother analyzing (tokenizing or token
+filtering) the field when you're indexing your documents - just store it in
+the index as it exists in the document. For more information on mappings, see
+<http://www.elasticsearch.org/guide/reference/mapping/> for an intro and
+<http://www.elasticsearch.org/guide/reference/mapping/core-types/> for
+specifics on `not_analyzed` (tip: search for it on that page).
+
+[Official
+Doc](https://www.elastic.co/guide/en/elasticsearch/guide/current/_finding_exact_values.html)
+
+You should use filter instead of match.
+
+    
+    
+    {
+    "query" : {
+        "constant_score" : { 
+            "filter" : {
+                "term" : { 
+                    "content" : 2
+                }
+            }
+        }
+    }
+    
+
+And you got docs whose content is exact 2, instead of 20 or 2.1
+

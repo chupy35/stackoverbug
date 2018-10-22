@@ -1,0 +1,3 @@
+29116211
+Embed large json file in single index elasticsearch
+<p>How can I embed json file in elasticsearch with large data nearly 300k records. I am using shell script but with this i am not able to load more than 4000 records.</p>&#xA;

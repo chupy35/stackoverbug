@@ -1,0 +1,26 @@
+15958963 What is the behaviour of arcDistance script field filter with a multi
+valued field geo_point?
+
+What is the behaviour of the script filter:
+
+    
+    
+    doc['distance'] >= doc['locations'].arcDistance(lat, lon)
+    
+
+If locations is a multi valued field of type geo_point?
+
+I would like for it to match if any of the locations meet the criteria. From
+experimentation I think it matches the first point.
+
+When you return the distance:
+
+    
+    
+    doc['locations'].arcDistance(lat, lon)
+    
+
+Which point will it pick? The first?
+
+I managed to look this up in the source code. It only uses the first location.
+

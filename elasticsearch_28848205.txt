@@ -1,0 +1,4 @@
+28848205
+Elastic search plugin
+<p>I have used the command <code>bin/plugin --url file:///PATH-TO-EXAMPLE-PLUGIN/target/releases/example-plugin-1.0-SNAPSHOT.zip --install example-plugin</code> to install my plugin, and get the jar in the subdirectory in the <code>/plugins</code>.</p>&#xA;&#xA;<p>But when I use <code>bin/elasticsearch</code> to start the elastic search, get the follow message which looks like no plugin was loaded.</p>&#xA;&#xA;<p><code>[plugins] [Marduk Kurios] loaded [], sites []</code></p>&#xA;&#xA;<p>I want to know what's the possible matter, my plugin was written according to this  <a href="https://www.found.no/foundation/writing-a-plugin/" rel="nofollow" title="tutorial">tutorial</a>.</p>&#xA;&#xA;<p>Thank you.</p>&#xA;
+<p>I have found the reason, which I get the file name of <code>es-plugin.properties</code> to <code>es-plugin.xxx</code> by mistake. </p>&#xA;

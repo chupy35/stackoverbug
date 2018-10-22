@@ -1,0 +1,35 @@
+15208719 elasticsearch/kibana query not finding text in _all index
+
+We have an elasticsearch kibana setup for storing log files. Log files are
+written using the Flume elasticsearch sink.
+
+If I search for `@fields.environment:"sm-local-mlamley"` then I find the log
+events I expect. These log events have a @message field of `2013-03-04
+10:05:41.7262|INFO|FlumePOC.Program|SM 101123123 log message fudgesicle`
+
+However, if I search for `"fudgesicle"` then I do not find them. In fact, I
+cannot find the entry even if I search for the entire @message field.
+
+How do I go about determining why elasticsearch doesn't seem to be indexing
+the data.
+
+You can query Elasticsearch directly, like this:
+
+    
+    
+    http://elasticsearch-host:port/index-name/index-type/_search?q=search-term
+    
+
+You can use wildcards for the name and type, including the empty string. And
+if you add `&pretty` to the end it'll slightly format the JSON response. So
+you might try:
+
+    
+    
+    http://elasticsearch-host:9200///_search?q=fudgesicle&pretty
+    
+
+That will show you if the log event has made it into ES at all. If it's there
+you might get some better indication as to the reason that Kibana can't find
+it.
+

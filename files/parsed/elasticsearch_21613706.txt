@@ -1,0 +1,136 @@
+21613706 date histogram of the max of the sum of a field across unique hosts
+
+I'm trying to do a date historgram of the sum of max values for a field across
+multiple values for another field. Here's an example of two matching docs:
+
+    
+    
+             {
+            "_index": "logstash-2014.02.06",
+            "_type": "xyz",
+            "_id": "HZ_2oaGvQvKWvsOLyYrGrw",
+            "_score": 1,
+            "_source": {
+               "@version": "1",
+               "@timestamp": "2014-02-05T16:01:01.260-08:00",
+               "type": "xyz",
+               "host": "compute-4.lab.solinea.com",
+               "received_at": "2014-02-05 21:01:01 UTC",
+               "received_from": "10.10.11.33",
+               "total_widgets": 24,
+            }
+         },
+         {
+            "_index": "logstash-2014.02.06",
+            "_type": "xyz",
+            "_id": "HZ_2oaGvQvKWvsOLyYrGrx",
+            "_score": 1,
+            "_source": {
+               "@version": "1",
+               "@timestamp": "2014-02-05T16:01:01.260-08:00",
+               "type": "xyz",
+               "host": "compute-3.lab.solinea.com",
+               "received_at": "2014-02-05 21:01:01 UTC",
+               "received_from": "10.10.11.32",
+               "total_widgets": 13,
+            }
+         }
+    
+
+In this case, I am looking for sum(max(total_widgets)) across unique hosts for
+this date bucket. I was trying a datehistogram, but haven't got what I was
+looking for. In this example:
+
+    
+    
+    {
+       "query": {
+          "range": {
+             "@timestamp": {
+                "gte": "2014-02-05T00:00:00+00:00",
+                "lte": "2014-03-05T00:00:00+00:00"
+             }
+          }
+       },
+       "facets": {
+          "total_widgets_facet": {
+             "date_histogram": {
+                "key_field": "@timestamp",
+                "value_field": "total_widgets",
+                "interval": "hour"
+             },
+             "facet_filter": {
+                "term": {
+                   "type": "xyz"
+                }
+             }
+          }
+       }
+    }
+    
+
+I get back a max value of 24, but I haven't quite got my head around how to
+structure the query and facet so that I am looking at the sum of the max of
+"total_widgets" across all unique hosts for a time bucket.
+
+I definitely appreciate any suggestions...
+
+I didn't find an efficient way to do this with Elasticsearch 0.90.x, but the
+following query is an example of how to use aggregations in 1.0.x to achieve
+the desired results:
+
+    
+    
+    {
+       "query": {
+          "bool": {
+             "must": [
+                {
+                   "range": {
+                      "@timestamp": {
+                         "from": "2014-02-07T00:00:00.000-00:00",
+                         "to": "2014-02-07T23:59:59.999-00:00"
+                      }
+                   }
+                },
+                {
+                   "term": {
+                      "type": "xyz"
+                   }
+                }
+             ]
+          }
+       },
+       "aggs": {
+          "events_by_host": {
+             "terms": {
+                "field": "host.raw"
+             },
+             "aggs": {
+                "events_by_date": {
+                   "date_histogram": {
+                      "field": "@timestamp",
+                      "interval": "hour"
+                   },
+                   "aggs": {
+                      "max_total_widgets": {
+                         "max": {
+                            "field": "total_widgets"
+                         }
+                      },
+                      "avg_total_widgets": {
+                         "avg": {
+                            "field": "total_widgets"
+                         }
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+I wrote a blog post on the topic here: [Elasticsearch Aggs Save the
+Day](http://www.solinea.com/blog/elasticsearch-aggs-save-the-day)
+

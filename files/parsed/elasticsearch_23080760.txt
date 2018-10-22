@@ -1,0 +1,46 @@
+23080760 Elasticsearch geo_distance filter - distance unit set to km but seems
+to calculate with meters
+
+I'm using geo_distance filter to get the points that are within a certain
+distance to a reference point. As a distance_unit I set km, however, when I'm
+running my code I'm pretty sure that Elastic calculates meters, and not
+kilometers (so in this particular case below I get the points that are within
+20 meters, not 20 kilometers).
+
+Any ideas why is it using meters rather than kilometers?
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "bool": {
+                        "must_not": [
+                            {
+                                "term": {
+                                    "_id": {
+                                        "value": idnum
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "filter": {
+                    "geo_distance": {
+                        "distance": 20,
+                        "distance_unit": "km",
+                        "geopoint": {
+                            "lat": lat,
+                            "lon": lng
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+use `"distance": "20KM", rather than distance_unit....`
+

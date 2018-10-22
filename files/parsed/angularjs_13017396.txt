@@ -1,0 +1,92 @@
+13017396 AngularJS Authentication Global Variables
+
+I am trying to implement a custom API authentication method as suggested
+below.
+
+[Password protecting a REST
+service?](https://stackoverflow.com/questions/8562223/password-protecting-a-
+rest-service?lq=1)
+
+However, I am having some trouble with the authkey. I would like to save my
+authkey received as a global variable but I can't seem to change it, it always
+become the same value as what it is defined to be at the start.
+
+I am implement global variable using angular (v0.9) service.
+
+snippet of my code
+
+    
+    
+    angular.service('Authkey', function(){
+      return {
+    "authkey": "0000"
+     };
+    });
+    
+
+controller
+
+    
+    
+    function LoginCtrl(Login_, Authkey_){
+    this.login = function(){
+    Login_.query({"Username": this.email,"Password": this.password}, function(response){
+            if (response.success === "true") {
+                Authkey_.authkey = response.AuthKey;
+                console.log(Authkey_.authkey);
+                window.location="/main.html";
+    
+            } 
+        }); 
+    }
+    }
+    
+
+Yup. It always become 0000 after the page is changed.
+
+Appreciate all help I can get. Thank you..
+
+try this:
+
+    
+    
+    angular.service('Authkey', function(){
+      var authkey = "000";
+      return {
+         getAuthKey: function(){
+            return authkey;
+         }, 
+         setAuthKey: function(key){
+            authkey = key;
+         }
+     };
+    });
+    
+    //in controller:
+    
+    Authkey_.setAuthKey(response.AuthKey);
+    consol.log(Authkey_.getAuthKey());
+    
+
+the difference here is that the AuthKey service has a closure on the key and
+you get/set that value.
+
+in your code you always return the same thing. your setting of the key in the
+service has no effect on your return value
+
+I'm not sure if this was available in Angular 0.9... but you might try using
+[Module.value(key,
+value)](http://docs.angularjs.org/api/angular.Module#value).... it allows you
+to set up a globally inject-able value.
+
+    
+    
+    var app = angular.module('myApp', []);
+    
+    app.value('token', '12345');
+    
+    app.controller('MyCtrl', function($scope, token) {
+         $scope.tokenOut = token; //still 12345.
+    });
+    
+

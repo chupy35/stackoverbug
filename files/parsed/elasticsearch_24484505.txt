@@ -1,0 +1,49 @@
+24484505 Query elasticsearch with multiple numeric ranges
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match": {
+              "log_path": "message_notification.log"
+            }
+          },
+          "filter": {
+            "numeric_range": {
+              "time_taken": {
+                "gte": 10
+              }
+            }
+          }
+        }
+      },
+      "aggs": {
+        "distinct_user_ids": {
+          "cardinality": {
+            "field": "user_id"
+          }
+        }
+      }
+    }
+    
+
+I have to run this query 20 times as i want to know notification times above
+each of the following thresholds- `[10,30,60,120,240,300,600,1200..]`. Right
+now, i am running a loop and making 20 queries for fetching this.
+
+Is there a more sane way to query elasticsearch once and get ranges that fall
+into these thresholds respectively?
+
+What you probably want is a "[range
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-range-aggregation.html)".
+
+Here is the possible query where you can add more range or alter them -
+
+`{ "size": 0, "query": { "match": { "log_path": "message_notification.log" }
+}, "aggs": { "intervals": { "range": { "field": "time_taken", "ranges": [ {
+"to": 50 }, { "from": 50, "to": 100 }, { "from": 100 } ] }, "aggs": {
+"distinct_user_ids": { "cardinality": { "field": "user_id" } } } } } }`
+

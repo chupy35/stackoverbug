@@ -1,0 +1,52 @@
+24914109 Elasticsearch: search and show results to users, Scroll API
+
+I am new to Elasticsearch. I am confused by the Scroll API at
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-scroll.html>
+
+> Scrolling is not intended for real time user requests, but rather for
+processing large amounts of data, e.g. in order to reindex the contents of one
+index into a new index with a different configuration.
+
+What I need is:
+
+  1. A user types a search phrase and clicks the search button
+  2. The program searches Elasticsearch for the first page of results
+  3. Show the first page of results to the user, and if he clicks "next page" or jumps to another later page, the program displays the results for that page.
+
+The following are two ways that I find:
+
+    
+    
+    SearchResponse scrollResp = client.prepareSearch("book")
+            .setTypes("children")
+            .setQuery(query)
+            .setSize(20).execute().actionGet();  
+    
+    SearchResponse scrollResp = client.prepareSearch("book")
+            .setTypes("children")
+            .setSearchType(SearchType.SCAN)
+            .setScroll(new TimeValue(60000))
+            .setQuery(query)
+            .setSize(20).execute().actionGet();  
+    
+
+Which should I use?
+
+Thanks and regards!
+
+You should use `from` and `size` parameters to control pagination, `from` is
+the start index, and `size` is the items per page.
+
+    
+    
+    SearchResponse scrollResp = client.prepareSearch("book")
+        .setTypes("children")
+        .setQuery(query)
+        .setFrom(20)
+        .setSize(20).execute().actionGet();  
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-from-size.html>
+

@@ -1,0 +1,22 @@
+18625434 ElasticSearch: delete shard
+
+I have my index distributed by customer: 1 customer <-> 1 shard
+
+When customer is deleted I want to delete the whole shard related to
+corresponding customer and will be excellent if I can do this repdily. Is it
+possible to delete whole shard directly? Are there are any alternatives to
+delete large amount of data from elasticsearch?
+
+The customer might have some thing in common an id or something...You can use
+the delete by query api to do the same based on the id criteria.
+
+Please have a look at the following link:
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/0.90/docs-delete-by-
+query.html>
+
+Using this you can delete all docs which has a common id (in your case it can
+be customer id) in the index.
+
+I hope the id is indexed as well.
+

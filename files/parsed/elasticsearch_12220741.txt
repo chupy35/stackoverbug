@@ -1,0 +1,38 @@
+12220741 How can I query/filter an elasticsearch index by an array of values?
+
+I have an elasticsearch index with numeric category ids like this:
+
+    
+    
+    {
+      "id": "50958",
+      "name": "product name",
+      "description": "product description",
+      "upc": "00302590602108",
+      "**categories**": [
+        "26",
+        "39"
+      ],
+      "price": "15.95"
+    }
+    
+
+I want to be able to pass an array of category ids (a parent id with all of
+it's children, for example) and return only results that match one of those
+categories. I have been trying to get it to work with a term query, but no
+luck yet.
+
+Also, as a new user of elasticsearch, I am wondering if I should use a
+filter/facet for this...
+
+ANSWERED! I ended up using a terms query (as opposed to term). I'm still
+interested in knowing if there would be a benefit to using a filter or facet.
+
+As you already discovered, a termQuery would work. I would suggest a
+[termFilter](http://www.elasticsearch.org/guide/reference/query-dsl/term-
+filter.html) though, since filters are faster, and cache-able.
+
+Facets won't limit result, but they are excellent tools. They count hits
+within your total results of specific terms, and be used for [faceted
+navigation.](http://www.elasticsearch.org/guide/reference/api/search/facets/index.html)
+

@@ -1,0 +1,140 @@
+24349439 Elasticsearch doesn't respond after index recovering
+
+ES not responded to any requests after loosing an index (for unknown reason).
+After server restart ES trying to recover index but as soon as it read entire
+index (about 200mb only) ES stop to respond. The last error I saw was
+`SearchPhaseExecutionException[Failed to execute phase [query_fetch], all
+shards failed]`. I'm using ES on single node virtual server. Index has only
+one shard with about 3mln documents (200mb).
+
+How I can recover this index?
+
+Here's the ES log
+
+    
+    
+    [2014-06-21 18:43:15,337][WARN ][bootstrap                ] jvm uses the client vm, make sure to run `java` with the server vm for best performance by adding `-server` to the command line
+    [2014-06-21 18:43:15,554][WARN ][common.jna               ] Unknown mlockall error 0
+    [2014-06-21 18:43:15,759][INFO ][node                     ] [Crimson Cowl] version[1.1.0], pid[1031], build[2181e11/2014-03-25T15:59:51Z]
+    [2014-06-21 18:43:15,759][INFO ][node                     ] [Crimson Cowl] initializing ...
+    [2014-06-21 18:43:15,881][INFO ][plugins                  ] [Crimson Cowl] loaded [], sites [head]
+    [2014-06-21 18:43:21,957][INFO ][node                     ] [Crimson Cowl] initialized
+    [2014-06-21 18:43:21,958][INFO ][node                     ] [Crimson Cowl] starting ...
+    [2014-06-21 18:43:22,275][INFO ][transport                ] [Crimson Cowl] bound_address {inet[/10.0.0.13:9300]}, publish_address {inet[/10.0.0.13:9300]}
+    [2014-06-21 18:43:25,385][INFO ][cluster.service          ] [Crimson Cowl] new_master [Crimson Cowl][UJNl8hGgRzeFo-DQ3vk2nA][esubuntu][inet[/10.0.0.13:9300]], reason: zen-disco-join (elected_as_master)
+    [2014-06-21 18:43:25,438][INFO ][discovery                ] [Crimson Cowl] elasticsearch/UJNl8hGgRzeFo-DQ3vk2nA
+    [2014-06-21 18:43:25,476][INFO ][http                     ] [Crimson Cowl] bound_address {inet[/10.0.0.13:9200]}, publish_address {inet[/10.0.0.13:9200]}
+    [2014-06-21 18:43:26,348][INFO ][gateway                  ] [Crimson Cowl] recovered [2] indices into cluster_state
+    [2014-06-21 18:43:26,349][INFO ][node                     ] [Crimson Cowl] started
+    
+
+After deleting another index on the same node ES respond to request, but
+failed to recover index. Here's the log
+
+    
+    
+    [2014-06-22 08:00:06,651][WARN ][bootstrap                ] jvm uses the client vm, make sure to run `java` with the server vm for best performance by adding `-server` to the command line
+    [2014-06-22 08:00:06,699][WARN ][common.jna               ] Unknown mlockall error 0
+    [2014-06-22 08:00:06,774][INFO ][node                     ] [Baron Macabre] version[1.1.0], pid[2035], build[2181e11/2014-03-25T15:59:51Z]
+    [2014-06-22 08:00:06,774][INFO ][node                     ] [Baron Macabre] initializing ...
+    [2014-06-22 08:00:06,779][INFO ][plugins                  ] [Baron Macabre] loaded [], sites [head]
+    [2014-06-22 08:00:08,766][INFO ][node                     ] [Baron Macabre] initialized
+    [2014-06-22 08:00:08,767][INFO ][node                     ] [Baron Macabre] starting ...
+    [2014-06-22 08:00:08,824][INFO ][transport                ] [Baron Macabre] bound_address {inet[/10.0.0.3:9300]}, publish_address {inet[/10.0.0.3:9300]}
+    [2014-06-22 08:00:11,890][INFO ][cluster.service          ] [Baron Macabre] new_master [Baron Macabre][eWDP4ZSXSGuASJLJ2an1nQ][esubuntu][inet[/10.0.0.3:9300]], reason: zen-disco-join (elected_as_master)
+    [2014-06-22 08:00:11,975][INFO ][discovery                ] [Baron Macabre] elasticsearch/eWDP4ZSXSGuASJLJ2an1nQ
+    [2014-06-22 08:00:12,000][INFO ][http                     ] [Baron Macabre] bound_address {inet[/10.0.0.3:9200]}, publish_address {inet[/10.0.0.3:9200]}
+    [2014-06-22 08:00:12,645][INFO ][gateway                  ] [Baron Macabre] recovered [1] indices into cluster_state
+    [2014-06-22 08:00:12,647][INFO ][node                     ] [Baron Macabre] started
+    [2014-06-22 08:05:01,284][WARN ][index.engine.internal    ] [Baron Macabre] [wordstat][0] failed engine
+    java.lang.OutOfMemoryError: Java heap space
+            at org.apache.lucene.index.ParallelPostingsArray.<init>(ParallelPostingsArray.java:35)
+            at org.apache.lucene.index.FreqProxTermsWriterPerField$FreqProxPostingsArray.<init>(FreqProxTermsWriterPerField.java:254)
+            at org.apache.lucene.index.FreqProxTermsWriterPerField$FreqProxPostingsArray.newInstance(FreqProxTermsWriterPerField.java:279)
+            at org.apache.lucene.index.ParallelPostingsArray.grow(ParallelPostingsArray.java:48)
+            at org.apache.lucene.index.TermsHashPerField$PostingsBytesStartArray.grow(TermsHashPerField.java:307)
+            at org.apache.lucene.util.BytesRefHash.add(BytesRefHash.java:324)
+            at org.apache.lucene.index.TermsHashPerField.add(TermsHashPerField.java:185)
+            at org.apache.lucene.index.DocInverterPerField.processFields(DocInverterPerField.java:171)
+            at org.apache.lucene.index.DocFieldProcessor.processDocument(DocFieldProcessor.java:248)
+            at org.apache.lucene.index.DocumentsWriterPerThread.updateDocument(DocumentsWriterPerThread.java:253)
+            at org.apache.lucene.index.DocumentsWriter.updateDocument(DocumentsWriter.java:453)
+            at org.apache.lucene.index.IndexWriter.updateDocument(IndexWriter.java:1529)
+            at org.elasticsearch.index.engine.internal.InternalEngine.innerIndex(InternalEngine.java:532)
+            at org.elasticsearch.index.engine.internal.InternalEngine.index(InternalEngine.java:470)
+            at org.elasticsearch.index.shard.service.InternalIndexShard.performRecoveryOperation(InternalIndexShard.java:744)
+            at org.elasticsearch.index.gateway.local.LocalIndexShardGateway.recover(LocalIndexShardGateway.java:228)
+            at org.elasticsearch.index.gateway.IndexShardGatewayService$1.run(IndexShardGatewayService.java:197)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at java.lang.Thread.run(Thread.java:745)
+    [2014-06-22 08:05:02,168][WARN ][cluster.action.shard     ] [Baron Macabre] [wordstat][0] sending failed shard for [wordstat][0], node[eWDP4ZSXSGuASJLJ2an1nQ], [P], s[INITIALIZING], indexUUID [LC3LMLxgS3CkkG_pvfTeSg], reason [engine failure, message [OutOfMemoryError[Java heap space]]]
+    [2014-06-22 08:05:02,169][WARN ][cluster.action.shard     ] [Baron Macabre] [wordstat][0] received shard failed for [wordstat][0], node[eWDP4ZSXSGuASJLJ2an1nQ], [P], s[INITIALIZING], indexUUID [LC3LMLxgS3CkkG_pvfTeSg], reason [engine failure, message [OutOfMemoryError[Java heap space]]]
+    [2014-06-22 08:53:22,253][INFO ][node                     ] [Baron Macabre] stopping ...
+    [2014-06-22 08:53:22,267][INFO ][node                     ] [Baron Macabre] stopped
+    [2014-06-22 08:53:22,267][INFO ][node                     ] [Baron Macabre] closing ...
+    [2014-06-22 08:53:22,272][INFO ][node                     ] [Baron Macabre] closed
+    [2014-06-22 08:53:23,667][WARN ][bootstrap                ] jvm uses the client vm, make sure to run `java` with the server vm for best performance by adding `-server` to the command line
+    [2014-06-22 08:53:23,708][WARN ][common.jna               ] Unknown mlockall error 0
+    [2014-06-22 08:53:23,777][INFO ][node                     ] [Living Totem] version[1.1.0], pid[2137], build[2181e11/2014-03-25T15:59:51Z]
+    [2014-06-22 08:53:23,777][INFO ][node                     ] [Living Totem] initializing ...
+    [2014-06-22 08:53:23,781][INFO ][plugins                  ] [Living Totem] loaded [], sites [head]
+    [2014-06-22 08:53:25,828][INFO ][node                     ] [Living Totem] initialized
+    [2014-06-22 08:53:25,828][INFO ][node                     ] [Living Totem] starting ...
+    [2014-06-22 08:53:25,885][INFO ][transport                ] [Living Totem] bound_address {inet[/10.0.0.3:9300]}, publish_address {inet[/10.0.0.3:9300]}
+    [2014-06-22 08:53:28,913][INFO ][cluster.service          ] [Living Totem] new_master [Living Totem][D-eoRm7fSrCU_dTw_NQipA][esubuntu][inet[/10.0.0.3:9300]], reason: zen-disco-join (elected_as_master)
+    [2014-06-22 08:53:28,939][INFO ][discovery                ] [Living Totem] elasticsearch/D-eoRm7fSrCU_dTw_NQipA
+    [2014-06-22 08:53:28,964][INFO ][http                     ] [Living Totem] bound_address {inet[/10.0.0.3:9200]}, publish_address {inet[/10.0.0.3:9200]}
+    [2014-06-22 08:53:29,433][INFO ][gateway                  ] [Living Totem] recovered [1] indices into cluster_state
+    [2014-06-22 08:53:29,433][INFO ][node                     ] [Living Totem] started
+    [2014-06-22 08:58:05,268][WARN ][index.engine.internal    ] [Living Totem] [wordstat][0] failed engine
+    java.lang.OutOfMemoryError: Java heap space
+            at org.apache.lucene.index.FreqProxTermsWriterPerField$FreqProxPostingsArray.<init>(FreqProxTermsWriterPerField.java:261)
+            at org.apache.lucene.index.FreqProxTermsWriterPerField$FreqProxPostingsArray.newInstance(FreqProxTermsWriterPerField.java:279)
+            at org.apache.lucene.index.ParallelPostingsArray.grow(ParallelPostingsArray.java:48)
+            at org.apache.lucene.index.TermsHashPerField$PostingsBytesStartArray.grow(TermsHashPerField.java:307)
+            at org.apache.lucene.util.BytesRefHash.add(BytesRefHash.java:324)
+            at org.apache.lucene.index.TermsHashPerField.add(TermsHashPerField.java:185)
+            at org.apache.lucene.index.DocInverterPerField.processFields(DocInverterPerField.java:171)
+            at org.apache.lucene.index.DocFieldProcessor.processDocument(DocFieldProcessor.java:248)
+            at org.apache.lucene.index.DocumentsWriterPerThread.updateDocument(DocumentsWriterPerThread.java:253)
+            at org.apache.lucene.index.DocumentsWriter.updateDocument(DocumentsWriter.java:453)
+            at org.apache.lucene.index.IndexWriter.updateDocument(IndexWriter.java:1529)
+            at org.apache.lucene.index.IndexWriter.addDocument(IndexWriter.java:1199)
+            at org.elasticsearch.index.engine.internal.InternalEngine.innerIndex(InternalEngine.java:523)
+            at org.elasticsearch.index.engine.internal.InternalEngine.index(InternalEngine.java:470)
+            at org.elasticsearch.index.shard.service.InternalIndexShard.performRecoveryOperation(InternalIndexShard.java:744)
+            at org.elasticsearch.index.gateway.local.LocalIndexShardGateway.recover(LocalIndexShardGateway.java:228)
+            at org.elasticsearch.index.gateway.IndexShardGatewayService$1.run(IndexShardGatewayService.java:197)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at java.lang.Thread.run(Thread.java:745)
+    [2014-06-22 08:58:06,046][WARN ][cluster.action.shard     ] [Living Totem] [wordstat][0] sending failed shard for [wordstat][0], node[D-eoRm7fSrCU_dTw_NQipA], [P], s[INITIALIZING], indexUUID [LC3LMLxgS3CkkG_pvfTeSg], reason [engine failure, message [OutOfMemoryError[Java heap space]]]
+    [2014-06-22 08:58:06,047][WARN ][cluster.action.shard     ] [Living Totem] [wordstat][0] received shard failed for [wordstat][0], node[D-eoRm7fSrCU_dTw_NQipA], [P], s[INITIALIZING], indexUUID [LC3LMLxgS3CkkG_pvfTeSg], reason [engine failure, message [OutOfMemoryError[Java heap space]]]
+    
+
+In order to recover you're Elasticsearch cluster you will need to allocate
+more memory to the heap. As you are running on a fairly small instance this
+may be a bit challenging but here is what you will need to do:
+
+  1. Change the configuration to allocate more memory to the heap. Not  
+clear what your current settings are but there are several ways to  
+boost this - the easiest is to set the environment variable  
+`ES_HEAP_SIZE`. I'd start with 1GB, try that and then boost it in  
+small increments as you are already near the limit of what you can do with a
+1.6GB memory instance. Alternatively you may make changes to the files used to
+launch Elasticsearch - depends on how you have them installed, but should be
+in the bin directory underneath the Elasticsearch home directory. For a linux
+installation the files are `elasticsearch` and `elasticsearch.in.sh`.
+
+  2. Move to a larger instance. This would be much easier to recover from on a system with more memory - so if the above step does not work, you could copy all your files to another larger instance and try the above steps again with a larger heap size.
+
+What has happened here is your server has become overloaded. Possibly there is
+a bad sector. What you need to do is delete your existing indices and re-index
+them.
+
+On Linux,
+
+  * Elasticsearch temporary files are kept in `usr/local/var/elasticsearch/`
+  * Delete this folder, then repopulate your index
+

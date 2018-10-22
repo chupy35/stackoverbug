@@ -1,0 +1,30 @@
+13241372 Is it possible to set a custom analyzer to not tokenize in
+elasticsearch?
+
+I want to treat the field of one of the indexed items as one big string even
+though it might have whitespace. I know how to do this by setting a non-custom
+field to be 'not-analyzed', but what tokenizer can you use via a custom
+analyzer?
+
+The only tokenizer items I see on elasticsearch.org are:
+
+  * Edge 
+  * NGram
+  * Keyword 
+  * Letter 
+  * Lowercase 
+  * NGram 
+  * Standard 
+  * Whitespace 
+  * Pattern
+  * UAX URL Email 
+  * Path 
+  * Hierarchy
+
+None of these do what I want.
+
+The [Keyword](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/keyword-tokenizer.html) tokenizer is what you are looking
+for. If it doesn't work for you for some reason, could you share your custom
+analyzer, example of the input that doesn't work and desired output.
+

@@ -1,0 +1,124 @@
+15653676 Returning the timestamp field in elasticsearch
+
+Why can I not see the _timestamp field while being able to filter a query by
+it?
+
+The following query return the correct documents, but not the timestamp
+itself. How can I return the timestamp?
+
+    
+    
+    {
+      "fields": [
+        "_timestamp",
+        "_source"
+      ],
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "range": {
+              "_timestamp": {
+                "from": "2013-01-01"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+The mapping is:
+
+    
+    
+    {
+        "my_doctype": {
+            "_timestamp": {
+                "enabled": "true"
+            },
+            "properties": {
+                "cards": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+    
+
+sample output:
+
+    
+    
+    {
+      "took" : 1,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 2,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "test1",
+          "_type" : "doctype1",
+          "_id" : "HjfryYQEQL6RkEX3VOiBHQ",
+          "_score" : 1.0, "_source" : {"cards": "5"}
+        }, {
+          "_index" : "test1",
+          "_type" : "doctype1",
+          "_id" : "sDyHcT1BTMatjmUS0NSoEg",
+          "_score" : 1.0, "_source" : {"cards": "2"}
+        }]
+      }
+    
+
+When timestamp field is enabled, it's indexed but not stored by default. So,
+while you can search and filter by the timestamp field, you cannot easily
+retrieve it with your records. In order to be able to retrieve the timestamp
+field you need to recreate your index with the following mapping:
+
+    
+    
+    {
+        "my_doctype": {
+            "_timestamp": {
+                "enabled": "true",
+                "store": "yes"
+            },
+            "properties": {
+                ...
+            }
+        }
+    }
+    
+
+This way you will be able to retrieve timestamp as the number of milliseconds
+since the epoch.
+
+It is not necessary to store the timestamp field, since its exact value is
+preserved as a term, which is also more likely to already be present in RAM,
+especially if you are querying on it. You can access the timestamp via its
+term using a `script_value`:
+
+    
+    
+    {
+        "query": {
+            ...
+        },
+        "script_fields": {
+            "timestamp": {
+                "script": "_doc['_timestamp'].value"
+            }
+        }
+    }
+    
+
+The resulting value is expressed in miliseconds since UNIX epoch. It's quite
+obscene that ElasticSearch can't do this for you, but hey, nothing's perfect.
+

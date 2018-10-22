@@ -1,0 +1,44 @@
+23425486 Elasticsearch aggregations slows down over time
+
+When trying to query with multiple aggregations in a loop the query-time get
+really slow. The result should give me the count from each type.
+
+The JSON i send looks like this
+
+` GET events / _search { "size": 0, "aggs": { "count_by_types_38": { "filter":
+{ "term": { "data.campaign_id": 38 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_39": { "filter":
+{ "term": { "data.campaign_id": 39 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_40": { "filter":
+{ "term": { "data.campaign_id": 40 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_41": { "filter":
+{ "term": { "data.campaign_id": 41 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_42": { "filter":
+{ "term": { "data.campaign_id": 42 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_44": { "filter":
+{ "term": { "data.campaign_id": 44 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_45": { "filter":
+{ "term": { "data.campaign_id": 45 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_46": { "filter":
+{ "term": { "data.campaign_id": 46 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_47": { "filter":
+{ "term": { "data.campaign_id": 47 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } }, "count_by_types_48": { "filter":
+{ "term": { "data.campaign_id": 48 } }, "aggs": { "field": { "terms": {
+"field": "_type", "min_doc_count": 0 } } } } }, "query": { "match_all": {} }
+}`
+
+For each iteration in the loop i change the data.campaign_id.
+
+I have tried with a lower number of aggregations, and it doesn't really change
+anything.
+
+8-12 iterations in it takes about 40 seconds before ES returns the result, and
+i kill it.
+
+If i run the query with just one aggregation there is no problem.
+
+Am i doing something wrong?
+
+The problem was that my dev server was to small.
+

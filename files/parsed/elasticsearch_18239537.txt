@@ -1,0 +1,67 @@
+18239537 Scroll SearchResponse not iterable when there are less results than
+the scrollSize setting
+
+I have a loop like this...
+
+    
+    
+    while (true) {
+        scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(new TimeValue(600000)).execute().actionGet();
+    
+        for (SearchHit hit : scrollResp.getHits()){
+            // does this when totalHits > scrollSize, skips it otherwise
+        }
+    
+        //Break condition: No hits are returned
+        if (scrollResp.hits().hits().length == 0) {
+            break;
+        }
+    }
+    
+
+The scrollSize of the query is set to 500. When the
+scrollResp.getHits().totalHits() < 500 the for loop is never entered. If I
+modify the scrollSize to be < totalHits the for loop will be entered.
+
+In general I am expecting > 500 results per query, but I need it to work in
+either case. Not sure if possibly I am attempting the iteration incorrectly or
+what. Feedback is appreciated.
+
+I believe you can do something like this:
+
+    
+    
+        // tested also with pageSize = 1
+        final int pageSize = 100;
+        SearchResponse firstScrollResponse = client
+                .prepareSearch("db")
+                .setTypes("collection")
+                .setSearchType(SearchType.SCAN)
+                .setScroll(TimeValue.timeValueMinutes(1))
+                .setSize(pageSize)
+                .execute()
+                .actionGet();
+    
+        //get the first page of actual results
+        firstScrollResponse = client.prepareSearchScroll(firstScrollResponse.getScrollId())
+                                      .setScroll(TimeValue.timeValueMinutes(1))
+                                      .execute()
+                                      .actionGet();
+    
+        while (firstScrollResponse.getHits().hits().length > 0) {
+    
+            for (final SearchHit hit : firstScrollResponse.getHits().hits()) {
+                // do smth with it
+            }
+    
+            // update the scroll response to get more entries from the old index
+            firstScrollResponse = client.prepareSearchScroll(firstScrollResponse.getScrollId())
+                                          .setScroll(TimeValue.timeValueMinutes(1))
+                                          .execute()
+                                          .actionGet();
+        }
+    
+
+The trick is first get the first page of actual results from the scroll, since
+the first search response contains no hits.
+

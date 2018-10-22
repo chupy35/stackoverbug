@@ -1,0 +1,38 @@
+21195116 Elastic Search Clustering in the Cloud
+
+I have 2 Linux VM's (both at same datacenter of Cloud Provider): Elastic1 and
+Elastic2 (where Elastic 2 is a clone of Elastic 1). Both have same version
+centos, same cluster name, and same version ES, again - Elastic2 is a clone.
+
+I use the service wrapper to automatically start them both at boot, and
+introduced each others ip to their respective iptables file, so now I can
+successfully ping between nodes.
+
+I thought this would be enough to allow ES to form a cluster, but to no avail.
+
+Both Elastic1 and Elastic2 have 1 index each named e1 and e2 respectfully.
+Each index has 1 shard with no replicas.
+
+I can use the head and paramedic plugins on each server successfully. And use
+`curl -XGET 'http://localhost:9200/_cluster/nodes?pretty=true'` to validate
+the cluster name is the same and each server only has 1 node listed.
+
+Is there anything glaring out at why these nodes arent talking? Ive restarted
+the ES service and rebooted on both servers to no avail. Could cloning be the
+problem??
+
+In your elasticsearch.yml:
+
+    
+    
+    discovery.zen.ping.multicast.enabled: false
+    discovery.zen.ping.unicast.hosts: ['host1:9300', 'host2:9300']
+    
+
+So, just list your node IPs with the transport port (default is 9300) under
+unicast hosts. Multicast is enabled by default, but is generally impossible on
+cloud environments without use of external plugins.
+
+Also, make sure to check your IP rules / security groups! That's easy to
+forget.
+

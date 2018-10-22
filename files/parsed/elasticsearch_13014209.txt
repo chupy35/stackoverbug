@@ -1,0 +1,20 @@
+13014209 Getting old indexed elasticsearch data
+
+I have lot of data indexed in my elasticsearch.
+
+I deleted elasticsearch folder and then extarct again fresh zip of
+elasticsearch and start the elasticsearch server.
+
+I am surprised because after staring new elasticsearch server, I again found
+all old data and this problem persists again and again.
+
+Can any please help me? I don't want to get all old data indexed in
+elasticsearch.
+
+Regards
+
+Given the cluster health response it's not a problem with multiple nodes
+running on the same cluster as suggested by Igor. I'd suggest you to check the
+java processes running. You could maybe have an elasticsearch hanging
+somewhere which keeps writing in that folder.
+

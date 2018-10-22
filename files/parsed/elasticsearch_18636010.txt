@@ -1,0 +1,33 @@
+18636010 why elasticsearch 0.19.12 stores long as integer
+
+I have this in elasticsearch
+
+    
+    
+    .startObject("mylongfield").field("type", "long").field("store", "true").field("index", "not_analyzed").endObject()
+    
+    Map<String, Object> row
+    row.put("mylongfield", Long.valueOf("0").longValue());
+    OR
+    row.put("mylongfield", Long.valueOf(0L).longValue());
+    
+
+when i get later the map
+
+    
+    
+    resultMap = searchHit.sourceAsMap()
+    resultMap.get("mylongfield") ... IT IS AN INTEGER ?!?
+    
+
+Why is ealsticsearch storing my long as integer?
+
+I've encountered similar behaviour using Elasticsearch 0.90.5 - the value of
+the data seems to override the mapping.
+
+The same issue is discussed
+[here](https://groups.google.com/forum/#!searchin/elasticsearch/getsource%2420integer%2420long/elasticsearch/jxIY22TmA8U/PyqZPPyYQ0gJ).
+If I understand correctly, this is happening because Elasticseach uses Jackson
+to convert the JSON data to a Map, and this is done based on the values. I've
+resorted to using instanceof to determine the class of the returned Object.
+

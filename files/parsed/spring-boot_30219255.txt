@@ -1,0 +1,119 @@
+30219255 Spring Boot: Change Port for Web Application
+
+I am currently trying to create a web application with Spring Boot. I need to
+host my application to localhost:8081. How do I change the port?
+
+Actually you want to change `server.port` and you can change it in many
+different ways as described <http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#boot-features-external-config>
+
+Examples:
+
+  * in your application.properties (in or outside the jar)
+  * command line
+
+java -Dserver.port=$PORT -jar target/demo-0.0.1-SNAPSHOT.jar
+
+and much more
+
+Actually you want to change server.port and you can change it in many
+different ways as described  <http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#boot-features-external-config>
+
+Put **_server.port=9000_** in your application.properties
+
+If you are using the embedded tomcat server, you can configure the
+EmbeddedServletContainerFactory bean yourself in your Application class
+annotated with @SpringBootApplication.
+
+This will give you options to customize your tomcat server, example
+configuration
+
+    
+    
+    @Bean
+    public EmbeddedServletContainerFactory servletContainer() {
+        TomcatEmbeddedServletContainerFactory factory = new TomcatEmbeddedServletContainerFactory();
+        factory.setPort(9000);
+        factory.setSessionTimeout(10, TimeUnit.MINUTES);
+        factory.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/notfound.html"));
+        return factory;
+    } 
+    
+
+You could also do the same for Jetty, using the
+JettyEmbeddedServletContainerFactory bean, or for Undertow using the
+UndertowEmbeddedServletContainerFactory .
+
+Official documentation found here : <http://docs.spring.io/spring-
+boot/docs/current-SNAPSHOT/reference/htmlsingle/>
+
+By default spring boot uses port 8080, BUT you can change the port just by
+adding the following code line in your main() like this:
+
+    
+    
+    System.getProperties().put( "server.port", *YOUR_PORT_NUMBER_GOES_HERE* );  
+    
+
+_e.g_
+
+    
+    
+    @SpringBootApplication
+    public class MyClass {
+    public static void main(String[] args) {
+        System.getProperties().put( "server.port", 8181 );  //8181 port is set here
+        SpringApplication.run(MyClass.class, args);
+    }
+    
+
+**OR**
+
+You can configure it in your application.properties file like so:
+
+    
+    
+    server.port=8181
+    
+
+If you DON'T have an application.properties file in your spring-boot
+application, you can go ahead and create one. Right-click on the
+**src/java/resources** folder and go to **New-> Other-> General and choose
+'File'** then name as: **application.properties**
+
+Any other configurations you might need are listed here
+<https://docs.spring.io/spring-boot/docs/current/reference/html/common-
+application-properties.html>. These properties are also configured in the
+application.properties file.
+
+In your application.properties file, just add one line
+
+    
+    
+    server.port = 8080
+    
+
+And for more configurations you can refer [Spring Boot
+documentation](https://docs.spring.io/spring-
+boot/docs/current/reference/html/howto-embedded-servlet-containers.html#howto-
+change-the-http-port) on port
+
+If you're using STS, you can do it following below steps:
+
+  * Go to Boot Dashboard view, you'll see your Boot app, say **myApp1**
+
+[![enter image description
+here](https://i.stack.imgur.com/5cJBL.png)](https://i.stack.imgur.com/5cJBL.png)
+
+  * Right click and click on Open Config. This should open Run Time Configuration section.
+  * Go to Argument tab and add parameter server.port=, like in the example below, a custom port **9091** is added.
+
+[![enter image description
+here](https://i.stack.imgur.com/QCmgS.png)](https://i.stack.imgur.com/QCmgS.png)
+
+  * Start the app and if everything is good, you'll see the desired port on Boot dashboard.
+
+[![enter image description
+here](https://i.stack.imgur.com/ycZxm.png)](https://i.stack.imgur.com/ycZxm.png)
+

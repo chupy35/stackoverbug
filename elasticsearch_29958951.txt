@@ -1,0 +1,4 @@
+29958951
+How disable scoring in elasticsearch for one query?
+<p>Is it possible to disable score calculation on particular query (not for type or all index) in elasticsearch?</p>&#xA;
+<p>As stated in comments, you could wrap your particular query in <strong>ConstantScoreQuery</strong></p>&#xA;&#xA;<pre><code>{&#xA;    "constant_score" : {&#xA;        "query": { your_query_here}&#xA;        "filter": {your_filter_here}&#xA;        "boost" : 1.0&#xA;    }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>All matched documents will get score 1.0. For more reference information - <a href="http://www.elastic.co/guide/en/elasticsearch/reference/1.5/query-dsl-constant-score-query.html" rel="nofollow">http://www.elastic.co/guide/en/elasticsearch/reference/1.5/query-dsl-constant-score-query.html</a></p>&#xA;

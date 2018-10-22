@@ -1,0 +1,58 @@
+21148964 boosting according to user preferences in elastic search
+
+I'm currently working on a targeted ads system. I keep track of users
+preferences and I'm supposed to retrieve ads accordingly. I index ads using
+**elasticsearch** in which I index the tags of the ad:
+
+> curl -XPUT localhost:9200/ads/ad/ad789 -d '{ "tags" : [ "sports", "gaming" ]
+}'
+
+**Now here comes the tricky part** , I want to boost the ads that have the tag
+sports by 8 and gaming by 2 according to the user's preferences.
+
+You can set up a `function_score` query with multiple filters, where each
+filter contributes a different boost if it matches. For example, this query
+will multiply the document score by 8 if it has a "sports" tag, and by 2 if it
+contains a "games" tag.
+
+    
+    
+    {
+      "query": {
+        "function_score": {
+          "query": {
+            "match_all": {}
+          },
+          "functions": [
+            {
+              "filter": {
+                "term": {
+                  "tags": "sports"
+                }
+              },
+              "boost_factor": 8
+            },
+            {
+              "filter": {
+                "term": {
+                  "tags": "games"
+                }
+              },
+              "boost_factor": 2
+            }
+          ]
+        }
+      }
+    }
+    
+
+By default, the boost value will be multiplied with the query score.
+Alternatively, you could use the `boost_mode` parameter to use only the
+function score instead (replace), add the function score to the query score
+(sum), average the function score and query score (average), or use the
+max/min of function score or query score (max, min).
+
+See the [function_score
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html) for more details.
+

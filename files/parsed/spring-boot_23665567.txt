@@ -1,0 +1,17 @@
+23665567 Use Spring Boot to package and run an existing WAR file
+
+Is there a way I can use Spring Boot to package and run an existing WAR file
+without modifying the WAR?
+
+Thanks!
+
+\--john
+
+You could use the Boot plugins to create a WAR that contained the embedded
+container jars, and a launcher for a main method. You'd have to provide a
+main() method, so really that's where it would potentially become problematic.
+Look for tutorials on the web about how to launch an embedded container, or
+inspect the code in Boot that does it. Spring Boot has such a lot of
+convenient embedded container features and you might end up re-writing quite a
+bit of it.
+

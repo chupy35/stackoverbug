@@ -1,0 +1,104 @@
+19259367 problems with phrase matching in elasticsearch
+
+I'm trying to perform Phrase matching using elasticsearch.
+
+Here is what I'm trying to accomplish:
+
+    
+    
+    data - 1: {
+        "test" {
+           "title" : "text1 text2"
+        }
+    }
+    
+    2: {
+        "test" {
+           "title" : "text3 text4"
+        }
+    }
+    
+    3: {
+        "test" {
+           "title" : "text5"
+        }
+    }
+    
+    
+    4: {
+        "test" {
+           "title" : "text6"
+        }
+    } 
+    
+
+### Search terms:
+
+If I lookup for "text0 text1 text2 text3" - It should return #1 (matches full
+string)
+
+If I lookup for "text6 text5 text4 text3" - It should return #4, #3, but not
+#2 as its not in same order.
+
+### Here is what I've tried:
+
+  * set the `index_analyzer` as keyword, and `search_analyzer` as standard
+  * also tried creating custom tokens
+
+but none of my solution allows me to lookup a substring match from search
+query against keyword in document.
+
+If anyone has written similar queries, can you provide how the mappings are
+configured and what kind of query is been used.
+
+What I see here is this: You want your search to match on any tokens sent from
+the query. If those tokens do match, it must be an exact match to the title.
+
+This means that indexing your title field as keyword would get you that
+mandatory match. However, the standard analyzer for search would never match
+titles spaces as you'd have your index token `{"text1 text2"}` and your search
+token `[{"text1},{"text2"}]`. You can't use a phrase match with any sloppy
+value or else your token order requirement will be ignored.
+
+So, what you really need is to generate keyword tokens during the index, but
+you need to generate shingles whenever you search. Your shingles will maintain
+order and if one of them matches, consider it a go. I would set to not output
+unigrams, but do allow unigrams if no shingles. This means that if you have
+just one word, it will output that token, but it if can combine your search
+words into various number of shingled tokens, it will not emit single word
+tokens.
+
+    
+    
+    PUT
+      { "settings":
+        {
+            "analysis": {
+                "filter": {
+                    "my_shingle": {
+                        "type": "shingle",
+                        "max_shingle_size": 50,
+                        "output_unigrams": false
+                    }
+                },
+                "analyzer": {
+                    "my_shingler": {
+                        "filter": [
+                            "lowercase",
+                            "asciifolding",
+                            "my_shingle"
+                        ],
+                        "type": "custom",
+                        "tokenizer": "whitespace"
+                    }
+                }
+            }
+        }
+    }
+    
+    Then you just want to set your type mapping to use the keyword analyzer for index and the `my_shingler` analyzer for search.
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+shingle-tokenfilter.html>
+

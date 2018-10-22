@@ -1,0 +1,66 @@
+23596157 Spring boot tomcat access logs
+
+I enabled tomcat access logs as per the spring boot reference documentation.
+But its not working properly. When I enabled it, access log file got created
+and I can see requests being logged there for that day. But at the start of
+the next day I don't see any new file. It started logging at 21hrs. Third day
+it started logging from 02hrs. From 4th day no access logs created.
+
+Here are the properties that I used.
+
+    
+    
+    server.tomcat.access-log-enabled=true
+    server.tomcat.access-log-pattern=%h %l %u %t "%r" %s %b %D
+    server.tomcat.basedir=/var/lib/org_name/tracking_server 
+    
+
+under tracking_server folder logs and work folder got created.
+
+Please let me know if I'm missing something. Regular logging is working
+perfectly according to the configuration specified in logback.xml
+
+Thanks for your help in advance.
+
+That configuration works for me in spring boot version 1.2.3.RELEASE. However,
+if you have the current version of spring boot, those parameters are a little
+bit different, [reference here](https://docs.spring.io/spring-
+boot/docs/current/reference/html/common-application-properties.html):
+
+    
+    
+    server.tomcat.accesslog.directory=logs # Directory in which log files are created. Can be relative to the tomcat base dir or absolute.
+    server.tomcat.accesslog.enabled=false # Enable access log.
+    server.tomcat.accesslog.pattern=common # Format pattern for access logs.
+    
+
+As you note, the difference is the hyphen (-).
+
+Additionally, tomcat access log configuration include the following
+parameters, according to [this
+document](https://tomcat.apache.org/tomcat-7.0-doc/config/valve.html#Access_Log_Valve):
+
+  * **fileDateFormat**. Default value is yyyy-MM-dd. It means that the log file is going to change daily. If you change for yyyy-MM-dd.HH, the log is going to change hourly.
+  * **rotatable**. Default value is true. If you set to false, I understood that it is going to have just only file. it do not use fileDateFormat parameter.
+
+However, in my version of spring boot (1.2.3.RELEASE) the class
+org.springframework.boot.autoconfigure.web.ServerProperties there are no
+values to change those properties (Tomcat subclass). But if you check
+org.apache.catalina.valves.AccessLogValve you could change this properties:
+
+    
+    
+    /**
+     * Should we rotate our log file? Default is true (like old behavior)
+     */
+    protected boolean rotatable = true;
+    
+    /**
+     * Date format to place in log file name.
+     */
+    protected String fileDateFormat = ".yyyy-MM-dd";
+    
+
+I know maybe you should play with those parameters. I hope this post help to
+solve your problem.
+

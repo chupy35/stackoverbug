@@ -1,0 +1,24 @@
+22646041 Return Child Properties In ElasticSearch Query
+
+I have had to refactor some of my code in my app to use a Child/Parent
+relationship in ElasticSearch. I use the Parent as the main search object, and
+use HasChild to filter on any child properties.
+
+As it stands now, the return object is the complete parent object. But in my
+code, I also require access to some of the child properties (Namely the child
+ID). Is this possible to be returned in the result set?
+
+If you need data from the child, then you're actually looking for a query on
+the child object with a `has_parent` clause to filter by some condition on the
+parent.
+
+Think of it this way: your results should include one hit per matching child,
+even if two children share the same parent. So the primary object you're
+searching is actually the child and not the parent.
+
+You could also consider using a [`top-
+children`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-top-children-query.html#query-dsl-top-children-query) query which would
+give you parents and their matching children, however this requires some
+estimations regarding how many children you expect to see per parent.
+

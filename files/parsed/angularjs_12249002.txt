@@ -1,0 +1,41 @@
+12249002 Not able to receive Angular js events
+
+Please have a look at this simple fiddle: <http://jsfiddle.net/tgbpy/11/>
+
+I am not able to emit the event. I need to do this simple thing to do without
+creating a shared service. What am I doing wrong?
+
+The controller1 and controller2 are are not nested. They are peers and come
+under the rootScope.
+
+    
+    
+    <div ng-controller="controller1">...</div>
+    <div ng-controller="controller2">...</div>
+    
+
+So when you emit an event from controller1, it wont reach controller2, but
+will only reach the parents(in this case, it will reach rootScope).
+
+In case controller1 is declared within controller2, then your code should
+work.
+
+    
+    
+    <div ng-controller="controller2">  
+      ..
+      <div ng-controller="controller1">...</div>
+      .. 
+    </div>
+    
+
+To add to what @manoj was telling you
+
+here is a fiddle that works
+
+<http://jsfiddle.net/tgbpy/13/>
+
+When you want to publish a message you call $rootScope.$broadcast unless the
+two controllers are nested. If you do $rootScope.$broadcast any scope wherever
+it is will get it.
+

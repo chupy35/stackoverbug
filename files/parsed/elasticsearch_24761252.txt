@@ -1,0 +1,71 @@
+24761252 Why my suggest call does not return any matches?
+
+I have `post` type which has field `title`. For now there are following
+titles:
+
+    
+    
+    "post title 1"
+    "post title 2"
+    "post title 3"
+    ...
+    "post title 200"
+    
+
+In `post` mapping there is:
+
+    
+    
+    properties:
+        ...
+        title:
+            type: "string"
+        ...
+    
+
+I am able to search for post title however following suggest request does not
+return any matches:
+
+    
+    
+    {
+    "index-name": {
+        "text": "post",
+        "phrase" : {
+            "field" : "title"
+        }
+    }   
+    }
+    
+
+result:
+
+    
+    
+    {
+        "_shards": {
+            "total": 1,
+            "successful": 1,
+            "failed": 0
+        },
+        "index-name": [
+            {
+                "text": "post",
+                "offset": 0,
+                "length": 4,
+                "options": []
+            }
+        ]
+    }
+    
+
+I use `POST .../index-name/_suggest` endpoint It also fails for text `"1"`,
+`"200"` etc
+
+I guess I have to update mapping to let know elastic that I want to use this
+field for suggestions, however I can't find it anywhere in docs...
+
+You should use "completion" type instead of "string" for title.
+
+And try to search for "post" text.
+

@@ -1,0 +1,56 @@
+23427554 Not able to contact elasticsearch on 9200
+
+Team,
+
+  1. I have installed elastic search service and prerequisites on a local machine. I could see that "service elasticsearch status" shows that service is running. 
+
+  2. Below logs are dumped to /var/log/elasticsearch/elasticsearch.log file when service is launched. Ip table service is stopped. 
+
+  3. I explicitly un commented network.host and port fields to bind to specified ip and port( 9200), but when i try to contact the machine using  `http://address:9200`, nothing shows up, but the webserver is running on this machine and other sites are accessible. Any thoughts? 
+
+Log:
+
+    
+    
+    [2014-05-02 22:24:17,884][INFO ][node                     ] [Sharon Ventura] version[1.1.1], pid[21799], build[f1585f0/2014-04-16T14:27:12Z] 
+    [2014-05-02 22:24:17,885][INFO ][node                     ] [Sharon Ventura] initializing ... 
+    [2014-05-02 22:24:17,892][INFO ][plugins                  ] [Sharon Ventura] loaded [], sites [head] 
+    [2014-05-02 22:24:22,288][INFO ][node                     ] [Sharon Ventura] initialized 
+    [2014-05-02 22:24:22,288][INFO ][node                     ] [Sharon Ventura] starting ... 
+    [2014-05-02 22:24:22,394][INFO ][transport                ] [Sharon Ventura] bound_address {inet[/10.147.38.151:9300]}, publish_address {inet[/<ip-address>:9300]} 
+    [2014-05-02 22:24:25,449][INFO ][cluster.service          ] [Sharon Ventura] new_master [Sharon Ventura][GYPgQG0qSniSd36gP7ErdA][inet[/<ip-address>:9300]], reason: zen-disco-join (elected_as_master) 
+    [2014-05-02 22:24:25,611][INFO ][discovery                ] [Sharon Ventura] elasticsearch/GYPgQG0qSniSd36gP7ErdA 
+    [2014-05-02 22:24:25,714][INFO ][http                     ] [Sharon Ventura] bound_address {inet[/10.147.38.151:9200]}, publish_address {inet[/<ip-address>:9200]} 
+    [2014-05-02 22:24:25,759][INFO ][gateway                  ] [Sharon Ventura] recovered [0] indices into cluster_state 
+    [2014-05-02 22:24:25,760][INFO ][node                     ] [Sharon Ventura] started 
+    
+
+Thanks!  Santhosh
+
+In your log you have an ip so you don't run it on localhost.  Check the
+firewall and actually that the port 9200 is accessible to you.
+
+If you ssh and port forward into that server/computer can you access
+elasticsearch? If you cannot access it locally on that server, then it should
+something other than the port.
+
+Give us some more details about your systems/servers to help you.
+
+I got the issue fixed, its the elasticsearch.yml file configuration which has
+the issue, the ip address was set to the natted ipaddress and its working.
+
+One more Question: Iam using python elasticsearch package, here iam doing an
+index using es.index() and wanted to search for few records post the index,
+using its search() function, any specific examples of how to use search
+function for getting records between two dates for all files which are
+indexed?
+
+Had the same issue, confirm your firewall is not blocking the port, You can
+also disable the firewall to confirm if thats the issue
+
+    
+    
+    sudo ufw disable
+    curl -X GET 'http://localhost:9200'
+    
+

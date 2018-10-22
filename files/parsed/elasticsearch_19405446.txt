@@ -1,0 +1,42 @@
+19405446 How to boost integer terms within Elasticsearch query
+
+I am trying to find a query for my data, that boosts all the numeric terms
+included.
+
+For example:
+
+    
+    
+    A query on a field "description" contains these terms: 
+    "PatientA Disease II 12 A 7 Cell 348 go"
+    
+
+I am trying to get items from Elasticsearch whose "description" field contains
+similar terms to the above. Similar means especially similar with regard to
+the integer values contained in the search query. Additionally, all
+punctuation that is contained in the searched data should be ignored.
+
+Desired results:
+
+    
+    
+    PatientA Cell Disease II 12 A 7 348 go
+    PatientB Disease II 12 A 7 Nucleus 348 go
+    PatientC, OK, II, 12 A, 7 Cell, 348 go
+    PatientD 7 Disease II 12-A Cell 348-go
+    
+
+The queries that I tried, always weigh every term the same and get distracted
+by punctuation. I found this post, that talks about boosting certain fields.
+[Elasticsearch "More Like This" API vs. more_like_this
+query](https://stackoverflow.com/questions/15300650/elasticsearch-more-like-
+this-api-vs-more-like-this-query)
+
+However, how can I boost certain terms in a specific field? Thanks!
+
+i think that you can boost specific keywords by appending something like
+`some_keyword^10`.
+
+while i find some references in my code, i have no clue where to look for
+documentation...
+

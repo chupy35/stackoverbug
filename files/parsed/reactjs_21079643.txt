@@ -1,0 +1,95 @@
+21079643 How to model a HTML table with two cells per column in React?
+
+I've been learning React recently, and I'm running into a problem trying to
+model and render a HTML table of the following structure (note the columns
+which are split into two using the colspan attribute for the headers).
+
+    
+    
+    +---------------------+---------------------+-----+-------------------+
+    |     Col 1 Header    |     Col 2 Header    | ... | Col N header      |
+    +----------+----------+----------+----------+-----+---------+---------+
+    | Data 1A  | Data 1B  | Data 2A  | Data 2B  | ... | Data NA | Data NB |
+    +----------+----------+----------+----------+-----+---------+---------+
+    | Data 1A  | Data 1B  | Data 2A  | Data 2B  | ... | Data NA | Data NB |
+    +----------+----------+----------+----------+-----+---------+---------+
+    
+
+I've modelled the table like this:
+
+Main component `Table`, which renders:
+
+    
+    
+    <table> 
+      <thead>
+        <tr>
+        {headers}  <!-- <Header/> components -->
+        </tr>
+      </thead>
+      <tbody>
+        {rows}     <!-- <Row/> components -->
+      </tbody> 
+    </table>
+    
+
+The `Header` components render as `<th colSpan="2">Col 1 Header</th>`
+
+Each `Row` renders as
+
+    
+    
+    <tr>
+      {cells}    <!-- <Cell/> components -->
+    </tr>
+    
+
+Now the `Cell` component is where I run into trouble as I want to split each
+column into two sub columns (as the header columns have `colSpan="2"`.)
+
+Since [ReactComponent's
+render()](http://facebook.github.io/react/docs/component-specs.html#render)
+method has to return a single child component, I can't figure out how to
+return the two cells like this: `<td>Data 1A</td><td>Data 1B</td>`
+
+In non-table situations I could return something like
+
+    
+    
+    <div>
+       <div class="subcol1">Data 1A</div>
+       <div class="subcol2">Data 1B</div>
+    </div>
+    
+
+but I can't seem to figure out how to achive this with a table. Maybe the way
+I've designed the component structure is a bit off?
+
+Right now it's impossible to make a component in React that renders as two
+table cells. In the future it may be possible but for now, your best bet is
+probably to make a plain JS function that returns the cells:
+
+    
+    
+    function cellsForData(data) {
+        return [
+            <td>Data 1A</td>,
+            <td>Data 1B</td>
+        ];
+    }
+    
+
+You can include this in your `cells` array for your table component and
+everything should work.
+
+in react it should be `colSpan` attribute not `colspan`.
+
+    
+    
+    <td colSpan={2}>
+    
+    </td>
+    
+
+more info [here](https://github.com/facebook/react/issues/185)
+

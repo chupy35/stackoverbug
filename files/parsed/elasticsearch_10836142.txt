@@ -1,0 +1,148 @@
+10836142 ElasticSearch duplicate results with paging
+
+I'm using elasticsearch with pyes. I'm getting duplicates in my last page of
+results. Here's my query:
+
+    
+    
+    "query": {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "and": [
+                        {
+                            "match_all": {
+    
+                            }
+                        }
+                    ]
+                },
+                "query": {
+                    "bool": {
+                        "minimum_number_should_match": 1,
+                        "should": [
+                            {
+                                "text": {
+                                    "name.keyword_name": {
+                                        "operator": "and",
+                                        "query": "kentucky",
+                                        "type": "boolean",
+                                        "fuzziness": 0.8
+                                    }
+                                }
+                            },
+                            {
+                                "text": {
+                                    "address": {
+                                        "operator": "and",
+                                        "query": "kentucky",
+                                        "type": "boolean"
+                                    }
+                                }
+                            },
+                            {
+                                "text": {
+                                    "neighborhoods.name": {
+                                        "operator": "and",
+                                        "query": "kentucky",
+                                        "type": "boolean",
+                                        "fuzziness": 0.8
+                                    }
+                                }
+                            },
+                            {
+                                "text": {
+                                    "categories.name": {
+                                        "operator": "and",
+                                        "query": "kentucky",
+                                        "type": "boolean",
+                                        "fuzziness": 0.8
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "facets": {
+            "neighborhoods.id": {
+                "terms": {
+                    "field": "neighborhoods.id",
+                    "size": 10
+                }
+            },
+            "categories.id": {
+                "terms": {
+                    "field": "categories.id",
+                    "size": 10
+                }
+            }
+        },
+        "size": 15,
+        "from": 15,
+        "fields": [
+            "id",
+            "categories.id",
+            "name",
+            "address",
+            "city",
+            "state",
+            "zipcode",
+            "location",
+            "_id",
+            "pos_review_count",
+            "neg_review_count",
+            "wishlist_count",
+            "recommender_count",
+            "checkin_count"
+        ]
+    },
+    
+
+In this query, I have
+
+    
+    
+        "size": 15,
+        "from": 15,
+    
+
+and also for this particular query the total_count of objects returned is 24.
+With a "from" at 15 and a total_count of 24, I'd like to be getting 9 results
+back here. But instead, because I set "size" to 15, I get 15 results entries.
+Since there are only 9 unique results left, 6 documents are being displayed
+twice. Any idea on how to make this give me 9 results rather than 15 with
+duplicates?
+
+Thanks for your help!
+
+If you have the data on multiple shards, it may return multiple times, I don't
+know why. Sorry, that is not very specific because I don't know why it
+happens.
+
+Try using a preference:
+<http://www.elastic.co/guide/en/elasticsearch/reference/1.4/search-request-
+preference.html>
+
+We use a preference custom string, and it fixed our duplicate data issue.
+
+What is your replication setting? Is it possible the data is on multiple
+shards? What version are you using?
+
+Unfortunately with pyes, you can't specify a preference on the multi search
+call. Try specifying a preference as a query parameter in the search call.
+
+search(index=..., ....., preference=)
+
+The issue is that you're sorting by a field (or by default by the _score)
+which has duplicate values across docs. My understanding is that different
+shards may sort duplicate field values in different orders.
+
+Therefore when you get a different shard for each request, you may get
+different sort orders, and therefore, you may get the same doc sorted onto two
+diff't pages (depending on which shard you asked).
+
+As TheJeff mentioned above, the fix is to specify _search?preference=my-
+paging-key to ensure a consistent shard used for each of the page requests
+

@@ -1,0 +1,46 @@
+24335218 onClick event isn't firing on React Component
+
+I'm working on a component stub where I have a grid of tiles, each that
+require a click handler, and also a specific "new" tile that has a different
+click handler. I'm trying to get the click handlers working correctly, but the
+event never seems to fire.
+
+Any ideas?
+
+    
+    
+    var grid = React.createClass({
+        onCreateNew: function () {
+            console.log("onCreateNew");
+        },
+        render: function () {
+            var tiles = [];
+            if (this.props.items) {
+                tiles = this.props.items.map(function (item, index) {
+                    //create a tile for each item
+                });
+            }
+            //always append "new" tile for the last one
+            tiles.push(React.DOM.div({
+                onClick: this.onCreateNew, className: "tile new_tile"
+            },
+                React.DOM.div({ className: "plus", onClick: this.onCreateNew }, "+")
+            ));            
+            return React.DOM.div({ id: "flowsheetPane" }, tiles);
+        }
+    });
+    
+
+As commenters have mentioned, your code appears to work as expected in
+isolation.
+
+React delegates to event handlers with a single event listener at the root of
+the DOM, so events need to propagate all the way to the top in order for React
+to call your function.
+
+Could you have added some event listeners somewhere in the component hierarchy
+that are calling `event.stopPropagation()`? If you did this outside of React
+(e.g. natively or with jquery), it would cause the events to never reach the
+top of the DOM, and React would never have a chance to delegate out to your
+methods.
+

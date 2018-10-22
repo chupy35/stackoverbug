@@ -1,0 +1,47 @@
+11806797 How to update a route from inside an AngularJS controller?
+
+I have an AngularJS application into which I want to load some plugins that
+are discovered by a controller when it starts up. In order for the plug in to
+work I have add some routes to the `$routeProvider` from the controller, but
+there seems to be no way to do this.
+
+Right now I'm using a pretty ugly hack as below:
+
+    
+    
+    var routeProvider;
+    angular.module('example', [], function($routeProvider) {
+        routeProvider = $routeProvider;
+        // Set up other routes
+    }
+    
+    function Controller($http, $location, $timeout) {
+        // Use $http to find some plugin
+        routeProvider.when(plugin.url, plugin.options);
+        // Ugly hack so that the plugin appears if $location.path() already points to it
+        var path = $location.path();
+        $location.path("/");
+        $timeout(function() { $location.path(path); }, 10);
+    }
+    
+
+If I don't do the nonsense with `$timeout` then if I start (load the page) at
+the route for the plugin it won't load (`$route.current` remains blank). With
+the jump between paths the route gets resolved properly and the plugin view
+loads as it should.
+
+Is there a better way of doing this?
+
+You could tear $routeProvider from the source and make your own version? :-)
+
+$routeProvider is just a provider made for you.
+<https://github.com/angular/angular.js/blob/master/src/ng/route.js>
+
+The way that we did this in the end was to have all of the routes downloaded
+from services before we start up AngularJS and then use that data structure to
+set up the routes, then bootstrap Angular once we had the information and
+everything was set up properly.
+
+The only downside of this is the delay in start up, especially if there are
+multiple service plug ins that you need to handle.
+

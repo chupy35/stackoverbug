@@ -1,0 +1,52 @@
+18323719 Ways to improve first time indexing in ElasticSearch
+
+In my application, I have a need to re-index all of the data from time to
+time. I have noticed that the time it takes to index data the first time (via
+bulk index) is significantly slower than subsequent re-indexing. In one
+scenario, it takes about 2 hours to perform the indexing the first time, and
+about 15 minutes (indexing the same data) with subsequent indexing.
+
+While the 2 hours to index the first time is reasonable, I am curious why
+subsequent iterations to re-index are significantly faster. And more so, I am
+wondering if there's anything I can do to improve the performance for when
+indexing the first time, e.g. perhaps by indicating how large the index will
+be, etc.
+
+Thanks, Eric
+
+Have you defined a mapping for your types? If not, everytime ES find a new
+field, the mapping must be updated (and this impact the whole index).
+
+On subsequent indexing, the mapping is already complete. So what you could do
+is explicitly mapping your types.
+
+Also, you can improve speed of re-indexing by setting the `refresh_interval`
+to an higher value, [look at this
+benchmark](http://blog.sematext.com/2013/07/08/elasticsearch-refresh-interval-
+vs-indexing-performance/).
+
+**Edited** to strike out references to `merge_factor` as it has been **removed
+in ES 2.0** :
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking_20_setting_changes.html#_merge_and_merge_throttling_settings>
+
+* * *
+
+As **Damien** indicates, you can indeed influence (bulk) indexing settings -
+`refresh_interval` can be set to `-1` temporarily and set back to the default
+value of `1s` after you complete your bulk indexing. ~~Another setting to
+modify is the`merge.policy.merge_factor`; set it to a higher value such as
+`30` and then back to the default of `10` once done.~~
+
+There are a number of tutorials and mailing list discussions about optimizing
+bulk indexing, but here's some official doc links to start with:
+
+~~<http://www.elasticsearch.org/guide/reference/index-modules/merge/>~~
+<http://www.elasticsearch.org/guide/reference/api/admin-indices-update-
+settings/>
+
+If you haven't already tuned the memory settings for your JVM, you should.
+Although specific to a 512mb VPS running Ubuntu 10.04 server, these settings
+(<http://pastebin.com/mNUGQCLY>) should point you in the right direction.
+Basically, allocating the desired amount of RAM to Elasticsearch upon startup
+can improve JVM memory allocation/GC timing.
+

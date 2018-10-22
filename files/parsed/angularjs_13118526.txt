@@ -1,0 +1,85 @@
+13118526 IE9 AngularJs issue:Unable to get value of the property 'nodeName':
+object is null or undefinedundefined
+
+Getting this error when a page is being loaded with angular js in IE9. No
+issues with Chrom/FF.
+
+"Unable to get value of the property 'nodeName': object is null or
+undefinedundefined"
+
+Any pointers would help.I thought this was fixed as part of Angular js 1.0.1
+release.
+
+I got this error in IE9 when I accidentally had the following illegal markup.
+
+    
+    
+    <table>
+       <h3>foo</h3>
+    
+        ..... blah
+    
+    </table>
+    
+
+Maybe run a html lint to make sure you're not violating any rules like that.
+
+I got this error on angular-perf.js. If you add an conditional comment to
+exclude IE, it will work, but you won't be able to use angular-perf in IE.
+
+For me the culprit was a **thead** tag in the table:
+
+    
+    
+     <table>
+       <thead>bla</thead>
+        ...        
+    </table>
+    
+
+For me, it was a case of having a table row inside of a div. I was fine as
+soon as I removed the intervening div.
+
+    
+    
+    <table>
+      <div>
+        <tr></tr>
+      </div>
+    </table>
+    
+
+The problem was:
+
+    
+    
+    <table>
+        <tr ng-repeat="p in list">
+            <td>{{p.f1}}</td> {{p.f2}}
+        </tr>
+    <table>
+    
+
+Remember `<tr>` should contain only `<td>` tag not any another tag or raw text
+according to the HTML specification. Modern browsers (including IE 10) can
+deal with that mistake but in IE 9 angular raises an error.
+
+for me the issue was << before Back hyperlink. I used htmllint and resolved
+all illegal mark up error except the ones for angular.
+
+Most probably you messed up with the syntax inside the
+
+    
+    
+    <table> <SOMETHING> </table>
+    
+
+I suggest you copy the DOM from browser and do a check on the
+<https://validator.w3.org/check> .  Look for errors like : **document type
+does not allow element "SOMETHING" here; missing one of "TH", "TD" start-tag**
+.
+
+I had the same problem and it was because in a `<table>` I had put some `<h3>`
+not wrapped in `<tr>` and `<td>`, and also, I have some `<br>` and `<br/>`
+tags, which should better be `<br />`, for `XHTML`'s sake.
+

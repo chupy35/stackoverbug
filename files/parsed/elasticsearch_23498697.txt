@@ -1,0 +1,143 @@
+23498697 What's the easy way to create a cluster with 2 nodes on the same
+machine?
+
+I'm testing [Elasticsearch](http://www.elasticsearch.com/) and I'm trying to
+create a simple cluster with 2 nodes on a single machine (on Fedora)
+
+I'm launching a first instance named Node1:
+
+    
+    
+    sudo bin/elasticsearch -Des.node.name=Node1 -Des.http.port=9200
+    
+
+And a second instance named Node2 in another terminal:
+
+    
+    
+    sudo bin/elasticsearch -Des.node.name=Node2 -Des.http.port=9201
+    
+
+The console output is the following for both commands:
+
+    
+    
+    log4j:WARN No appenders could be found for logger (node).
+    log4j:WARN Please initialize the log4j system properly.
+    log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+    
+
+GET `http://127.0.0.1:9200` gives me:
+
+    
+    
+    {
+      "status" : 200,
+      "name" : "Node1",
+      "version" : {
+        "number" : "1.1.1",
+        "build_hash" : "f1585f096d3f3985e73456debdc1a0745f512bbc",
+        "build_timestamp" : "2014-04-16T14:27:12Z",
+        "build_snapshot" : false,
+        "lucene_version" : "4.7"
+      },
+      "tagline" : "You Know, for Search"
+    }
+    
+
+and GET `http://127.0.0.1:9201` gives me
+
+    
+    
+    {
+      "status" : 200,
+      "name" : "Node2",
+      "version" : {
+        "number" : "1.1.1",
+        "build_hash" : "f1585f096d3f3985e73456debdc1a0745f512bbc",
+        "build_timestamp" : "2014-04-16T14:27:12Z",
+        "build_snapshot" : false,
+        "lucene_version" : "4.7"
+      },
+      "tagline" : "You Know, for Search"
+    }
+    
+
+That looks good but now if I get the cluster health I have different results
+on 9200 and 9201:
+
+GET `http://127.0.0.1:9200/_cluster/health?pretty=true`
+
+    
+    
+    {
+      "cluster_name" : "elasticsearch",
+      "status" : "yellow",
+      "timed_out" : false,
+      "number_of_nodes" : 1,
+      "number_of_data_nodes" : 1,
+      "active_primary_shards" : 6,
+      "active_shards" : 6,
+      "relocating_shards" : 0,
+      "initializing_shards" : 0,
+      "unassigned_shards" : 6
+    }
+    
+
+GET `http://127.0.0.1:9201/_cluster/health?pretty=true`
+
+    
+    
+    {
+      "cluster_name" : "elasticsearch",
+      "status" : "green",
+      "timed_out" : false,
+      "number_of_nodes" : 1,
+      "number_of_data_nodes" : 1,
+      "active_primary_shards" : 0,
+      "active_shards" : 0,
+      "relocating_shards" : 0,
+      "initializing_shards" : 0,
+      "unassigned_shards" : 0
+    }
+    
+
+Why do I have only 1 node on the same cluster? Why is it green and also
+yellow? Looks like the cluster is not working...
+
+How do I make this works?  Where are the [Zen
+Discovery](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+discovery-zen.html) logs?
+
+Related questions:
+
+  * [elasticsearch: auto node discovery not happening, missing anything?](https://stackoverflow.com/questions/21611254/elasticsearch-auto-node-discovery-not-happening-missing-anything)
+  * [Multiple nodes in ElasticSearch](https://stackoverflow.com/questions/13477303/multiple-nodes-in-elasticsearch)
+
+Elasticsearch nodes cannot share the same data directory. So you need to add
+an additional parameter: `-Des.data.path=/path/to/data`
+
+    
+    
+     sudo bin/elasticsearch -Des.node.name=Node1 -Des.http.port=9200 
+       -Des.data.path=/path/to/data1
+    
+     sudo bin/elasticsearch -Des.node.name=Node1 -Des.http.port=9201 
+       -Des.data.path=/path/to/data2
+    
+
+That should work for you. Also, note that in this case you do not need to
+specify the port numbers as Elasticsearch will automatically grab the next
+available free port, starting with 9200 by default.
+
+I had the same problem. I fixed it by setting the parameter network.host to
+127.0.0.1 in the config file elasticsearch.yml.
+
+Like others have said, you have two separate clusters with one node each. What
+type of discovery are you using, unicast or multicast?
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+discovery-zen.html>
+
+For the ZenDiscovery logs, start your elasticsearch instance with an extra
+parameter to get verbose logging: `-Dlogger.zen.discovery=TRACE`
+

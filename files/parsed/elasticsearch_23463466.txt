@@ -1,0 +1,150 @@
+23463466 registering a custom analyzer and using it in a template
+
+I've been trying to add custom analyzer in elasticsearch with the goal of
+using it as the default analyzer in an index template. So far, I've been able
+to get it to work when explicitly defined as the analyzer for a property (when
+defined inside the template), but not when trying to use it as the default.
+Here is what I have so far:
+
+Appended to elasticsearch.yml:
+
+    
+    
+    ### custom analyzer ###
+    index:
+        analysis:
+            analyzer:
+                custom_whitespace:
+                    type: standard
+                    tokenizer: whitespace
+                    filter: [lowercase]
+    
+
+Elasticsearch starts without error, but when I try to use a template to create
+an index such as:
+
+    
+    
+    {
+        "aliases": {},
+        "order": 0,
+        "settings": {
+            "index.analysis.analyzer.default.stopwords": "_none_",
+            "index.analysis.analyzer.default.type": "custom_whitespace",
+            "index.refresh_interval": "5s"
+        },
+        "template": "goldstone-*",
+        "mappings": {
+            "_default_": {
+                "_timestamp": {
+                    "enabled": true,
+                    "path": "@timestamp"
+                },
+                "_source": {
+                    "enabled": true
+                },
+                "properties": {
+                    "@timestamp": {
+                        "type": "date"
+                    }
+    
+                }
+            }
+        }
+    }
+    
+
+An error is generated during index creation:
+
+    
+    
+    IndexCreationException[[goldstone-2014.05.05] failed to create index]; nested: ElasticsearchIllegalArgumentException[failed to find analyzer type [custom_whitespace] or tokenizer for [default]]; nested: NoClassSettingsException[Failed to load class setting [type] with value [custom_whitespace]]; nested: ClassNotFoundException[org.elasticsearch.index.analysis.customwhitespace.CustomWhitespaceAnalyzerProvider]
+    
+
+The only way I've been able to successfully register the custom analyzer was
+to define it in the template, but then I was not able to use it as the default
+analyzer using the "index.analysis.analyzer.default.type" parameter, only by
+specifying an explicit analyzer with each property. That configure looks like:
+
+    
+    
+    {
+        "aliases": {},
+        "order": 0,
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "custom_whitespace": {
+                        "filter": ["lowercase"],
+                        "tokenizer": "whitespace"
+                    }
+                }
+            },
+            "index.analysis.analyzer.default.stopwords": "_none_",
+            "index.analysis.analyzer.default.type": "whitespace",
+            "index.refresh_interval": "5s"
+        },
+        "template": "goldstone-*",
+        "mappings": {
+            "keystone_service_list": {
+                "_timestamp": {
+                    "enabled": true,
+                    "path": "@timestamp"
+                },
+                "_source": {
+                    "enabled": true
+                },
+                "properties": {
+                    "@timestamp": {
+                        "type": "date"
+                    },
+                    "region": {
+                        "type": "string",
+                        "analyzer": "custom_whitespace"
+                    }
+                }
+            }
+       }
+    }
+    
+
+Any way to define this analyzer so it can be used as the default for all
+properties of all types in an index template?
+
+You can try [dynamic-
+templates](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/custom-
+dynamic-mapping.html#dynamic-templates), like:
+
+    
+    
+    // only show 'mappings' part
+    "mappings": {
+        "keystone_service_list": {
+            "_timestamp": {
+                    "enabled": true,
+                    "path": "@timestamp"
+                },
+                // _source enabled default
+                //"_source": {
+                //    "enabled": true
+                //},
+                "dynamic_templates": [
+                    {
+                        "string_fields": {
+                            "match": "*",
+                            "match_mapping_type": "string",
+                            "mapping": {
+                                "type": "string",
+                                "analyzer": "custom_whitespace"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+This will adopt 'custom_whitespace' analyzer to all fields which type is
+string in 'keystone_service_list'.
+

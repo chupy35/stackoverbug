@@ -1,0 +1,21 @@
+15514114 files indexing automatically by elasticsearch
+
+I am a newbie in elasticsearch, please forgive me if my question sounds weird
+:D I want to index files in some directories with elasticsearch automatically
+(for example: if i add a file in certain directory then elasticsearch can
+index that file immediately), but i don't know how to configure elasticsearch
+in order to solve that problem. Can anyone suggest me?
+
+Thank in advance
+
+I dont think you can have elasticsearch watch a directory (I wouldn't think
+that is a good thing to do in most cases.)
+
+Instead, have a client wrapper that implements a FileWatcher. Push changes to
+ElasticSearch via this client.
+
+You could use
+[PathHierarchyTokenizer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/pathhierarchy-tokenizer.html) to preserve the file system
+hierarchy in your index, allowing you to drill down your Directory structure.
+

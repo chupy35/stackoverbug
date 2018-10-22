@@ -1,0 +1,87 @@
+10250904 unable to install elasticsearch plugin
+
+I've downloaded elastic search plugin from
+
+<https://github.com/downloads/spinscale/elasticsearch-suggest-
+plugin/elasticsearch-suggest-0.0.3-0.18.6.zip>
+
+I've unzipped the folder and I know i'm supposed to put the 3 jar files in the
+lib/ directory (of play itself or of the application I'm creating or that of
+elasticsearch). but which lib/ directory shall i put it in? also, what shall i
+do next. i tried to understand the documentation on the website but i didn't.
+I'll really appreciate any help as I've been trying for 2 days to install this
+plugin. I'm using play 1.2.4
+
+Try the builtin `bin/plugin` utility:
+
+    
+    
+    % bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.0.3-0.18.6.zip -install elasticsearch-suggest
+    -> Installing elasticsearch-suggest...
+    Trying https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.0.3-0.18.6.zip...
+    Downloading ..............................................................................DONE
+    Installed elasticsearch-suggest
+    % find plugins/elasticsearch-suggest
+    plugins/elasticsearch-suggest
+    plugins/elasticsearch-suggest/elasticsearch-suggest-0.0.3.jar
+    plugins/elasticsearch-suggest/lucene-misc-3.5.0.jar
+    plugins/elasticsearch-suggest/lucene-spellchecker-3.5.0.jar
+    %
+    
+
+Download elastic search deb file from this link [elastic
+search](https://github.com/elasticsearch/elasticsearch/downloads)
+
+and once installed then check elastic search status like **sudo service
+elasticsearch status** To view elastic search index in GUI, run this command
+from your /usr/share directory
+
+**sudo elasticsearch/bin/plugin -install mobz/elasticsearch-head**
+
+**open "http://localhost:9200/_plugin/head/"**
+
+### MAC OS - with brew elasticsearch base install
+
+Install the elasticsearch package with brew :
+
+    
+    
+    brew install elasticsearch
+    
+
+Install the elasticsearch_head plugin to get a simple browser :
+
+    
+    
+    cd /usr/local/Cellar/elasticsearch/1.4.0/
+    sudo bin/plugin -install mobz/elasticsearch-head
+    open "http://127.0.0.1:9200/_plugin/head/"
+    
+
+![enter image description here](https://i.stack.imgur.com/kLeov.png)
+
+In one line:
+
+    
+    
+    sudo /usr/share/elasticsearch/bin/plugin -install mobz/elasticsearch-head
+    
+
+Using current homebrew installation (March 2016 -- 2.2.0_1 version) resulted
+in the plugin executable not being linked, therefore i had to do:
+
+`$ ~HOMEBREW_ROOT/Cellar/elasticsearch/2.2.0_1/libexec/bin/plugin install
+mobz/elasticsearch-head`
+
+Grab the **plugin script path** by using this command on Mac OS
+
+`brew info elasticsearch`
+
+[![enter image description
+here](https://i.stack.imgur.com/pY3uo.png)](https://i.stack.imgur.com/pY3uo.png)
+
+Then, use the **plugin script path** to install:
+
+`/usr/local/Cellar/elasticsearch/2.3.3/libexec/bin/plugin install some/es-
+plugin`
+

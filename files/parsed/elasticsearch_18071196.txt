@@ -1,0 +1,171 @@
+18071196 ElasticSearch _Type with geolocation
+
+I have set up an elastic Search index which includes different _type mapping
+for every country.
+
+So there is a mapping for "us" "au" "uk" etc.
+
+Each mapping includes a location mapping of type "geo_point"
+
+prior to adding different _types
+
+My query sort would look like:
+
+    
+    
+    "sort" : [
+        {
+    
+                "_geo_distance" : {
+                "postcode.location" : [' . $mylocation_long . ',' . $mylocation_lat . '], 
+                "order" : "asc",
+                "unit" : "km"
+            }
+        }
+    ],
+    
+
+with adding _types to the data and mapping this no longer works, instead I
+specify it like:
+
+    
+    
+     "sort" : [
+        {
+    
+                "_geo_distance" : {
+                "$country.location" : [' . $mylocation_long . ',' . $mylocation_lat . '], 
+                "order" : "asc",
+                "unit" : "km"
+            }
+        }
+    ],
+    
+
+this works fine.
+
+However there are times when queries need to be done beyond a single country.
+So setting it to "us.location" isn't correct, and wont work.
+
+In this case, how do I make this sorting work, when I don't know the country
+and I need to sort it by a mapped location.
+
+Or is it a case of this can not be done and all docs must have the same _type
+in order for this to work?
+
+What happens when you point the working query at /index/_search instead of
+/index/type/_search ?
+
+Sorry if I am missing something obvious, but why cannot you just sort on
+"location". It seems to work just fine:
+
+    
+    
+    curl -XDELETE localhost:9200/test-idx/ && echo 
+    curl -XPUT localhost:9200/test-idx/ -d '
+    {
+        "settings":{
+            "number_of_shards":1,
+            "number_of_replicas":0
+        },
+        "mappings": {
+            "us": {
+                "properties": {
+                    "location": {
+                      "type": "geo_point"
+                    }        
+                }
+            },
+            "uk": {
+                "properties": {
+                    "location": {
+                      "type": "geo_point"
+                    }        
+                }
+            },
+            "au": {
+                "properties": {
+                    "location": {
+                      "type": "geo_point"
+                    }        
+                }
+            }
+        }
+    }' && echo 
+    curl -XPUT localhost:9200/test-idx/us/1 -d '
+    {
+        "location": "42.3606402,-71.0674569"
+    }
+    ' && echo 
+    curl -XPUT localhost:9200/test-idx/uk/2 -d '
+    {
+        "location": "51.5286416,-0.1017943"
+    }
+    ' && echo 
+    curl -XPUT localhost:9200/test-idx/au/3 -d '
+    {
+        "location": "-33.8471226,151.0594183"
+    }
+    ' && echo 
+    
+    curl -XPOST localhost:9200/test-idx/_refresh && echo 
+    curl "localhost:9200/test-idx/_search?pretty" -d '{
+        "query": {
+            "match_all": {}
+        },
+        "sort" : [
+            {
+                    "_geo_distance" : {
+                    "location" : "52.3712989,4.8937347", 
+                    "order" : "asc",
+                    "unit" : "km"
+                }
+            }
+        ]
+    }' && echo
+    
+
+output:
+
+    
+    
+    {"ok":true,"acknowledged":true}
+    {"ok":true,"acknowledged":true}
+    {"ok":true,"_index":"test-idx","_type":"us","_id":"1","_version":1}
+    {"ok":true,"_index":"test-idx","_type":"uk","_id":"2","_version":1}
+    {"ok":true,"_index":"test-idx","_type":"au","_id":"3","_version":1}
+    {"ok":true,"_shards":{"total":1,"successful":1,"failed":0}}
+    {
+      "took" : 3,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 3,
+        "max_score" : null,
+        "hits" : [ {
+          "_index" : "test-idx",
+          "_type" : "uk",
+          "_id" : "2",
+          "_score" : null, "_source" : {"location": "51.5286416,-0.1017943"},
+          "sort" : [ 355.2735714686373 ]
+        }, {
+          "_index" : "test-idx",
+          "_type" : "us",
+          "_id" : "1",
+          "_score" : null, "_source" : {"location": "42.3606402,-71.0674569"},
+          "sort" : [ 5563.606078215864 ]
+        }, {
+          "_index" : "test-idx",
+          "_type" : "au",
+          "_id" : "3",
+          "_score" : null, "_source" : {"location": "-33.8471226,151.0594183"},
+          "sort" : [ 16650.926847312003 ]
+        } ]
+      }
+    }
+    
+

@@ -1,0 +1,18 @@
+24614088 Spring Boot - Select service implemenation via command line
+
+Is it possible to select what service implementation to use via a command line
+option or value in the application.properties files (ideally with a default).
+Does that solution works with `@EnableAutoConfiguration`?
+
+My use case is the following: I have an application that has 3 service
+implementations, and depending on the environment I would like to select one
+or the other.
+
+Currently only one of the implementations is marked with `@Service`, as
+otherwise `@EnableAutoConfiguration` does not work.
+
+Maybe you can use [Spring
+profiles](https://spring.io/blog/2011/02/14/spring-3-1-m1-introducing-
+profile/). Mark each `@Bean` implementation with `@Profile("...")` and then
+start your app with `spring.profiles.active=...` to select the beans you need.
+

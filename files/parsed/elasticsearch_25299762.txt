@@ -1,0 +1,15 @@
+25299762 how to disable shard re-balancing in elastic search, while allowing
+new indices to be allocated?
+
+I am using ElasticSearch version 1.0.1 and want to achieve two things at the
+same time -  1\. Allow new indices to be created ( the primary and replica
+shards need to be allocated as per usual logic).  2\. Prevent existing shards
+to be rebalanced on node failure.
+
+What combination of settings will allow me to achieve the same? I tried the
+settings from the cluster module documented at
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+cluster.html>. But I am unable to achieve both of them at the same time.
+
+Thanks,
+

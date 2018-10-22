@@ -1,0 +1,44 @@
+17212867 Understanding the write_consistency and quorum rule of Elasticsearch
+
+According to the elasticsearch documentation, the rule for write_consistency
+level quorum is:
+
+quorum (>replicas/2+1)
+
+Using ES 0.19.10, on a setup with 16 shards / 3 replicas we will get 16
+primary shards 48 replicas
+
+Running 2 nodes, we will have 16(primary) + 16(replicas) = 32 active shards.
+
+For the quorum rule to be met, quorum > 48/2 + 1 = 25 active shards.
+
+Now, testing this proves otherwise, write_consistency level is not met (write
+operations times out) until we have 3 nodes running. This kind of makes sense,
+since we could get a split-brain between groups of 2 nodes each in this setup,
+but I dont quite understand how this rule is supposed to work? Am I using the
+wrong numbers here?
+
+Primary shard count doesn't actually matter, so I'm going to replace it with
+N.
+
+If you have an index with N shards and 2 replicas, there are three shards in
+the replication group. This means the quorum is two: the primary plus one of
+the replicas. You need two active shards, which usually means two active
+machines, to satisfy the write consistency parameter
+
+An index with N shards and 3 replicas has four shards in the replication group
+(primary + 3 replicas), so a quorum is three.
+
+An index with N shards and 1 replica is a special case, since you can't really
+have a quorum with only two shards. With only one replica, Elasticsearch only
+requires a single active shard (e.g. the primary), so the `quorum` setting is
+identical to the `one` setting for this particular arrangement.
+
+**A few notes:**
+
+  * 0.19 is really old, you should definitely, absolutely, positively upgrade. I can't even count how many bugfixes and performance improvements have been added since that release :)
+
+  * Write consistency is merely a gateway check. Before executing the indexing request, the node will do a straw-poll to see if write_consistency is met. If it is, it tries to execute the index and push the replication. This doesn't guarantee that the replicas will succeed...they could easily fail and you'll see it in the response. It is simply a mechanism to halt the indexing process if the consistency setting is not satisfied.
+
+  * A "fully replicated" setup with two nodes is 1 primary shard + 1 replica. Each node has a complete set of data. There is no reason to have more replicas, since ES refuses to put the copies of the same data on the same machine (doesn't make sense, doesn't help HA). The inability to index is just a side effect of write consistency, but it's pointing out a bigger problem with your setup :)
+

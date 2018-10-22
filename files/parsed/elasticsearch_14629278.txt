@@ -1,0 +1,88 @@
+14629278 ElasticSearch "Match" with FullText Matches
+
+I'm working with ElasticSearch. When I do this query:
+
+    
+    
+    {query: "blackberry -q10"}
+    
+
+I get exactly what I want (all results which have reference to BlackBerry but
+not Q10).
+
+However, I want to restrict the fields which are searched to just the "title"
+field. Eg, the _source documents have titles, body, tags, etc. and I only want
+to search the title. The ElasticSearch "Match" seems right for me...
+
+    
+    
+    {query: {match: {title: "blackberry -q10"}}}
+    
+
+While this succeeds in only searching the title, it still returns results with
+have Q10 in the title, unlike the search above.
+
+I'm looking at [the match
+documentation](http://www.elasticsearch.org/guide/reference/query-dsl/match-
+query.html) but can't seem to figure it out.
+
+Thanks!
+
+You want to match all the titles that have "blackberry" AND do not have have
+q10, not all the titles that have "blackberry" OR do not have q10.
+
+The default boolean operator for a match is (in most cases) OR. Try adding an
+"operator": "and" clause to your query instead.
+
+The Match query doesn't use negation syntax like that. E.g you can't use a
+"minus" to negate a term. It will be parsed as a hyphen by the default search
+analyzer.
+
+I would use a filtered query in this case. You could add the negation in a
+query...but a filter will be much faster.
+
+    
+    
+    {
+      "filtered":{
+         "query":{
+            "match":{
+               "title":"blackberry"
+            }
+         },
+         "filter":{
+            "bool":{
+               "must_not":{
+                   "term":{
+                      "title":"q10"
+                  }
+               }
+            }
+         }
+      }
+    }
+    
+
+Note, you may need to change the `term` filter, depending on how you analyzed
+the field at index time.
+
+EDIT: Based on your comment below, if you really want to keep the ability to
+do negations "inline", you would use the `field` query (a more specific
+version of `query_string`, which would also work). This query uses Lucene
+syntax, which allows inline negation
+
+    
+    
+    {
+       "field" : {
+           "title" : "blackberry -q10"
+       }
+    }
+    
+
+The reason `query_string` and it's derivatives are not recommended is because
+it is easy to shoot yourself in the foot. Or rather, it's easy for your users
+to shoot your server in the face. Query_string demands proper syntax and will
+simply die if the users enter it incorrectly. It also allows your users to
+make some horrible inefficient queries, usually through wildcards
+

@@ -1,0 +1,43 @@
+28548370 store data temporarily in a component without using state
+
+I have a react app that queries a local http point and returns data every few
+seconds. Each time the ajax request returns, I package some of the info
+returned into an object and add that object to an array. This means that each
+time the ajax call returns, I have to
+
+  1. get the array from state
+  2. add the new array to state after I add the object to the array
+
+As a result of this continuously updating of state, my React app renders
+automatically (& unnecessarily). Nothing has changes in the UI as a result of
+adding to the object to the array (and then storing the array in state) but
+React renders automatically.
+
+Question: Is there a way to have an array accessible to different function
+calls in a component without using state?
+
+    
+    
+      var arr = this.state.arrayOfObjects.slice();
+      obj = {};
+      var timeStamp = Date.now();
+      obj['stuffFromApi'] = apiStuff;
+      obj['timeStamp'] = timeStamp;
+      arr.push(obj);    
+      this.setState({ arrayOfObjects: arr});
+    
+
+You can just use an instance variable:
+
+    
+    
+    this.arrayOfObjects = this.arrayOfObjects || []; // can also be initialized in componentWillMount method.
+    obj = {};
+    var timeStamp = Date.now();
+    obj['stuffFromApi'] = apiStuff;
+    obj['timeStamp'] = timeStamp;
+    this.arrayOfObjects.push(obj);
+    
+
+Then you can access `this.arrayOfObjects` from other functions too.
+

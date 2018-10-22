@@ -1,0 +1,51 @@
+28074393 Spring boot createJarFileFromFileEntry
+
+I have a spring boot app and I start it with -Dloader.path=. One of the jar
+files is hive-exec.jar. This has a jar file bundled called minlog-1.2.jar. If
+I specify this file in -Dloader.path, I get an error,
+
+> java.lang.IllegalStateException: Unable to open nested entry
+'minlog-1.2.jar'. It has been compressed and nested jar files must be stored
+without compression. Please check the mechanism used to create your executable
+jar file at
+org.springframework.boot.loader.jar.JarFile.createJarFileFromFileEntry(JarFile.java:378)
+at
+org.springframework.boot.loader.jar.JarFile.createJarFileFromEntry(JarFile.java:355)
+at
+org.springframework.boot.loader.jar.JarFile.getNestedJarFile(JarFile.java:341)
+at
+org.springframework.boot.loader.archive.JarFileArchive.getNestedArchive(JarFileArchive.java:108)
+at
+org.springframework.boot.loader.archive.JarFileArchive.getNestedArchives(JarFileArchive.java:92)
+at
+org.springframework.boot.loader.PropertiesLauncher.getClassPathArchives(PropertiesLauncher.java:445)
+at org.springframework.boot.loader.Launcher.launch(Launcher.java:60) at
+org.springframework.boot.loader.PropertiesLauncher.main(PropertiesLauncher.java:564)
+
+However, if I copy this file into a folder and add that folder in
+-Dloader.path, I don't get any error.
+
+What am I missing?
+
+Thank You,
+
+I am trying to manage the database driver as external jar instead of a
+project's maven's dependency. The application use the JPA framework, and we
+wanted to be able to switch from one SQL-database implementation from one
+environment to another (for example, H2 in DEV, Oracle in production). I had
+to manage the h2-database-driver jar as an external dependency. While loading
+it with the "-Dloader.path" command line option, I came accross he same
+problem as you described.
+
+Viewing the org.springframework.boot.loader.jar.JarFile source code, the class
+manage an folder-entry and a jar-entry differently. The method
+getNestedArchives seems to invoke the createJarFileFromFileEntry method which
+throw this exception.  There must be a good reason for it, if someone know
+about it, any comment is welcomed!
+
+When loading jar dependencies from a directory, the java.util.jar.JarFile
+constructor is used instead and does not seem to throw any exception...
+
+In the createJarFileFromFileEntry method, instad of throwing an exception,
+wouldn't it be possible to only have a log.warn and not throw an exception?
+

@@ -1,0 +1,60 @@
+13926871 Elasticsearch - How to set n-to-n relationship
+
+I am trying to create a Books library application. A user can borrow many
+books. A book can be borrowed by many users in its lifetime. In ElasticSearch
+there will be user documents and book documents. How can I search for all
+books that a user borrowed?
+
+  1. If I create a user-book document, then the book details are repeated as many times as the book is borrowed.
+
+  2. If I have an array in Book document listing all the users that borrowed the book, then the array will be enormous for popular books.
+
+Which is better? or is there a simpler and better solution that the above 2?
+
+Create three types in your index, one for Books, one for User and one for a
+checkout. Store info about users and books using types "user" and "book"
+respectively. Every time a user checks out a book, store a document containing
+the user ID and book ID using type "checkout". Query the checkout type for all
+the books checked out by a user and all the users who checked out a book.
+Meanwhile, information for users and books is stored only once.
+
+Main question is IMHO what do you want to search?
+
+  1. If you want to search for books (title, isbn...), then store books.
+  2. If you want to search for Users (name, address, city...), then store users.
+  3. If you want to search for users that borrow a book, then store a user and an array of borrowed books.
+
+That means that if you need 1 and 3, you will store twice the information
+about your book (one time in book type and another time in user type).
+
+If you need to add informations about borrow date and return date, just add it
+to your array of "checkout" objects.
+
+I will probably design it like this...
+
+    
+    
+    {
+      "name":"david",
+      "birthdate":"1971-12-26",
+      "books":[
+        {
+          "title":"Star wars",
+          "author":"Georges Lucas",
+          "borrowdate":"2012-12-18",
+          "returndate":null
+        },
+        {
+          "title":"Star Trek",
+          "author":"Whatever his name",
+          "borrowdate":"2012-07-01",
+          "returndate":"2012-08-15"
+        }
+      ]
+    }
+    
+
+Does it help?
+
+David.
+

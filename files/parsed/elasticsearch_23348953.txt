@@ -1,0 +1,70 @@
+23348953 Elasticsearch - No node available
+
+I'm getting this error for a few hours.. I'm using Play 2.2.0 and
+Elasticsearch 0.90.7!
+
+Can anyone help me?
+
+    
+    
+    play.api.Application$$anon$1: Execution exception[[NoNodeAvailableException: No node available]]
+            at play.api.Application$class.handleError(Application.scala:293) ~[play_2.10-2.2.1.jar:2.2.1]
+            at play.api.DefaultApplication.handleError(Application.scala:399) ~[play_2.10-2.2.1.jar:2.2.1]
+            at play.core.server.netty.PlayDefaultUpstreamHandler$$anonfun$2$$anonfun$applyOrElse$3.apply(PlayDefaultUpstreamHandler.scala:261) ~[play_2.10-2.2.1.jar:2.2.1]
+            at play.core.server.netty.PlayDefaultUpstreamHandler$$anonfun$2$$anonfun$applyOrElse$3.apply(PlayDefaultUpstreamHandler.scala:261) ~[play_2.10-2.2.1.jar:2.2.1]
+            at scala.Option.map(Option.scala:145) ~[scala-library.jar:na]
+            at play.core.server.netty.PlayDefaultUpstreamHandler$$anonfun$2.applyOrElse(PlayDefaultUpstreamHandler.scala:261) ~[play_2.10-2.2.1.jar:2.2.1]
+    org.elasticsearch.client.transport.NoNodeAvailableException: No node available
+            at org.elasticsearch.client.transport.TransportClientNodesService$RetryListener.onFailure(TransportClientNodesService.java:256) ~[elasticsearch-0.90.7.jar:na]
+            at org.elasticsearch.action.TransportActionNodeProxy$1.handleException(TransportActionNodeProxy.java:89) ~[elasticsearch-0.90.7.jar:na]
+            at org.elasticsearch.transport.TransportService$Adapter$2$1.run(TransportService.java:316) ~[elasticsearch-0.90.7.jar:na]
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145) ~[na:1.7.0_25]
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615) ~[na:1.7.0_25]
+            at java.lang.Thread.run(Thread.java:724) ~[na:1.7.0_25]
+    
+
+Usually the error you are getting means that your client cannot connect to the
+elasticsearch node(s).
+
+  * Check that you are passing the correct parameters to your client
+  * Check that you do not have issues with a firewall 
+  * Provide a bit more info on your situation as Nick said above, e.g. do you deploy your elastic search on a node on a cloud infrastructure like azure? In this case for example your client might time out because it cannot ping the nodes.
+
+and you can also check some other similar cases in here, e.g. [No Node
+Available
+Exception](https://stackoverflow.com/questions/10218156/elasticsearch-
+throwing-the-exception-nonodeavailableexception-occured-no-node?rq=1)
+
+Are you closing off your connections? It could be you're firing stuff off to
+ElasticSearch, but not closing down your connections. Eventually ES will have
+"No nodes available"
+
+    
+    
+    try{
+      Client client //set it up
+      client.prepareSearch //do something
+    }
+    
+    finally {
+      client.close(); //close it down
+    }
+    
+
+I suggest you to try these settings of ES
+
+    
+    
+    client.transport.sniff=true
+    sniffOnConnectionFault=true
+    
+
+In my case, client refused to connect to ES with this exception because
+cluster name on server was different then specified on client side.  Client
+connects to ES, looks for desired cluster name, and then fails saying no node
+available. But in reality, that should mean that no node belongs to cluster
+with name specified on client side.
+
+That can by fixed either by specifying a correct cluster name, or by setting
+`client.transport.ignore_cluster_name` to true.
+

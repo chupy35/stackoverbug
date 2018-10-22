@@ -1,0 +1,100 @@
+20141081 Elasticsearch Search Keyword Inside A Larger Text
+
+I'm kind of new to Elasticsearch.  I'm storing a lot of keywords inside
+Elasticsearch, something like
+
+    
+    
+    {"text": "harry potter", "added": "2013-11-10"}
+    {"text": "prisoner of azkaban", "added": "2013-11-10"}
+    ...
+    
+
+What I want to do is, given a larger text, find all keywords that occur in
+that string.
+
+For example, for string `harry potter and the prisoner of azkaban`, I most
+likely expect to have `harry potter` and `prisoner of azkaban` leaving `and
+the` as the remainder.
+
+My algorithm is
+
+    
+    
+    1. search the keyword with the best score for the input
+    2. if found, remove the keyword inside the input. otherwise exit.
+    3. go back to step 1 and use the remainder as the input.
+    
+
+I initially use this query
+
+    
+    
+    {
+       "query": {
+           "match": {
+               "text": "harry potter and prisoner of azkaban"
+           }
+       }
+    }
+    
+
+This most likely return `prisoner of azkaban` in the first pass and `harry
+potter` after that.
+
+For most text inputs I have, this work nicely. But then I notice for some text
+inputs, I don't get what I expect because of the scoring. There are some
+keywords that have better scoring than the other but don't really exist in the
+input.
+
+For example, in one case, there is a keyword `prisoner harry potter`. When I
+try the query using `harry potter and prisoner of azkaban`, this keyword has
+(let's just assume for the sake of example) the best score than `harry potter`
+and the `prisoner of azkaban`, but I can not remove the keyword inside the
+input because of the order.
+
+Well, I can modify the algorithm to
+
+    
+    
+    1. search the 5 keywords with the best score for the input
+    2. for each keywords check against the input, 
+          if a keyword inside the input remove it from the input.
+    3. if at least one keyword is inside the input go back to step 1
+          and use the remainder as the new input otherwise exit.
+    
+
+But I'm wondering if there is another way to modify, maybe the query, or maybe
+the analyzer, or maybe the mapping to improve the scoring.
+
+.. or maybe Elasticsearch is not suitable for this?
+
+You can use [shingle indexing](http://www.elasticsearch.org/blog/searching-
+with-shingles/) then search with one query for once, without using any
+algorithms.
+
+Shingle analyzer basicly seperates your text into terms and term groups.
+
+    
+    
+    Text : I love apple
+    Terms: I, love, apple, I love, love apple, I love apple
+    
+
+The use following query to match all documents.
+
+    
+    
+    {
+       "query": {
+           "match": {
+               "text": "harry potter and prisoner of azkaban"
+           }
+       }
+    }
+    
+
+[Also here an answer to my question about shingle
+analyzer.](https://stackoverflow.com/questions/18252549/how-to-find-most-used-
+phrases-in-elasticsearch)
+

@@ -1,0 +1,143 @@
+19735279 Applying a dynamic template to multiple types - for managing tokens
+for sorting
+
+We are having some difficulty on figuring out how to best manage our tokenized
+and untokenized fields for both searching and sorting. Our goals are pretty
+straightforward:
+
+  1. Support Partial word searches
+  2. Support Sorting on all all fields
+  3. Our mapping must be dynamic, customers add new fields at runtime. 
+
+We're able to accomplish this using a dynamic template. We Store Strings using
+the default tokenizer, a custom, ngram tokenizer, and an unanalyzed tokenizer.
+The mapping:
+
+    
+    
+    curl -XPUT 'http://testServer:9200/test/' -d '{
+            "settings": {
+                "analysis": {
+                    "analyzer": {
+                        "my_ngram_analyzer": {
+                            "tokenizer": "my_ngram_tokenizer",
+                            "filter": [
+                                "lowercase"
+                            ],
+                            "type" : "custom"
+                        },
+                        "default_search": {
+                            "tokenizer" : "keyword",
+                            "filter" : [
+                                "lowercase"
+                            ]
+                        }
+                    },
+                    "tokenizer": {
+                        "my_ngram_tokenizer": {
+                            "type": "nGram",
+                            "min_gram": "3",
+                            "max_gram": "100",
+                            "token_chars": []
+                        }
+                    }
+                }
+            },
+            "mappings": {
+                "TestObject": {
+                    "dynamic_templates": [
+                        {
+                            "metadata_template": {
+                                "match_mapping_type": "string",
+                                "path_match": "*",
+                                "mapping": {
+                                    "type": "multi_field",
+                                    "fields": {
+                                        "ngram": {
+                                            "type": "{dynamic_type}",
+                                            "index": "analyzed",
+                                            "index_analyzer": "my_ngram_analyzer",
+                                            "search_analyzer" : "default_search"
+                                        },
+                                        "{name}": {
+                                            "type": "{dynamic_type}",
+                                            "index": "analyzed",
+                                            "index_analyzer" : "standard",
+                                            "search_analyzer" : "default_search"
+                                        },
+                                        "sortable": {
+                                            "type": "{dynamic_type}",
+                                            "index": "analyzed",
+                                            "analyzer" : "default_search"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }'
+    
+
+We're really only keeping the unanalyzed field around for sorting and exact
+matches (We even call it, 'sortable'. ) This configuration makes it easy for
+us to get partial word searches, if the query is a "contains" query- we append
+".ngram" to the query target. The problem that we are having is deciding when
+to use the ".sortable" suffix. If the we receive a request to sort on
+dateUpdated, for example, we don't want to use .sortable, since that field is
+a date. If The request is to sort on 'name', we do want to use it, since that
+field is a string, and not use it if we are trying to sort on 'price'.
+
+The logic to check the type of a field before sorting seems a little kludgy
+(we check in our model, rather than checking the type in elasticsearch).It
+would be nice to ALWAYS have a '.sortable' field around, but we can't run non-
+string types through the dynamic template below- booleans and numbers can't be
+run through an ngram filter.
+
+Does anyone have a suggestion for how we can always have a ".sortable" field
+for sorting, that would never be tokenized regardless of the type? Or maybe
+you have a better solution for this kind of problem that we're not seeing?
+Thanks in advance!
+
+What this really boiled down to is that we always wanted to have a "sortable"
+field- (which we renamed to "unanalyzed" because it has other uses) on _every_
+mapped field. The real trick to doing this, without adding a new dynamic
+template for every type, was to make a dynamic template that would be
+applicable for every type other than a string. To do that, you need to set
+`match_pattern` to regex:
+
+    
+    
+               {
+                    "other_types": {
+                        "match_mapping_type": "date|boolean|double|long|integer",
+                        "match_pattern": "regex",
+                        "path_match": ".*",
+                        "mapping": {
+                            "type": "multi_field",
+                            "fields": {
+                                "{name}": {
+                                    "type": "{dynamic_type}",
+                                    "index": "not_analyzed"
+                                },
+                                "unanalyzed": {
+                                    "type": "{dynamic_type}",
+                                    "index": "not_analyzed"
+                                }
+                            }
+                        }
+                    }
+                } 
+    
+
+Note that you need to make a small change to "path_match" as well- you have to
+use a real regular expression (as opposed to '*' which is an ES 'simple'
+expression.)
+
+The one drawback to this is we are increasing the size of our index- we are
+storing all of these types twice. For our purposes though, our indexes (we
+have many) have plenty of room to grow, and it's worth it to avoid having to
+do a type look up on every field before doing a sort or an exact-match query
+(just always used ${fieldName}.unanalyzed).
+

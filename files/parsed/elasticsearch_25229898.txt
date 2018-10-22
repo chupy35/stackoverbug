@@ -1,0 +1,94 @@
+25229898 How to make 2 groups in random order in ElasticSearch
+
+For example, in google.com, there are 2 type of search results, 1. Ads that
+relevant to keyword and 2. normal search result.
+
+How can I do that with Elastic search with following conditions
+
+  1. Show Ads for 3 slots with random by userid in a top 3 in search result
+  2. Show normal search result that also random by userid
+
+How to make a single query to integrate those two conditions together in
+search result.
+
+Given sample data, query with 'a' then it should return random(paid 1-3) then
+follow by random(normal 4-6)
+
+    
+    
+    {"type" : "paid", "document" : "paid random 1"}
+    {"type" : "paid", "document" : "paid random 2"}
+    {"type" : "paid", "document" : "paid random 3"}
+    {"type" : "normal", "document" : "normal random 4"}
+    {"type" : "normal", "document" : "normal random 5"}
+    {"type" : "normal", "document" : "normal random 6"}
+    
+
+Hi looking at your question,  I guess you are trying to fetch documents.
+
+  1. Top three random documents based on paid amount
+  2. Top three random documents (default)
+
+So, I've managed to make a request for you,  I've used
+[top_hits](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-top-hits-aggregation.html) aggregation,
+
+Here is the request,
+
+    
+    
+    curl -XPOST "http://localhost:9200/x3/_search" -d'
+    {
+       "query": {
+          "match": {
+             "doc": "xxx"
+          }
+       },
+       "aggs": {
+          "tophits_random_paid": {
+             "top_hits": {
+                "from": 0,
+                "size": 3,
+                "sort": [
+                   {
+                      "paidAmount": {
+                         "order": "desc"
+                      }
+                   },
+                   {
+                      "_script": {
+                         "script": "(doc[\"userid\"].value + salt).hashCode()",
+                         "type": "number",
+                         "params": {
+                            "salt": "some_random_string"
+                         },
+                         "order": "asc"
+                      }
+                   }
+                ]
+             }
+          },
+          "tophits_random_default": {
+             "top_hits": {
+                "from": 0,
+                "size": 3,
+                "sort": [
+                   {
+                      "_script": {
+                         "script": "(doc[\"userid\"].value + salt).hashCode()",
+                         "type": "number",
+                         "params": {
+                            "salt": "some_random_string"
+                         },
+                         "order": "asc"
+                      }
+                   }
+                ]
+             }
+          }
+       }
+    }'
+    
+
+Thanks, Hope this helps !!.
+

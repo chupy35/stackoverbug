@@ -1,0 +1,54 @@
+24890453 ElasticSearch for Time Series Data
+
+I am evaluating a number of different NoSQL databases to store time series
+JSON data. ElasticSearch has been very interesting due to the query engine, I
+just don't know how well it is suited to storing time series data.
+
+The data is composed of various metrics and stats collected at various
+intervals from devices. Each piece of data is a JSON object. I expect to
+collect around 12GB/day, but only need to keep the data in ES for 180 days.
+
+Would ElasticSearch be a good fit for this data vs MongoDB or Hbase?
+
+Using time based indices, for instance an index a day, together with the
+index-template feature and an alias to query all indices at once there could
+be a good match. Still there are so many factors that you have to take into
+account like: \- type of queries \- Structure of the document and query
+requirements over this structure. \- Amount of reads versus writes \-
+Availability, backups, monitoring \- etc
+
+Not an easy question to answer with yes or no, I am afraid you have to do more
+research yourself before you are really say that it is the best tool for the
+job.
+
+You can read up on ElasticSearch time-series use-case example
+[here](http://www.elasticsearch.org/case-study/data-dog/).
+
+But I think columnar databases are a better fit for your requirements.
+
+My understanding is that ElasticSearch works best when your queries return a
+small subset of results, and it caches such parameters to be used later. If
+same parameters are used in queries again, it can use these cached results
+together in union, hence returning results really fast. But in time series
+data, you generally need to aggregate data, which means you will be traversing
+a lot of rows and columns together. Such behavior is quite structured and is
+easy to model, in which case there does not seem to be a reason why
+ElasticSearch should perform better than columnar databases. On the other
+hand, it may provide ease of use, less tuning, etc all of which may make it
+more preferable.
+
+Columnar databases generally provide a more efficient data structure for time
+series data. If your query structures are known well in advance, then you can
+use Cassandra. Beware that if your queries request without using the primary
+key, Cassandra will not be performant. You may need to create different tables
+with the same data for different queries, as its read speed is dependent on
+the way it writes to disk. You need to learn its intricacies, a time-series
+example is [here](http://www.datastax.com/dev/blog/advanced-time-series-with-
+cassandra).
+
+Another columnar database that you can try is the columnar extension provided
+for Postgresql. Considering that your max db size will be about 180 * 12 =
+2.16 TB, this method should work perfectly, and may actually be your best
+option. You can also expect some significant size compression of about 3x. You
+can learn more about it [here](http://citusdata.github.io/cstore_fdw/).
+

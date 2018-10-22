@@ -1,0 +1,37 @@
+23705338 what does calling _close on an elasticsearch alias do?
+
+I've got a ton of indices sharing the alias **events**. I called **_close** on
+the **events** alias and now I can't search the **events** alias at all, even
+if I reopen it using **_open**.
+
+The error I'm getting is:
+
+    
+    
+    {
+       "error": "ClusterBlockException[blocked by: [FORBIDDEN/4/index closed];]",
+       "status": 403
+    }
+    
+
+If I make an **_aliases** call, I get back
+
+    
+    
+    "aliases": {
+        "events": {}
+    }
+    
+
+for all of the pertinent indices so it seems like they are all aliased
+correctly. Searched the ES documentation but couldn't find much.
+
+<clarification> seems like calling **_open** on the **events** alias just
+reopens all the indices with that alias, and calling **_close** just closes
+them all. which is what i expected to happen.
+
+Calling close on an elasticsearch alias does exactly what you'd expect it to
+-- closes all the indices with that alias. Not sure if this is the best
+solution, but I ended up re-aliasing closed indices so they were still marked
+but don't cause searching the alias to fail.
+

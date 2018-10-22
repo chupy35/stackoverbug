@@ -1,0 +1,48 @@
+13123233 elasticsearch query
+
+I am trying to create elasticsearch query and apply filter on search result as
+below:
+
+    
+    
+    "query" : {
+            "custom_filters_score" : {
+                "query" : {"match" : {"country" : {"query" : "usa","operator" : "and"}}},
+                "filters" : [
+                    {
+                        "filter" : {"query" : {"match" : {"state" : {"query" : "statename","operator" : "and"}}} },
+                        "boost" : "3"
+                    },
+                    {
+                        "filter" : {"query" : {"match" : {"city" : {"query" : "cityname","operator" : "and"}}} },
+                        "boost" : "3"
+                    }
+                ],
+                "score_mode" : "first"
+            }
+        }
+    
+
+Here filters are not working. It is not filtering data for specific state and
+city and returning data for all state and city for country usa.
+
+Any help please!
+
+Regards
+
+I think you misunderstood what the [Custom Filter
+Score](http://www.elasticsearch.org/guide/reference/query-dsl/custom-filters-
+score-query.html) query does. The filters are not applied to filter data, but
+to give a specific score to the documents that match them. Therefore, it's
+normal that elasticsearch gives you all those documents back. Their scores
+will be computed based on the filters that you provided.
+
+If you only want to filter your documents you need to use [normal
+filters](http://www.elasticsearch.org/guide/reference/api/search/filter.html).
+The elasticsearch [query
+DSL](http://www.elasticsearch.org/guide/reference/query-dsl/) provides a lot
+of options for filters too (jsut look at the bottom of the page). Have a look
+for example at the [bool
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/bool-
+filter.html) to combine multiple filters.
+

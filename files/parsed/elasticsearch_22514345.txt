@@ -1,0 +1,21 @@
+22514345 Escaping special characters in elasticsearch on document load
+
+I would like to load some marked up html into a document that is stored in
+elasticsearch. What characters besides " s need to be escaped and how do you
+escape them?
+
+I would like to test via curl (or sense chrome plugin) so I would not be
+relying on any libraries to do format the text.
+
+    
+    
+    POST index1/doctype 
+    {
+      "page" : "a",
+      "page_time" : "2014-03-19_12-10",
+      "html" : "<div class="section" id="idOne"></div>"
+    }
+    
+
+I found my answer. To escape " s use \ s.
+

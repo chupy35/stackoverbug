@@ -1,0 +1,57 @@
+23721898 how to implement a authentication with spring boot security?
+
+i am using spring boot. i want to post a username and password params to
+login, and if login success then return a token. after, i will use the token
+to judge login status. here is my security configure code. but i don't konw
+where to write the login authentication logic code.
+
+SecurityConfig.java
+
+    
+    
+    @Configuration
+    @EnableWebSecurity
+    public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    
+    
+    
+         @Override
+         protected void configure(HttpSecurity http) throws Exception {
+             http.authorizeRequests()
+                    .anyRequest()
+                    .fullyAuthenticated()
+                    .and()
+                    .formLogin()
+                    .loginPage("/user/unlogin")
+                    .permitAll(); 
+         }
+    
+         @Override
+         public void configure(WebSecurity web) throws Exception {
+             web.ignoring().antMatchers("/user/login")
+                    .antMatchers("/user/logout")
+                    .antMatchers("/user/register"); 
+         }
+    }
+    
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+thank you !
+
+There's always more than one way to do something with Spring. There is a happy
+path (probably) with Spring Boot, and you seem to have started on it. Note
+though, if you want Boot to provide some default behaviour, then don't use
+`@EnableWebSecurity` (as advised in the user guide). The [web-secure
+sample](https://github.com/spring-projects/spring-boot/tree/master/spring-
+boot-samples/spring-boot-sample-web-secure) has an example you can follow.
+
+If you use `formLogin()` the default login URL is `/login` (not
+`/user/login`), so you should be able to post the username and password to
+that endpoint to authenticate. Don't add `/login` to the unsecured paths using
+`web.ignoring()` or Spring Security will never process it. When you post to
+`/login` you get back a `JSESSIONID` cookie. That's your authentication token,
+and it expires when the session expires in the server (30min by default, but
+easily configurable). Include it in future requests for secure resources -
+some HTTP clients will even do that for you (like a browser does).
+

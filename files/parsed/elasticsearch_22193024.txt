@@ -1,0 +1,79 @@
+22193024 Elasticsearch terms filter returns no results
+
+I have a bunch of documents with an array field like this:
+
+    
+    
+    { "feed_uids": ["math.CO", "cs.IT"] }
+    
+
+I would like to find all documents that contain some subset of these values
+i.e. treat them as tags. Documentation leads me to believe a terms filter
+should work:
+
+    
+    
+    { "query": { "filtered": { "filter": { "terms": { "feed_uids": [ "cs.IT" ] } } } } }
+    
+
+However, the query matches nothing. What am I doing wrong?
+
+The `terms`-filter works as you expect. I guess your problem here is that you
+have a mapping where `feed_uids` is using the standard analyzer.
+
+This is quite a common problem which is described in a bit more depth here:
+[Troubleshooting Elasticsearch searches, for
+Beginners](http://www.found.no/foundation/beginner-troubleshooting/)
+
+Here is a runnable example showcasing how it works if you specify `"index":
+"not_analyzed"` for the field:
+<https://www.found.no/play/gist/bc957d515597ec8262ab>
+
+    
+    
+    #!/bin/bash
+    
+    export ELASTICSEARCH_ENDPOINT="http://localhost:9200"
+    
+    # Create indexes
+    
+    curl -XPUT "$ELASTICSEARCH_ENDPOINT/play" -d '{
+        "mappings": {
+            "type": {
+                "properties": {
+                    "feed_uids": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                    }
+                }
+            }
+        }
+    }'
+    
+    # Index documents
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_bulk?refresh=true" -d '
+    {"index":{"_index":"play","_type":"type"}}
+    {"feed_uids":["math.CO","cs.IT"]}
+    {"index":{"_index":"play","_type":"type"}}
+    {"feed_uids":["cs.IT"]}
+    '
+    
+    # Do searches
+    
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_search?pretty" -d '
+    {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "terms": {
+                        "feed_uids": [
+                            "cs.IT"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    '
+    
+

@@ -1,0 +1,365 @@
+25030196 Spring boot process is not shutdown with an embeded Tomcat
+
+I'm using Spring-Boot- 1.1.4 and running on Ubuntu 14 with Java 1.7. I built a
+web appliaction based on MongoDB and an embedded Tomcat. The issue is that I
+cann't gracefully shutdown my application since there are some blocked Tomcat
+threads. Here is my thread dump:
+
+    
+    
+            2014-07-30 09:11:29
+        Full thread dump Java HotSpot(TM) 64-Bit Server VM (24.60-b09 mixed mode):
+    
+        "Attach Listener" daemon prio=10 tid=0x00007faa20009800 nid=0x1820 waiting on condition [0x0000000000000000]
+           java.lang.Thread.State: RUNNABLE
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "localhost-startStop-2" daemon prio=10 tid=0x00007fa9f4001000 nid=0x1800 waiting for monitor entry [0x00007faa6f2aa000]
+           java.lang.Thread.State: BLOCKED (on object monitor)
+            at org.springframework.boot.context.embedded.EmbeddedWebApplicationContext.stopAndReleaseEmbeddedServletContainer(EmbeddedWebApplicationContext.java:381)
+            - waiting to lock <0x000000062b7e1dd8> (a org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext)
+            at org.springframework.boot.context.embedded.EmbeddedWebApplicationContext.doClose(EmbeddedWebApplicationContext.java:153)
+            at org.springframework.context.support.AbstractApplicationContext.close(AbstractApplicationContext.java:841)
+            - locked <0x000000062b80e9c0> (a java.lang.Object)
+            at org.springframework.web.servlet.FrameworkServlet.destroy(FrameworkServlet.java:819)
+            at org.apache.catalina.core.StandardWrapper.unload(StandardWrapper.java:1486)
+            - locked <0x000000079e9401b8> (a org.apache.catalina.core.StandardWrapper)
+            at org.apache.catalina.core.StandardWrapper.stopInternal(StandardWrapper.java:1847)
+            - locked <0x000000079e9401b8> (a org.apache.catalina.core.StandardWrapper)
+            at org.apache.catalina.util.LifecycleBase.stop(LifecycleBase.java:232)
+            - locked <0x000000079e9401b8> (a org.apache.catalina.core.StandardWrapper)
+            at org.apache.catalina.core.StandardContext.stopInternal(StandardContext.java:5647)
+            - locked <0x000000062c35df08> (a org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedContext)
+            at org.apache.catalina.util.LifecycleBase.stop(LifecycleBase.java:232)
+            - locked <0x000000062c35df08> (a org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedContext)
+            at org.apache.catalina.core.ContainerBase$StopChild.call(ContainerBase.java:1575)
+            at org.apache.catalina.core.ContainerBase$StopChild.call(ContainerBase.java:1564)
+            at java.util.concurrent.FutureTask.run(FutureTask.java:262)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - <0x00000007725ba0f0> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+    
+        "Tomcat-startStop-2" daemon prio=10 tid=0x00007fa9cc001000 nid=0x17ff waiting on condition [0x00007faa6f1a9000]
+           java.lang.Thread.State: WAITING (parking)
+            at sun.misc.Unsafe.park(Native Method)
+            - parking to wait for  <0x00000007725ba0d0> (a java.util.concurrent.FutureTask)
+            at java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)
+            at java.util.concurrent.FutureTask.awaitDone(FutureTask.java:425)
+            at java.util.concurrent.FutureTask.get(FutureTask.java:187)
+            at org.apache.catalina.core.ContainerBase.stopInternal(ContainerBase.java:1179)
+            - locked <0x000000062c3668c8> (a org.apache.catalina.core.StandardHost)
+            at org.apache.catalina.util.LifecycleBase.stop(LifecycleBase.java:232)
+            - locked <0x000000062c3668c8> (a org.apache.catalina.core.StandardHost)
+            at org.apache.catalina.core.ContainerBase$StopChild.call(ContainerBase.java:1575)
+            at org.apache.catalina.core.ContainerBase$StopChild.call(ContainerBase.java:1564)
+            at java.util.concurrent.FutureTask.run(FutureTask.java:262)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - <0x0000000770e25b88> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+    
+        "Thread-2" prio=10 tid=0x00007fa9d8001000 nid=0x17fd waiting on condition [0x00007faa6e8a0000]
+           java.lang.Thread.State: WAITING (parking)
+            at sun.misc.Unsafe.park(Native Method)
+            - parking to wait for  <0x0000000770e25b68> (a java.util.concurrent.FutureTask)
+            at java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)
+            at java.util.concurrent.FutureTask.awaitDone(FutureTask.java:425)
+            at java.util.concurrent.FutureTask.get(FutureTask.java:187)
+            at org.apache.catalina.core.ContainerBase.stopInternal(ContainerBase.java:1179)
+            - locked <0x000000062c39a058> (a org.apache.catalina.core.StandardEngine)
+            at org.apache.catalina.util.LifecycleBase.stop(LifecycleBase.java:232)
+            - locked <0x000000062c39a058> (a org.apache.catalina.core.StandardEngine)
+            at org.apache.catalina.core.StandardService.stopInternal(StandardService.java:502)
+            - locked <0x000000062c39a058> (a org.apache.catalina.core.StandardEngine)
+            at org.apache.catalina.util.LifecycleBase.stop(LifecycleBase.java:232)
+            - locked <0x000000062c39a9e8> (a org.apache.catalina.core.StandardService)
+            at org.apache.catalina.core.StandardServer.stopInternal(StandardServer.java:752)
+            at org.apache.catalina.util.LifecycleBase.stop(LifecycleBase.java:232)
+            - locked <0x000000062c39ab58> (a org.apache.catalina.core.StandardServer)
+            at org.apache.catalina.startup.Tomcat.stop(Tomcat.java:351)
+            at org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainer.stop(TomcatEmbeddedServletContainer.java:215)
+            - locked <0x000000062c39b0d8> (a org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainer)
+            at org.springframework.boot.context.embedded.EmbeddedWebApplicationContext.stopAndReleaseEmbeddedServletContainer(EmbeddedWebApplicationContext.java:383)
+            - locked <0x000000062b7e1dd8> (a org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext)
+            at org.springframework.boot.context.embedded.EmbeddedWebApplicationContext.doClose(EmbeddedWebApplicationContext.java:153)
+            at org.springframework.context.support.AbstractApplicationContext$1.run(AbstractApplicationContext.java:809)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "SIGTERM handler" daemon prio=10 tid=0x00007faa20008000 nid=0x17fc in Object.wait() [0x00007faa6e9a1000]
+           java.lang.Thread.State: WAITING (on object monitor)
+            at java.lang.Object.wait(Native Method)
+            - waiting on <0x000000062b80e9d0> (a org.springframework.context.support.AbstractApplicationContext$1)
+            at java.lang.Thread.join(Thread.java:1281)
+            - locked <0x000000062b80e9d0> (a org.springframework.context.support.AbstractApplicationContext$1)
+            at java.lang.Thread.join(Thread.java:1355)
+            at java.lang.ApplicationShutdownHooks.runHooks(ApplicationShutdownHooks.java:106)
+            at java.lang.ApplicationShutdownHooks$1.run(ApplicationShutdownHooks.java:46)
+            at java.lang.Shutdown.runHooks(Shutdown.java:123)
+            at java.lang.Shutdown.sequence(Shutdown.java:167)
+            at java.lang.Shutdown.exit(Shutdown.java:212)
+            - locked <0x000000062bb7e438> (a java.lang.Class for java.lang.Shutdown)
+            at java.lang.Terminator$1.handle(Terminator.java:52)
+            at sun.misc.Signal$1.run(Signal.java:212)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "http-nio-8086-exec-5" daemon prio=10 tid=0x00007fa9e4003800 nid=0x17f5 waiting on condition [0x00007faa6eaa2000]
+           java.lang.Thread.State: WAITING (parking)
+            at sun.misc.Unsafe.park(Native Method)
+            - parking to wait for  <0x0000000764c2c860> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+            at java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)
+            at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2043)
+            at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:104)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:32)
+            at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1068)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "http-nio-8086-exec-4" daemon prio=10 tid=0x00007fa9e4002000 nid=0x17f4 waiting on condition [0x00007faa6eba3000]
+           java.lang.Thread.State: WAITING (parking)
+            at sun.misc.Unsafe.park(Native Method)
+            - parking to wait for  <0x0000000764c2c860> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+            at java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)
+            at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2043)
+            at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:104)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:32)
+            at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1068)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "http-nio-8086-exec-3" daemon prio=10 tid=0x00007fa9e4001000 nid=0x17f3 waiting on condition [0x00007faa6fbdf000]
+           java.lang.Thread.State: WAITING (parking)
+            at sun.misc.Unsafe.park(Native Method)
+            - parking to wait for  <0x0000000764c2c860> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+            at java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)
+            at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2043)
+            at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:104)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:32)
+            at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1068)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "http-nio-8086-exec-2" daemon prio=10 tid=0x00007fa9e801b800 nid=0x17f2 waiting on condition [0x00007faa6f3ab000]
+           java.lang.Thread.State: WAITING (parking)
+            at sun.misc.Unsafe.park(Native Method)
+            - parking to wait for  <0x0000000764c2c860> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+            at java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)
+            at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2043)
+            at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:104)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:32)
+            at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1068)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "http-nio-8086-exec-1" daemon prio=10 tid=0x00007fa9e801b000 nid=0x17f0 waiting on condition [0x00007faa6f4ac000]
+           java.lang.Thread.State: WAITING (parking)
+            at sun.misc.Unsafe.park(Native Method)
+            - parking to wait for  <0x0000000764c2c860> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+            at java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)
+            at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2043)
+            at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:104)
+            at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:32)
+            at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1068)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "http-nio-8086-Acceptor-0" daemon prio=10 tid=0x00007faa04cfa800 nid=0x17ed sleeping[0x00007faa6eca4000]
+           java.lang.Thread.State: TIMED_WAITING (sleeping)
+            at java.lang.Thread.sleep(Native Method)
+            at org.apache.tomcat.util.net.NioEndpoint$Acceptor.run(NioEndpoint.java:774)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "http-nio-8086-ClientPoller-1" daemon prio=10 tid=0x00007faa05804000 nid=0x17ec sleeping[0x00007faa6eda5000]
+           java.lang.Thread.State: TIMED_WAITING (sleeping)
+            at java.lang.Thread.sleep(Native Method)
+            at org.apache.tomcat.util.net.NioEndpoint$Poller.run(NioEndpoint.java:1134)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "http-nio-8086-ClientPoller-0" daemon prio=10 tid=0x00007faa042e0000 nid=0x17eb waiting on condition [0x00007faa6eea6000]
+           java.lang.Thread.State: TIMED_WAITING (sleeping)
+            at java.lang.Thread.sleep(Native Method)
+            at org.apache.tomcat.util.net.NioEndpoint$Poller.run(NioEndpoint.java:1134)
+            at java.lang.Thread.run(Thread.java:745)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "NioBlockingSelector.BlockPoller-1" daemon prio=10 tid=0x00007faa0608f000 nid=0x17ea runnable [0x00007faa6efa7000]
+           java.lang.Thread.State: RUNNABLE
+            at sun.nio.ch.EPollArrayWrapper.epollWait(Native Method)
+            at sun.nio.ch.EPollArrayWrapper.poll(EPollArrayWrapper.java:269)
+            at sun.nio.ch.EPollSelectorImpl.doSelect(EPollSelectorImpl.java:79)
+            at sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:87)
+            - locked <0x0000000764bd6228> (a sun.nio.ch.Util$2)
+            - locked <0x0000000764bd61a8> (a java.util.Collections$UnmodifiableSet)
+            - locked <0x0000000764bd6028> (a sun.nio.ch.EPollSelectorImpl)
+            at sun.nio.ch.SelectorImpl.select(SelectorImpl.java:98)
+            at org.apache.tomcat.util.net.NioBlockingSelector$BlockPoller.run(NioBlockingSelector.java:339)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "container-0" prio=10 tid=0x00007faa04195000 nid=0x17e6 waiting on condition [0x00007faa6f0a8000]
+           java.lang.Thread.State: TIMED_WAITING (sleeping)
+            at java.lang.Thread.sleep(Native Method)
+            at org.apache.catalina.core.StandardServer.await(StandardServer.java:413)
+            at org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainer$1.run(TomcatEmbeddedServletContainer.java:140)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "DestroyJavaVM" prio=10 tid=0x00007faa7c00a000 nid=0x17cd waiting on condition [0x0000000000000000]
+           java.lang.Thread.State: RUNNABLE
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "Service Thread" daemon prio=10 tid=0x00007faa7c1ee800 nid=0x17dc runnable [0x0000000000000000]
+           java.lang.Thread.State: RUNNABLE
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "C2 CompilerThread1" daemon prio=10 tid=0x00007faa7c1ec000 nid=0x17db waiting on condition [0x0000000000000000]
+           java.lang.Thread.State: RUNNABLE
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "C2 CompilerThread0" daemon prio=10 tid=0x00007faa7c1e9000 nid=0x17da waiting on condition [0x0000000000000000]
+           java.lang.Thread.State: RUNNABLE
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "Signal Dispatcher" daemon prio=10 tid=0x00007faa7c1e7800 nid=0x17d9 runnable [0x0000000000000000]
+           java.lang.Thread.State: RUNNABLE
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "Finalizer" daemon prio=10 tid=0x00007faa7c1c0000 nid=0x17d8 in Object.wait() [0x00007faa749b0000]
+           java.lang.Thread.State: WAITING (on object monitor)
+            at java.lang.Object.wait(Native Method)
+            - waiting on <0x000000062ba25ac0> (a java.lang.ref.ReferenceQueue$Lock)
+            at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:135)
+            - locked <0x000000062ba25ac0> (a java.lang.ref.ReferenceQueue$Lock)
+            at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:151)
+            at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:209)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "Reference Handler" daemon prio=10 tid=0x00007faa7c1be000 nid=0x17d7 in Object.wait() [0x00007faa74ab1000]
+           java.lang.Thread.State: WAITING (on object monitor)
+            at java.lang.Object.wait(Native Method)
+            - waiting on <0x000000062ba25608> (a java.lang.ref.Reference$Lock)
+            at java.lang.Object.wait(Object.java:503)
+            at java.lang.ref.Reference$ReferenceHandler.run(Reference.java:133)
+            - locked <0x000000062ba25608> (a java.lang.ref.Reference$Lock)
+    
+           Locked ownable synchronizers:
+            - None
+    
+        "VM Thread" prio=10 tid=0x00007faa7c1b9800 nid=0x17d6 runnable 
+    
+        "GC task thread#0 (ParallelGC)" prio=10 tid=0x00007faa7c020000 nid=0x17ce runnable 
+    
+        "GC task thread#1 (ParallelGC)" prio=10 tid=0x00007faa7c021800 nid=0x17cf runnable 
+    
+        "GC task thread#2 (ParallelGC)" prio=10 tid=0x00007faa7c023800 nid=0x17d0 runnable 
+    
+        "GC task thread#3 (ParallelGC)" prio=10 tid=0x00007faa7c025800 nid=0x17d1 runnable 
+    
+        "GC task thread#4 (ParallelGC)" prio=10 tid=0x00007faa7c027800 nid=0x17d2 runnable 
+    
+        "GC task thread#5 (ParallelGC)" prio=10 tid=0x00007faa7c029000 nid=0x17d3 runnable 
+    
+        "GC task thread#6 (ParallelGC)" prio=10 tid=0x00007faa7c02b000 nid=0x17d4 runnable 
+    
+        "GC task thread#7 (ParallelGC)" prio=10 tid=0x00007faa7c02d000 nid=0x17d5 runnable 
+    
+        "VM Periodic Task Thread" prio=10 tid=0x00007faa7c1f9000 nid=0x17dd waiting on condition 
+    
+        JNI global references: 184
+    
+
+Although there are several discussions on this issue, I couldn't find what I'm
+doing wrong, I mean, I didn't do anything related to the shutdown process.
+Important, the issue is not reproduced on windows. Can someone please instruct
+me on this?
+
+It looks like you've found a bug in Spring Boot. Thanks for bringing it to our
+attention. I've opened [an issue](https://github.com/spring-projects/spring-
+boot/issues/1314) to address it.
+
+We haven't seen this problem before so there must be something about your
+application or environment that we haven't encountered. Can you please comment
+on the [Spring Boot issue](https://github.com/spring-projects/spring-
+boot/issues/1314) with some more details on how to reproduce the problem?
+
+The complete answer can be found [here](https://github.com/spring-
+projects/spring-boot/issues/1314)
+
+To make things short, I configured my Spring Boot application manually
+(@EnableAutoConfiguration is **disabled** ), so, I added the dispatcher
+servlet by creating it using a contructor:
+
+    
+    
+    @Bean(name = DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)
+    public DispatcherServlet dispatcherServlet(WebApplicationContext ctx) {
+        DispatcherServlet dispatcherServlet = new DispatcherServlet(ctx);
+        return dispatcherServlet;
+    }
+    
+
+This caused the shutdown thread to be blocked.
+

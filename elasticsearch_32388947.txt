@@ -1,0 +1,5 @@
+32388947
+Querystring query without analysis on es?
+<p>I have a field "animal" that is not_analyzed. Is a document with "animal": "fox"&#xA;searchable with a querystring query if a user passes in "fo" as the querystring? Or would the user have to pass in "fox" in order to match that document?</p>&#xA;
+<p>"fo" won't match "fox" if you're using not_analyzed.</p>&#xA;&#xA;<p>There are three types of index mappings in elasticsearch:</p>&#xA;&#xA;<p><code>analyzed</code> analyses your text and then indexes it. ("fo" matches "fox")<br>&#xA;<code>not_analyzed</code> indexes your text (makes it searchable) exactly as it is. ("fo" doesn't match "fox", only "fox" does)<br>&#xA;<code>no</code> the field is not searchable.</p>&#xA;&#xA;<p><a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/mapping-intro.html" rel="nofollow">reference</a></p>&#xA;
+<p>If you search for fo* it will work , else you need to search for the exact term.</p>&#xA;

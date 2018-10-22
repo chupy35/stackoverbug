@@ -1,0 +1,3 @@
+33207420
+Elastic search synchronization with relational database?
+<p>Say have a sql server which is imported in elastic search using JDBC importer.&#xA;As elastic search will just be used for the search purpose and transactions being handled by the sql server .</p>&#xA;&#xA;<p>How it could be made sure that all changes to sql server either create,delete or update also reflects to data in elastic search .&#xA;Any turn around , if there will also help.</p>&#xA;

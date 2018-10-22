@@ -1,0 +1,20 @@
+13554845 Is there a limit to the number of indexes an ElasticSearch alias can
+point to?
+
+I have this alias that I want to point to 60 indexes. At 21 indexes, I start
+getting Execution Rejected exceptions.
+
+Is this because of a 20 index limit in the alias API?
+
+Assuming that you have 5 shards per index, a request against 21 indices may
+generates about 105 shard requests, 32 of these requests are sent to threads
+in the pool and 73 request go into the queue. At this moment you have only
+about 27 elements in the queue left. So, if another request against 6 or more
+indices (30 shards) arrives, some shardsrequests are going to be rejected with
+Execution Rejected Exception. I am oversimplifying the situation here quite a
+bit and the actual number of threads used depends on many factors including
+where shards are located, search settings, etc. However, I hope you can see
+the main idea here: if you want to search against a large number of shards,
+you need to make sure you have enough capacity in the thread pool to handle
+the peak load.
+

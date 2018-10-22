@@ -1,0 +1,3 @@
+29526270
+How to query elasticsearch without specifying which property to match
+<p>I have an elasticsearch document with multiple properties, like <code>title</code>, <code>body</code>, <code>author</code>.</p>&#xA;&#xA;<p>I'd like to get results from a query that matches ANY of the fields.</p>&#xA;&#xA;<p>Usually, I'll query by specifying a property to match. I'd rather write a more flexible query that will return the whole document if any of the properties are matched.</p>&#xA;

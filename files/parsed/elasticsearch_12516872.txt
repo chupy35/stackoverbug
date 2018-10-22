@@ -1,0 +1,57 @@
+12516872 Club-Mate doesn't fit Club-Mate in elasticsearch
+
+This is my Stack:
+
+  * Rails 3.2.6
+  * MongoID ~> 2.5
+  * Tire 0.4.2
+  * ElasticSearch Server 
+
+I have a couple thousand products I want to index in elastic search. This is
+my mapping:
+
+    
+    
+    mapping do
+        indexes :name, analyzer: 'snowball', boost: 100
+        indexes :description, analyzer: 'snowball'
+    end 
+    
+
+Unfortunately the search results are unbelievable bad. By searching for "club-
+mate", the first result is "club-mate-c". And the second result is "club-
+mate". Why is "club-mate" not the best fit to "club-mate".  The search results
+are ordered by _score. Nothing else.
+
+I appreciate any kind of feedback.  I am sure it is just a configuration
+problem.
+
+You have provided little information about what data you are indexing, how
+uniform the data is, or how you are querying it.
+
+A likely problem is that the terms `club` and `mate` are not very common in
+your dataset, and are unevenly distributed across your shards.
+
+By default, the term frequencies are considered separately by each shard, so
+if on one shard you have `club`, `mate` 3 times, and on another shard you have
+`club`, `mate`, `c` once, then the second shard might consider `club` and
+`mate` to be more relevant than the first shard.
+
+Typically, with large amounts of data, term frequencies even themselves out,
+so this ceases to be a problem. However, with small amounts of data, you can
+see issues like this.
+
+Solutions:
+
+  * Use a single shard instead of the default 5 (if you are always going to have a small amount of data, then this is the better option)
+  * Index more data
+  * Add `search_type=dfs_query_then_fetch` to your search parameters, which will check the term frequencies across all shards before running the query
+
+**Note:** The `search_type` defaults to `query_then_fetch` rather than to
+`dfs_query_then_fetch` because normally, you would have enough data to ensure
+even term frequencies, and it performs better.
+
+You can add `explain=1` to your search parameters to see how the score for
+each document has been calculated, which should shed more light on the
+problem.
+

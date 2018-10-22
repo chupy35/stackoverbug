@@ -1,0 +1,3 @@
+31425133
+Elastic search - get last second changes
+<p>How do I get all changes that were indexed in my Elasticsearch cluster within the last second?&#xA;I've tried to add a time stamp and query it, but indexing some of the items took few seconds, and therefore these items were missing in the result (I didn't get them in the next second either, since the timestamp refers to the start of the indexing process).</p>&#xA;

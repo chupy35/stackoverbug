@@ -1,0 +1,82 @@
+14364262 Should I be using a nested object or a normal field?
+
+I've been taking baby steps into using Elasticsearch, and while researching a
+separate issue I ran into [this
+question.](https://stackoverflow.com/questions/8140651/how-to-search-nested-
+objects-with-elastic-search) Here, swatkins asked about querying nested
+objects, and a responder pointed out that nested objects weren't necessary
+given his model. I've copied the model here, and made some changes to reflect
+my particular question:
+
+    
+    
+    [{
+        id:4635,
+        description:"This is a test description",
+        author:"John",
+        author_id:51421,
+        meta: {
+            title:"This is a test title for a video",
+            description:"This is my video description",
+            url:"/url_of_video"
+            awesomeness-level: "pretty-awesome"
+            kung-fu: true
+        }
+    },
+    {
+        id:4636,
+        description:"This is a test description 2",
+        author:"John",
+        author_id:51421,
+        meta: {
+            title:"This is an example title for a video",
+            description:"This is my video description2",
+            url:"/url_of_video2"
+            kung-fu:false
+            monsters:true
+            monsters-present: "Dracula, The Mummy"
+        }
+    }]
+    
+
+Our application allows users to define custom metadata, so we're using a
+nested object to represent that data. At first glance, it looks similar to
+swatkins' model, so I thought that maybe we shouldn't be using a nested
+object.
+
+The big difference is each objects meta might be different, note the second
+video has meta specifically about "monster movies", while the first video
+references an "awesomeness-level". So, should I be using a nested object, or
+just mapping metadata as a normal field? If we do the latter, will the first
+video have empty metadata fields? Does that really even matter? Thanks in
+advance!
+
+Assuming that your example represents two elasticsearch documents, it doesn't
+look like you need to make `meta` a nested object. It makes sense to use
+nested objects when one parent object has multiple nested objects and your
+searches involve several fields of the nested objects. For example, if you
+have a record like this:
+
+    
+    
+    {
+      "name": "apple",
+      "attributes": [
+         {
+           "color": "yellow",
+           "size": "big"
+         },
+         {
+           "color": "red",
+           "size": "small"
+         }
+      ]
+    }
+    
+
+and you want this record to be found when you search for `color:yellow AND
+shape:big` or `color:red AND shape:small` but don't want it to be returned
+when you search for `color:yellow AND shape:small`, it makes sense to make
+`attributes` a nested object. It will allow you to index and search each
+attribute independently and then get parent object of matching attribute.
+

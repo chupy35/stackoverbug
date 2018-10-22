@@ -1,0 +1,57 @@
+24560746 Difference between Elasticsearch Range Query and Range Filter
+
+I want to query elasticsearch documents within a date range. I have two
+options now, both work fine for me. Have tested both of them.  1\. Range Query
+2\. Range Filter
+
+Since I have a small data set for now, I am unable to test the performance for
+both of them. What is the difference between these two? and which one would
+result in faster retrieval of documents and faster response?
+
+Filters are cached so they are faster!
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/filter-
+caching.html>
+
+The main difference between queries and filters has to do with scoring.
+Queries return documents with a relative ranked score for each document.
+Filters do not. This difference allows a filter to be faster for two reasons.
+First, it does not incur the cost of calculating the score for each document.
+Second, it can cache the results as it does not have to deal with possible
+changes in the score from moment to moment - it's just a boolean really, does
+the document match or not?
+
+From the documentation:
+
+> Filters are usually faster than queries because:
+
+>
+
+> they don’t have to calculate the relevance _score for each document —  the
+answer is just a boolean “Yes, the document matches the filter” or “No, the
+document does not match the filter”. the results from most filters can be
+cached in memory, making subsequent executions faster.
+
+As a practical matter, the question is do you use the relevance score in any
+way? If not, filters are the way to go. If you do, filters still may be of use
+but should be used where they make sense. For instance, if you had a language
+field (let's say language: "EN" as an example) in your documents and wanted to
+query by language along with a relevance score, you would combine a query for
+the text search along with a filter for language. The filter would cache the
+document ids for all documents in english and then the query could be applied
+to that subset.
+
+I'm over simplifying a bit, but that's the basics. Good places to read up on
+this:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filtered-query.html>
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/query-dsl-
+filtered-query.html>
+
+<http://exploringelasticsearch.com/searching_data.html>
+
+<http://elasticsearch-users.115913.n3.nabble.com/Filters-vs-Queries-
+td3219558.html>
+

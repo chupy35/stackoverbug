@@ -1,0 +1,4 @@
+31835343
+How to open console/window to use CURL command in elastic search?
+<p>I am using winodws 8.1.&#xA;I have installed elastic search, now I want to create an index in elastic search&#xA;so,which IDE I can use? or how to open to user CURL command like below?</p>&#xA;&#xA;<pre><code>curl -XPUT 'http://localhost:9200/depst/semployee/11' -d '{ "name": "xxxx"}'&#xA;</code></pre>&#xA;&#xA;<p>how to open window which allow to type above command?</p>&#xA;
+<p>You can use <strong>cygwin</strong> with the <strong>curl extension</strong> installed or you can - for example - to manualy querying.&#xA;You can also install the <strong>plugin head</strong> for elasticsearch wich permit you to test your index, more information about head plugin here:</p>&#xA;&#xA;<p><a href="https://github.com/mobz/elasticsearch-head" rel="nofollow">https://github.com/mobz/elasticsearch-head</a></p>&#xA;

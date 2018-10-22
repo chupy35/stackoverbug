@@ -1,0 +1,25 @@
+21304434 Elasticsearch list all rivers
+
+  
+How do I list all the rivers in Elasticsearch, I'm new to it and was adding
+rivers on the fly and I want to do some cleaning. The [official
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/rivers/current/index.html)
+doesn't mention a way to do so..
+
+I think this will do the trick for you, as `_river` is an index like any other
+it can be queried like one. -
+
+    
+    
+    curl -XGET http://localhost:9200/_river/_search?q=*
+    
+
+To piggyback on Nate's answer, if you throw the following line into a browser,
+you will get output that's actually readable (notice the "pretty" parameter
+was added):
+
+    
+    
+    http://localhost:9200/_river/_search?q=*&pretty
+    
+

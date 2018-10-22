@@ -1,0 +1,52 @@
+14221159 In ElasticSearch, should I use multiple indexes for separate but
+related entities?
+
+The overhead of adding indexes is well-documented, but I have not been able to
+find good information on when to use multiple indexes with regards to the
+various document types being indexed.
+
+**Here is a generic example to illustrate the question:**
+
+**Say we have the following entities**
+
+  * Products (Name, ProductID, ProductCategoryID, List-of-Stores)
+  * Product Categories (Name, ProductCategoryID)
+  * Stores (Name, StoreID)
+
+Should I dump these three different types of documents into a single index,
+each with the appropriate `elasticsearch type`?
+
+I am having difficulty establishing where to the draw the line on one vs.
+multiple indexes.
+
+What if we add an unrelated entity, "Webpages". Definitely a separate index?
+
+I was recently modeling a ElasticSearch backend from scratch and from my point
+of view, the best option is putting all related documents types in the same
+index.
+
+I read that [some people had problems with too many concurrent
+indexes](http://elasticsearch-users.115913.n3.nabble.com/More-indices-vs-more-
+types-tp3999423p4002051.html) (1 index per type). It's better for performance
+and robustness to unify related types in the same index.
+
+Besides, if the types are in the same index you can use
+"[_parent](http://www.elasticsearch.org/guide/reference/mapping/parent-
+field.html)" field to create hierarquical models that allow to you interesting
+features for search as
+"[has_child](http://www.elasticsearch.org/guide/reference/query-dsl/has-child-
+query.html)" and
+"[has_parent](http://www.elasticsearch.org/guide/reference/query-dsl/has-
+parent-filter.html)" and of course you have not to duplicate data in your
+model.
+
+A very interesting video explaining elasticsearch **"Data Design Patterns"**
+by Shay Banon:
+
+<http://vimeo.com/44716955>
+
+This exact question is answered at 13:40 where examining different data flows,
+by looking at the concepts of **Type, Filter** and **Routing**
+
+Regards
+

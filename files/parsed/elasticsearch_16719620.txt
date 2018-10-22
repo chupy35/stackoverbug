@@ -1,0 +1,87 @@
+16719620 ElasticSearch search query processing
+
+I have been reading up on `ElasticSearch` and couldn't find an answer for how
+to do the following:
+
+Say, you have some records with, "study" in the title and a user uses the word
+"studying" instead of "study". How would you set up `ElasticSearch` to match
+this?
+
+Thanks, Alex
+
+ps: Sorry, if this is a duplicate. Wasn't sure what to search for!
+
+You might be interested in this:
+<http://www.elasticsearch.org/guide/reference/query-dsl/flt-query/>
+
+For eg: I have indexed book titles and on this query:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "fuzzy": {
+                "book": {
+                  "value": "ringing",
+                  "min_similarity": "0.3"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+I got
+
+    
+    
+    {
+      "took" : "1",
+      "timed_out" : "false",
+      "_shards" : {
+        "total" : "5",
+        "successful" : "5",
+        "failed" : "0"
+      }
+      "hits" : {
+        "total" : "1",
+        "max_score" : "0.19178301",
+        "hits" : [
+          {
+            "_index" : "library",
+            "_type" : "book",
+            "_id" : "3",
+            "_score" : "0.19178301",
+            "_source" : {
+              "book" : "The Lord of the Rings",
+              "author" : "J R R Tolkein"
+            }
+          }
+        ]
+      }
+    }
+    
+
+which is the only correct result..
+
+You could apply stemming to your documents, so that when you index `studying`,
+you are beneath indexing `study`. And when you query you do the same, so that
+when you search for `studying` again, you'll be searching for `study` and
+you'll find a match, both looking for `study` and `studying`.
+
+Stemming depends of course on the language and there are different techniques,
+for english [snowball](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/snowball-tokenfilter/) is fine. What happens is that you lose
+some information when you index data, since as you can see you cannot really
+distinguish between studying and study anymore. If you want to keep that
+distinction you could index the same text in different ways using a
+[multi_field](http://www.elasticsearch.org/guide/reference/mapping/multi-
+field-type/) and apply different text analysis to it. That way you could
+search on multiple fields, both the non stemmed version and stemmed version,
+maybe giving different weights to them.
+

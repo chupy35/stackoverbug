@@ -1,0 +1,111 @@
+28916768 How can I add properties to a react component passed as a variable?
+
+My scenario is that I'm creating a render() function in a controller (not
+React related) to render views with the option of specifying a layout. That
+way I can have multiple different layout components, all accepting a content
+property, that can be rendered in a simple way. Here's what I'm trying to do
+in a nutshell:
+
+    
+    
+    render: function(content, layout) {
+        layout = layout || <Layout />;
+        layout.setProps({ content: content });
+        React.render(layout, document.body);
+    }
+    
+
+Can it be done? Or if you think it can be done but it's a bad idea, please let
+me know why.
+
+There are a couple ways you could approach this.
+
+The simplest is to pass the layout's type and properties separately:
+
+    
+    
+    function render(content, layoutType, layoutProperties) {
+      layoutType = layoutType || Layout;
+      layoutProperties = layoutProperties || {};
+    
+      var props = { content: content };
+      for (var key in layoutProperties) {
+        props[key] = layoutProperties[key];
+      }
+    
+      var layout = React.createElement(layoutType, props);
+    
+      React.render(layout, document.body);
+    }
+    
+    render(<div>Test 1</div>);
+    render(<div>Test 2</div>, CustomLayout, { title: "Test Title" });
+    
+
+[JSFiddle example](http://jsfiddle.net/BinaryMuse/hjLufbkz/):
+<http://jsfiddle.net/BinaryMuse/hjLufbkz/>
+
+If you want to pass a fully-realized `ReactElement` as the layout instead, you
+could use
+[`React.addons.cloneWithProps`](http://facebook.github.io/react/docs/clone-
+with-props.html) (or, in v0.13 RC2 and later,
+[`React.cloneElement`](http://facebook.github.io/react/blog/2015/03/03/react-v0.13-rc2.html#react.cloneelement)):
+
+    
+    
+    function render(content, layout) {
+      var props = { content: content };
+      layout = layout || <Layout />;
+      layout = React.addons.cloneWithProps(layout, props);
+    
+      React.render(layout, document.body);
+    }
+    
+    render(<div>Test 1</div>);
+    render(<div>Test 2</div>, <CustomLayout title="Test Title" />);
+    
+
+[JSFiddle example](http://jsfiddle.net/BinaryMuse/8krawhx4/):
+<http://jsfiddle.net/BinaryMuse/8krawhx4/>
+
+* * *
+
+I'm a big fan of using `this.props.children` to nest elements; note that you
+can modify both the techniques above to do so:
+
+    
+    
+    function render(content, layoutType, layoutProperties) {
+      layoutType = layoutType || Layout;
+      layoutProperties = layoutProperties || {};
+    
+      var layout = React.createElement(layoutType, layoutProperties, content);
+    
+      React.render(layout, document.body);
+    }
+    
+
+[JSFiddle example](http://jsfiddle.net/BinaryMuse/6g8uyfp4/):
+<http://jsfiddle.net/BinaryMuse/6g8uyfp4/>
+
+and
+
+    
+    
+    function render(content, layout) {
+      layout = layout || <Layout>{content}</Layout>;
+      layout = React.addons.cloneWithProps(layout, {children: content});
+    
+      React.render(layout, document.body);
+    }
+    
+
+[JSFiddle example](http://jsfiddle.net/BinaryMuse/nadv297h/):
+<http://jsfiddle.net/BinaryMuse/nadv297h/>
+
+Of course, if one of your custom layout components already utilizes
+`this.props.children` for other purposes, the original technique with
+`cloneWithProps`/`cloneElement` and `this.props.content` works just fine.
+([JSFiddle example](http://jsfiddle.net/BinaryMuse/b5ncfnqh/):
+<http://jsfiddle.net/BinaryMuse/b5ncfnqh/>)
+

@@ -1,0 +1,40 @@
+23845530 Looping over all documents in an elasticsearch index
+
+Using the Elasticsearch javascript client (node.js), what is the best (or
+simplest) way to loop through every document in an index (ca. 100 000
+documents)?
+
+I think a good place to start is with scan queries using the scroll api:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/scan-
+scroll.html>
+
+Basically it's similar to a cursor with a database - you open the query with a
+time limit and it returns a scroll id. You then use that scroll id to retrieve
+the first batch of results and it returns the documents along with a new
+scroll id. Examples below:
+
+    
+    
+    curl -XGET 'localhost:9200/_search?search_type=scan&scroll=10m&size=1000' -d '
+    {
+        "query" : {
+            "match_all" : {}
+        }
+    }
+    '
+    
+
+This will return a _scroll_id that you then use to retrieve documents:
+
+    
+    
+    curl -XGET 'localhost:9200/_search/scroll?scroll=10m' -d '<_SCROLL_ID_HERE>'
+    
+
+Note that this will return 1000 documents PER PRIMARY SHARD - so if you have 4
+primary shards it will return 4000 documents. Each call will in addition to
+the documents return a new _scroll_id which you then use for the next call.
+The "scroll=10m" sets a time limit of 10m to keep the scroll open between
+calls.
+

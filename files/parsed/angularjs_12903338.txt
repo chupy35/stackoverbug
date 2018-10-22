@@ -1,0 +1,70 @@
+12903338 AngularJS dependency injection of value inside of module.config
+
+Trying to setup some helpers value to the module. Tried with service and value
+and it didn't help:
+
+    
+    
+    var finance = angular.module('finance', ['finance.services'])
+        .value("helpers", {
+            templatePath: function (name) {
+                return '/areas/scripts/finance/templates/' + name + '/index.html';
+            }
+        })
+        .config(['$routeProvider', 'helpers', function ($routeProvider, helpers) {
+        $routeProvider.
+            when('/', {
+                templateUrl: helpers.getTemplatePath('dashboard'),
+                controller: DashboardController
+            })            
+            .when('/people', {
+                templateUrl: '/areas/scripts/app/people/index.html',
+                controller: PeopleController
+            })
+            .otherwise({
+                redirectTo: '/dashboard'
+            });
+    }]);
+    
+
+What I am doing wrong?
+
+The problem is that you are trying to inject a value object `helpers` in the
+config block of a AngularJS module and this is not allowed. You can only
+inject constants and providers in the config block.
+
+The AngularJS [documentation](http://docs.angularjs.org/guide/module)
+(section: "Module Loading & Dependencies") gives the insight into this:
+
+> A module is a collection of configuration and run blocks which get applied
+to the application during the bootstrap process. In its simplest form the
+module consist of collection of two kinds of blocks:
+
+>
+
+> **Configuration blocks** \- get executed during the provider registrations
+and configuration phase. Only providers and constants can be injected into
+configuration blocks. This is to prevent accidental instantiation of services
+before they have been fully configured.
+
+>
+
+> **Run blocks** \- get executed after the injector is created and are used to
+kickstart the application. Only instances and constants can be injected into
+run blocks. This is to prevent further system configuration during application
+run time.
+
+Instead of `.value` you can use `.constant`. Then you can use your service in
+`.config` part.
+
+Your helper method is called `templatePath` and you are calling it inside
+`.config` as `getTemplatePath`. Shouldn't it be:
+
+    
+    
+    when('/', {
+                templateUrl: helpers.templatePath('dashboard'),
+                controller: DashboardController
+         }) 
+    
+

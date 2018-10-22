@@ -1,0 +1,84 @@
+17100848 How to perform bucket filtering with ElasticSearch date histogram
+value_field
+
+Trying to construct a date histogram with ElasticSearch logs of the following
+type:
+
+    
+    
+    {
+        "_index": "foo"
+        "_source": {
+        […]
+        "time": "2013-06-12T14:43:13.238-07:00",
+        "userName": "bar"
+        }
+    }
+    
+
+where the histogram buckets the "time" field per "day" interval, but also
+where multiple occurrences of a single userName only gets counted once.
+
+I have tried the following:
+
+    
+    
+    {
+        "query" : {
+            "match_all" : {}
+        },
+        "facets" : {
+            "histo1" : {
+                "date_histogram" : {
+                    "key_field" : "time",
+                    "value_script" : "doc['userName'].values.length",
+                    "interval" : "day"
+                }
+            }
+        }
+    }
+    
+
+where I have expected the min|max|mean for each of the "histo1" entries to be
+the number of unique users in the respective time buckets. But the result
+consistently returns `min = max = mean = 1`
+
+    
+    
+        "histo1": {
+            "_type": "date_histogram",
+            "entries": [
+                {
+                    "time": 1370908800000,
+                    "count": 11,
+                    "min": 1,
+                    "max": 1,
+                    "total": 11,
+                    "total_count": 11,
+                    "mean": 1
+                },
+                {
+                    "time": 1370995200000,
+                    "count": 18,
+                    "min": 1,
+                    "max": 1,
+                    "total": 18,
+                    "total_count": 18,
+                    "mean": 1
+                }
+            ]
+        }
+    
+
+Am I misunderstanding how key/values works in date histogram?
+
+I ended up using the elasticsearch timefacets plugin:
+<https://github.com/crate/elasticsearch-timefacets-plugin>
+
+Other options included:
+
+  * <https://github.com/bleskes/elasticfacets>
+  * <https://github.com/ptdavteam/elasticsearch-approx-plugin>
+
+Both of them only have support for ES version < 0.90, unfortunately.
+

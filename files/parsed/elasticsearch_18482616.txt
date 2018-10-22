@@ -1,0 +1,143 @@
+18482616 Elastic search Query String Query
+
+I am trying to get records using the **Query String Query** .  
+My scenario for searching is as follows :  
+I have to search like : `"I Love my " AND (HTC OR Iphone OR Samsung)`  
+And I am expecting result like :
+
+  * I Love my HTC
+  * I Love my Iphone 
+  * I Love my Samsung
+
+I just tried some combinations but its not working
+
+    
+    
+    {
+      "query": {
+                "query_string": {
+                    "default_field": "SearchContent",
+                   "query": "\"I Love my\" AND (HTC OR Iphone OR Samsung)"
+                }
+            }
+    }
+    
+
+How can i do this with Query String Or is there any Other Option , i am stuck.
+Help me out.
+
+Well, yes. You can build a filtered quesry based on a match_all query with the
+filters that interest you, combinig and or or filters. Here, you want to
+return docs that have one of thoses 3 phrases. I assume you do not want "I
+love my cake, and I have a iphone" to return.
+
+So, something like that (do not know if it is efficient enough, tough).
+
+    
+    
+    {
+    "filtered" : {
+        "query" : {
+            "match_all" : {}
+        },
+        "filter" : {
+            "or" : {
+                "filters" : [{
+                        "fquery" : {
+                            "query" : {
+                                "query_string" : {
+                                    "query" : "\"I love my iphone\"",
+                                    "default_field" : "searchContent",
+                                    "default_operator" : "and"
+                                }
+                            }
+                        }
+                    },{
+                        "fquery" : {
+                            "query" : {
+                                "query_string" : {
+                                    "query" : "\"I love my htc\"",
+                                    "default_field" : "searchContent",
+                                    "default_operator" : "and"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "fquery" : {
+                            "query" : {
+                                "query_string" : {
+                                    "query" : "\"I love my samsung\"",
+                                    "default_field" : "searchContent",
+                                    "default_operator" : "and"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+}
+
+Try this...
+
+    
+    
+    {
+      "query": {
+                "query_string": {
+                    "default_field": "SearchContent",
+                   "query": "I Love my *"
+    
+                }
+            }
+    }
+    
+
+Wild card doesn't scale well if the data is too large. But, this can be of
+some help if performance is not a major concern (less amount of data).
+
+You can use the below query string to search for the same.
+
+    
+    
+    {
+        "query_string" : {
+            "fields" : ["content", "my_field"],
+            "query" : "\"I love my \" HTC Iphone Samsung"
+    
+        }
+    }
+    
+
+Try this it may workout for you. or check :
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html>
+
+The query depends on your _mapping. If you haven't defined any, then probably
+the standard analyzer is used. If so then tokens are:
+
+  * I Love my HTC -> "i", "love", "my", "htc"
+  * I Love my Iphone -> "i", "love", "my", "iphone"
+  * I Love my Samsung -> "i", "love", "my", "samsung"
+
+notice the tokens are lowercase.
+
+The proper format for your query string is:
+
+    
+    
+    GET /yourindex/_search
+    {
+      "query": {
+        "query_string": {
+          "default_field": "SearchContent",
+          "query": "\"i love my\" AND (samsung OR htc OR iphone)"
+        }
+      }
+    }
+    
+

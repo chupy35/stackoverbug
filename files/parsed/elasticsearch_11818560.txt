@@ -1,0 +1,30 @@
+11818560 Variation in ElasticSearch Results
+
+I'm not sure if this is possible, but I'm trying to introduce variation in
+ElasticSearch results. Something similar to how Google restricts results on
+domain name, e.g. it would usually show max 1 or 2 results from any particular
+domain.
+
+e.g. if we're searching on blog comments, only show 2 comments for any
+particular blog post.
+
+I don't think it can be done with facets, because we're constraining on a
+field that has thousands of possible values. But I may be wrong.
+
+I'd say you're talking about grouping. There's an open
+[issue](https://github.com/elasticsearch/elasticsearch/issues/256) about it.
+You can also have a look at
+[this](https://stackoverflow.com/questions/8304418/simulating-field-
+collapsing-grouping-by-field-in-elastic-search) other question to see if you
+can work around it in your case.
+
+There is a [fork](https://github.com/martijnvg/elasticsearch-with-local-
+grouping) which provides local grouping but it works only locally. That would
+force you to use only one shard, which doesn't make a lot of sense with
+elasticsearch.
+
+Given the interest around elasticsearch and the grouping feature itself, as
+well as the fact that there's now a [company](http://www.elasticsearch.com/)
+behind the project, I guess the issue will be closed soon. At least that's
+what I hope!
+

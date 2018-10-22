@@ -1,0 +1,106 @@
+11805120 Can I use angular.js with an object, not a function?
+
+Here's my situation: I've got a Javascript object in an application that I've
+already created that looks a little something like this...
+
+    
+    
+    var foo = foo || {};
+    foo.name = "";
+    foo.gender = "";
+    
+    foo.loadUser = function() {
+        // Some other stuff here
+        foo.name = "Joe";
+        foo.gender = "Fella";
+    
+        $("#welcome).text("Hello " + foo.name + " you sure are a swell " + foo.gender + "!");    
+    }
+    
+
+Now, I've decided I don't like my mixing of logic and presentation, so I want
+to remove that line of jquery, and just have angular.js update the text for me
+with some simple data-binding. So I've loaded angular.js and added this little
+line..
+
+    
+    
+    <div ng-app>
+    <div id="welcome" ng-controller="foo">Hello {{foo.name}}! 
+         You sure are a swell {{foo.gender}}!</div>
+    
+
+The problem is that, when doing this, I get an error along the lines of...
+
+> Error: Argument 'foo' is not a function, got Object
+
+Looking at the angular.js Getting Started example, it looks like I might need
+to go back and rewrite my entire foo object (along with all my other code) in
+a format like...
+
+    
+    
+    function foo($scope) {
+      $scope.name = '';
+      $scope.gender = '';
+    
+      $scope.loadUser = function() {
+        //Other stuff here
+        $scope.name = "Joe";
+        $scope.gender = "Fella"            
+      }
+    
+    }
+    
+
+...which might work (I haven't tried it yet), but I'm not sure I want to
+rewrite all of my code to fit this new format. I have a lot more objects than
+just foo, and in real life foo has a lot more stuff in it. (Heck, I don't even
+call it "foo"!)
+
+Is there any way I can get data binding to work without rewriting all of my
+objects as function?
+
+Not sure if this is what you're looking for but you should still be able to
+use your foo objects as they are in an Angular controller like this:
+
+    
+    
+    function Controller($scope){
+        $scope.foo = foo;
+        foo.loadUser();
+    }
+    
+
+See [this fiddle](http://jsfiddle.net/aRXM5/) for an example. You may also
+want to move your objects into a
+[service](http://docs.angularjs.org/guide/dev_guide.services.creating_services)
+or factory as described in Lesson 2 of [this
+article](http://onehungrymind.com/angularjs-sticky-notes-pt-1-architecture/).
+
+This might seem obvious but have you tried `ng-controller="foo.loadUser"`
+
+markup
+
+    
+    
+    <div id="welcome" ng-controller="foo.loadUser">Hello {{foo.name}}! 
+         You sure are a swell {{foo.gender}}!</div>
+    
+
+angular
+
+    
+    
+    foo.loadUser = function($scope) {
+        // Some other stuff here
+        foo.name = "Joe";
+        foo.gender = "Fella";
+    
+        $scope.foo = foo;
+    }
+    
+
+As long the function receives as $scope and does all the angularjs magic on
+that value you shouldn't have to alter you existing objects.
+

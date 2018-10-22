@@ -1,0 +1,24 @@
+14865360 Is it possible in ElasticSearch to have a _parent mapping that is of
+the same type as the child?
+
+Basically, is it possible to do this?
+
+    
+    
+    curl -XPOST http://esdev1-sn1:9200/test/tracking/_mapping -d '
+    {
+      "tracking": {
+        "_parent": {
+          "type": "tracking"
+        }
+      }
+    }
+    '
+    
+
+Theoretically, nothing prevents you from doing this. Practically, figuring out
+routing might be an issue. Elasticsearch requires all children to be indexed
+in the same shard as parent. So, in your case if your index contains more than
+one shard then for any given document all its ancestors and descendants have
+to be indexed with the same `_routing` value.
+

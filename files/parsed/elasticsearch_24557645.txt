@@ -1,0 +1,139 @@
+24557645 ElasticSearch: aggregation on _score field?
+
+I would like to use the
+[stats](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-stats-aggregation.html) or
+[extended_stats](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-extendedstats-aggregation.html) aggregation on the
+`_score` field but can't find any examples of this being done (i.e., seems
+like you can only use aggregations with actual document fields).
+
+**Is it possible to request aggregations on calculated "metadata" fields for
+each hit in an ElasticSearch query response (e.g.,`_score`, `_type`, `_shard`,
+etc.)?**
+
+I'm assuming the answer is 'no' since fields like `_score` aren't indexed...
+
+Note: The original answer is now outdated in terms of the latest version of
+Elasticsearch. The equivalent script using Groovy scripting would be:
+
+    
+    
+    {
+        ...,
+        "aggregations" : {
+            "grades_stats" : { 
+                "stats" : { 
+                    "script" : "_score" 
+                } 
+            }
+        }
+    }
+    
+
+In order to make this work, you will need to enable dynamic scripting or, even
+better, store a file-based script and execute it by name (for added security
+by not enabling dynamic scripting)!
+
+* * *
+
+You can use a script and refer to the score using doc.score. More details are
+available in ElasticSearch's scripting
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html#_score).
+
+A sample stats aggregation could be:
+
+    
+    
+    {
+        ...,
+        "aggregations" : {
+            "grades_stats" : { 
+                "stats" : { 
+                    "script" : "doc.score" 
+                } 
+            }
+        }
+    }
+    
+
+And the results would look like:
+
+    
+    
+    "aggregations": {
+        "grades_stats": {
+            "count": 165,
+            "min": 0.46667441725730896,
+            "max": 3.1525731086730957,
+            "avg": 0.8296855776598959,
+            "sum": 136.89812031388283
+        }
+    }
+    
+
+A
+[histogram](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-histogram-aggregation.html) may also be a useful
+aggregation:
+
+    
+    
+    "aggs": {
+        "grades_histogram": {
+            "histogram": {
+                "script": "doc.score * 10",
+                "interval": 3
+            }
+        }
+    }
+    
+
+Histogram results:
+
+    
+    
+    "aggregations": {
+        "grades_histogram": {
+            "buckets": [
+                {
+                   "key": 3,
+                   "doc_count": 15
+                },
+                {
+                   "key": 6,
+                   "doc_count": 103
+                },
+                {
+                   "key": 9,
+                   "doc_count": 46
+                },
+                {
+                   "key": 30,
+                   "doc_count": 1
+                }
+            ]
+        }
+    }
+    
+
+`doc.score` doesn't seem to work anymore. Using `_score` seems to work
+perfectly.
+
+Example:
+
+    
+    
+    {
+        ...,
+        "aggregations" : {
+            "grades_stats" : { 
+                "stats" : { 
+                    "script" : "_score" 
+                } 
+            }
+        }
+    }
+    
+

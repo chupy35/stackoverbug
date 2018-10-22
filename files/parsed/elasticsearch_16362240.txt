@@ -1,0 +1,195 @@
+16362240 Elasticsearch Complex Filter Logic
+
+If someone could post and example of how to do this, it would answer nearly
+every question I've had about how filtering works in Elasticsearch.
+
+Assume A, B, C, D, E, etc are fields, and a1, a2, …, b1, b2, ...etc are
+possible values for those fields. Also assume that any of these fields could
+have multiple values.
+
+How would I perform filtering with the logic below:
+
+A=a1 AND (B=b1 OR C=c1) AND ((D=d1) OR (D=d2)) AND (((E=e1) OR (E=e2)) AND
+(F=f1)) OR (((G=g1) AND (G=g2)) AND (H=h1))
+
+This is not an actual query I'm trying to write, however it has all the pieces
+of queries that I'd like to write.
+
+I know how to do A=a1 and (B=b1 or B=b2). For example, below I search for the
+terms "something to search" in documents where CustomerID=113 AND (TypeID=91
+OR TypeID=70).
+
+    
+    
+    {
+       "query": {
+        "filtered": {
+          "query": {
+            "query_string": {
+              "query": "something to search"
+            }
+          },
+          "filter": {
+            "and": [
+              {
+                "term": {
+                  "CustomerID": "113"
+                }
+              },
+              {
+                "or": [
+                  {
+                    "terms": {
+                      "TypeID": [
+                        91,
+                        70
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+I'm struggling, however, to figure out how to combine the rest of these
+filters.
+
+A full example would be awesome!
+
+The way to go is basically what you showed in the snippet. You would use [AND
+filters](http://www.elasticsearch.org/guide/reference/query-dsl/and-filter/)
+and [OR
+filters](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-or-filter.html) in a nested way. For example, considering: `A=a1 AND (B=b1
+OR C=c1)`. You would have:
+
+    
+    
+    {
+       "query": {
+        "filtered": {
+          "query": {
+            "query_string": {
+              "query": "something to search"
+            }
+          },
+          "filter": {
+            "and": [
+              {
+                "term": { "A": "a1" }
+              },
+              {
+                "or": [
+                  {
+                    "term": { "B": "b1 }
+                  },
+                  {
+                    "term": { "C": "c1 }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+I assume that you're constructing these JSONs programmatically, so it isn't
+hard to, given a complex logic, construct an equivalent filter in the JSON.
+
+If the problem is how to convert a input **textual query** like `"A=a1 AND
+(B=b1 OR C=c1)"` to a corresponding representation in memory of the logic,
+then you'd be better off just using a [query
+filter](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-query-filter.html) with a `query_string` query. You'll probably do not
+want to manually parse the logic.
+
+The OR filter contains 2 or more subqueries where one must match. The And
+filter contains 2 or more subqueries where all must match. Combine and nest
+them, and you get a lot of  posibilities.
+
+To acomplish what you ask for: A=a1 AND (B=b1 OR C=c1) AND ((D=d1) OR (D=d2))
+AND (((E=e1) OR (E=e2)) AND (F=f1)) OR (((G=g1) AND (G=g2)) AND (H=h1))
+
+    
+    
+    {
+       "query": {
+        "filtered": {
+          "query": {
+            "query_string": {
+              "query": "something to search"
+            }
+          },
+          "filter": {
+            "and": [
+              {
+                "term": {
+                  "A": "a1"
+                }
+              },
+              {
+                "or": [
+                  {
+                    "term": {
+                      "B": "b1"
+                    }
+                  }, {
+                    "term": {
+                      "C": "c1"
+                    }
+                  }
+                ]
+              },
+              {
+                "terms": 
+                  {
+                    "D": [ "d1", "d2" ]
+                  }
+              },
+              {
+                "terms": 
+                  {
+                    "E": [ "e1", "e2" ]
+                  }
+              },
+              {
+                "or": [
+                  {
+                    "term": {
+                      "F": "f1"
+                    }
+                  }, {
+                    "term": {
+                      "G": "g1"
+                    }
+                  }
+                ]
+              },
+              {
+                "term": 
+                  {
+                    "G": "g2"
+                  }
+              },
+              {
+                "term": 
+                  {
+                    "H": "h1"
+                  }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+Not shure i've counted the paranteces correct, but hopefully you see the
+picture.
+

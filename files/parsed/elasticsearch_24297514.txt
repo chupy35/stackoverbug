@@ -1,0 +1,125 @@
+24297514 ElasticSearch Nested Filter Not Matching Emails
+
+I'm on ElasticSearch 1.0.1, using NEST and straight HTTP to query/test.
+
+I have a doc like so:
+
+    
+    
+     {      "_index": "orders_staging",
+            "_type": "order",
+            "_id": "1721",
+            "_score": 1,
+            "_source": {
+               "dbId": 1721,
+               "id": "a0f4012b0351",
+               "sourceId": "__micah",
+               "partnerId": 7,
+               "partnerName": "__Test34",
+               "paymentMethodId": 1,
+               "shippingAddress": {
+                  "addressId": 1553,
+                  "firstName": "Micah",
+                  "lastName": "Smith",
+                  "line1": "",
+                  "line2": "",
+                  "city": "Pittsburgh",
+                  "state": "PA",
+                  "countryCode": "US",
+                  "postalCode": "15201",
+                  "phone": "5551212",
+                  "email": "micah@me.com"
+               },
+               "dateCreated": "2012-10-24T15:11:10.193"
+            }
+    }
+    
+
+When i run the following filter:
+
+    
+    
+    GET orders_staging/order/_search
+    {
+     "from": 0,
+     "size": 25,
+     "filter": {
+      "or":{
+          "filters": [
+             {
+                 "nested": {
+                    "path": "shippingAddress",
+                    "query": {
+                        "term":{
+                            "shippingAddress.email":{
+                             "value":"micah"   
+                            }
+                        }
+                    }
+                 }
+             }
+          ]
+    
+    
+     }
+     }
+    }
+    
+
+It works, but if i use the full email `micah@me.com` it fails.
+
+It seems like anything with an `@` symbol fails.
+
+Any ideas? Is it impossible to `Term` match an Email? I've tried escaping it
+but with no luck (and its a POST anyways).
+
+Are you using a mapping? if so, is the shippingaddres.email a String or text
+field? if it's text, my guess is that the field might be getting tokenized.
+Try mapping the field as a string field if you are going to always match exact
+addresses
+
+One possible reason for this is that your email address might be tokenized
+during indexing. So instead of micah@me.com there are three tokens (terms):
+micah, me, com. If that is the case, try to add `"index": "not_analyzed"` to
+its mapping definition.
+
+You should use the UAX Email URL Tokenizer. From the documentation:
+
+> **UAX Email URL Tokenizer**
+
+>
+
+> A tokenizer of type uax_url_email which works exactly like the standard
+tokenizer, but tokenizes emails and urls as single tokens.
+
+It tokenizes the email address as a single token, facility email address
+searches.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+uaxurlemail-tokenizer.html>
+
+Here is a decent example of appropriate index settings and mappings along with
+a link to sample code on Github:
+
+    
+    
+    {
+      "settings" : {
+        "index": {
+          "analysis" :{
+            "analyzer": {
+               "default": {
+                 "type" : "custom",
+                 "tokenizer" : "uax_url_email",
+                 "filter" : ["standard", "lowercase", "stop"]
+                           }
+                        }
+                      }
+                  }
+           }
+    }
+    
+
+<https://github.com/imotov/elasticsearch-test-
+scripts/blob/master/email_default_analyzer.sh>
+

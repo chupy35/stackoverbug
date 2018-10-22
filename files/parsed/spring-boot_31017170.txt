@@ -1,0 +1,14 @@
+31017170 Is there a simple way to enable stack traces in Spring Boot logging?
+
+I want to see more than just the Exception's message string in my logs -- a
+full stack trace would be preferable. Is there an easy way to do this, or do I
+have to delve into Logback custom classes? I'd rather just set a config option
+somewhere.
+
+You have to add the exception to the pattern for Logback. According to the
+[logback documentation](http://logback.qos.ch/manual/layouts.html) you can
+either add `%ex` or `%xEx`. If you haven't configured a custom logback
+configuration so far, exceptions should already be logged because the default
+logback configuration which comes with Spring Boot, contains these pattern
+keywords. If it doesn't work, there might be another problem.
+

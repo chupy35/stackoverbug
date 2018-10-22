@@ -1,0 +1,85 @@
+14866727 elasticsearch and not_analyzed - STIll cant find stuff
+
+I have a mapped entity like this:
+
+    
+    
+    { "Organisation":{
+      "properties":{
+         "_abstract_":{
+            "type":"string",
+            "store":"yes"
+         },
+         "_author_":{
+            "type":"string",
+            "store":"yes"
+         },
+         "_editdate_":{
+            "type":"date",
+            "index":"analyzed",
+            "store":"yes",
+            "format":"dateOptionalTime"
+         },
+         "_id_":{
+            "type":"string",
+            "index":"not_analyzed",
+            "store":"yes",
+            "omit_norms":true,
+            "index_options":"docs"
+         },
+         "_title_":{
+            "type":"string",
+            "store":"yes"
+         },
+         "country":{
+            "type":"string",
+            "store":"yes"
+         },
+         "countrycode":{
+            "type":"string",
+            "index":"not_analyzed",
+            "omit_norms":true,
+            "index_options":"docs"
+         },
+         "creationdateutc":{
+            "type":"date",
+            "index":"analyzed",
+            "store":"yes",
+            "format":"dateOptionalTime"
+         }, ...
+    
+
+CountryCode can have values like CNTRY/US. I cannot query this - it still
+wants to split the value into two tokens even though it's not_analyzed. eg:
+
+    
+    
+    { "query":{
+      "bool":{
+         "must":[
+            {
+               "term":{
+                  "countrycode":"cntry/us"
+               }
+            }
+         ],
+         "must_not":[
+    
+         ],
+         "should":[
+    
+         ]
+      }},   "from":0,   "size":50}
+    
+
+I dont get it. Am I misunderstanding something simple?
+
+I solved this by specifying the search AND index analyzer as 'keyword' in the
+field mapping.
+
+I also compounded my problems by using the wrong case for the values I was
+searching for (when keyword, the values are not lowered) and when using Head I
+was GETting the query instead of POSTing it. Doh!
+
+Thanks
+

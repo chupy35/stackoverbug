@@ -1,0 +1,60 @@
+18988392 Elasticsearch: Why is my query returning too many results?
+
+I'm querying `http://elasticsearch.myserver.net:9200/my_index/foo/` with the
+following query:
+
+    
+    
+    {
+    "query": {
+        "ids": {
+          "type": "foo",
+          "values": [
+            "fff",
+            "bar",
+            "baz"
+          ]
+        }
+      }
+    }
+    
+
+But I'm getting a response with 12 hits, which is the total number of items of
+type foo in my index, rather than three, which is the number I requested. I'm
+making this query by typing it into the "any request" tab of elasticsearch
+head. What is going on?
+
+Update:
+
+I've also tried
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "ids": {
+                "type": "programme",
+                "values": [
+                  "fff",
+                  "330930",
+                  "200005"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+with the same result.
+
+If using the Any Request tab in head, make sure you have the dropdown request
+method set to "POST". If you have the "GET" method selected it may return all
+results similar to what you are seeing.
+
+![enter image description here](https://i.stack.imgur.com/2BvDl.png)
+

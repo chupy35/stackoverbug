@@ -1,0 +1,10 @@
+21393231 Removing/Downgrading to older version of ElasticSearch
+
+I installed ElasticSearch 0.90.10 deb (Using Software Center) without knowing
+that I needed to use 0.20.6. I have removed directories pertaining to
+0.90/0.20 to start off fresh but when I tar -zxvf elasticsearch-0.20.6 and
+curl the localhost I still get that I'm using v.0.90.10 !
+
+I've tried to do some research on how to remove ES 0.90.10 but nothing has
+resolved my issue.  Can anyone guide me in the right direction?
+

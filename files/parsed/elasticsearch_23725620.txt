@@ -1,0 +1,48 @@
+23725620 Automatically decide document type
+
+I have a large database with two different types of documents and I want them
+to be indexed in ES as different document types in ES terms as well. But I
+don't want to prefilter my database.
+
+Is it possible to configure ES so it will set the type of the documents
+according to its structure during indexing?
+
+To give more information:
+
+I'm indexing tweets from the twitter api. But I not only have tweets in json
+format but also json documents which say to delete a tweet in the database. I
+want to index these two documents so that they are unique. For the tweets I
+ensure that by setting the tweet ID to the document ID with a mapping. But I
+can't do the same on the delete docs because then I would overwrite the
+tweets. Separating the two by setting them to different docs but both use the
+same ID would ensure that, but I'm open for other suggestions.
+
+The delete docs look like this:
+
+    
+    
+    {"delete":
+        {"status":
+            {"id":417427762463649792,
+            "user_id":608116073,
+            "id_str": "417427762463649792",
+            "user_id_str":"608116073"}
+        }
+    }
+    
+
+And the tweets like this(excerpt):
+
+    
+    
+    {"created_at":
+        "Sun Dec 29 22:59:59 +0000 2013",
+        "id":417429821849743360
+    [...]
+    }
+    
+
+I want to index with stream2es or elasticsearch-hadoop.
+
+Thanks!
+

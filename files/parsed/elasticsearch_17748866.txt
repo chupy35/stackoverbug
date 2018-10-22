@@ -1,0 +1,90 @@
+17748866 Search for parentheses via ElasticSearch
+
+I have a requirement where i need to index some text that is prefixed with
+(std) which i should then be able to search for again.
+
+Ie. a document (html) contains the following sentence
+
+> (std)Almindelige betingelser for misligholdelseserstatning
+
+and i should be able to query for
+
+> (std)Almindelige betingelser
+
+Now, i've read a whole lot in the documentations and have now a charfilter in
+place which replaces ( and ) with _, and i thought i would then be safe to
+just to a replace in the search-query as well, so it becomes
+
+> _std_Almindelige betingelser
+
+but for some reason its simply not working AT ALL. No result at all is being
+returned when searching for `_std_Almindelige betingelser` even though i can
+see the term is there by browsing the document and return a list of facets.
+
+This is my index settings and type mapping
+
+    
+    
+    var settings = new IndexSettings();
+    
+    settings.Analysis.CharFilters.Add("parenthesis", new MappingCharFilter
+    {
+        Mappings = new[] { "( => _", ") => _" }
+    });
+    
+    settings.Analysis.TokenFilters.Add("snowball", new SnowballTokenFilter
+    {
+        Language = "Danish"
+    });
+    
+    settings.Analysis.Analyzers.Add("content", new CustomAnalyzer
+    {
+        CharFilter = new List<string>() { "html_strip", "parenthesis" },
+        Tokenizer = "whitespace",
+        Filter = new List<string>() { "lowercase", "snowball" }
+    });
+    
+
+And the mapping
+
+    
+    
+    {"searchservicepages":{
+        "_source":{
+            "excludes" : ["content"]
+        },
+        "properties":{
+            "content":{
+                "type":"string",
+                "index_analyzer"":"content"
+            }
+        }
+    }}
+    
+
+The problem is in the mapping.  You should change `"index_analyzer":
+"content"` into `"analyzer":"your_analyzer_name"`
+
+While your mapping is giving me trouble, with same index settings following
+mapping worked fine.
+
+    
+    
+      "testindex": {
+            "testdoc": {
+              "_source": {
+                "excludes": [
+                  "content"
+                ]
+              },
+              "properties": {
+                "content": {
+                  "type": "string",
+                  "analyzer": "myAnalyzer"
+                }
+              }
+            }
+    
+
+_Btw I'm using ES 0.90.2_
+

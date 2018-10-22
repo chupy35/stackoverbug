@@ -1,0 +1,4 @@
+33958389
+How to make search match similar words in elasticsearch
+<p>Im building a auto-suggest which will suggest similar words like "cat" when searching for "kat". How to match similar words in elasticsearch,so that I can implement it.</p>&#xA;
+<p>I feel <a href="https://github.com/elastic/elasticsearch-analysis-phonetic" rel="nofollow">phonetic analyzer</a> is a good choice here. It tries to map words with similar sounds ( while pronouncing ) into a single token. In your example kat and cat would be the same for this analyzer.</p>&#xA;

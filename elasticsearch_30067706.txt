@@ -1,0 +1,4 @@
+30067706
+Elasticsearch - script_fields error
+<p>I am using elastic 1.5.0. When I run this block in the query:</p>&#xA;&#xA;<pre><code>"script_fields" : {&#xA;        "test1" : {&#xA;            "script" : "doc['actual_air_time'].value * 2",&#xA;             "lang":"groovy"&#xA;        }&#xA;    }&#xA;</code></pre>&#xA;&#xA;<p>I get an error:</p>&#xA;&#xA;<pre><code>nested: ScriptException[dynamic scripting for [groovy] disabled]&#xA;</code></pre>&#xA;&#xA;<p>How can I enable groovy script for elastic? Is there any other way to evaluate "test1" without using script_fields?</p>&#xA;
+<p>You can enable it in elasticsearch.yml, by setting:</p>&#xA;&#xA;<pre><code>script.groovy.sandbox.enabled: true&#xA;</code></pre>&#xA;&#xA;<p>For more details see: <a href="http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html" rel="nofollow">http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html</a></p>&#xA;

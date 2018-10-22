@@ -1,0 +1,183 @@
+21289149 Trouble with has_parent query containing scripted function_score
+
+I have two document types, in a parent-child relationship:
+
+    
+    
+    "myParent" : {
+      "properties" : {
+        "weight" : {
+          "type" : "double"
+        }
+      }
+    }
+    
+    "myChild" : {
+      "_parent" : {
+        "type" : "myParent"
+      },
+      "_routing" : {
+        "required" : true
+      }
+    }
+    
+
+The `weight` field is to be used for custom scoring/sorting. This query
+directly against the parent documents works as intended:
+
+    
+    
+    {
+      "query" : {
+        "function_score" : {
+          "script_score" : {
+            "script" : "_score * doc['weight'].value"
+          }                 
+        }                                                                       
+      }    
+    }
+    
+
+However, when trying to do similar scoring for the child documents with a
+`has_parent` query, I get an error:
+
+    
+    
+    {
+      "query" : {
+        "has_parent" : {
+          "query" : {
+            "function_score" : {                                                    
+              "script_score" : {
+                "script" : "_score * doc['weight'].value"
+              }
+            }
+          },
+          "parent_type" : "myParent",
+          "score_type" : "score"
+        }
+      }
+    }
+    
+
+The error is:
+
+> QueryPhaseExecutionException[[myIndex][3]:
+query[filtered(ParentQuery[myParent](filtered(function score (ConstantScore(
+_:_ ),function=script[_score * doc['weight'].value], params
+[null]))->cache(_type:myParent)))->cache(_type:myChild)],from[0],size[10]:
+Query Failed [failed to execute context rewrite]]; nested:
+ElasticSearchIllegalArgumentException[No field found for [weight] in mapping
+with types [myChild]];
+
+It seems like instead of applying the scoring function to the parent and then
+passing its result to the child, ES is trying to apply the scoring function
+itself to the child, causing the error.
+
+If I don't use `score` for `score_type`, the error doesn't occur, although the
+results scores are then all `1.0`, as documented.
+
+What am I missing here? How can I query these child documents with custom
+scoring based on a parent field?
+
+I think the problem is that you are trying to score `child` documents based on
+a field in the `parent` document and that the function score should really be
+the other way round.
+
+To solve the problem my idea would be to store the parent/child relation and
+the score with the child documents. Then you would filter for child documents
+and score them according to the `weight` in the child document.
+
+An example:
+
+    
+    
+    "myParent" : {
+        "properties" : {
+            "name" : {
+                "type" : "string"
+            }
+        }
+    }
+    
+    "myChild" : {
+        "_parent" : {
+            "type" : "myParent"
+        },
+        "_routing" : {
+            "required" : true
+        },
+        "properties": {
+            "weight" : {
+                "type" : "double"
+            }
+        }
+    }
+    
+
+Now you could use a `has_parent` filter to select all `child` documents that
+have a certain `parent` and then score them using the `function score`:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "function_score" : {
+                        "script_score" : {
+                            "script" : "_score * doc['weight'].value"
+                        }
+                    }
+                },
+                "filter": {
+                    "has_parent": {
+                        "parent_type": "myParent",
+                        "query": {
+                            "term": {
+                                "name": "something"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+So if `parent` documents were blog posts and `child` comments, then you could
+filter all posts and score the comments based on `weight`. I doubt that
+scoring `childs` based on `parents` is possible though I might be wrong :)
+
+Disclaimer: 1st post to stack overflow...
+
+This I would say is a bug: it is using the `myChild` mapping as the default
+context, even though you are inside a `has_parent` query. But I'm not sure how
+easy the bug would be to fix. properly.
+
+However, you can work around it by including the `type` name in the full field
+name:
+
+    
+    
+    curl -XGET "http://localhost:9200/t/myChild/_search" -d'
+    {
+      "query": {
+        "has_parent": {
+          "query": {
+            "function_score": {
+              "script_score": {
+                "script": "_score * doc[\"myParent.weight\"].value"
+              }
+            }
+          },
+          "parent_type": "myParent",
+          "score_type": "score"
+        }
+      }
+    }'
+    
+
+I've opened an issue to see if we can get this fixed
+[#4914](https://github.com/elasticsearch/elasticsearch/issues/4914)
+

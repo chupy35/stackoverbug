@@ -1,0 +1,44 @@
+21027372 What's the reason for specifying only the 'field' option for the Term
+& Phrase suggesters in elasticsearch
+
+When using the suggester API, we are forced to specify the **field** option :
+
+    
+    
+    "suggest" : {
+      "text" : "val",
+      "sug_name" : {      
+        "term" : {
+          "field" : "field_name"
+        }
+      }
+    }
+    
+
+Is this field supposed to be a valid field name of some type ?
+
+If so, fields can exist only in the context of types AFAIK. Why isn't possible
+to also specify (at least optionally) the type the field belongs to ?
+
+Is your question if "field" has to be a valid field?  YES it does if you want
+it to find anything, you are welcome to search for fields that dont exist,
+although that seems an odd thing to do.
+
+Your second question, the answer, I believe, is NO, you can not specify a
+`_type` using the `_suggest` api, you can use a `suggest` block with the
+[_search api as shown
+here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+suggesters.html)
+
+    
+    
+    curl -s -XPOST 'localhost:9200/_search' -d '{
+      "query" : {
+        ...
+      },
+      "suggest" : {
+        ...
+      }
+    }'
+    
+

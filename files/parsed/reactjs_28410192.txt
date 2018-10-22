@@ -1,0 +1,84 @@
+28410192 HTML select onChange doesn't fire when value changes
+
+When `this.state.selected` changes, the select box changes its value
+correctly, but its `onChange` method is not called. This is probably because I
+need two-way-bindings for that, so I've tried the `valueLink` pattern from
+[the docs](http://facebook.github.io/react/docs/two-way-binding-helpers.html),
+but it still doesn't get fired:
+
+    
+    
+    render: function() {
+      return (
+        React.createElement("select", { valueLink: { value: this.state.selected, requestChange: this.changeHandler } },
+           React.createElement("option", { value: 1 }, "1"),
+           React.createElement("option", { value: 2 }, "2")
+        )
+      )
+    }
+    
+
+See the whole fiddle: <http://jsbin.com/tisahiliqi/1/edit?html,output>
+
+How can I get `requestChange` executed **without** firing an event manually
+(which is, in my opinion, what two-way-bindings should do for me)?
+
+Did I misunderstand something?
+
+Your code is a little mixed up with React's `LinkedStateMixin`. If you want to
+fire your own event handler you can use this: <http://jsbin.com/fuwowifoqe/1/>
+
+    
+    
+    var MySelect = React.createClass({
+      getInitialState: function() {
+        return { selected: 1 }
+      },
+    
+       componentDidMount: function() {
+        // Imagine some AJAX that takes 1s
+        window.setTimeout(function() {
+          this.setState({ selected: 2 });
+        }.bind(this), 1000);
+      },
+    
+      changeHandler: function(e) {
+        // ... Doesn't fire...
+        alert("Something changed!");
+        this.setState({selected : e.target.value })
+      },
+    
+      render: function() {
+        return (
+          React.createElement("select", { value: this.state.selected, onChange: this.changeHandler },
+             React.createElement("option", { value: 1 }, "1"),
+             React.createElement("option", { value: 2 }, "2")
+          )
+        )
+      }
+    });
+    
+    React.render(React.createElement(MySelect, null, "Hi"), document.getElementById("app"));
+    
+
+Note that the handler is not fired when you change value with `setState`, but
+when value is changed via user interaction.
+
+* * *
+
+**UPDATE**
+
+Then you can observe changes to `this.state` or `this.state.selected` using
+one of the life cycle methods such as `componentWillUpdate` or
+`componentDidUpdate`:
+
+jsbin: <http://jsbin.com/lipovucapi/1/>
+
+    
+    
+    componentDidUpdate: function(prevProps, prevState){  
+        if(this.state.selected != prevState.selected)
+            alert("selected changed!");
+    },
+    
+

@@ -1,0 +1,76 @@
+27469686 spring boot: can't initialize a postgresql datasource
+
+I have the following bean configured.
+
+    
+    
+    @Bean
+    @Primary
+    @ConfigurationProperties(prefix="datasource.etlTarget")
+    public DataSource datasourceTest() {
+        System.out.println("************");
+        System.out.println("************");
+        return DataSourceBuilder.create().build();
+    }
+    
+
+Then error log is:
+
+    
+    
+    ************
+    ************
+    2014-12-14 21:12:35.718  WARN 21758 --- [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt
+    
+    org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'org.springframework.batch.core.configuration.annotation.SimpleBatchConfiguration': Injection of autowired dependencies failed; nested exception is org.springframework.beans.factory.BeanCreationException: Could not autowire field: private java.util.Collection org.springframework.batch.core.configuration.annotation.AbstractBatchConfiguration.dataSources; nested exception is org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'datasourceTest' defined in class path resource [com/testcom/etc/ETLJobRepository.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [javax.sql.DataSource]: Factory method 'datasourceTest' threw exception; nested exception is java.lang.IllegalStateException: No supported DataSource type found
+        at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessPropertyValues(AutowiredAnnotationBeanPostProcessor.java:334)
+    
+
+Key error message is
+
+    
+    
+    nested exception is java.lang.IllegalStateException: No supported DataSource type found
+    
+
+The gradle setting is
+
+    
+    
+    dependencies {
+        compile "org.springframework.boot:spring-boot-starter-batch:1.2.0.RELEASE"
+        compile "org.springframework:spring-jdbc:4.1.3.RELEASE"
+        compile 'org.postgresql:postgresql:9.3-1102-jdbc41'
+        testCompile group: 'junit', name: 'junit', version: '4.11'
+    }
+    
+
+I tried hard to figure it out why it error out, but don't find out the root
+cause
+
+The property is
+
+    
+    
+    datasource.etlTarget.url=jdbc:postgresql://localhost/example
+    datasource.etlTarget.driverClassNname=org.postgresql.Driver
+    datasource.etlTarget.username=postgres
+    datasource.etlTarget.password=test
+    
+
+You made a typo in your configuration:
+
+    
+    
+    datasource.etlTarget.driverClassNname=org.postgresql.Driver
+    
+
+Should be:
+
+    
+    
+    datasource.etlTarget.driverClassName=org.postgresql.Driver
+    
+
+(i.e. `driverClassName` instead of `driverClassNname`)
+

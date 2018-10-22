@@ -1,0 +1,79 @@
+12936920 How do you access the current collection item in child controller?
+
+Controllers:
+
+    
+    
+    var ProductsCtrl = function ($scope) {
+      $scope.products = [ {name: 'one'}, {name: 'two'}, {name:'three'} ];
+    };
+    
+    var ProductCtrl = function ($scope) {
+      $scope. // How do I access the current product name?
+    };
+    
+
+view:
+
+    
+    
+    <ul ng-controller='ProductsCtrl'>
+      <li ng-repeat='product in products' ng-controller='ProductCtrl'>
+      </li>
+    </ul>
+    
+
+The current product is accessible in the scope as "product" in your case.
+
+if you repeat something like this :
+
+ng-repeat="item in items" your child controller will have "item" in the scope.
+
+So in your example :
+
+    
+    
+    <ul ng-controller='ProductsCtrl'>
+      <li ng-repeat='product in products' ng-controller='ProductCtrl'>
+        {{product.name}}
+      </li>
+    </ul>
+    
+
+@ganaraj already provided the correct answer. But I'd like to point out that
+in your example, you probably don't need to declare a controller in the <li>
+element. The child scopes created by ng-repeat for each product have access to
+the ProductCtrl controller. You should only need
+
+    
+    
+    <li ng-repeat='product in products'>
+    
+
+See also section "Controller Inheritance Example" on the [Understanding the
+Controller
+Component](http://docs.angularjs.org/guide/dev_guide.mvc.understanding_controller)
+page.
+
+You can add methods to ProdctsCtrl's $scope that take a product argument,
+which could then be called inside the ng-repeat. E.g., in your controller:
+
+    
+    
+    var ProductsCtrl = function ($scope) {
+       ...
+       $scope.totalPrice = function(product) {
+          return product.price * product.quantity;
+       }
+    }
+    
+
+In your HTML:
+
+    
+    
+    <li ng-repeat='product in products'>
+       total cost = {{totalPrice(product)}}
+    </li>
+    
+

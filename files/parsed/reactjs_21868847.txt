@@ -1,0 +1,97 @@
+21868847 Sending events between components
+
+Consider the ToDo App example on the React homepage. For posterity, here's [a
+fiddle](http://jsfiddle.net/nXJL5/) and the code is at the end of this post.
+
+Now say we decide to upgrade this app with w simple features:
+
+  1. Each todo item will have not only text, but also a "done" attribute. You can click on an item and it will toggle the "done" state, and perhaps add strikethrough styling when it is done.
+  2. At the very bottom, there will be text indicating the number of "Done", eg, "2 items done, 3 left to do"
+
+The problem is that the state of the items is maintained in `TodoApp`, not in
+`TodoList`. So we'd like to add an `onClick={something}` to the `<li>` element
+in `TodoList`'s render method. But we want that click event to be handled by
+`TodoApp`, which would then change the state of the item, and cause everything
+to re-render. If we wanted to approach it like this, how could we do it?
+
+We could also create a `TodoItem` component to be called by `TodoList`, and
+push the statefulness down into that. This would allow the click to be handled
+by the `TodoItem`, but now we would need a way to share the `TodoItem`s'
+states with the component indicating the number of items done and still todo.
+
+In a nutshell, I'd like to know how components can send events to each other,
+because I think just knowing that would allow solutions to both problems.
+
+## React ToDo App
+
+    
+    
+    /** @jsx React.DOM */
+    var TodoList = React.createClass({
+      render: function() {
+        var createItem = function(itemText) {
+          return <li>{itemText}</li>;
+        };
+        return <ul>{this.props.items.map(createItem)}</ul>;
+      }
+    });
+    var TodoApp = React.createClass({
+      getInitialState: function() {
+        return {items: [], text: ''};
+      },
+      onChange: function(e) {
+        this.setState({text: e.target.value});
+      },
+      handleSubmit: function(e) {
+        e.preventDefault();
+        var nextItems = this.state.items.concat([this.state.text]);
+        var nextText = '';
+        this.setState({items: nextItems, text: nextText});
+      },
+      render: function() {
+        return (
+          <div>
+            <h3>TODO</h3>
+            <TodoList items={this.state.items} />
+            <form onSubmit={this.handleSubmit}>
+              <input onChange={this.onChange} value={this.state.text} />
+              <button>{'Add #' + (this.state.items.length + 1)}</button>
+            </form>
+          </div>
+        );
+      }
+    });
+    React.renderComponent(<TodoApp />, document.body);
+    
+
+The idiomatic way to do this is to pass a callback down to TodoList:
+
+**Live demo:** <http://jsbin.com/zeqizene/1/edit>
+
+I've changed TodoList to look like this:
+
+    
+    
+    var TodoList = React.createClass({
+      handleDoneToggle: function(i) {
+        this.props.onDoneToggle(i);
+      },
+      render: function() {
+        var createItem = function(item, i) {
+          return <li onClick={this.handleDoneToggle.bind(null, i)}>
+            {item.text}
+            {item.done && " (done)"}
+          </li>;
+        };
+        return <ul>{this.props.items.map(createItem, this)}</ul>;
+      }
+    });
+    
+
+When an item is clicked, TodoList will call its own `onDoneToggle` function,
+so `TodoApp` can modify the state appropriately.
+
+See also [Editing a rich data structure in
+React.js](https://stackoverflow.com/questions/20795323/editing-a-rich-data-
+structure-in-react-js).
+

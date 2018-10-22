@@ -1,0 +1,97 @@
+22719035 Problems with elasticsearch filtering
+
+I'm having trouble with filtering in elastic search. I want to filter an index
+of order lines. Like this sql query:
+
+`SELECT * FROM orderrow WHERE item_code = '7X-BogusItem'`
+
+Here's my elasticsearch query:
+
+    
+    
+    GET /myindex/orderrow/_search
+    {
+        "query": {
+            "constant_score": {
+               "filter": {
+                   "term": {
+                      "item_code": "7X-BogusItem"
+                   }
+               }
+            }
+        }
+    }
+    
+
+I'm getting no results back. Yet when I run this query:
+
+    
+    
+    GET /myindex/orderrow/_search
+    {
+        "query": {
+            "query_string": {
+                "query": "7X-BogusItem"
+            }
+        }
+    }
+    
+
+I get the proper results. What am I doing wrong?
+
+You could try with:
+
+    
+    
+    GET /myindex/orderrow/_search
+    {
+        "query": {
+            "constant_score": {
+               "filter": {
+                   "query": {
+                      "query_string": {
+                          "query": "7X-BogusItem"
+                       }
+                   }
+               }
+            }
+        }
+    }
+    
+
+The thing is that query_string query is analyzed while term query is not.
+Probably your data `7X-BogusItem` was transformed by default analyzer during
+indexing to terms like `7x` and `bogusitem`. When you try to do a query with
+term `7X-BogusItem` it will not work because you don't have term
+`7X-BogusItem` \- you have only terms `7x` and `bogusitem`. However performing
+query_string will transform your query `7X-BogusItem` to terms `7x` and
+`bogusitem` under the hood and it will find what you want.
+
+If you don't want your text `7X-BogusItem` to be transformed by analyzer, you
+could change mapping option for field `item_code` to `"index" :
+"not_analyzed"`.
+
+You can check what your data will look like after analysis:
+
+    
+    
+    curl -XGET "localhost:9200/_analyze?analyzer=standard&pretty" -d '7X-BogusItem'
+    {
+      "tokens" : [ {
+        "token" : "7x",
+        "start_offset" : 0,
+        "end_offset" : 2,
+        "type" : "<ALPHANUM>",
+        "position" : 1
+      }, {
+        "token" : "bogusitem",
+        "start_offset" : 3,
+        "end_offset" : 12,
+        "type" : "<ALPHANUM>",
+        "position" : 2
+      } ]
+    }
+    
+
+So for text `7X-BogusItem` we have in index terms `7x` and `bogusitem`.
+

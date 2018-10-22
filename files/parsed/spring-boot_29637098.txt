@@ -1,0 +1,15 @@
+29637098 Spring boot - parachute is non existent error
+
+I use spring boot 1.1.6 in our application. Its running for a while without
+any issues and started throwing the following error all of sudden.
+
+SEVERE:Memory usage is low, parachute is non existent, your system may start
+failing.
+
+I tried setting -Xms and -Xmx to the higher value. But still getting the same
+error. Is there any setting i am missing.
+
+Thanks, Baskar.S
+
+Adding -XX:MaxPermSize to a higher value solved the problem.
+

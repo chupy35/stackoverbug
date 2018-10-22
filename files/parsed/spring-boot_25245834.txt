@@ -1,0 +1,68 @@
+25245834 Spring boot without embedded servlet container
+
+I have a spring-boot web application, but I don't want to start it in embedded
+Tomcat/Jetty. What is the correct way to disable embedded container?
+
+If I do smth like:
+
+    
+    
+            <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+               <exclusion>
+                   <groupId>org.springframework.boot</groupId>
+                   <artifactId>spring-boot-starter-tomcat</artifactId>
+               </exclusion>
+            </exclusions>
+        </dependency>
+    
+
+I keep getting
+
+    
+    
+    org.springframework.context.ApplicationContextException: Unable to start embedded container; 
+    
+
+Since you are using Maven (instead of Gradle) check out
+[this](http://spring.io/guides/gs/convert-jar-to-war-maven/) guide and
+[this](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#build-tool-plugins-maven-packaging)
+part of the official documentation.
+
+The basic steps are:
+
+Make the embedded servlet container a **provided** dependency (therefore
+removing it from the produced war)
+
+    
+    
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-tomcat</artifactId>
+        <scope>provided</scope>
+    </dependency>
+    
+
+Add an application initializer like:
+
+    
+    
+    import org.springframework.boot.builder.SpringApplicationBuilder;
+    import org.springframework.boot.context.web.SpringBootServletInitializer;
+    
+    public class WebInitializer extends SpringBootServletInitializer {
+    
+        @Override
+        protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+            return application.sources(Application.class);
+        }
+    
+    }
+    
+
+That class is needed in order to be able to bootstrap the Spring application
+since there is no `web.xml` used.
+

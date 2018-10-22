@@ -1,0 +1,234 @@
+23656458 elasticsearch - what to do with unassigned shards
+
+my cluster is with yellow status because some shards are unassigned. what to
+do with this?
+
+I tried set `cluster.routing.allocation.disable_allocation = false` to all
+indexes, but I think this don't work because I'm using version 1.1.1.
+
+I also tried restarting all machines, but same happens.
+
+Any idea?
+
+**EDIT :**
+
+  * Cluster stat : 
+    
+        { 
+      cluster_name: "elasticsearch",
+      status: "red",
+      timed_out: false,
+      number_of_nodes: 5,
+      number_of_data_nodes: 4,
+      active_primary_shards: 4689,
+      active_shards: 4689,
+      relocating_shards: 0,
+      initializing_shards: 10,
+      unassigned_shards: 758
+    }
+    
+
+Those unassigned shards are actually unassigned replicas of your actual shards
+from the master node.
+
+In order to assign these shards, you need to run a new instance of
+elasticsearch to create a secondary node to carry the data replicas.
+
+**EDIT:** Sometimes the unassigned shards belongs to indexes that have been
+deleted making them orphan shards that will never assign regardless of adding
+nodes or not. But it's not the case here!
+
+There are many possible reason why allocation won't occur:
+
+  1. You are running different versions of Elasticsearch on different nodes
+  2. You only have one node in your cluster, but you have number of replicas set to something other than zero.
+  3. You have insufficient disk space.
+  4. You have shard allocation disabled.
+  5. You have a firewall or SELinux enabled. With SELinux enabled but not configured properly, you will see shards stuck in INITIALIZING or RELOCATING forever.
+
+As a general rule, you can troubleshoot things like this:
+
+  1. Look at the nodes in your cluster: `curl -s 'localhost:9200/_cat/nodes?v'`. If you only have one node, you need to set `number_of_replicas` to 0. (See ES documentation or other answers).
+  2. Look at the disk space available in your cluster: `curl -s 'localhost:9200/_cat/allocation?v'`
+  3. Check cluster settings: `curl 'http://localhost:9200/_cluster/settings?pretty'` and look for `cluster.routing` settings
+  4. Look at which shards are UNASSIGNED `curl -s localhost:9200/_cat/shards?v | grep UNASS`
+  5. Try to force a shard to be assigned 
+    
+        curl -XPOST -d '{ "commands" : [ {
+      "allocate" : {
+           "index" : ".marvel-2014.05.21", 
+           "shard" : 0, 
+           "node" : "SOME_NODE_HERE",
+           "allow_primary":true 
+         } 
+      } ] }' http://localhost:9200/_cluster/reroute?pretty
+    
+
+  6. Look at the response and see what it says. There will be a bunch of YES's that are ok, and then a NO. If there aren't any NO's, it's likely a firewall/SELinux problem.
+
+The first 2 points of the answer by Alcanzar did it for me, but I had to add
+
+    
+    
+    "allow_primary" : true
+    
+
+like so
+
+    
+    
+    curl -XPOST http://localhost:9200/_cluster/reroute?pretty -d '{
+      "commands": [
+        {
+          "allocate": {
+            "index": ".marvel-2014.05.21",
+            "shard": 0,
+            "node": "SOME_NODE_HERE",
+            "allow_primary": true
+          }
+        }
+      ]
+    }'
+    
+
+The only thing that worked for me was changing the number_of_replicas (I had 2
+replicas, so I changed it to 1 and then changed back to 2).
+
+First:
+
+    
+    
+    PUT /myindex/_settings
+    {
+        "index" : {
+            "number_of_replicas" : 1
+         }
+    }
+    
+
+Then:
+
+    
+    
+    PUT /myindex/_settings
+    {
+        "index" : {
+            "number_of_replicas" : 2
+         }
+    }
+    
+
+This is a common issue arising from the default index setting, in
+particularly, when you try to replicate on a single node. To fix this with
+transient cluster setting, do this:
+
+    
+    
+    curl -XPUT http://localhost:9200/_settings -d '{ "number_of_replicas" :0 }'
+    
+
+Next, enable the cluster to reallocate shards (you can always turn this on
+after all is said and done):
+
+    
+    
+    curl -XPUT http://localhost:9200/_cluster/settings -d '
+    {
+        "transient" : {
+            "cluster.routing.allocation.enable": true
+        }
+    }'
+    
+
+Now sit back and watch the cluster clean up the unassigned replica shards. If
+you want this to take effect with future indices, don't forget to modify
+elasticsearch.yml file with the following setting and bounce the cluster:
+
+    
+    
+    index.number_of_replicas: 0
+    
+
+Check that the versions of ElasticSearch on each node are the same. If they
+are not, then ES will not allocate replica copies of the index to 'older'
+nodes.
+
+Using @Alcanzar's answer, you can get some diagnostic error messages back:
+
+    
+    
+    curl -XPOST 'http://localhost:9200/_cluster/reroute?pretty' -d '{
+      "commands": [
+        {
+          "allocate": {
+            "index": "logstash-2016.01.31",
+            "shard": 1,
+            "node": "arc-elk-es3",
+            "allow_primary": true
+          }
+        }
+      ]
+    }'
+    
+
+result is:
+
+    
+    
+    {
+      "error" : "ElasticsearchIllegalArgumentException[[allocate] allocation of
+                [logstash-2016.01.31][1] on node [arc-elk-es3]
+                [Xn8HF16OTxmnQxzRzMzrlA][arc-elk-es3][inet[/172.16.102.48:9300]]{master=false} is not allowed, reason:
+                [YES(shard is not allocated to same node or host)]
+                [YES(node passes include/exclude/require filters)]
+                [YES(primary is already active)]
+                [YES(below shard recovery limit of [2])]
+                [YES(allocation disabling is ignored)]
+                [YES(allocation disabling is ignored)]
+                [YES(no allocation awareness enabled)]
+                [YES(total shard limit disabled: [-1] <= 0)]
+                *** [NO(target node version [1.7.4] is older than source node version [1.7.5]) ***
+                [YES(enough disk for shard on node, free: [185.3gb])]
+                [YES(shard not primary or relocation disabled)]]",
+      "status" : 400
+    }
+    
+
+How to determine the version number of ElasticSearch:
+
+    
+    
+    adminuser@arc-elk-web:/var/log/kibana$ curl -XGET 'localhost:9200'
+    {
+      "status" : 200,
+      "name" : "arc-elk-web",
+      "cluster_name" : "elasticsearch",
+      "version" : {
+        "number" : "1.7.5",
+        "build_hash" : "00f95f4ffca6de89d68b7ccaf80d148f1f70e4d4",
+        "build_timestamp" : "2016-02-02T09:55:30Z",
+        "build_snapshot" : false,
+        "lucene_version" : "4.10.4"
+      },
+      "tagline" : "You Know, for Search"
+    }
+    
+
+In my case, I setup the `apt-get` repository incorrectly and they got out of
+sync on the different servers. I corrected it on all the servers with:
+
+    
+    
+    echo "deb http://packages.elastic.co/elasticsearch/1.7/debian stable main" | sudo tee -a /etc/apt/sources.list
+    
+
+and then the usual:
+
+    
+    
+    sudo apt-get update
+    sudo apt-get upgrade
+    
+
+and a final server reboot.
+

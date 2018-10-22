@@ -1,0 +1,301 @@
+24893919 Elasticsearch: performance in case of complex filters and lot of
+records
+
+I am new to Elasticsearch. I need to build a query with querying (scoring) on
+two text fields plus complex filters. Here is what I got so far (with the help
+of kind folks such as Dan Tuffery, John Petrone, and dark_shadow at SO) and it
+works:
+
+    
+    
+    {
+      "filter": {
+        "or": [
+          {
+            "and": [
+              {
+                "range": {
+                  "start": {
+                    "lte": 201407292300
+                  }
+                }
+              },
+              {
+                "range": {
+                  "end": {
+                    "gte": 201407292300
+                  }
+                }
+              },
+              {
+                "term": {
+                  "condtion1": false
+                }
+              },
+              {
+                "or": [
+                  {
+                    "and": [
+                      {
+                        "term": {
+                          "condtion2": false
+                        }
+                      },
+                      {
+                        "or": [
+                          {
+                            "and": [
+                              {
+                                "missing": {
+                                  "field": "condtion6"
+                                }
+                              },
+                              {
+                                "missing": {
+                                  "field": "condtion7"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "term": {
+                              "condtion6": "nop"
+                            }
+                          },
+                          {
+                            "term": {
+                              "condtion7": "rst"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "and": [
+                      {
+                        "term": {
+                          "condtion2": true
+                        }
+                      },
+                      {
+                        "or": [
+                          {
+                            "and": [
+                              {
+                                "missing": {
+                                  "field": "condtion3"
+                                }
+                              },
+                              {
+                                "missing": {
+                                  "field": "condtion4"
+                                }
+                              },
+                              {
+                                "missing": {
+                                  "field": "condtion5"
+                                }
+                              },
+                              {
+                                "missing": {
+                                  "field": "condtion6"
+                                }
+                              },
+                              {
+                                "missing": {
+                                  "field": "condtion7"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "term": {
+                              "condtion3": "abc"
+                            }
+                          },
+                          {
+                            "term": {
+                              "condtion4": "def"
+                            }
+                          },
+                          {
+                            "term": {
+                              "condtion5": "ghj"
+                            }
+                          },
+                          {
+                            "term": {
+                              "condtion6": "nop"
+                            }
+                          },
+                          {
+                            "term": {
+                              "condtion7": "rst"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "and": [
+              {
+                "term": {
+                  "condtion8": "TIME_POINT_1"
+                }
+              },
+              {
+                "range": {
+                  "start": {
+                    "lte": 201407302300
+                  }
+                }
+              },
+              {
+                "or": [
+                  {
+                    "term": {
+                      "condtion9": "GROUP_B"
+                    }
+                  },
+                  {
+                    "and": [
+                      {
+                        "term": {
+                          "condtion9": "GROUP_A"
+                        }
+                      },
+                      {
+                        "ids": {
+                          "values": [
+                            100,
+                            10
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "and": [
+              {
+                "term": {
+                  "condtion8": "TIME_POINT_2"
+                }
+              },
+              {
+                "ids": {
+                  "values": [
+                    100,
+                    10
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "and": [
+              {
+                "term": {
+                  "condtion8": "TIME_POINT_3"
+                }
+              },
+              {
+                "or": [
+                  {
+                    "term": {
+                      "condtion1": true
+                    }
+                  },
+                  {
+                    "range": {
+                      "end": {
+                        "lt": 201407302300
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "or": [
+                  {
+                    "term": {
+                      "condtion9": "GROUP_B"
+                    }
+                  },
+                  {
+                    "and": [
+                      {
+                        "term": {
+                          "condtion9": "GROUP_A"
+                        }
+                      },
+                      {
+                        "ids": {
+                          "values": [
+                            100,
+                            10
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+    
+
+I am wondering whether Elasticsearch will perform well in case of such queries
+against hundreds of thousands of records.
+
+Basically I am facing choice of technologies. I am thinking about whether
+traditional database plus full-text search features do a better job. I do like
+what Elasticsearch offers and the features to use possibly in my project in
+the future.
+
+Personally i think elastic search will be a good choice of technology for what
+you are trying to achieve, i have used FAST, Solr and SQL in the past, but i
+really find ES much better.
+
+Do have a look at this [Queries vs.
+Filters](https://stackoverflow.com/questions/14595988/queries-vs-filters) as
+its important to know when to use filters vs queries, as elastic search does
+some caching.
+
+I have ran complex histograms over 800 million records on one server (16
+cores, 64GB Ram, 500GB SAN) and it works very well, i would prefer to cluster
+the instance however my client does not wish to add a couple of more linux
+servers (madness really). You should ideally set ES up with 3 nodes as this
+gives you great performance and high availability, which i have done at
+another clients setup and works a dream.
+
+I can see you are using a lot of AND/OR/NOT Filters. I strongly recommend
+going through these links:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/filter-
+caching.html> <http://www.elasticsearch.org/blog/all-about-elasticsearch-
+filter-bitsets/>
+
+you should use **bool filter instead of And/Or/Not** as bool filter are
+internally cached. So, its much faster. Also, you are using term and missing
+filter which are inherently fast as they operate on terms level.
+
+A last advise would be to properly analyze your use case and better approach
+your problem. Try to reduce number of filters by making effective choices.
+ElasticSearch can handle these filters very well and with caching it won't be
+too slow.
+
+Thanks
+

@@ -1,0 +1,127 @@
+23863972 How do I add things to the /info endpoint in spring boot
+programmatically?
+
+How do I add things to the `/info` endpoint in [Spring
+Boot](http://projects.spring.io/spring-boot/) programmatically? The
+[documentation](http://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#production-ready-customizing-endpoints) states
+that this is possible for the `/health` endpoint through the use of
+`HealthIndicator` interface. Is there something for the `/info` endpoint as
+well?
+
+I would like to add operating system name and version and other runtime info
+there.
+
+One way to do what you want (in the event that you have totally custom
+properties you need to display) is to declare a bean of type InfoEndpoint
+which will override the default.
+
+    
+    
+    @Bean
+    public InfoEndpoint infoEndpoint() {
+         final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+         map.put("test", "value"); //put whatever other values you need here
+         return new InfoEndpoint(map);
+    }
+    
+
+As you can see from the code above, the map can contain whatever info you
+need.
+
+In the event that the data you want to show can be retrieved by the
+environment and is not custom, you do not need to override the `InfoEndpoint`
+bean, but you can simply add properties to the properties file with a prefix
+of `info`. One example where the OS name is evaluated is the following:
+
+    
+    
+    info.os = ${os.name}
+    
+
+In the code above, Spring Boot will evaluate the right-hand expression before
+returning the property in the `/info` endpoint.
+
+A final note is that there is a ton of environment information that is already
+available in the `/env` endpoint
+
+**Update**
+
+As pointed out by @shabinjo, in newer Spring Boot versions there is no
+`InfoEndpoint` constructor that accepts a map. You can however use the
+following snippet:
+
+    
+    
+    @Bean
+    public InfoEndpoint infoEndpoint() {
+         final Map<String, Object> map = new LinkedHashMap<String, Object>();
+         map.put("test", "value"); //put whatever other values you need here
+         return new InfoEndpoint(new MapInfoContributor(map));
+    }
+    
+
+The code above will completely override the default info that would end-up in
+`/info`. To overcome this issue one could add the following bean
+
+    
+    
+    @Bean
+    public MapInfoContributor mapInfoContributor() {
+        return new MapInfoContributor(new HashMap<String, Object>() {{
+            put("test", "value");
+        }});
+    }
+    
+
+It should be possible to add a custom PropertySource inside an
+ApplicationListener to add custom info.* properties to the environment (see
+this answer for an example: [How to Override Spring-boot
+application.properties
+programmatically](https://stackoverflow.com/questions/29072628/how-to-
+override-spring-boot-application-properties-
+programmatically/29133241#29133241))
+
+The accepted answer actually clobbers the InfoEndpoint and does not add to it.
+
+One way I found to _add_ to the info is, in a `@Configuration` class, add an
+`@Autowired` method that adds extra properties following the `info.*`
+conventions to the environment. Then `InfoEndpoint` will pick them up when its
+invoked.
+
+You can do something like the following:
+
+    
+    
+    @Autowired
+    public void setInfoProperties(ConfigurableEnvironment env) {
+        /* These properties will show up in the Spring Boot Actuator /info endpoint */
+        Properties props = new Properties();
+    
+        props.put("info.timeZone", ZoneId.systemDefault().toString());
+    
+        env.getPropertySources().addFirst(new PropertiesPropertySource("extra-info-props", props));
+    }
+    
+
+In Spring Boot 1.4, you are able to declare `InfoContributer` beans to make
+this a whole lot easier:
+
+    
+    
+    @Component
+    public class ExampleInfoContributor implements InfoContributor {
+    
+        @Override
+        public void contribute(Info.Builder builder) {
+            builder.withDetail("example",
+                    Collections.singletonMap("key", "value"));
+        }
+    
+    }
+    
+
+See <http://docs.spring.io/spring-
+boot/docs/1.4.0.RELEASE/reference/htmlsingle/#production-ready-application-
+info-custom> for more info.
+

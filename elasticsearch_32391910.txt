@@ -1,0 +1,4 @@
+32391910
+Elasticsearch wait for index status
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-health.html" rel="nofollow">Cluster health API</a> has parameter <code>wait_for_status</code> that (according to documentation) waits for specified <strong>cluster</strong> status. However, I would like to wait for specific <strong>index</strong> to reach some status.</p>&#xA;&#xA;<p>If I use cluster health request with <code>level=indices</code> and <code>index=myindex</code> will the wait still operate on cluster level? I guess polling the status and continuing after status is reached would have the same effect but is there better way to do this?</p>&#xA;
+<p>It is possible to use the <code>health</code> api for specific indices, as well:</p>&#xA;&#xA;<pre><code>GET /_cluster/health/index_name?wait_for_status=green&amp;timeout=10s&#xA;</code></pre>&#xA;

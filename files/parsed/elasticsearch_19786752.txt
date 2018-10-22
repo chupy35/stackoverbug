@@ -1,0 +1,83 @@
+19786752 unable to correctly sort dates with milliseconds
+
+With a mapping definition of seconds:
+
+    
+    
+      "time": {
+               "type": "date",
+               "store": "yes",
+               "format": "yyyy/MM/dd HH:mm:ss",
+               "index": "analyzed"
+            },
+    
+
+the time field is sorted "desc" and "asc" correctly
+
+However we need milli-second accuracy
+
+    
+    
+      "time": {
+               "type": "date",
+               "store": "yes",
+               "format": "yyyy/MM/dd HH:mm:ss.SSS",
+               "index": "analyzed"
+            },
+    
+
+then oddly the sort on "asc" is returning the sort order  while sort on "desc"
+is returning the correct milli-second order
+
+to answer my own question .. the custom mapping syntax was incorrect. A
+corrected version is below that correctly sorts on dates with milliseconds.
+
+The only minor remaining question is how and why the incorrect format was
+accepted and how to prevent that.
+
+    
+    
+    POST test2
+    {
+       "settings": {
+        "number_of_shards": 1
+    },
+    "mappings": {
+      "logevent": {
+         "properties": {
+            "logtime": {
+               "type": "date",
+               "store": "yes",
+               "format": "yyyy/MM/dd HH:mm:ss.SSS"
+            },
+            "eventKey": {
+               "type": "string",
+               "store": "yes",
+               "index": "analyzed"
+            },
+            "channelid": {
+               "type": "string",
+               "store": "yes",
+               "index": "analyzed"
+            },
+            "eventtype": {
+               "type": "string",
+               "store": "yes",
+               "index": "analyzed"
+            },
+            "step": {
+               "type": "string",
+               "store": "yes",
+               "index": "analyzed"
+            },
+            "line": {
+               "type": "string",
+               "store": "yes",
+               "index": "analyzed"
+            }
+         }
+      }
+       }
+    }
+    
+

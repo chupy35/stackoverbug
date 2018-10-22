@@ -1,0 +1,71 @@
+23612609 How to use copy_to on a nested field
+
+Is it possible to use copy_to in a nested field :
+
+Here is an extract of my mapping :
+
+    
+    
+    day: {
+        type: nested
+        properties: {
+            weight: {
+                index_name: bzixtz2fng.day.weight
+                type: double
+            }
+            value: {
+                index_name: bzixtz2fng.day.value
+                type: string
+                copy_to: [
+                    raw_words
+                    back
+                ]
+            }
+        } 
+    }
+    
+
+Why I don't find my doc when I search on back
+
+    
+    
+    {
+      "query": {
+        "term": {
+          "back": "one"
+        }
+      }
+    }
+    
+
+PS : Version 1.0.1
+
+I think you need to use the nested query or filter to wrap your term query as
+explained here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-nested-query.html>.
+
+Something like this should work:
+
+    
+    
+    {
+        "nested": {
+            "path": "obj1",
+            "score_mode": "avg",
+            "query": {
+                "nested": {
+                    "term": {
+                        "obj1.back": "one"
+                    }
+                }
+            }
+        }
+    }
+    
+
+If that doesn't help, please provide the mapping returned from /_mapping.
+
+It was an issue [#6701](https://github.com/elastic/elasticsearch/issues/6701)
+on elasticsearch, fix in v1.4.0.
+

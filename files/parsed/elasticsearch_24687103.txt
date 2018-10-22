@@ -1,0 +1,51 @@
+24687103 Elasticsearch: how to write the mapping for a multi-valued field?
+
+I am new to Elasticsearch. Forgive me if this is obvious. Googled it but did
+not find how to write the mapping for a mutlivalued field (strings). I only
+found how to write a multivalued document and search on a multivalued field:
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/_multi_value_fields_2.html>
+
+Thanks for any help!
+
+The Elasticsearch docs have a page that explains what you want.
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-
+fields.html>
+
+I have updated the Link Now try the link
+
+A multivalued field is different from Elastic's `multi_field`. It is described
+here:
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/0.90/mapping-multi-
+field-type.html>
+
+Current documentation mentions multi-fields here:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html#_field_datatypes>
+
+A **multivalued** field as I understand it (and I think that is what you meant
+by it, as well) is one that contains several values that will be searched
+separately from each other:
+
+Example:
+
+Field `color`, multivalued, `keyword` containing the following values:
+"black", "blue", "white". When the query contains "white", there will be a
+match. The score will be different then if you have a whitespace delimited
+field with three tokens "black blue white" where white comes last.
+
+> In Elasticsearch, there is no dedicated array type. Any field can contain
+zero or more values by default, however, all values in the array must be of
+the same datatype.
+(<https://www.elastic.co/guide/en/elasticsearch/reference/current/array.html>)
+
+Elastic just adds values implicitly to fields. There won't be any error
+handling like in SOLR with an explicit `multiValued=false`. You will have to
+check during import time if you want to make sure a field is **not**
+containing a list of values.
+
+If one or more documents have multiple values for a certain field, this
+field's values are displayed as array in the JSON results no matter how many
+values there are for a specific document. So the result type of that field is
+consistent across the index but it is not reflected in the mapping.
+

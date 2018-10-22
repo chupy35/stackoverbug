@@ -1,0 +1,4 @@
+31909433
+Where is the Elasticsearch scripts directory?
+<p>The Elasticsearch <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html" rel="nofollow">docs</a> say this:</p>&#xA;&#xA;<blockquote>&#xA;  <p>Save the contents of the script as a file called config/scripts&#xA;  /my_script.groovy on every data node in the cluster</p>&#xA;</blockquote>&#xA;&#xA;<p>I was wondering where to find the <code>config/scripts</code> directory</p>&#xA;
+<p>The <code>config/scripts</code> directory most likely needs to be created. To make sure Elasticsearch picks up your script, you should create the <code>scripts</code> directory inside the folder which contains your elasticsearch.yml configuration file.&#xA;This is often something like <code>/etc/elasticsearch</code> on Linux. Otherwise, just do a search for <code>elasticsearch.yml</code> on your machine and note the folder it's in.</p>&#xA;

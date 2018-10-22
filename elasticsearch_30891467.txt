@@ -1,0 +1,4 @@
+30891467
+How to filter aggregations?
+<p>I have field <code>tags</code> <em>(Integer, multiple=True)</em>.</p>&#xA;&#xA;<p>I want to aggregate by this field with some filtering (for example, tags in [1, 2, 3]), so only result for tags (1, 2, 3) will return.</p>&#xA;
+<p>You can do it like this with a <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-filter-aggregation.html" rel="nofollow"><code>filters</code></a> aggregation and a <code>terms</code> sub-aggregation:</p>&#xA;&#xA;<pre><code>{&#xA;  "aggs": {&#xA;    "tagfilter": {&#xA;      "filter": {&#xA;        "terms": {&#xA;          "tags": [ "1", "2", "3" ]&#xA;        }&#xA;      },&#xA;      "aggs": {&#xA;        "mytags": {&#xA;          "terms": {&#xA;            "field": "tags"&#xA;          }&#xA;        }&#xA;      }&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;

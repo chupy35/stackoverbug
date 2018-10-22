@@ -1,0 +1,46 @@
+11635018 Using AngularJS ng-bind and ng-href together?
+
+Using AngularJS, I've noticed a pattern that seems wrong to me.
+
+When building a table, my data is bound using ng-bind. But if I need the text
+in the cell to link to something, the link has to get created manually.
+
+A non-linked table cell looks like:
+
+    
+    
+    <td ng-bind="customer.name"></td>
+    
+
+But if I want to create a link, I do:
+
+    
+    
+    <td><a ng-href="/customer/{{customer.id}}">{{customer.name}}</a></td>
+    
+
+Is there a way to create the link using attributes? Something like:
+
+    
+    
+    <td ng-bind="customer.name" ng-href="/customer/{customer.id}"></td>
+    
+
+This isn't really an AngularJS issue; this is more about how HTML works. HTML
+doesn't allow you to just add an `href` attribute to any element to create a
+link. You need to use the anchor tag to create a link.
+
+If you want, you could [write a
+directive](http://docs.angularjs.org/guide/directive) that produces the anchor
+tag inside cells. But that hardly seems worth it, and most would probably
+agree that it produces less semantic, more confusing markup.
+
+HTML links spec: <http://www.w3.org/TR/html4/struct/links.html>
+
+You could use `ng-bind`, yes, but inside the `<a>`, like @btford said.
+
+    
+    
+    <td><a ng-href="/customer/{{customer.id}}" ng-bind="customer.name"></a></td>
+    
+

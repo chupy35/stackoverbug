@@ -1,0 +1,31 @@
+12248382 angularjs: how to access the current element of ng-repeat
+
+I need to be able to access the current element of ng-repeat inside a
+directive. See the jsfiddle for this: <http://jsfiddle.net/terebentina/TVEnN/>
+
+I am expecting a hash in the console (like {width: 100, height: 100}) but I am
+not really sure how to do that.
+
+Any help would be much appreciated.
+
+Here is a fiddle that works ( and outputs what you are expecting).
+
+<http://jsfiddle.net/TVEnN/2/>
+
+Things to Note about `ng-repeat`:
+
+  1. `ng-repeat` always creates a NEW SCOPE for each element in the array / object. 
+  2. The current element is available in this new scope as the name of the element defined in the `ng-repeat`. For ex: if you defined `ng-repeat = "page in pages"` then the current element is available in the scope as page. If you defined `ng-repeat = "(key,value) in object"` both `key` and `value` are available in this new scope.
+  3. The current position in the array is available as `$index`.
+  4. Since `ng-repeat` creates a new scope and all scopes inherit from their parent the `pages` in the above example is still available in this new scope, which means you could do stuff like `$scope.pages.length` if you need to.
+
+In addition to @ganaraj's answer:
+
+There's a pitfall when using filters. By using filters, e.g. to order items
+alphabetically, the `$index` resp. the `key` variable does no longer represent
+the actual position of the item in the items array, but its current position
+in the `ng-repeat`-block.
+
+See [this link](http://codeutopia.net/blog/2014/11/10/angularjs-best-
+practices-avoid-using-ng-repeats-index/)
+

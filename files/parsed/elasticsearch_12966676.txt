@@ -1,0 +1,14 @@
+12966676 how multi tenancy is supported in elastic search?
+
+I am just wondering how multi-tenancy is supported in ElasticSearch? Multi-
+tenancy means that different customers can have different index. Would
+ElasticSearch builds different index per customer or a single index (a kind of
+sparse index)?
+
+Basically you are correct. Multi-tenancy in ElasticSearch means:
+
+  * Configure indices assigned to specific user accounts
+  * Configure aliases with specific filtering/routing that can be assigned to specific user accounts
+
+Hope that helps...
+

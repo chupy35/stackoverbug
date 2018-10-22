@@ -1,0 +1,138 @@
+25333782 How can I improve Elasticsearch performance for sorted and
+geographically filtered queries over large datasets?
+
+I have a large dataset of relatively short documents which include, among
+other fields, a given name, a family name, a tenantId, a geographic location,
+and a set of skills.
+
+We have roughly 7 million records spread over three nodes, and things are
+unbearably slow (on the order of ten seconds) when searching for a term with a
+decent number of matches. We will usually be sorting our result set
+alphabetically by name, chronologically by createdDate, or by term relevance.
+We also require term highlights and result counts. We are using the REST api
+to communicate with ES.
+
+I've read that sorting can be a major bottleneck for search performance; what
+are some strategies that have worked in production to deal with this kind of
+requirement?
+
+I'm using a mapping similar to the following:
+
+    
+    
+    "candidate": {
+    "dynamic":"true",
+    "properties": {
+      "accountId": {
+        "type": "string",
+        "store": "true",
+        "index": "not_analyzed"
+      },
+      "tenant": {
+        "type": "string",
+        "store": "true",
+        "index": "not_analyzed"
+      },
+      "givenName": {
+        "type": "string",
+        "store": "true",
+        "index":"analyzed",
+        "analyzer":"sortable",
+        "term_vector" : "with_positions_offsets"
+      },
+      ...
+      "locations": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "store": "true",
+            "index": "analyzed",
+            "term_vector" : "with_positions_offsets"
+          },
+          "point": {
+            "type" : "geo_point",
+            "store": "true",
+            "lat_lon":"true"
+          }
+        }
+      },
+      "skills": {
+        "type": "string",
+        "store": "true",
+        "index": "analyzed",
+        "term_vector" : "with_positions_offsets"
+      },
+      "createdDate": {
+        "type": "long",
+        "store": "true",
+        "index": "not_analyzed"
+      },
+      "updatedDate": {
+        "type": "long",
+        "store": "true",
+        "index": "not_analyzed"
+      }
+    }
+    
+
+And queries structured like this:
+
+    
+    
+    {
+      "from" : 0,
+      "size" : 40,
+      "query" : {
+        "bool" : {
+          "must" : {
+            "bool" : {
+              "should" : [ {
+                "multi_match" : {
+                  "query" : "query text",
+                  "fields" : [ "givenName", "familyName", "email", "locations.name", "skills"],
+                  "type" : "cross_fields"
+                }
+              }, {
+                "prefix" : {
+                  "email" : {
+                    "prefix" : "query text"
+                  }
+                }
+              } ]
+            }
+          }
+        }
+      },
+      "post_filter" : {
+        "bool" : {
+          "must" : {
+            "geo_polygon" : {
+              "point" : {
+                "points" : [ [ -75.06681499999999, 40.536544 ], 
+                ... many more long/lat points ... 
+                [ -75.06681499999999, 40.536544 ] ]
+              }
+            }
+          }
+        }
+      },
+      "sort" : [ {
+        "createdDate" : {
+          "order" : "asc"
+        }
+      } ],
+      "highlight" : {
+        "fields" : {
+          "givenName" : { },
+          "familyName" : { },
+          "email" : { },
+          "locations.name" : { },
+          "skills" : { }
+        }
+      }
+    }
+    
+
+Is there some kind of range-based querying solution that others have found
+helpful for dealing with similar sort/search requirements?
+

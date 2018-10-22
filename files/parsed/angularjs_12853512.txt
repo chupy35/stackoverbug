@@ -1,0 +1,29 @@
+12853512 How to toggle button's state in angular.js?
+
+What I'm trying to do is to enable submit button If all of the textboxes hold
+values in them. Disable the submit button otherwise. But the problem here is
+the number of textboxes may vary (dynamic) so I can not hardcode the models in
+`ng-disabled` attribute.
+
+This is what I've tried so far: <http://jsfiddle.net/codef0rmer/6uKAT/>
+
+Is there any other approach I should follow?
+
+You want to use validation. <http://docs.angularjs.org/api/ng.directive:form>
+
+Put all the input field with `required` attributes, then any empty input
+element would make the form invalid. If invalid, then disable the button with
+`ng-disable`.
+
+This is the [basic idea](http://plnkr.co/edit/3Zt2du?p=preview).
+
+    
+    
+    <form name="myForm">
+         Item1: <input ng-model="item1" required/><br/>
+         Item2: <input ng-model="item2" required/><br/>
+         Item3: <input ng-model="item3" required/><br/>
+         <button type="submit" ng-disabled="myForm.$invalid">Submit</button>
+    </form>
+    
+

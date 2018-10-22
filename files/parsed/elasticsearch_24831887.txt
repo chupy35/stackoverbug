@@ -1,0 +1,201 @@
+24831887 Elasticsearch: what sample document would look like for this mapping?
+
+I am new to Elasticsearch. I was given this mapping document:
+
+    
+    
+    {
+        "book": {
+            "properties": {
+                "title": {
+                    "properties": {
+                        "de": {
+                            "type": "string",
+                            "fields": {
+                                "default": {
+                                    "type": "string",
+                                    "analyzer": "de_analyzer"
+                                }
+                            }
+                        },
+                        "fr": {
+                            "type": "string",
+                            "fields": {
+                                "default": {
+                                    "type": "string",
+                                    "analyzer": "fr_analyzer"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+I am wondering what a sample document conforming to this mapping would like so
+that I can generate right json string.
+
+Thanks and regards.
+
+It should look something similar to:
+
+    
+    
+    {
+        "book": {
+            "title": {
+                "de": "somestring",
+                "fr": "somestring"
+            }
+        }
+    }
+    
+
+For more information read
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+object-type.html).
+
+This is how your json will look like. I see you are confused by:
+
+    
+    
+                       "fr": {
+                            "type": "string",
+                            "fields": {
+                                "fr": {
+                                    "type": "string",
+                                    "analyzer": "fr_analyzer"
+                                }
+                            }
+                        }
+    
+
+Actually this is used for indexing a single field in multiple ways. Effective
+you are telling elasticsearch that you want same field to index in two
+different ways. In your case I'm not getting why you are using same name "fr"
+and "de" for indexing multi-fields. If you will use same name, ES will index
+it only as a single field. So, in your case doing like this is a similar
+thing:
+
+    
+    
+                "fr": {
+                    "type": "string",
+                    "analyzer": "fr_analyzer"
+                 }
+    
+
+For more information go through these links:
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/most-
+fields.html>
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/multi-
+fields.html>
+
+Hope this helps.
+
+Well, I'm way slow here, but, as dark_shadow points out, this looks like a
+convoluted attempt at exposing multiple analyzers for a field (formerly known
+as multi-field mapping). I've written up an example of mapping this in two
+ways: giving title two properties, fr and de, for which explicit strings need
+to be provided in each document, and just having a single title property, with
+fr and de analyzer 'fields'. Note that I replaced the name analyzers with
+"standard" to keep me from having to load those analyzers locally.
+
+The difference between these is apparent. In example one, you have the ability
+to provide the translated titles on each book, with the index/search analyzer
+appropriate to the language being use on the respective properties.
+
+In example two, you are providing a single title string, which will be indexed
+using both analyzers, and then you can choose the analyser to search by in
+your query.
+
+    
+    
+    #!/bin/sh
+    echo "--- delete index"
+    curl -X DELETE 'http://localhost:9200/so_multi_map/'
+    echo "--- create index and put mapping into place"
+    curl -XPUT http://localhost:9200/so_multi_map/?pretty -d '{
+        "mappings": {
+            "example_one": {
+                "properties": {
+                    "title": {
+                        "properties": {
+                            "de": {
+                                "type": "string",
+                                "analyzer": "standard"
+                            },
+                            "fr": {
+                                "type": "string",
+                                "analyzer": "standard"
+                            }
+                        }
+                    }
+                }
+            },
+            "example_two": {
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "fields": {
+                            "de": {
+                                "type": "string",
+                                "analyzer": "standard"
+                            },
+                            "fr": {
+                                "type": "string",
+                                "analyzer": "standard"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "settings" : {
+            "number_of_shards" : 1,
+            "number_of_replicas" : 0
+        }
+    }'
+    
+    echo "--- index a book by example_one by POSTing"
+    curl -XPOST http://localhost:9200/so_multi_map/example_one -d '{
+        "title": {
+            "de": "Auf der Suche nach der verlorenen Zeit",
+            "fr": "À la recherche du temps perdu"
+        }
+    }'
+    echo "--- index a book by example_two by POSTing"
+    curl -XPOST http://localhost:9200/so_multi_map/example_two -d '{
+        "title": "À la recherche du temps perdu"
+    }'
+    echo "\n --- flush indices"
+    curl -XPOST 'http://localhost:9200/_flush'
+    echo "--- show the books"
+    curl -XGET http://localhost:9200/so_multi_map/_search?pretty -d '
+    {
+        "query": {
+            "match_all": {}
+        }
+    }'
+    echo "--- how to query just the fr title in example one:"
+    curl -XGET http://localhost:9200/so_multi_map/example_one/_search?pretty -d '
+    {
+        "query": {
+            "match": {
+                "title.fr": "recherche"
+            }
+        }
+    }'
+    echo "--- how to query just the fr title in example two:"
+    curl -XGET http://localhost:9200/so_multi_map/example_two/_search?pretty -d '
+    {
+        "query": {
+            "match": {
+                "title.fr": "recherche"
+            }
+        }
+    }'
+    
+

@@ -1,0 +1,38 @@
+24998745 spring-boot configure non exposed properties
+
+I am using spring-boot to configure jms and activemq connectivity. Due to a
+defect in activemq I need to set the idle timeout on the
+PooledConnectionFactory. This configuration is not exposed by spring-boot. How
+do I set it?
+
+I have a @Bean to create a messageListenerContainer which has the
+connectionFactory as an argument. I can instanceof check the factory and
+configure it here but this seems not the correct way.
+
+Downcasting to `PooledConnectionFactory` and calling `setIdleTimeout` is a
+perfectly reasonable approach, in my opinion.
+
+If you'd prefer not to do it as part of the creation of the message listener
+container, you could declare your own `ConnectionFactory` bean while still
+making use of `ActiveMQProperties`. Something like this:
+
+    
+    
+    @Configuration
+    @EnableConfigurationProperties(ActiveMQProperties.class)
+    class CustomActiveMQConnectionFactoryConfiguration {
+    
+        @Autowired
+        private ActiveMQProperties properties;
+    
+        @Bean
+        public ConnectionFactory jmsConnectionFactory() {
+            ConnectionFactory connectionFactory = this.properties.createConnectionFactory();
+            if (connectionFactory instanceof PooledConnectionFactory) {
+                ((PooledConnectionFactory) connectionFactory).setIdleTimeout(1000);
+            }
+            return connectionFactory;
+        }
+    }
+    
+

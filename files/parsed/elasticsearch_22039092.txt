@@ -1,0 +1,148 @@
+22039092 Syntax for function_score in Elastic Search
+
+I am new to Elastic Search. I have indexed movie artists (actors and
+directors) in ElasticSearch and a simple text search works fine e.g if I
+search for 'steven' with the following syntax
+
+    
+    
+    {"query":
+        {"query_string":
+            {"query":"steven"}
+        }
+    }
+    
+
+... I get the following results, which are fine :
+
+    
+    
+    1. Steven Conrad       - Popularity (from document) = 487 - elasticsearch _score = 3,2589545
+    2. Steven Knight       - Popularity (from document) = 487 - elasticsearch _score = 3,076738
+    3. Steven Waddington   - Popularity (from document) = 431 - elasticsearch _score = 2,4931839
+    4. Steven E. De Souza  - Popularity (from document) = 534 - elasticsearch _score = 2,4613905
+    5. Steven R. Monroe    - Popularity (from document) = 293 - elasticsearch _score = 2,4613905
+    6. Steven Mackintosh   - Popularity (from document) = 363 - elasticsearch _score = 2,2812681
+    7. Steven Wright       - Popularity (from document) = 356 - elasticsearch _score = 2,2812681
+    8. Steven Soderbergh   - Popularity (from document) = 5947 - elasticsearch _score = 2,270944
+    9. Steven Seagal       - Popularity (from document) = 1388 - elasticsearch _score = 2,270944
+    10. Steven Bauer        - Popularity (from document) = 714 - elasticsearch _score = 2,270944
+    
+
+However, as you can see above, I have a **popularity numeric field** in my
+document, and, when searching for ' _steven_ ', I would like the most popular
+artists (Steven Soderbergh, Steven Seagal ...) to come first.
+
+Ideally, I'd like to sort the results above by `popularity * _score`
+
+I am pretty sure I have to have use the `function_score` feature of Elastic
+Search but I can't figure out the exact syntax.
+
+I've tried to do my "improved" search with the following syntax
+
+    
+    
+    {
+      "query": {
+        "custom_score": {
+          "query": {
+            "query_string": {
+              "query": "steven"
+            }
+          },
+          "script": "_score * doc['popularity']"
+        }
+      }
+    }
+    
+
+But I get an exception (extract from error message below :)
+
+    
+    
+    org.elasticsearch.search.query.QueryPhaseExecutionException: [my_index][4]: query[filtered(function score (_all:steven,function=script[_score * doc['popularity']], params [null]))->cache(_type:artist)],from[0],size[10]: Query Failed [Failed to execute main query]
+      // ....
+    Caused by: java.lang.RuntimeException: uncomparable values <<1.9709579>> and <<org.elasticsearch.index.fielddata.ScriptDocValues$Longs@7c5b73bc>>
+      // ... 
+      ... 9 more
+    Caused by: java.lang.ClassCastException: org.elasticsearch.index.fielddata.ScriptDocValues$Longs cannot be cast to java.lang.Float
+      at java.lang.Float.compareTo(Float.java:33)
+      at org.elasticsearch.common.mvel2.math.MathProcessor.doOperationNonNumeric(MathProcessor.java:266)
+    
+
+I have the impression the syntax I use is incorrect
+
+**What should be the right syntax ? Or is there something else that I am
+missing ?** Thanks a lot in advance
+
+**Edit** My table mapping is defined as follows :
+
+    
+    
+    "mappings" : {
+      "artist" : {
+        "_all" : {
+          "auto_boost" : true
+        },
+        "properties" : {
+          "first_name" : {
+            "type" : "string",
+            "index" : "not_analyzed",
+            "analyzer" : "standard"
+          },
+          "last_name" : {
+            "type" : "string",
+            "boost" : 2.0,
+            "index" : "not_analyzed",
+            "norms" : {
+              "enabled" : true
+            },
+            "analyzer" : "standard"
+          },
+          "popularity" : {
+            "type" : "integer"
+          }
+        }
+      }
+    }
+    
+
+have you missed the `.value` near `doc['...']`?
+
+this works for me (i stored integers without mapping):
+
+    
+    
+    $ curl -XPUT localhost:9200/test/test/a -d '{"name":"steven", "popularity": 666}'
+    {"_index":"test","_type":"test","_id":"a","_version":1,"created":true}
+    
+    $ curl -XPUT localhost:9200/test/test/b -d '{"name":"steven", "popularity": 42}' 
+    {"_index":"test","_type":"test","_id":"b","_version":1,"created":true}
+    
+    $ curl -XPOST localhost:9200/test/test/_search\?pretty -d '{ "query": { "custom_score": { "query": { "match_all": {}}, "script": "_score * doc[\"popularity\"].value" } } }'                                                                                                                                                 
+    {
+      "took" : 83,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 2,
+        "max_score" : 666.0,
+        "hits" : [ {
+          "_index" : "test",
+          "_type" : "test",
+          "_id" : "a",
+          "_score" : 666.0, "_source" : {"name":"steven", "popularity": 666}
+        }, {
+          "_index" : "test",
+          "_type" : "test",
+          "_id" : "b",
+          "_score" : 42.0, "_source" : {"name":"steven", "popularity": 42}
+        } ]
+      }
+    }
+    
+

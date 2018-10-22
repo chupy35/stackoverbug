@@ -1,0 +1,29 @@
+17865271 ElasticSearch: array size inside of terms query cannot exceed 1000
+indices
+
+I have a query like so:
+
+` "filter": { "query": { "terms": { "user": ["jonh", "doe", ..., "asdf"]} } }
+`
+
+The number of users in the array is arbitrarily big for our use case. However,
+ElasticSearch seems to fail with `"SearchPhaseExecutionException[Failed to
+execute phase [query], total failure;` when the size of the array surpasses
+`1027`.
+
+Is this the expected behavior? If so, is there a way to increase the size of
+the accepted array?
+
+Your request is using terms **query** , which is getting translated into
+boolean query, which by default doesn't accept more than 1024 terms. However,
+since you are using it as a filter later on, it will be actually faster to
+switch to using terms **filter** , which doesn't have this limitation. All you
+have to do is remove [query
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/query-filter/)
+from your request:
+
+    
+    
+    "filter": { "terms": { "user": ["jonh", "doe", ..., "asdf"]} }
+    
+

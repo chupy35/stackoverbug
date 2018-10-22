@@ -1,0 +1,127 @@
+14144561 ElasticSearch filter boosting based on field value
+
+I have the following query:
+
+    
+    
+    {
+    "from": 0, 
+    "query": {
+        "custom_filters_score": {
+            "filters": [
+                {
+                    "boost": 1.5, 
+                    "filter": {
+                        "term": {
+                            "format": "test1"
+                        }
+                    }
+                }, 
+                {
+                    "boost": 1.5, 
+                    "filter": {
+                        "term": {
+                            "format": "test2"
+                        }
+                    }
+                }
+            ], 
+            "query": {
+                "bool": {
+                    "must": {
+                        "query_string": {
+                            "analyzer": "query_default", 
+                            "fields": [
+                                "title^5", 
+                                "description^2", 
+                                "indexable_content"
+                            ], 
+                            "query": "blah"
+                        }
+                    }, 
+                    "should": []
+                }
+            }
+        }
+    }, 
+    "size": 50
+    }
+    
+
+Which should be boosting things that have `{"format":"test1"}` in them, if I'm
+reading the documentation correctly.
+
+However, using `explain` tells me that `"custom score, no filter match,
+product of:"` is the outcome, and the score of the returned documents that
+match the filter isn't changed by this filter.
+
+What am I doing wrong?
+
+Edit: here's the schema:
+
+    
+    
+    mapping:
+      edition:
+        _all: { enabled: true }
+        properties:
+          title:       { type: string, index: analyzed }
+          description: { type: string, index: analyzed }
+          format:      { type: string, index: not_analyzed, include_in_all: false }
+          section:     { type: string, index: not_analyzed, include_in_all: false }
+          subsection:  { type: string, index: not_analyzed, include_in_all: false }
+          subsubsection:  { type: string, index: not_analyzed, include_in_all: false }
+          link:        { type: string, index: not_analyzed, include_in_all: false }
+          indexable_content: { type: string, index: analyzed }
+    
+
+and let's assume a typical document is like:
+
+    
+    
+    {
+        "format": "test1",
+        "title": "blah",
+        "description": "blah",
+        "indexable_content": "keywords here",
+        "section": "section",
+        "subsection": "child-section",
+        "link":"/section/child-section/blah"
+    }
+    
+
+If it says "no filter match", it means that it didn't match any filters in
+your query. Most likely reason for this is that the records that match your
+query don't have terms "test1" in them. Unfortunately, you didn't provide
+mapping and test data, so it's difficult to tell what's going on there for
+sure.
+
+Try running this query to see if you can actually find any records that match
+your search criteria and should be boosted:
+
+    
+    
+    {
+        "from": 0,
+        "query": {
+            "bool": {
+                "must": [{
+                    "query_string": {
+                        "analyzer": "query_default",
+                        "fields": ["title^5", "description^2", "indexable_content"],
+                        "query": "blah"
+                    }
+                }, {
+                    "term": {
+                        "format": "test1"
+                    }
+                }]
+            }
+        },
+        "size": 50
+    }
+    
+
+Your query looks fine and based on the provided information, it should work:
+<https://gist.github.com/4448954>
+

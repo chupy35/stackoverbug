@@ -1,0 +1,64 @@
+17035015 How to facet/histogram the following in elasticsearch?
+
+Say I have the following fields:
+
+    
+    
+    timestamp: (elasticsearch date field)
+    ice-cream-flavor: (e.g. Chocolate, Vanilla, Strawberry)
+    container: (e.g. Cup, Cone)
+    
+
+I want to be able to use some kind of facet to be able to give me a count
+based on:
+
+    
+    
+    timestamp: (bucketed by day)
+    ice-cream-flavor count (how many Chocolate on that day? How many Vanilla that day?)
+    
+
+Could I take it a step further and do:
+
+I want to be able to use some kind of facet to be able to give me a count
+based on:
+
+    
+    
+    timestamp: (bucketed by day)
+    ice-cream-flavor count (how many Chocolate on that day? How many Vanilla that day?)
+    container count (based on time bucketed by day, could I get the count of how many of each ice cream flavor were stored in a container?)
+    
+
+Is this possible? What kind of facet is this? Could you provide an example? I
+tried using the DateHistogram and Histogram facet but it appears that if I
+specify the field to be a date, I get some random key with some random count
+that makes no sense....
+
+What I've tried... Given a date histogram with a specified "field=timestamp",
+I get the following output that appears to make no sense. It expects a key
+field and a value field with a value field that has to be an integer? It
+doesnt make much sense... and does not take into account the specific
+conditions I want.
+
+    
+    
+    myhistogram: {
+    _type: "date_histogram",
+    entries: [
+    {},
+    {
+    count: 1,
+    time: 634579946870400000
+    },
+    {
+    count: 1,
+    time: 634580073100800000
+    }]}
+    
+
+The date histogram supports a "value_field" parameter for bucketing, but it
+only supports numeric values. There is a plugin
+[elasticfacets](https://github.com/bleskes/elasticfacets) which seems to allow
+using the date histogram facet with any other facet to bucket on.
+

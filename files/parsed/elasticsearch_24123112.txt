@@ -1,0 +1,92 @@
+24123112 context suggester not working in elasticsearch
+
+i'm using elasticsearch version 1.2.1:
+
+i'm following the example given in the elasticsearch documentation but it
+throws an error.
+
+it may be possible i'm missing something.
+
+when i run the query, the error i get is:
+
+    
+    
+    {
+       "_shards": {
+          "total": 5,
+          "successful": 4,
+          "failed": 1,
+          "failures": [
+             {
+                "index": "services",
+                "shard": 2,
+                "reason": "BroadcastShardOperationFailedException[[services][2] ]; nested: ElasticsearchException[failed to execute suggest]; nested: NullPointerException; "
+             }
+          ]
+       }
+    }
+    
+
+**here's the complete example:**
+
+    
+    
+    PUT /services
+    
+    PUT /services/service/_mapping
+    {
+        "service": {
+            "properties": {
+                "name": {
+                    "type" : "string"
+                },
+                "tag": {
+                    "type" : "string"
+                },
+                "suggest_field": {
+                    "type": "completion",
+                    "context": {
+                        "color": { 
+                            "type": "category",
+                            "path": "color_field",
+                            "default": ["red", "green", "blue"]
+                        },
+                        "location": { 
+                            "type": "geo",
+                            "precision": "5m",
+                            "neighbors": true,
+                            "default": "u33"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    PUT services/service/1
+    {
+        "name": "knapsack",
+        "suggest_field": {
+            "input": ["knacksack", "backpack", "daypack"],
+            "context": {
+                "color": ["red", "yellow"]
+            }
+        }
+    }
+    
+    
+    POST services/_suggest?pretty'
+    {
+        "suggest" : {
+            "text" : "m",
+            "completion" : {
+                "field" : "suggest_field",
+                "size": 10,
+                "context": {
+                    "color": "red"
+                }
+            }
+        }
+    }
+    
+

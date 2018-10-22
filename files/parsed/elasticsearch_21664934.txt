@@ -1,0 +1,19 @@
+21664934 Running multiple elasticsearch instances
+
+I need to setup 2 Elasticsearch instances:
+
+  * one for kibana logs (my separate application will throw logs at it)
+  * one for search for my production application
+
+My plan is to create a separate folders with elasticsearch in them. They dont
+talk to each other which means they are separate databases and if one goes
+down, the other still runs. Is this good solution or should I use only one
+elasticsearch folder with muliple elasticsearch.yaml configuration files? What
+is the best practice for multiple elasticsearch instances?
+
+The best practice is to NOT run two Elasticsearch instances on the SAME
+server.
+
+Your production search will probably need a lot of ram to work fast and stay
+responsive. You don't want your logging system interfere with that.
+

@@ -1,0 +1,112 @@
+28121272 Whats the best way to update an object in an array in ReactJS?
+
+If you have an array as part of your state, and that array contains objects,
+whats an easy way to update the state with a change to one of those objects?
+
+Example, modified from the tutorial on react:
+
+    
+    
+    var CommentBox = React.createClass({
+      getInitialState: function() {
+        return {data: [
+          { id: 1, author: "john", text: "foo" },
+          { id: 2, author: "bob", text: "bar" }
+        ]};
+      },
+      handleCommentEdit: function(id, text) {
+        var existingComment = this.state.data.filter({ function(c) { c.id == id; }).first();
+        var updatedComments = ??; // not sure how to do this  
+    
+        this.setState({data: updatedComments});
+      }
+    }
+    
+
+While updating state the key part is to treat it as if it is immutable. Any
+solution would work fine if you can guarantee it.
+
+Here is my solution using [immutability-
+helper](https://github.com/kolodny/immutability-helper):
+
+jsFiddle: <http://jsfiddle.net/eLmwf14a/>
+
+    
+    
+      var update = require('immutability-helper');
+    
+      handleCommentEdit: function(id, text) {
+        var data = this.state.data;
+        var commentIndex = data.findIndex(function(c) { 
+            return c.id == id; 
+        });
+    
+        var updatedComment = update(data[commentIndex], {text: {$set: text}}); 
+    
+        var newData = update(data, {
+            $splice: [[commentIndex, 1, updatedComment]]
+        });
+        this.setState({data: newData});
+      },
+    
+
+Following questions about state arrays may also help:
+
+  * [Correct modification of state arrays in ReactJS](https://stackoverflow.com/questions/26253351/correct-modification-of-state-arrays-in-reactjs)
+  * [what is the preferred way to mutate a React state?](https://stackoverflow.com/questions/23966438/what-is-the-preferred-way-to-mutate-a-react-state)
+
+When you working with array you need to pass custom attribute, in my example I
+am passing  
+`data-index` attribute, `data-` is a prefix when you pass custom attribute it
+is also an html 5 convention,  
+This is the same way as we update `array` in `Reducer`.
+
+Ex:
+
+    
+    
+    //handleChange method
+    handleChange(e){
+    
+      //getting custom attribute value.
+      let i = e.target.getAttribute('data-index'),
+          obj = Object.assign({}, this.state.arr[i],{[e.target.name]: e.target.value});
+          
+      //update state value.
+      this.setState({arr: [...this.state.arr.slice(0, i),   obj, ...this.state.arr.slice(i + 1)]})
+      }
+
+I quite like doing this with Object.assign rather than the immutability
+helpers.
+
+    
+    
+    handleCommentEdit: function(id, text) {
+        this.setState({
+          data: this.state.data.map(el => (el.id === id ? Object.assign({}, el, { text }) : el))
+        });
+    }
+    
+
+I just think this is much more succinct than splice and doesn't require
+knowing an index or explicitly handling the not found case.
+
+Trying to clean up/ explain better how to do this AND what's going on.
+
+  * First, find the index of the element you're replacing in the state array.
+  * Second, `update` the element at that index
+  * Third, call `setState` with the new collection
+
+    
+    
+    import update from 'immutability-helper';
+    
+    // this.state = { employees: [{id: 1, name: 'Obama'}, {id: 2, name: 'Trump'}] } 
+    
+    updateEmployee(employee) {
+        const index = this.state.employees.findIndex((emp) => emp.id === employee.id);
+        const updatedEmployees = update(this.state.employees, {$splice: [[index, 1, employee]]});  // array.splice(start, deleteCount, item1)
+        this.setState({employees: updatedEmployees});
+    }
+    
+

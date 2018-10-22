@@ -1,0 +1,37 @@
+16141670 find the average store size of a document type in elasticsearch
+
+How can I know the size (in bytes) that a specific document type takes (say,
+type 1 and type2)?
+
+If I try:
+
+    
+    
+    curl -XGET 
+    'http://localhost:9200/my_index/_stats?clear=true&store=true&indexing=true&types=type1,type2'
+    
+
+I only get the total size in bytes of the index.
+
+I am actually interested in the average size of a document of a certain type,
+but this can be deduced from the count and the total size I guess
+
+Different types are indexed using the same index and share many common
+structures. So, it's not really possible to tell how much one type is taking
+without considering the effect of another type.
+
+As the above answer says, there's not a way to do this built into
+elasticsearch.
+
+not sure if this is obvious or not, butttttt I needed to accomplish the same
+thing to track some out of control index growth, so I added an optional debug
+index where the app that acts as my central point for indexing actually logs
+the size of each document, its id after indexing, and some other pertinent
+info to help me track down what the docs were that were taking up all that
+space.
+
+this approach isn't 100% accurate since biggest before compression doesn't
+necessarily indicate biggest after compression (pretty sure ES compresses docs
+and i think stores them in a binary json format?), but it definitely pointed
+me in the right direction.
+

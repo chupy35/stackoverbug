@@ -1,0 +1,21 @@
+30140808 Is it possible to disable Spring Boot's autoconfigurations via
+profile?
+
+I am researching how to modify our Spring Boot-based services so that they can
+run both on-premises and on AWS. We already know that we can push our Docker
+containers anywhere we want and run things that way. Ideally, what I'm looking
+for is the ability to take advantage of the available AWS features, when
+available. For example, on-premises we use RabbitMQ for messaging. If deployed
+on AWS, we want to use SQS instead. I already know know how to conditionally
+enable/disable beans via the profile so we can dynamically swap out the
+messaging gateway bean simple enough. The challenge comes with the RabbitMQ
+autoconfiguration. When running in AWS, I need all the bits that come along
+with `spring-boot-starter-amqp` to go dormant and not complain that a RabbitMQ
+instance cannot be found. Is this possible to do or am I doomed to having two
+separate builds targeted to particular environments? I'm okay with having a
+slightly fatter JAR file in exchange for a simpler build.
+
+You should be able to do this by adding
+`@EnableAutoConfiguration(exclude=RabbitAutoConfiguration.class)` to the AWS
+specific configuration profile.
+

@@ -1,0 +1,76 @@
+13220673 Filtering facets results in nested element with ElasticSearch
+
+I have this mapping:
+
+    
+    
+    products: {
+        product: {
+            properties: {
+                id: {
+                    type: "long"
+                },
+                name: {
+                    type: "string"
+                },
+                tags: {
+                    dynamic: "true",
+                    properties: {
+                        tagId: {
+                            type: "long"
+                        },
+                        tagType: {
+                            type: "long"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+I want to create a facet on tag ids, but with tag-type filtering. I need the
+filter to only apply on the facet and not the query results. So here's my
+request:
+
+    
+    
+    {
+    "from": 0,
+    "size": 10,
+    "facets": {
+        "tags": {
+            "terms": {
+                "field": "tags.tagId",
+                "size": 10
+            },
+            "facet_filter": {
+                "terms": {
+                    "tags.tagType": [
+                        "11",
+                        "19"
+                    ]
+                }
+            }
+        }
+    },
+    "query": {
+        "match_all": {}
+    }
+    
+
+}
+
+The facet filtering does not seem to affect the faceting. Any ideas?
+
+The filter is applied to the documents, the parent entity in your example.
+That means that you're filtering the documents on which you make the facet by
+`tags.tagType`. Therefore all documents which have a specific `tags.tagType`
+value are used to build the facet, which is not what I want.
+
+This is the usecase for
+[nested](http://www.elasticsearch.org/guide/reference/mapping/nested-
+type.html) documents. You can have a look at [this nice
+article](http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-
+children-and-nested-documents/) too.
+

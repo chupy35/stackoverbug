@@ -1,0 +1,84 @@
+25514690 Difference between expected_nodes and recover_after_nodes parameters
+
+I can't see the difference between two parameters for the recovery phase of
+the gateway module.
+
+In the
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+gateway.html#recover-after) :
+
+  * The `gateway.recover_after_nodes` setting (which accepts a number) controls **after how many (...) eligible nodes (...) recovery will start**.
+
+  * The `gateway.expected_nodes` allows to set **how many (...) eligible nodes** are expected to be in the cluster, and **once met, (...) recovery starts**
+
+From what I understand, these two settings trigger the recovery phase once the
+number of node is equal to the value set.
+
+Why using one over the other?
+
+And what is the point of using both of them?
+
+For example :
+
+    
+    
+    gateway:
+        recover_after_nodes: 3
+        expected_nodes: 5
+    
+
+In this case, what is the purpose of `expected_nodes`? recovery will be
+triggered as soon as there will be 3 nodes. There must be another reason to
+use it.
+
+I hope my question is clear enough.
+
+Thanks in advance!
+
+When using recovery_after_nodes, recover_after_data_nodes or
+recovery_after_master_nodes, once all set conditions are met the cluster will
+then start waiting recover_after_time before starting recovery:
+
+> The gateway.recover_after_time setting (which accepts a time value) sets the
+time to wait till recovery happens once all gateway.recover_after...nodes
+conditions are met.
+
+When using expected_nodes, expected_data_nodes or expected_master nodes,
+recovery will start once all conditions are met - the cluster will not wait.
+In addition, it will also default recovery_after_time to 5 min.
+
+In your test case:
+
+    
+    
+    gateway:
+        recover_after_nodes: 3
+        expected_nodes: 5
+    
+
+Once you hit 3 nodes a countdown clock starts and the cluster will then
+recovery in either 5 minutes (the default) or if you hit 5 nodes. Basically it
+allows you to set a minimum threshold (recovery_after_nodes), with a timeout
+(recovery_after_time) to wait for a desired state (expected_nodes). You will
+either recovery recovery_after_time after recovery_after_nodes is hit, or when
+expected_nodes is hit (no additional waiting) - whichever comes first.
+
+from the public document, there are misunderstandings in this threads.
+
+<http://www.elastic.co/guide/en/elasticsearch/reference/1.x/modules-
+gateway.html>
+
+    
+    
+    gateway:
+    recover_after_time: 5m
+    expected_nodes: 2
+    
+
+> In an expected 2 nodes cluster will cause recovery to start 5 minutes after
+the first node is up, but once there are 2 nodes in the cluster, recovery will
+begin immediately (without waiting).
+
+so, the timer defined by recover_after_time will start already after a first
+node is up. not start after finding nodes defined in recover_after_nodes
+

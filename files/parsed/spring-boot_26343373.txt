@@ -1,0 +1,51 @@
+26343373 spring-boot 1.2.0.M2 breaks app
+
+I have a spring boot app that worked fine up until I updated from 1.2.0.M1 to
+1.2.0.M2. The app will not build because of an UnsatisfiedDependencyException
+resulting from spring-boot RabbitAutoConfiguration:
+
+    
+    
+    Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException:
+        Error creating bean with name 'jmsMessagingTemplate' defined in class path resource [org/springframework/boot/autoconfigure/amqp/RabbitAutoConfiguration$MessagingTemplateConfiguration.class]: 
+        Unsatisfied dependency expressed through constructor argument with index 0 of type [org.springframework.amqp.rabbit.core.RabbitTemplate]: :
+        No qualifying bean of type [org.springframework.amqp.rabbit.core.RabbitTemplate] is defined: 
+        expected single matching bean but found 3: looperTemplate,pingTemplate,orgRequestTemplate; nested exception is org.springframework.beans.factory.NoUniqueBeanDefinitionException: 
+        No qualifying bean of type [org.springframework.amqp.rabbit.core.RabbitTemplate] is defined: 
+        expected single matching bean but found 3: looperTemplate,pingTemplate,orgRequestTemplate
+    at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:751) ~[spring-beans-4.1.1.RELEASE.jar:4.1.1.RELEASE]
+    at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:466) ~[spring-beans-4.1.1.RELEASE.jar:4.1.1.RELEASE]
+    
+
+The problem is I do have RabbitMQ templates, but I have 3 of them and it needs
+a qualifier to select a single template. However this code is in spring-boot,
+not my code. I would prefer not to have to alter spring-boot code, but I am
+not sure what I should do in my code to prevent this exception.
+
+I can see the offending jmsMessagingTemplate was added in the 1.2.0.M2
+version. The naming of this is also misleading as I do not have JMS enabled in
+my app (although this is a RabbitMQ specific auto configuration file in
+spring-boot).
+
+Any suggestions on how I can configure my code without eliminating templates
+or modifying spring-boot code?
+
+I've created [#1701](https://github.com/spring-projects/spring-
+boot/issues/1701) to track the naming issue. You should read
+`rabbitMessagingTemplate` there.
+
+There are several auto configuration instances in Boot that requires certain
+types to be flagged with `@Primary` if they're not using the "default" name.
+For instance a `JdbcTemplate` is created for you automatically if none exists
+and a datasource is present. If you have more than one you should either name
+one `dataSource` or flag one of them as `@Primary`.
+
+In your case, the messaging auto config for RabbitMQ expects one
+`RabbitTemplate` to be named `rabbitTemplate` or flag one of the three as
+`@Primary`.
+
+This is annoying and we should do better. I've created
+[#1702](https://github.com/spring-projects/spring-boot/issues/1702) for that.
+
+Let me know if that works out for you. Thanks!
+

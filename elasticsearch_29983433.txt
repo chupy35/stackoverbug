@@ -1,0 +1,4 @@
+29983433
+Need all the indexes documents in a single bucket, is there any way?
+<p>I am working on a use case that process on buckets returned by Terms aggregation. </p>&#xA;&#xA;<p>In one scenario there is need to process on all indexed documents, Is there any way using Terms aggregation or any other that can return all the documents in a single bucket? So I don't have to underlying architecture to handle this single scenario</p>&#xA;&#xA;<p>Thanks.</p>&#xA;
+<p>Take a look at the Scroll API of Elasticsearch. This is the suggested way of fetching all documents of an index.</p>&#xA;&#xA;<p><a href="http://www.elastic.co/guide/en/elasticsearch/reference/1.4/search-request-scroll.html" rel="nofollow">Scroll API</a></p>&#xA;

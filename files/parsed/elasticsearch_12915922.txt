@@ -1,0 +1,35 @@
+12915922 Elastic search and "databases"
+
+Sorry for the ambiguous title, couldn't thing of anything better fitting.
+
+I 'm exploring Elastic Search and it looks very cool. My question is
+conceptual since I 'm used to sql.
+
+In Sql, you have different databases and you store the data for each
+application there. Does the same concept exist in ES? Or is all data from all
+my application going to end up in the same place? In that case, what are the
+best practices to avoid unwanted results from unfitting data?
+
+Schemaless doesn't mean structureless:
+
+  * In elastic search you can organize your data into document collections
+  * A top-level document collection is roughly equivalent to a database
+  * You can also hierarchically create new document collections inside top-level collections, which is a very rough equivalent of a database table
+  * When you search documents, you search for documents inside specific document collections (such as search for all posts inside blog1)
+  * Individual documents can be viewed as equivalent to rows in a database table
+  * Also please note that I say roughly equivalent -- data in SQL is often normalized into tables by relations, while documents (in ES) often hold large entities of data. For instance, it generally makes sense to embed all comments inside a blog post document, whereas in SQL you would normalize comments and blogposts into individual tables.
+
+For a nice tutorial, I recommend taking look at ["ElasticSearch in 5
+minutes"](http://www.elasticsearchtutorial.com/elasticsearch-
+in-5-minutes.html) tutorial.
+
+Switching from SQL to a search engine can be challenging at times.
+Elasticsearch has a concept of index, that can be roughly mapped to a database
+and type that can, again very roughly, mapped to a table. Elasticsearch has
+very powerful mechanism of selecting records (rows) of a single type and
+combining results from different types and indices (union). However, there is
+no support for joins at the moment. The only relationship that elasticsearch
+supports is has_child, but it's not suitable for modeling many-to-many
+relationships. So, in most cases, you need to be prepared to denormalize your
+data, so it can be stored in a single table.
+

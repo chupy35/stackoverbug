@@ -1,0 +1,202 @@
+28258517 React js: Input element renders differently compared to other
+elements
+
+I made a simple application (in react js) that has two lists and you can add
+elements to that list. One is a list of input elements and other is list of
+spans.
+
+Upon adding new element, the list of span renders perfectly but the list of
+inputs renders differently.
+
+This is how my react class looks like
+
+    
+    
+    var App = React.createClass({
+      getInitialState: function(){
+        return {
+          'app': {
+            'data': this.props.data,
+            'data2': this.props.data2
+          }
+        };
+      },
+      onclick: function(){
+        var dat = this.state.app.data;
+        var val = this.refs.input.getDOMNode().value;
+    
+        dat.splice(0, 0, val);
+    
+        var dat2 = this.state.app.data2;
+        dat2.splice(0, 0, val);
+    
+        this.setState({'app': {
+          'data': dat,
+          'data2': dat2
+        }});
+    
+      },
+      renderElement: function(i){
+        return(
+          <input defaultValue={i} />
+        );
+      },
+      renderElement2: function(i){
+        return(
+          <span>{i}</span>
+        );
+      },
+      render: function(){
+        var self = this;
+        return(
+          <div>
+            <input type="text" ref="input" placeholder="Enter a value"/>
+            <input type="button" value="Add value" onClick={this.onclick} />
+            <div className="col2">
+              {this.state.app.data.map(function(page, i){
+                  return(
+                    <div key={i}>{self.renderElement(page)}</div>
+                  );
+              })}
+            </div>
+            <div className="col2">
+              {this.state.app.data2.map(function(page, i){
+                  return(
+                    <div key={i}>{self.renderElement2(page)}</div>
+                  );
+              })}
+            </div>
+          </div>
+        );
+      }
+    });
+    
+
+This is how the App is rendered
+
+    
+    
+    var data =  [1,2,3];
+    var data2 =  [1,2,3];
+    
+    React.render(<App data={data} data2={data2}/>, document.getElementById("main"));
+    
+
+Here is the [DEMO](http://jsfiddle.net/gz8omn7y/1/)
+
+    
+    
+    My test case:
+    I add 55 and expect the results to look like this 
+    55
+    1
+    2
+    3
+    55
+    1
+    2
+    3
+    
+    But I get
+    1
+    2
+    3
+    3
+    55
+    1
+    2
+    3
+    
+
+Am I missing something basic here ?
+
+Sorry, I don't know the exact reason why this is happening, but if you include
+a value for the key attribute on your inputs, it resolves the issue:
+
+    
+    
+      renderElement: function(i){
+        return(
+          <input key={i} defaultValue={i} />
+        );
+      },
+    
+
+My guess is that the lack of 'key' and use of 'defaultValue', instead of
+'value', makes it difficult for React to correctly diff the change.
+
+First render looks (roughly) like this:
+
+    
+    
+    <div>
+     <div key={0}><input defaultValue="1" /></div>
+     <div key={1}><input defaultValue="2" /></div>
+     <div key={2}><input defaultValue="3" /></div>
+    </div>
+    <div>
+     <div key={0}><span>1</span></div>
+     <div key={1}><span>2</span></div>
+     <div key={2}><span>3</span></div>
+    </div>
+    
+
+Cool, no problems. Then let's say I put 'foo' in the box and click Add Value.
+The state updates by inserting it before the first item (side note:
+splice(0,0,x) is unshift(x)), you then render this:
+
+    
+    
+    <div>
+     <div key={0}><input defaultValue="foo" /></div>
+     <div key={1}><input defaultValue="1" /></div>
+     <div key={2}><input defaultValue="2" /></div>
+     <div key={3}><input defaultValue="3" /></div>
+    </div>
+    <div>
+     <div key={0}><span>foo</span></div>
+     <div key={1}><span>1</span></div>
+     <div key={2}><span>2</span></div>
+     <div key={3}><span>3</span></div>
+    </div>
+    
+
+Now it's time for React to take these two, and figure out what changed. To do
+this it compares the component (div, span, or input here), and the keys.
+
+Starting with the span section, it sees that all the tags are the same, but
+there's a new key it hasn't seen before at the **end**. It also sees that the
+value of `div[0] span`, `div[1] span`, and `div[2] span` have all changed. It
+inserts the **new** elements with the text 3 at the end, and updates the other
+spans. Inefficient, but it works.
+
+Now for the inputs... it does roughly the same thing. The keys and tags for
+the first three inputs are the same, it tells each of the inputs that they're
+updating, they check if they have a value prop, and if not, kindly deny to do
+anything.
+
+It sees that there's a **new** input at the end. It is at `div[3] input` and
+has a defaultValue of "3". React inserts the new input, sets the value to 3,
+and the update is complete.
+
+As you continue, the above procedure is the same, and it continues updating
+the spans, and inserting a new `div span` and `div input` each time.
+
+The main problem here, aside from defaultValue which I don't think should ever
+be used, is the keys are upside down! Items are being inserted at the
+beginning, so keys should descend, not ascend. This can be fixed by using the
+length of the items and subtracting the index from that. If length is 4, the
+keys will be 4, 3, 2, 1.
+
+    
+    
+    this.state.app.data.map(function(page, i, items){
+      return(
+        <div key={items.length - i}>{self.renderElement(page)}</div>
+      );
+    })
+    
+
+React then says 'oh, there's a new item at the _beginning_ , I should just
+insert a node there', and everyone's happy. The end.
+

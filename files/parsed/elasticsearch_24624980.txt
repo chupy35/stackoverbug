@@ -1,0 +1,23 @@
+24624980 Port 9300 on Elasticsearch
+
+According to the documentation, [Elasticsearch reserves port 9300-9400 for
+cluster
+communication](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+transport.html) and [port 9200-9300 for accessing the elasticsearch
+APIs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+http.html). You get the impression that these ranges are _inclusive_ : so port
+9300 is part of the first and the second port range.
+
+Now, my IT ops department won't like that, so hopefully I got it wrong. Anyone
+knows?
+
+Elasticsearch will bind to a single port for both HTTP and the node/transport
+APIs.
+
+It'll try the lowest available port first, and if it is already taken, try the
+next. If you run a single node on your machine, it'll only bind to 9200 and
+9300.
+
+See also: [Elasticsearch Internals: Networking
+Introduction](https://www.found.no/foundation/elasticsearch-networking/)
+

@@ -1,0 +1,108 @@
+21509350 Spring Boot - logging.file property not having any effect?
+
+I have written an application using Boot 1.0.0.RC1
+
+The default logging configuration output works fine for my needs and according
+to <http://projects.spring.io/spring-boot/docs/spring-boot/README.html> I
+should be able to set the logging.file property in application.properties to
+specify where the log file will be stored on disk.
+
+This does not seem to have any effect though. My log ends up in
+/tmp/spring.log
+
+logging.file property is defined in application.properties:
+
+    
+    
+    logging.file=/tmp/mylog.log
+    
+
+Output of mvn dependency:tree :
+
+    
+    
+    [INFO] +- org.springframework.boot:spring-boot-starter-actuator:jar:1.0.0.RC1:compile
+    [INFO] |  \- org.springframework.boot:spring-boot-actuator:jar:1.0.0.RC1:compile
+    [INFO] |     \- org.hsqldb:hsqldb:jar:2.3.1:compile
+    [INFO] +- org.springframework.boot:spring-boot-starter:jar:1.0.0.RC1:compile
+    [INFO] |  +- org.springframework.boot:spring-boot:jar:1.0.0.RC1:compile
+    [INFO] |  +- org.springframework.boot:spring-boot-autoconfigure:jar:1.0.0.RC1:compile
+    [INFO] |  \- org.springframework.boot:spring-boot-starter-logging:jar:1.0.0.RC1:compile
+    [INFO] |     +- org.slf4j:jcl-over-slf4j:jar:1.7.5:compile
+    [INFO] |     +- org.slf4j:jul-to-slf4j:jar:1.7.5:compile
+    [INFO] |     +- org.slf4j:log4j-over-slf4j:jar:1.7.5:compile
+    [INFO] |     \- ch.qos.logback:logback-classic:jar:1.0.13:compile
+    [INFO] |        \- ch.qos.logback:logback-core:jar:1.0.13:compile
+    [INFO] +- org.springframework.boot:spring-boot-starter-security:jar:1.0.0.RC1:compile
+    [INFO] |  +- org.springframework.security:spring-security-config:jar:3.2.0.RELEASE:compile
+    [INFO] |  |  +- aopalliance:aopalliance:jar:1.0:compile
+    [INFO] |  |  \- org.springframework.security:spring-security-core:jar:3.2.0.RELEASE:compile
+    [INFO] |  +- org.springframework.security:spring-security-web:jar:3.2.0.RELEASE:compile
+    [INFO] |  +- org.springframework:spring-aop:jar:4.0.0.RELEASE:compile
+    [INFO] |  +- org.springframework:spring-beans:jar:4.0.0.RELEASE:compile
+    [INFO] |  +- org.springframework:spring-context:jar:4.0.0.RELEASE:compile
+    [INFO] |  +- org.springframework:spring-core:jar:4.0.0.RELEASE:compile
+    [INFO] |  +- org.springframework:spring-expression:jar:4.0.0.RELEASE:compile
+    [INFO] |  \- org.springframework:spring-web:jar:4.0.0.RELEASE:compile
+    [INFO] +- org.springframework.boot:spring-boot-starter-web:jar:1.0.0.RC1:compile
+    [INFO] |  +- org.springframework.boot:spring-boot-starter-tomcat:jar:1.0.0.RC1:compile
+    [INFO] |  |  +- org.apache.tomcat.embed:tomcat-embed-core:jar:7.0.47:compile
+    [INFO] |  |  \- org.apache.tomcat.embed:tomcat-embed-logging-juli:jar:7.0.47:compile
+    [INFO] |  +- com.fasterxml.jackson.core:jackson-databind:jar:2.3.1:compile
+    [INFO] |  |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.3.0:compile
+    [INFO] |  |  \- com.fasterxml.jackson.core:jackson-core:jar:2.3.1:compile
+    [INFO] |  \- org.springframework:spring-webmvc:jar:4.0.0.RELEASE:compile
+    [INFO] +- org.springframework.boot:spring-boot-starter-jdbc:jar:1.0.0.RC1:compile
+    [INFO] |  +- org.springframework:spring-jdbc:jar:4.0.0.RELEASE:compile
+    [INFO] |  +- org.apache.tomcat:tomcat-jdbc:jar:7.0.47:compile
+    [INFO] |  |  \- org.apache.tomcat:tomcat-juli:jar:7.0.47:compile
+    [INFO] |  \- org.springframework:spring-tx:jar:4.0.0.RELEASE:compile
+    [INFO] +- org.thymeleaf:thymeleaf-spring4:jar:2.1.2.RELEASE:compile
+    [INFO] |  +- org.thymeleaf:thymeleaf:jar:2.1.2.RELEASE:compile
+    [INFO] |  |  +- ognl:ognl:jar:3.0.6:compile
+    [INFO] |  |  \- org.javassist:javassist:jar:3.16.1-GA:compile
+    [INFO] |  \- org.slf4j:slf4j-api:jar:1.7.5:compile
+    [INFO] +- org.apache.commons:commons-lang3:jar:3.2.1:compile
+    [INFO] +- mysql:mysql-connector-java:jar:5.1.27:compile
+    [INFO] +- com.h2database:h2:jar:1.3.175:compile
+    [INFO] +- javax.validation:validation-api:jar:1.1.0.Final:compile
+    [INFO] +- org.hibernate:hibernate-validator:jar:5.0.1.Final:compile
+    [INFO] |  +- org.jboss.logging:jboss-logging:jar:3.1.1.GA:compile
+    [INFO] |  \- com.fasterxml:classmate:jar:0.8.0:compile
+    [INFO] +- org.yaml:snakeyaml:jar:1.13:runtime
+    [INFO] +- org.springframework.boot:spring-boot-starter-test:jar:1.0.0.RC1:test
+    [INFO] |  \- org.springframework:spring-test:jar:4.0.0.RELEASE:test
+    [INFO] +- junit:junit:jar:4.11:test
+    [INFO] |  \- org.hamcrest:hamcrest-core:jar:1.3:test
+    [INFO] +- org.mockito:mockito-core:jar:1.9.5:test
+    [INFO] |  \- org.objenesis:objenesis:jar:1.0:test
+    [INFO] \- org.hamcrest:hamcrest-library:jar:1.3:test
+    
+
+So logback is on the classpath and picking up the default base.xml
+configuration from spring-boot.
+
+Shouldn't the logging.file property work out of the box then, or do I need to
+configure it differently?
+
+I know I can put logback.xml in classpath to configure logback directly that
+way and possibly include the default springboot logback configuration from
+base.xml but if I can achieve the same simply setting the logging.file
+property I would prefer that.
+
+The approach I got working was to specify -DLOG_FILE=logs/output.log when
+running the embedded Tomcat using java -jar.
+
+However I need to build a war and deploy that in a standalone Tomcat that I do
+not have access to reconfigure and set environment properties like the
+LOG_FILE property - so I need to be able to specify the log output using my
+application.properties.
+
+I updated my pom.xml to use the 1.0.0.BUILD-SNAPSHOT version of Springboot and
+now it works just fine specifying the logging.file in application.properties.
+
+Can anyone here tell me when (approximately) spring boot 1.0.0.RELEASE is
+scheduled for?
+
+Cheers Flemming
+

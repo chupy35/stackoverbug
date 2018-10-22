@@ -1,0 +1,75 @@
+23036752 ElasticSearch using wildcard and term queries
+
+I'm new using Elastic Search, and i never used Lucene too.
+
+I build this query:
+
+    
+    
+      {
+        "query" : {
+          "wildcard" : { "referer" : "*.domain.com*" }
+        },
+        "filter" : {
+          "query" : {
+            "term" : { "first" : "1" }
+          }
+        },
+        "facets" : {
+          "site_id" : {
+            "terms" : {
+              "field" : "site",
+              "size" : "70"
+            }
+          }
+        }
+      }
+    
+
+The wildcard is working great, but the term filter was ignored, what i did
+wrong?
+
+I need to filter the results with both wildcard and term
+
+Thanks!
+
+Assuming what you are trying to do is applying the filter on the wildcard
+query results, you can use a FilteredQuery. However, your case might fit
+better for a filter.
+
+You use a query filter. Instead of that you may directly use a TermFilter in a
+FilteredQuery rather than making a filter out of a TermQuery. TermFilter
+should be faster as it directly uses the TermsEnum.
+
+Note that results of Filters are cached in a FilterCache and Filters are
+faster because they do not do any scoring of documents. In your case, even
+though the filter part of the FilteredQuery will work fast, but the wildcard
+query will be unnecessarily do scoring. You may try to use an AND Filter to
+club both queryfilter(wildcard query) and term filter instead of a
+FilteredQuery.
+
+To make just the filter work as required by you, try something like below.
+(Not tried myself)
+
+    
+    
+    {
+        "filtered" : {
+            "query" : {
+                "wildcard" : { "referer" : "*.domain.com*" }
+            },
+            "filter" : {
+                 "term" : { "first" : "1" }
+            }
+        },
+        "facets" : {
+            "site_id" : {
+                "terms" : {
+                    "field" : "site",
+                    "size" : "70"
+                }
+            }
+        }
+    }
+    
+

@@ -1,0 +1,93 @@
+12736283 AngularJS - Using Partials Dynamically Within Other Partials
+
+I am relatively new to AngularJS and would like to know how feasible it is to
+pull in partial templates dynamically. Consider this abstracted (and
+simplified for this example) module. This itself would be a partial template
+that will be reused throughout the application.
+
+**Partial Module Markup**
+
+    
+    
+    <div class="module">
+        <h2 class="module-title">{{module.title}}</h2>
+    
+        <div class="module-content">
+            {{module.content}}
+        </div>
+    
+    </div>
+    
+
+After fetching some data client side, I may wish for `module.content` to be a
+simple string of text, no problems there. What would be useful is if I could
+dynamically insert other partial templates into `module.content` based on the
+data I'm working with. Say for example in my response I have a list of
+headlines I wish to display, is is possible to pull in a partial template that
+handles headlines? And in another spot, `module.content` could be a partial
+template that handles a gallery of images.
+
+Any input or direction would be greatly appreciated!
+
+There are a couple approaches available to you.
+
+Your best bet is to add your own
+[directive](http://docs.angularjs.org/guide/directive). Expanding on your
+example:
+
+    
+    
+    module.directive('myModule', function() {
+      return {
+        restrict: 'A',
+        scope : {
+          title : '@'
+        },
+        templateUrl : '/partial/module.html',
+        transclude : true
+      };
+    });
+    
+
+We'll use transclusion to make the contents more flexible. Now the partial:
+
+    
+    
+    <div class="module">
+      <h2 class="module-title">{{title}}</h2>
+    
+      <div class="module-content" ng-transclude></div>
+    </div>
+    
+
+With this directive installed, you can use the following HTML:
+
+    
+    
+    <div my-module title="{{module.title}}">
+      {{module.content}}
+    </div>
+    
+
+Another option is to use the [`ng-
+include`](http://docs.angularjs.org/api/ng.directive:ngInclude) directive.
+This is a simple transclusion of a partial, the difference being that the
+transcluded partial lives in the same scope as the context it was included in.
+
+    
+    
+    <div ng-include="module.partialUrl"></div>
+    
+
+In the above case, Angular will transclude the partial at the URL at
+`$scope.module.partialUrl`. (Edit: this means you can dynamically substitute
+out UIs by replacing the scope variable used by ngInclude. Awesome, right?)
+
+If you're just reusing the same partial to avoid repetitive code, then simply
+surround the URL in single quotes:
+
+    
+    
+    <div ng-include="'/partial/foo.html'"></div>
+    
+

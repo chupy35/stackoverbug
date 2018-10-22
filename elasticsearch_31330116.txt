@@ -1,0 +1,4 @@
+31330116
+Search WIthout Field Length Normalization
+<p>How can I omit the fieldLength Norm at search time? I have some documents I want to search and I want to ignore extraneous strings in my query so that things like "parrot" match to "multiple parrots." </p>&#xA;&#xA;<p>So, how can I ignore the field length norm at search time?</p>&#xA;
+<p>I had the same problem - though I think for efficiency reasons this is normally done at index time.  Instead of using tf-idf I used BM25 (which is supposedly better).  BM25 has a coefficient to the field norm term which can be set to 0 so it doesn't effect the solution...</p>&#xA;&#xA;<p><a href="https://stackoverflow.com/a/38362244/3071643">https://stackoverflow.com/a/38362244/3071643</a></p>&#xA;

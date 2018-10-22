@@ -1,0 +1,131 @@
+13987030 How to build a parent/child mapping for Elasticsearch?
+
+I tried to use the following mapping to index my data:
+
+    
+    
+    {  
+      "mappings": {
+       "chow-demo": {
+        "properties": {
+         "@fields": {
+          "dynamic": "true",
+          "properties": {
+            "asgid": {
+              "type": "string",
+              "analyzer": "keyword"
+            },
+            "asid": {
+              "type": "long"
+            },
+            "astid": {
+              "type": "long"
+            },
+            "clfg": {
+              "analyzer": "keyword",
+              "type": "string"
+            },
+            "httpcode": {
+              "type": "long"
+            },
+            "oid": {
+              "type": "string"
+            },
+            "onid": {
+              "type": "long"
+            },
+            "ptrnr": {
+              "analyzer": "keyword",
+              "type": "string"
+            },
+            "pguid": {
+              "analyzer": "keyword",
+              "type": "string"
+            },
+            "ptid": {
+              "type": "long"
+            },
+            "sid": {
+              "type": "long"
+            },
+            "src_url": {
+              "analyzer": "keyword",
+              "type": "string"
+            },
+            "title": {
+              "analyzer": "keyword",
+              "type": "string"
+            },
+            "ts": {
+              "type": "long"
+            }
+           }
+          },
+          "@timestamp": {
+           "format": "dateOptionalTime",
+           "type": "date"
+          },
+          "@message": {
+           "type": "string"
+          },
+          "@source": {
+           "type": "string"
+          },
+          "@type": {
+           "analyzer": "keyword",
+           "type": "string"
+          },
+          "@tags": {
+           "type": "string"
+          },
+          "@source_host": {
+           "type": "string"
+          },
+          "@source_path": {
+           "type": "string"
+          }
+         }
+        },
+       "chow-clfg": {
+        "_parent": {
+         "type": "chow-demo"
+        },
+        "dynamic": "true",
+        "properties": {
+         "_ttl": {
+          "enabled": true,
+          "default": "1h"
+         },
+         "clfg": {
+          "analyzer": "keyword",
+          "type": "string"
+         },
+         "@timestamp": {
+          "format": "dateOptionalTime",
+          "type": "date"
+         },
+         "count": {
+          "type": "long"
+         }
+        }
+       }
+      }
+    }
+    
+
+I tried to populate the parent type "chow-demo" without populating the child
+type "chow-clfg", and the document refused to index. (No documents were
+indexed into Elasticsearach)
+
+When I take out the child mapping for "chow-clfg", it does indexing properly
+as usual. Hence I have the following question:
+
+  1. Is my mapping structure wrong?
+  2. Must the parent and child be indexed together at the same time before the data can be successfully indexed?
+
+Really need help in this question for my project to progress! Thanks!
+
+  1. Yes, your mapping is wrong. The `_ttl` element should be one level higher in the `chow-clfg` type. In other words `_ttl` should be on the same level as `_parent`. However, I am not quite sure how this problem can affect your ability to index.
+
+  2. Parents and children don't have to be indexed together. 
+

@@ -1,0 +1,75 @@
+22773276 elasticsearch scoring on bool query
+
+I have a nested query for bool condition in this format
+
+    
+    
+    GET _search 
+    {
+        "explain": true, 
+       "from": 1,
+       "size": 10,
+       "query": {
+          "filtered": {
+             "query": {
+                "function_score": {
+                   "boost": 1,
+                   "score_mode": "sum",
+                   "boost_mode": "sum",
+                   "functions": [],
+                   "query": {
+                      "bool": {
+                         "must": [
+                            {
+                               "bool": {
+                                  "should": [
+                                     {
+                                        cond1.0
+                                     },
+                                     {
+                                        cond1.1
+                                     },
+                                     {
+                                       cond1.2
+                                     }
+                                  ] , "minimum_number_should_match": 1, "boost": 5.0
+                               }
+                            }
+                         ] ,
+                         "should": [
+                            {
+                               "bool": {
+                                  "should": [
+                                     {
+                                        cond2.0
+                                     },
+                                     {
+                                       cond 2.1
+    
+                                     },
+                                     {
+                                        cond 2.2
+                                     }
+                                  ] , "minimum_number_should_match": 1, "boost":3.0
+                               }
+                            }
+    
+                         ],
+                         "minimum_number_should_match": 1
+                      }
+                   }
+                }
+             }
+          }
+       },
+       "fields": [
+          "*"
+       ]
+    }
+    
+
+So the boost of 5.0 if changed to 4.0, should ideally impace just the boolean
+conditions of 1.0,1.1,1.2 but it also seems to have an effect on the score of
+2.0,2.1,2.2. I dont understand how that should happen. Shouldnt it be mutually
+exclusive
+

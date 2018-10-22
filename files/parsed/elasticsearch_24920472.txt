@@ -1,0 +1,61 @@
+24920472 How to increase size of string in elastic search
+
+I'm looking how to increase the length of a string in elastic search. This
+post, [UTF8 encoding is longer than the max length
+32766](https://stackoverflow.com/questions/24019868/utf8-encoding-is-longer-
+than-the-max-length-32766), says that in order to do that I need to do one of
+the following:
+
+    
+    
+    1) change the type to binary
+    2) to continue to use string but set the index type to "no"
+    
+
+How would I do either of these?
+
+You will need to change the mapping for the field and then re-index the data -
+you cannot change a mapping for a field after you've indexed data into it.
+
+If you are unfamiliar with the concept of mappings within Elasticsearch or the
+Put mappings API, I'd start reading here:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/mapping-
+intro.html>
+
+and here:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+put-mapping.html>
+
+Assuming you wanted to created a field as binary, you'd do something like
+this:
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/yourindex/yourtype/_mapping' -d '
+    {
+        "yourtype" : {
+            "properties" : {
+                "yourbigstring" : {"type" : "binary", "store" : true }
+            }
+        }
+    }
+    '
+    
+
+and if you want to leave it as a string but not analyzed:
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/yourindex/yourtype/_mapping' -d '
+    {
+        "yourtype" : {
+            "properties" : {
+                "yourbigstring" : {"type" : "string", "store" : true, "index" : "not_analyzed"}
+            }
+        }
+    }
+    '
+    
+

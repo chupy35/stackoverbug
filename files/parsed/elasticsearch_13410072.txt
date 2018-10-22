@@ -1,0 +1,45 @@
+13410072 how to include doc urls in result set
+
+In ElasticSearch, I am wondering how I can get back document urls as well in
+the search result set? Here is what I meant with some example.
+
+Let's say I index a doc using the following curl command:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/ads/offers/1234' -d '{
+      "name": "blah blah",
+      "Weight":0.0001,
+      ...
+    }'
+    
+
+Then I run a search and I want to get the document URL itself in the result
+set. In the above case, the document URL is the following:
+
+    
+    
+    http://localhost:9200/ads/offers/1234. 
+    
+
+How can I do that? Is there a special field name for this or do I have to
+create some kind field to store this explicitly?
+
+elasticsearch search response contains all piece that are needed to build this
+URL on the client. The record for the URL in you example will look like this:
+
+    
+    
+    "hits" : [ {
+        "_index" : "ads",
+        "_type" : "offers",
+        "_id" : "1234",
+        ...
+    
+
+If you really need to get this URL from elasticsearch you can use [script
+field](http://www.elasticsearch.org/guide/reference/api/search/script-
+fields.html) to combine these pieces together into a single field on the
+server side, although I cannot think of a legitimate scenario where it would
+be needed.
+

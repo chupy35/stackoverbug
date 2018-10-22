@@ -1,0 +1,163 @@
+21610327 In Elasticsearch [0.90.7 & 1.0.0RC1] how can I troubleshoot a missing
+analyzer issue?
+
+I have been following this example here for setting up soundex search:
+<http://blog.jessitron.com/2012/04/configuring-soundex-in-elasticsearch.html>
+
+I have installed the plugin fine locally, and the analyzer works as I expect
+it to. However when I deploy to a separate server, I'm getting different
+behavior - an error when I try to put the analyzer in a mapping.
+
+I have tried this with fresh installs of both 0.90.7 & 1.0.0RC1. In both cases
+it is the same - the plugin works fine on my local machine, but not on the
+remote one.
+
+## Relevant bit from my elasticsearch.yml file:
+
+    
+    
+    index :
+        analysis :
+            analyzer :
+                search_soundex :
+                    type : custom
+                    tokenizer : standard
+                    filter : [standard, lowercase, soundex_filter]
+            filter :
+                soundex_filter :
+                    type : phonetic
+                    encoder : soundex
+                    replace : true 
+    
+
+## What I'm sending as my map:
+
+    
+    
+      PUT customer_requests_140113/
+    { "mappings": {
+            "customer_request" : {
+            "properties" : {
+                -- SNIP --
+                "Contacts" : {
+                    "properties" : {
+                        "ContactMethods" : {
+                            "properties" : {
+                                "Type" : {
+                                    "type" : "string"
+                                },
+                                "Value" : {
+                                    "type" : "string"
+                                }
+                            }
+                        },
+                        "FullName" : {
+                            "type" : "string"
+                            ,"index":"analyzed"
+                            ,"analyzer": "search_soundex"
+                        },
+                        "StopNumber" : {
+                            "type" : "string"
+                        }
+                    }
+                },
+                -- SNIP --
+            }
+        }
+    
+
+## The response from ElasticSearch:
+
+    
+    
+    {
+       "error": "MapperParsingException[mapping [customer_request]]; nested: MapperParsingException[Analyzer [search_soundex] not found for field [FullName]]; ",
+       "status": 400
+    }
+    
+
+## The error I am getting in my logs:
+
+    
+    
+    [2014-02-06 11:15:13,128][DEBUG][action.admin.indices.create] [xxxxxxx] [customer_requests_140113] failed to create
+    org.elasticsearch.index.mapper.MapperParsingException: mapping [customer_request]
+        at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$2.execute(MetaDataCreateIndexService.java:312)
+        at org.elasticsearch.cluster.service.InternalClusterService$UpdateTask.run(InternalClusterService.java:298)
+        at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.run(PrioritizedEsThreadPoolExecutor.java:135)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:744)
+    Caused by: org.elasticsearch.index.mapper.MapperParsingException: Analyzer [search_soundex] not found for field [FullName]
+        at org.elasticsearch.index.mapper.core.TypeParsers.parseField(TypeParsers.java:100)
+        at org.elasticsearch.index.mapper.core.StringFieldMapper$TypeParser.parse(StringFieldMapper.java:150)
+        at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseProperties(ObjectMapper.java:263)
+        at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parse(ObjectMapper.java:219)
+        at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseProperties(ObjectMapper.java:263)
+        at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parse(ObjectMapper.java:219)
+        at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:176)
+        at org.elasticsearch.index.mapper.MapperService.parse(MapperService.java:314)
+        at org.elasticsearch.index.mapper.MapperService.merge(MapperService.java:193)
+        at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$2.execute(MetaDataCreateIndexService.java:309)
+        ... 5 more
+    
+
+## The startup log:
+
+    
+    
+    [2014-02-06 11:13:10,372][INFO ][node                     ] [xxxxxxx] version[0.90.7], pid[2152], build[36897d0/2013-11-13T12:06:54Z]
+    [2014-02-06 11:13:10,372][INFO ][node                     ] [xxxxxxx] initializing ...
+    [2014-02-06 11:13:10,403][INFO ][plugins                  ] [xxxxxxx] loaded [analysis-phonetic], sites [head]
+    [2014-02-06 11:13:16,877][INFO ][node                     ] [xxxxxxx] initialized
+    [2014-02-06 11:13:16,877][INFO ][node                     ] [xxxxxxx] starting ...
+    [2014-02-06 11:13:17,158][INFO ][transport                ] [xxxxxxx] bound_address {inet[/0:0:0:0:0:0:0:0:9300]}, publish_address {inet[/10.117.11.60:9300]}
+    [2014-02-06 11:13:20,341][INFO ][cluster.service          ] [xxxxxxx] new_master [JBVWEBD42B][phzrhkfXQtGNX8Wv93xOpw][inet[/10.117.11.60:9300]], reason: zen-disco-join (elected_as_master)
+    [2014-02-06 11:13:20,372][INFO ][discovery                ] [xxxxxxx] xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    [2014-02-06 11:13:20,372][WARN ][discovery.zen.ping.multicast] [xxxxxxx] received ping response ping_response{target [[xxxxxxx][xxxxxxxxxxxxxxx][inet[/10.117.11.61:9300]]], master [[xxxxxxx][xxxxxxxxxxxxxxx][inet[/10.117.11.61:9300]]], cluster_name[xxxxxxxxx-xxxxxxxxx]} with no matching id [1]
+    [2014-02-06 11:13:20,434][INFO ][http                     ] [xxxxxxx] bound_address {inet[/0:0:0:0:0:0:0:0:9200]}, publish_address {inet[/10.117.11.60:9200]}
+    [2014-02-06 11:13:20,434][INFO ][node                     ] [xxxxxxx] started
+    [2014-02-06 11:13:20,450][INFO ][gateway                  ] [xxxxxxx] recovered [0] indices into cluster_state
+    
+
+## Output from /_nodes/plugin:
+
+    
+    
+    {
+        ok: true
+        cluster_name: xxxxxxxxxxxxxxxx
+        nodes: {
+            xxxxxxxxxxxxxxxxxxxx: {
+                name: xxxxxxxxxxx
+                transport_address: inet[/10.117.11.60:9300]
+                hostname: xxxxxxx
+                version: 0.90.7
+                http_address: inet[/10.117.11.60:9200]
+                plugins: [
+                    {
+                        name: analysis-phonetic
+                        description: Phonetic analysis support
+                        jvm: true
+                        site: false
+                    }
+                    {
+                        name: head
+                        description: No description found for head.
+                        url: /_plugin/head/
+                        jvm: false
+                        site: true
+                    }
+                ]
+            }
+        }
+    }
+    
+
+## My thoughts so far:
+
+I can see that the phonetic analyzer plugin is getting loaded from the startup
+script. I also know from `/_nodes/plugin` that it's aware of it after loading.
+But when I try to use it in a custom analyzer, it seems to blow up. This
+baffles me, because the same setup seems to work on my local machine!
+

@@ -1,0 +1,145 @@
+19941577 How to perform fast exact-match searches in elasticsearch
+
+Let's say I have a user object in user/data:
+
+    
+    
+    {"_id": 123, "name": "Bob"}
+    
+
+and users have multiple pets, where a pet document looks like this:
+
+    
+    
+    {"_id": 1423, "owner": 123, "type": "cat", "name": "Prince McNugget"}
+    {"_id": 1830, "owner": 123, "type": "dog", "name": "Tarley"}
+    
+
+What is the right way to (or what are the good options to) perform a _fast_
+(ie indexed) search in elastic search to find all pet documents with owner
+123?
+
+I've read answers to the "exact-match" question that propose using a mapping
+where the field is "not_analyzed", but I would assume that a field that is
+"not_analyzed" isn't indexed, and so the database would have to perform
+something similar to a full-table scan (I'm comparing to SQL here) to come up
+with the results. This isn't acceptable for me - I need it to be an indexed
+search.
+
+You can use `term query` on pets:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-term-query.html>
+
+    
+    
+    {
+      "query": {
+        "term" : { "owner" : 123 }
+      }
+    }
+    
+
+In ES, everything is indexed unless you config not to index it, so it should
+be fast by default.
+
+Edit: "not_analyzed" is as what mcollin explained. It just tell ES not to
+analyze the data (keep data as what we passed), it will still indexed unless
+you specify `"index" : "no"`.
+
+For your use case the [relational
+features](https://www.elastic.co/guide/en/elasticsearch/guide/master/parent-
+child-mapping.html) of es are interesting. Those allow for queries such as
+[has_parent](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-has-parent-filter.html) where you can search for the exact id. Besides
+that the mentioned [term
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-term-query.html) is correct.
+
+> I would assume that a field that is "not_analyzed" isn't indexed
+
+That's an easy assumption to make, but also an incorrect one. In ES,
+'not_analyzed' means that the data in the field was not split into tokens
+(analysis). The data is still very much indexed.
+
+The fastest way to search in ES is using
+[filters](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl.html). From the first Query DSL page:
+
+> Filters are very handy since they perform an order of magnitude better than
+plain queries since no scoring is performed and they are automatically cached.
+
+Since filters are so much faster, the fastest query will nearly always be a
+filtered query:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": { 'match_all' : { } },
+                "filter": {
+                    { "term": { "owner": 123 }}
+                }
+            }
+        }
+    }
+    
+
+As noted on the [Filtered
+Query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-filtered-query.html) page, the default query for a Filtered Query is
+`match_all`, so this query can be further shortened to:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "filter": {
+                    { "term": { "owner": 123 }}
+                }
+            }
+        }
+    }
+    
+
+The limitation of filters is that they are boolean. Either documents match the
+filter exactly or they do not. For performance, it's recommended to constrain
+as much as possible with filters and then use queries for further matching.
+
+I have built a query builder that parses a HTML form and then submits the
+search parameters. The builder checks each search param for wildcard
+characters (? or *) and if they exist, it uses a wildcard query. If not, it
+adds a filter. I provide UI buttons to make it easy for users to perform exact
+searches by clicking data. When they uses those, searches hit the filters and
+are wicked fast. They can also type `string*` and get what they want, after
+waiting a few more milliseconds.
+
+Here's a generalized snippet of my query builder:
+
+    
+    
+    var filters = [], queries = [];
+    var searchVal = ..., searchField = ...;
+    
+    var getWild = function (field, val, boost) {
+        var wc = { wildcard: { } };
+        wc.wildcard[field] = { value: val, boost: (boost || 1) };
+        return wc;
+    };
+    
+    if (searchVal) {
+        if (/\*|\?/.test(searchVal)) {
+            queries.push(getWild(searchField, searchVal);
+        }
+        else {
+            filters.push({ term: {searchField: searchVal}});
+        }
+    }
+    
+
+I use an `And` filter to constrain all the exact matches (date range, uid
+constraints, etc) and then the rest of the queries as a `filtered -> bool`
+query. It works really well and my little 3-node ES cluster with 133,000,000
+documents is plenty fast enough.
+

@@ -1,0 +1,88 @@
+22867546 Inconsistent ordering of results across primary /replica for
+documents with equivalent score
+
+I have created an index with a single shard and 1 replica. I'm running
+ElasticSearch version 1.0.1 and the cluster has 3 nodes .
+
+I noticed that occasionally the ordering of results for documents with the
+same score is  different based on whether the same query ran against the
+primary vs replica.  The query is a match query.
+
+For example when run against primary the result has :
+
+    
+    
+    {
+           "took": 2,
+           "timed_out": false,
+           "_shards": {
+              "total": 1,
+              "successful": 1,
+              "failed": 0
+           },
+           "hits": {
+              "total": 2,
+              "max_score": 9.058382,
+              "hits": [
+                 {
+                    "_index": "testdocs",
+                    "_type": "testdocs",
+                    "_id": "132898",
+                    "_score": 9.058382
+                 },
+                 {
+                    "_index": "testdocs",
+                    "_type": "testdocs",
+                    "_id": "132888",
+                    "_score": 9.058382
+                 }
+              ]
+           }
+        }
+    
+
+when run against replica:
+
+    
+    
+    {
+       "took": 1,
+       "timed_out": false,
+       "_shards": {
+          "total": 1,
+          "successful": 1,
+          "failed": 0
+       },
+       "hits": {
+          "total": 2,
+          "max_score": 9.058382,
+          "hits": [
+             {
+                "_index": "testdocs",
+                "_type": "testdocs",
+                "_id": "132888",
+                "_score": 9.058382
+             },
+             {
+                "_index": "testdocs",
+                "_type": "testdocs",
+                "_id": "132898",
+                "_score": 9.058382
+             }
+          ]
+       }
+    }
+    
+
+Not the change in "_id" in the result order above.
+
+I wasn't able to replicate it with a subset of documents. I believe this seems
+to occur when the number of segments in replica is not same as that of
+primary. In the above case replica has 21 vs 28 in primary. However both have
+the same number of documents so the data is consistent.
+
+The question I have is, is this the expected behavior i.e for documents with
+the same score ES does not provide default ordering example: sort by _id ?  Is
+the only way around it to explicitly sort the results by _score and _id or is
+there some other setting that i'm missing.
+

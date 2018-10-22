@@ -1,0 +1,51 @@
+16784111 Do elasticsearch work on excel binary workbook
+
+I am trying to perform indexing and searching on all product of microsoft
+office. i had find out that it is not working on excel binary book(.xlsb).
+
+I had perform indexing successfully but it is not able to find words from it.
+
+I had tried following steps:
+
+    
+    
+             curl -X PUT "localhost:9200/test/attachment/_mapping" -d '{
+               "attachment" : {
+                 "properties" : {
+                   "file" : {
+                     "type" : "attachment",
+                     "fields" : {
+                       "title" : { "store" : "yes" },
+                       "file" : { "term_vector":"with_positions_offsets", "store":"yes" }
+                     }
+                   }
+                 }
+               }
+             }'
+    
+             coded=`cat test.xlsb | perl -MMIME::Base64 -ne 'print encode_base64($_)'`
+             json="{\"file\":\"${coded}\"}"
+             echo "$json" > json.file
+             curl -X POST "localhost:9200/test/attachment/" -d @json.file
+    
+             curl "localhost:9200/_search?pretty=true" -d '{
+               "fields" : ["title"],
+               "query" : {
+                 "query_string" : {
+                   "query" : "sheet"
+                 }
+               },
+               "highlight" : {
+                 "fields" : {
+                   "file" : {}
+                 }
+               }
+              }'
+    
+
+We just added streaming/read-only xlsb support in POI (coming in 3.15-beta3).
+Once that is released, we'll upgrade Apache Tika (1.15?), and then once
+Elastic upgrades, you should be good to go.
+
+A mere 4 years later!
+

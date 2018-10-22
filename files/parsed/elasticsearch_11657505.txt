@@ -1,0 +1,115 @@
+11657505 Defining analyzer while querying in elasticSearch
+
+I am pretty new to elasticsearch and just need some clarification: Can we
+define a analyzer while querying the search server. I tried it with the "text"
+and "field" query and it works fine:
+
+Query:
+
+    
+    
+    curl -XPOST http://localhost:9200/test/user/_search? -d '{ "query" : {
+    "text" : {"_all" : {"query" :"Vaibhav","analyzer" :
+    "lowercase_keyword" }} } }'
+    
+
+Result:
+
+    
+    
+    {"took":144,"timed_out":false,"_shards":{"total":5,"successful":5,"failed":0},"hits":{"total":1,"max_score":0.10848885,"hits":{"_index":"test","_type":"user","_id":"1","_score":0.10848885,
+    "_source" : {
+       "first_name": "Vaibhav",
+       "last_name":"saini",
+       "password":"pwd"
+    
+
+But when I try to do the same thing with term/prefix/wildcard query I get the
+exception:
+
+Query:
+
+    
+    
+    curl -XPOST http://localhost:9200/test/user/_search? -d '{
+    "query" : { "term" : {"_all" : {"query" :"Vaibhav","analyzer" :
+    "lowercase_keyword" }} } }'
+    
+
+Result:
+
+    
+    
+    {"error":"SearchPhaseExecutionException[Failed to execute phase [query], total failure; shardFailures
+    {[kws9J6tbQtWCMNKBm3Gpkw][test][4]: SearchParseException[[test][4]:
+    from[-1],size[-1]: Parse Failure [Failed to parse source
+    [\n{\n\"query\" : {\n\"term\" : {\"_all\" : {\"query\"
+    :\"Vaibhav\",\"analyzer\" : \"lowercase_keyword\" }}\n}\n}]]]; nested:
+    QueryParsingException[[test] [term] query does not support [query]];
+    }{[kws9J6tbQtWCMNKBm3Gpkw][test][1]: SearchParseException[[test][1]:
+    from[-1],size[-1]: Parse Failure [Failed to parse source
+    [\n{\n\"query\" : {\n\"term\" : {\"_all\" : {\"query\"
+    :\"Vaibhav\",\"analyzer\" : \"lowercase_keyword\" }}\n}\n}]]]; nested:
+    QueryParsingException[[test] [term] query does not support [query]];
+    }{[kws9J6tbQtWCMNKBm3Gpkw][test][2]: SearchParseException[[test][2]:
+    from[-1],size[-1]: Parse Failure [Failed to parse source
+    [\n{\n\"query\" : {\n\"term\" : {\"_all\" : {\"query\"
+    :\"Vaibhav\",\"analyzer\" : \"lowercase_keyword\" }}\n}\n}]]]; nested:
+    QueryParsingException[[test] [term] query does not support [query]];
+    }]","status":500}
+    
+
+So is it like we can't define analayzers while querying the elasticsearch
+server for some type of queries and for others we can? If not, am I doing
+anything wrong?
+
+Any help is greatly appreciated.
+
+The `term`, `prefix`, and `wildcard` queries expect the value specified in the
+query to be already analyzed.
+
+This syntax worked for me:
+
+    
+    
+    GET /_search
+    {
+      "query": {
+        "match_phrase": {
+          "controller": {
+            "analyzer": "keyword",
+            "query": "api/v2/test"
+          }
+        }
+      }
+    }
+    
+
+Find more details in the
+[documentation](https://www.elastic.co/guide/en/elasticsearch/reference/1.4/query-
+dsl-match-query.html#_phrase).
+
+You can set a custom [search-
+analyzer](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+analyzer.html) to be used for queries.
+
+From the docs:
+
+> Usually, the same analyzer should be applied at index time and at search
+time, to ensure that the terms in the query are in the same format as the
+terms in the inverted index.
+
+>
+
+> Sometimes, though, it can make sense to use a different analyzer at search
+time, such as when using the analysis-edgengram-tokenizer for autocomplete.
+
+>
+
+> By default, queries will use the `analyzer` defined in the field mapping,
+but this can be overridden with the `search_analyzer` setting
+
+The docs also list an example.
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+analyzer.html>
+

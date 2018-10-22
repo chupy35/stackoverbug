@@ -1,0 +1,87 @@
+24957288 Elasticsearch applying a mapping by default
+
+I want my string fields in elasticsearch not be analyzed by default and be
+applied it to all index in elasticsearch without any index level
+configuration. Currently I have to go and setup the mapping for each index,
+indexType individually like this,
+
+    
+    
+    POST sellers/sellerDailyRecord/_mapping
+    {
+    "sellerDailyRecord" : {
+        "dynamic_templates" : [
+            {
+                "template1" : {
+                    "match" : "*",
+                    "match_mapping_type" : "string",
+                    "mapping" : {
+                        "type" : "string",
+                        "index" : "not_analyzed"
+                    }
+                }
+            }
+        ]
+    }
+    }
+    
+
+Can I make the above configuration default mapping for all indexType? I read
+elasticsearch docs for root object but I am not able to figure out how to do
+this. Can anyone help me figure out this? Thanks
+
+You can do this while creating index, so that it applies to all the types
+created inside the index,
+
+    
+    
+    curl -XPUT "http://localhost:9200/t1" -d'
+    {
+       "mappings": {
+          "_default_": {
+             "dynamic_templates": [
+                {
+                   "string_template": {
+                      "match": "*",
+                      "match_mapping_type": "string",
+                      "mapping": {
+                         "type": "string",
+                         "index" :"not_analyzed"
+                      }
+                   }
+                }
+             ]
+          }
+       }
+    }'
+    
+
+Hope this helps!!
+
+I have found a better way of doing this using index templates. This solved my
+problem and I don't have to go do this for each and every index:
+
+    
+    
+    PUT _template/not_analyzed_template
+    {
+        "template": "*", 
+        "mappings": {
+            "_default_": {
+                "dynamic_templates": [
+                    {
+                        "template_1": {
+                            "mapping": {
+                                "index": "not_analyzed",
+                                "type": "string"
+                            },
+                            "match_mapping_type": "string",
+                            "match": "*"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+

@@ -1,0 +1,58 @@
+16724598 ElasticSearch Facets
+
+I have following elastic search query
+
+    
+    
+    SearchResponse response = DbContext.INSTANCE.client()
+                .prepareSearch(indexList)
+                .setTypes("docs")
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)             
+                .setQuery(queryBuilder)             
+                .setFilter(FilterBuilders.andFilter(f1, f2))
+                .addFacet(FacetBuilders.termsFacet("f").field("frm").size(10))
+                .setFrom(pageNumber).setSize(size).execute().actionGet();
+    
+
+Facet count return by this query is global, how to get the facet for the
+search response?
+
+* * *
+
+I found the answer: What I done is add filter to the main query
+
+    
+    
+    QueryBuilder queryBuilder = QueryBuilders.boolQuery()
+    .must(QueryBuilders.queryString(criterion.getFullText()).field("text"))
+    .must(QueryBuilders.termsQuery("from", criterion.getFrom().toArray((new String[0]))))
+    .must(QueryBuilders.termsQuery("to", criterion.getTo().toArray((new String[0]))))
+    .must(QueryBuilders.rangeQuery("date").from(dtf.print(criterion.getFromDate())).to(dtf.print(criterion.getToDate())));
+    
+    SearchResponse response = 
+    DbContext.INSTANCE.client()
+    .prepareSearch(indexList)
+    .setTypes("docs")
+    .setQuery(queryBuilder)
+    .addFacet(fb)
+    .addFacet(tf)
+    .addSort("date", SortOrder.DESC)
+    .setFrom(pageNumber).setSize(size).execute().actionGet();
+    
+
+This is what i did unless you want "main" search and facet has different
+search requirement. `global=false` should do the trick for you
+
+    
+    
+    "facets": {
+      "volume_by_day": {
+        "date_histogram": {
+          "field": "crdate",
+          "interval": "day"
+        },
+        "global": "false"
+      }
+    }
+    
+

@@ -1,0 +1,41 @@
+21373177 How to generate the quantile distribution of a numeric property with
+Elasticsearch?
+
+I am trying to generate a [quantile](http://en.wikipedia.org/wiki/Quantile)
+distribution chart ([histogram](http://en.wikipedia.org/wiki/Histogram)) for a
+numeric property stored within documents managed by
+[Elasticsearch](http://www.elasticsearch.org/). For example, I would define a
+number of quantiles like 20, and the chart would be a histogram with 20 bars.
+The left-most bar would show the average of the numeric property for the 5%
+(100/20) of all documents for which this property would be the lowest across
+the entire set of documents, the second bar would show the same for the next
+5%, and so on...
+
+Doing this for 4 quantiles would show quartiles. And for 100 quantiles, it
+would show every percentile.
+
+I looked at the [histogram
+facet](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets-histogram-facet.html) and the [range
+facet](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets-range-facet.html), but neither of them seem to be applicable. In fact,
+I am suspecting that the histogram facet should be renamed in order to avoid
+any confusion. While I would really like to be able to generate this chart
+with a single query, doing one query per quantile would be acceptable for my
+current use case.
+
+With 0.90 and facets, you would have to use multiple search requests in order
+to calculate these quantiles. No way around that unfortunately. However, you
+could reduce round trips by combining several search requests into a single
+request using [multi-
+search](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+multi-search.html).
+
+The soon-to-be-released 1.0 has a new
+[aggregations](http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.x/search-
+aggregations.html) framework which provides much more flexibility than facets.
+Quantiles aren't in there yet, but an [estimated quantiles aggregation is in
+the
+works](https://github.com/elasticsearch/elasticsearch/commits/features/quantile_aggregations).
+Will hopefully make it in for 1.01, but no promises :)
+

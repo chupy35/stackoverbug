@@ -1,0 +1,4 @@
+31307199
+Elasticsearch - update on key not id
+<p>I have documents indexed in elasticsearch that I need to update. </p>&#xA;&#xA;<p>The problem is that I don't know the elasticsearch id for the documents at update time. I have a unique key (say email address) that identifies each document - but the update API wants the elasticsearch id.</p>&#xA;&#xA;<p>Do I need to query for each document first and get the elasticsearch id before doing the update? Sounds horribly inefficient. The updates are in batches of 100,000 in a 20,000,000 document index.</p>&#xA;
+<p>For <strong><em>elasticsearch</em></strong>, there is <strong>no update by query mechanism</strong>: </p>&#xA;&#xA;<p><a href="https://stackoverflow.com/questions/15946663/updating-a-field-in-all-records-in-elasticsearch">Updating a field in all records in elasticsearch</a>.</p>&#xA;&#xA;<p>And you can use <code>_bulk</code> api to efficiently update multi documents. </p>&#xA;

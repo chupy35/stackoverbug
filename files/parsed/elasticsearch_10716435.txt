@@ -1,0 +1,90 @@
+10716435 ElasticSearch index unix timestamp
+
+I have to index documents containing a 'time' field whose value is an integer
+representing the number of seconds since epoch (aka unix timestamp).
+
+I've been reading ES docs and have found this:
+
+<http://www.elasticsearch.org/guide/reference/mapping/date-format.html>
+
+But it seems that if I want to submit unix timestamps and want them stored in
+a 'date' field (integer field is not useful for me) I have only two options:
+
+  * Implement my own date format
+  * Convert to a supported format at the sender
+
+Is there any other option I missed?
+
+Thanks!
+
+If you supply a mapping that tells ES the field is a date, it can use epoch
+millis as an input. If you want ES to auto-detect you'll have to provide
+ISO8601 or other discoverable format.
+
+Update: I should also note that you can influence what strings ES will
+recognize as dates in your mapping.
+<http://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-date-
+format.html>
+
+In case you want to use Kibana, which I expect, and visualize according to the
+time of a log/entry you will need at least one field to be a date field.
+
+_Please note that you have to set the field as date type BEFORE you input any
+data into the /index/type. Otherwise it will be stored as long and
+unchangeable._
+
+Simple example that can be pasted into the
+[marvel/sense](https://www.elastic.co/guide/en/marvel/current/index.html
+"marvel/sense") plugin:
+
+    
+    
+    # Make sure the index isn't there
+    DELETE /logger
+    
+    # Create the index
+    PUT /logger
+    
+    # Add the mapping of properties to the document type `mem`
+    PUT /logger/_mapping/mem
+    {
+      "mem": {
+        "properties": {
+          "timestamp": {
+            "type": "date"
+          },
+          "free": {
+             "type": "long"
+          }
+        }
+      }
+    }
+    
+    # Inspect the newly created mapping
+    GET /logger/_mapping/mem
+    
+
+_Run each of these commands in serie._
+
+## Generate free mem logs
+
+Here is a simple script that echo to your terminal and logs to your local
+elasticsearch:
+
+    
+    
+    while (( 1==1 )); do memfree=`free -b|tail -n 1|tr -s ' ' ' '|cut -d ' ' -f4`; echo $load; curl -XPOST "localhost:9200/logger/mem" -d "{ \"timestamp\": `date +%s%3N`, \"free\": $memfree }"; sleep 1; done
+    
+
+### Inspect data in elastic search
+
+Paste this in your marvel/sense
+
+    
+    
+    GET /logger/mem/_search
+    
+
+Now you can move to Kibana and do some graphs. Kibana will autodetect your
+date field.
+

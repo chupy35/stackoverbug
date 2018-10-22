@@ -1,0 +1,48 @@
+16444953 What indexes are created when indexing a document in elasticsearch
+
+If I create a first document of it's type, or put a mapping, is an index
+created for each field?
+
+Obviously if i set "index" to "analyzed" or "not analyzed" the field is
+indexed.
+
+Is there a way to store a field so it can be retrieved but never searched by?
+I imagine this will save a lot of space? If I set this to "no" will this save
+space?
+
+Will I still be able to search by this, just take more time, or will this be
+totally unsearchable?
+
+Is there a way to make a field indexed after some documents are inserted and I
+change my mind?
+
+For example, I might have a mapping:
+
+    
+    
+    {
+     "book":{"properties":{
+         "title":{"type":"string", "index":"not_analyzed"},
+         "shelf":{"type":"long","index":"no"}
+    }}}
+    
+
+so I want to be able to search by title, but also retrieve the shelf the book
+is on
+
+`index:no` will indeed not create an index for that field, so that saves some
+space. Once you've done that you can't search for that particular field
+anymore.
+
+Perhaps also useful in this context is to know aboutthe `_source` field, which
+is returned by default and includes all fields you've stored.
+<http://www.elasticsearch.org/guide/reference/mapping/source-field/>
+
+As to your second question:  you can't change your mind halfway. When you want
+to index a particular field later on you have to reindex the documents.
+
+That's why you may want to reconsider setting index:no, etc. In fact a good
+strategy to begin is to don't define a schema for fields at all, unless you're
+100% sure you need a non-default analyzer for a particular field for instance.
+Otherwise ES will use generally usable defaults.
+

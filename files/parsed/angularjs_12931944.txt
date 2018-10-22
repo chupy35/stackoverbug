@@ -1,0 +1,37 @@
+12931944 Extend AngularJS function filterFilter without altering source?
+
+I've modified AngularJS function filterFilter so I can use exact matches. So
+searching for '1' gives only '1', not '11', '12' etc.
+
+    
+    
+    function filterFilter() {
+      return function(array, expression,exact) {
+      ...
+        var search = function(obj, text){
+        ...
+          case "string":
+            return exact?('' + obj).toLowerCase() === text:('' + obj).toLowerCase().indexOf(text) > -1;
+    
+
+Now I can use it like this: sectionDicts |
+filter:{id:section.sectionDictId}:true
+
+But how can I extend this function without modyfying angular's source? I've
+found this [How to extend or override existing filters in
+angularjs?](https://stackoverflow.com/questions/12236905/how-to-extend-or-
+override-existing-filters-in-angularjs) but it's another case I think.
+
+Also this <https://groups.google.com/forum/#!msg/angular/v-WjFF-
+iR88/XSXRhkGhf_sJ> doesn't work
+
+**Edit** As suggested I've added new filter. I just copied filterFilter,
+modified it to my needs. Although I also had to copy functions getter and
+isFunction from angular.js
+
+You could just create your own filter that does what you need. There's not
+really a way to change the inner workings of this function, that I'm aware of
+at least. Besides, it sounds like what you want to do is fundamentally
+different than the documented behavior of angular's "filter" filter, and would
+just confuse the next developer to come along if you altered the original.
+

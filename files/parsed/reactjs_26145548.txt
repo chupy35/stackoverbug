@@ -1,0 +1,33 @@
+26145548 Using refs in react
+
+The React documentation contains the following warning:
+
+> Never access refs inside of any component's render method - or while any
+component's render method is even running anywhere in the call stack.
+
+Why? My problem is, I'm writing a component which lays out its children in
+ways that depend on the children sizes. That is, I need to measure the DOM
+nodes so I need to access each child, which I was planning to do via refs, in
+render. What's wrong with that? Of course, I need to allow for the fact that
+some children may not yet exist in refs (in the first render, no child
+exists).
+
+Incidentally, my render seems to work.
+
+_Disclaimer:_ I'm not a React core developer, but I use it quite extensively
+on a large project.
+
+TL;DR: The safest place is to use lifecycle methods, in the `.render()` method
+the component is still only a declarative description of what is to be done.
+
+Beacuse what you construct in your `.render()` method isn't the component that
+is going to be rendered, it's a _description_ of what you want React to
+construct for you. That construction happens later (that's when all the
+optimisations comes in). At the same time, the object you returned to
+`React.createClass` will get substituted for a new object. Visualize it like
+you are sending a letter to React (the object sent to `.createClass()`) and
+React responds with a package (the component). If you need to do something
+with the sub-components that will be created go look in the [lifecycle
+methods](http://facebook.github.io/react/docs/component-specs.html). `.refs`
+should be populated by the time of `.componentDidMount()`.
+

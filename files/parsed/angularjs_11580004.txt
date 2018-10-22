@@ -1,0 +1,156 @@
+11580004 angular.js link behaviour - disable deep linking for specific URLs
+
+I have a working Angular.js app with HTML5 mode enabled.
+
+    
+    
+    $location.Html5mode(true).hashbang("!");
+    
+
+What I want to achieve is to get some URLs or `<a>` tags to do the normal
+browsing behaviour instead of changing the URL in the address bar using HTML5
+history API and handling it using Angular controllers.
+
+I have this links:
+
+    
+    
+    <a href='/auth/facebook'>Sign in with Facebook</a>
+    <a href='/auth/twitter'>Sign in with Twitter</a>
+    <a href='/auth/...'>Sign in with ...</a>
+    
+
+And I want the browser to redirect the user to `/auth/...` so the user will be
+then redirected to an authentication service.
+
+Is there any way I can do this?
+
+I've run into the same issue a few times now with angular, and while I've come
+up with two functional solutions, both feel like hacks and not very "angular".
+
+**Hack #1:**
+
+Bind a `window.location` refresh to the link's `click` event.
+
+    
+    
+    <a 
+      href=/external/link.html 
+      onclick="window.location = 'http://example.com/external/link.html';"
+    >
+    
+
+The downside and problems with this approach are fairly obvious.
+
+**Hack #2**
+
+Setup Angular `$route`s that perform a `$window.location` change.
+
+    
+    
+    // Route
+    .when('/external', {
+      templateUrl: 'path/to/dummy/template', 
+      controller: 'external'
+    })
+    
+    // Controller
+    .controller('external', ['$window', function ($window) {
+      $window.location = 'http://www.google.com';
+    }])
+    
+
+I imagine that you could extend this using `$routeParams` or query strings to
+have one controller handle all "external" links.
+
+As I said, neither of these solutions are very satisfactory, but if you must
+get this working in the short term, they might help.
+
+On a side note, I would really like to see Angular support `rel=external` for
+this type of functionality, much like jQueryMobile uses it to disable ajax
+page loading.
+
+In your routes try:
+
+`$routeProvider.otherwise({})`
+
+This is the code for turning off deep linking all together. It disables the
+click event handler from the rootElement.
+
+    
+    
+    angular.module('myApp', [])
+       .run(['$location', '$rootElement', function ($location, $rootElement) {
+          $rootElement.off('click');
+    }]);
+    
+
+Adding `target="_self"` works in Angular 1.0.1:
+
+    
+    
+    <a target="_self" href='/auth/facebook'>Sign in with Facebook</a>
+    
+
+This feature is documented (<https://docs.angularjs.org/guide/$location> \-
+search for '_self')
+
+If you're curious, look at the angular source (line 5365 @ v1.0.1). The click
+hijacking only happens if `!elm.attr('target')` is true.
+
+To work off the Nik's answer, if you have lots of links and don't want to add
+targets to each one of them, you can use a directive:
+
+    
+    
+    Module.directive('a', function () {
+        return {
+            restrict: 'E',
+            link: function(scope, element, attrs) {
+                element.attr("target", "_self");
+            }
+        };
+    });
+    
+
+To add to Dragonfly's answer, a best practice I have found to limit the number
+of target="_self" attributes is to **never** put the ng-app attribute on the
+body tag. By doing that you are telling angular that **everything** within the
+body tags are a part of the angular app.
+
+If you are working within a static wrapper that should not be affected by
+angular, put your ng-app attribute on a div (or other element) that surrounds
+only the location your angular app is going to be working in. This way you
+will only have to put the target='_self' attribute on links that will be
+children of the ng-app element.
+
+    
+    
+    <body>
+        ... top markup ...
+        <div ng-app="myApp">
+            <div ng-view></div>
+        </div>
+        ... bottom markup ...
+    </body>
+    
+
+An alternative to Fran6co's method is to disable the 'rewriteLinks' option in
+the $locationProvider:
+
+    
+    
+    $locationProvider.html5Mode({
+        enabled: true,
+        rewriteLinks: false
+    });
+    
+
+This will accomplish exactly the same thing as calling
+$rootElement.off('click'), but will not interfere with other javascript that
+handles click events on your app's root element.
+
+See [docs](https://docs.angularjs.org/api/ng/provider/$locationProvider), and
+[relevant
+source](https://github.com/angular/angular.js/blob/master/src/ng/location.js#L843)
+

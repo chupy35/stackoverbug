@@ -1,0 +1,94 @@
+11375185 Trouble with facet counts
+
+I'm attempting to use ElasticSearch for analytics -- specifically to track
+"top content" for hand-rolled Rails CMS. The requirement is quite a bit more
+complicated than keeping a counter for each piece of content. I won't get into
+the depth of problem right now, as I can't seem to get even the basics
+working.
+
+My problem is this: I'm using facets and the counts aren't what I expect them
+to be. For example:
+
+Query:
+
+    
+    
+    {"facets":{"el_ids":{"terms":{"field":"el_id","size":1,"all_terms":false,"order":"count"}}}}
+    
+
+Result:
+
+    
+    
+    {"el_ids":{"_type":"terms","missing":0,"total":16672,"other":16657,"terms":[{"term":"quis","count":15}]}}
+    
+
+Ok, great, the piece of content with id "quis" had 15 hits and since the
+`order` is `count`, it should be my top piece of content. Now lets get the top
+5 pieces of content.
+
+Query:
+
+    
+    
+    {"facets":{"el_ids":{"terms":{"field":"el_id","size":5,"all_terms":false,"order":"count"}}}}
+    
+
+Result (just the facet):
+
+    
+    
+    [
+      {"term":"qgz9","count":26},
+      {"term":"quis","count":15},
+      {"term":"hnqn","count":15},
+      {"term":"higp","count":15},
+      {"term":"csns","count":15}
+    ]
+    
+
+Huh? So the piece of content w/ id "qgz9" had more hits with 26? Why wasn't it
+the top result in the first query?
+
+Ok, lets get the top 100 now.
+
+Query:
+
+    
+    
+    {"facets":{"el_ids":{"terms":{"field":"el_id","size":100,"all_terms":false,"order":"count"}}}}
+    
+
+Results (just the facet):
+
+    
+    
+    [
+      {"term":"qgz9","count":43},
+      {"term":"difc","count":37},
+      {"term":"zryp","count":31},
+      {"term":"u65r","count":31},
+      {"term":"sxsi","count":31},
+      ...
+    ]
+    
+
+So now "qgz9" has 43 hits instead of 26? How can that be? I can assure you
+there's nothing happening in the background modifying the index. If I repeat
+these queries, I get the same results.
+
+As I repeat this process of increasing the result size, counts continue to
+change and new content ids emerge at the top. Can someone explain to me what
+I'm doing wrong or where my understanding of how this works is flawed?
+
+It turns out that this is a [known
+issue](https://github.com/elasticsearch/elasticsearch/issues/1305):
+
+> ...the way top N facets work now is by getting the top N from each shard,
+and merging the results. This can give inaccurate results.
+
+By default, my index was being created with 5 shards. By changing this so the
+index only has a single shard, the counts behave inline with my expectations.
+Another workaround would be to always set `size` to a value greater than the
+number of expected facets and peel off the top N results.
+

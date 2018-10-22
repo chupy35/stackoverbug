@@ -1,0 +1,30 @@
+21874807 How to manually cluster nodes on elasticsearch
+
+I have two servers.
+
+    
+    
+    xxx.xxx.xxx.xxx
+    yyy.yyy.yyy.yyy
+    
+
+In elastic search config, how to I manually add. I am not a fan of discovery.
+It does not work.
+
+Each node is eligible to be master. I am using digital ocean.
+
+Assuming you're using zen discovery, you can disable the multi-cast option and
+set the addresses of the unicast hosts to discover.
+
+If you're using the default port of 9300 on your nodes, the settings below
+should work in your configuration file
+
+    
+    
+    # disable multicast
+    discovery.zen.ping.multicast.enabled: false
+    
+    # set the list of hosts for unicast discovery
+    discovery.zen.ping.unicast.hosts: [“xxx.xxx.xxx.xxx”, “yyy.yyy.yyy.yyy”]
+    
+

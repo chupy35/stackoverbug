@@ -1,0 +1,25 @@
+23749283 ElasticSearch gem method to scan all documents in index
+
+I am upgrading our ElasticSearch server to the latest (v1.0.1) and in the
+process using the new [ElasticSearch
+gem](https://github.com/elasticsearch/elasticsearch-rails) and removing the
+Tire gem.
+
+Tire had a [scan](http://ruby-
+doc.org/gems/docs/l/load_balanced_tire-0.1/Tire/Search/Scan.html) method (that
+mapped to the [scan type
+search](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-search-type.html))to iterate over all documents in the index and I am
+looking to see if someone knows of a similar method/attribute in the new
+ElasticSearch rails gem that can walk over all indexed documents.
+
+Elasticsearch-rails gem has a dependency on [elasticsearch
+gem](https://github.com/elasticsearch/elasticsearch-ruby). This gem exposes
+the `search` api which takes `search_type` as an option, which could be `scan`
+for your case.
+
+Also, `elasticsearch` gem has a `scroll`
+[api](https://github.com/elasticsearch/elasticsearch-
+ruby/blob/master/elasticsearch-api/lib/elasticsearch/api/actions/scroll.rb),
+that you can use as well.
+

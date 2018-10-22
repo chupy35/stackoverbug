@@ -1,0 +1,3 @@
+28788460
+What is Elasticsearch date histogram pre/post rounding?
+<p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_pre_post_offset" rel="nofollow">http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_pre_post_offset</a> gives a brief description of pre/post offsets for Elasticsearch date histograms. But I don't understand what it means. What does Elasticsearch do with the pre and post offsets? What are "pre rounding" and "post rounding"?</p>&#xA;

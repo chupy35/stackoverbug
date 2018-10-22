@@ -1,0 +1,32 @@
+29520654 Spring Boot blows up when using solrj but not spring-boot-starter-
+data-solr
+
+I am trying to port an existing Spring application across to Spring Boot. I am
+**NOT** using the spring-boot-starter-data-solr starter however I have apache
+solrj (5.0.0) on my classpath.
+
+During startup the app blows up. It seems that spring boot sees the solr
+classes and assumes that I also have spring-boot-starter-data-solr on the
+classpath. In particular I get this error:
+
+> java.lang.IllegalArgumentException: @ConditionalOnMissingBean annotations
+must specify at least one bean (type, name or annotation)
+
+If I drop the solrj dependency and use spring-boot-starter-data-solr instead
+it is ok. However I don't need the spring-data-solr integration and doing so
+will force me to backport our app to the 4.7.x release of solr.
+
+Is anyone aware of a workaround for this?
+
+So it seems the problem was caused by spring boot's dependency on solrj 4.7.x
+whereas I am using 5.0.0
+
+I fixed it by using
+
+    
+    
+    @SpringBootApplication(exclude = {SolrAutoConfiguration.class})
+    
+
+To tell boot to ignore the SolrAutoConfiguration completely.
+

@@ -1,0 +1,18 @@
+28513352 Possible to transfer state/props data from server
+
+Is there a way to transfer state from server to client? I know I can simply
+request the initial data again on the client, but that involves extra
+requests. Is there a simple way of doing this?
+
+You can transfer initial data from your server as follow:
+
+    
+    
+    <script>
+        var data = <json data serialized by your server language>;
+    </script>
+    
+
+Then, using `data` variable you can initialize your components' `state` and
+`props`.
+

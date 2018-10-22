@@ -1,0 +1,77 @@
+23255991 Elasticsearch - Sorting by a nested multi-field
+
+I've run into a problem while trying to sort on nested multi-field properties
+in Elasticsearch. One of the two multi-fields works, the other returns null
+for every value.
+
+My sortable analyzer:
+
+    
+    
+        "analyzer": {
+            "sortable": {
+                "type": "custom",
+                "tokenizer": "keyword",
+                "filter": ["lowercase"]
+            }
+        }
+    
+
+Mapping:
+
+    
+    
+    {
+        "doc": {
+            "properties": {
+                "id" : {
+                    "type": "long"
+                },
+                "name": {
+                    "type": "string",
+                    "index": "analyzed",
+                    "analyzer": "snowball",
+                    "fields": {
+                        "sortable": { 
+                            "type": "string",
+                            "analyzer": "sortable"
+                        }
+                    }
+                },
+                "website": {
+                    "type": "nested",
+                    "properties": {
+                        "domain": {
+                            "type": "string",
+                            "analyzer": "snowball",
+                            "fields": {
+                                "sortable": { 
+                                    "type": "string",
+                                    "analyzer": "sortable"
+                                }
+                            }
+                        },
+                        "created": {
+                            "type": "date"
+                        }
+                    }
+                } 
+            }
+        }
+    }
+    
+
+A full working example is
+[here](http://sense.qbox.io/gist/92524e522f5096f98c59cc6f2da7ffa213433536).
+Note the four searches at the bottom. Sorting by name or name.sortable both
+show values in the sort section of the result. Sorting by website.domain shows
+a value in the sort section, but website.domain.sortable always shows null.
+
+I'm hoping I'm just doing something silly here, but for the life of me I can't
+see what. This is in Elasticsearch 1.1.0. I'll gladly also take alternative
+solutions, though I hate to just slap the field in there twice under two
+different names.
+
+You need to require a path for sorting on nested document types.
+<http://sense.qbox.io/gist/0d05fcf12be64e4a924a6b010ffe55e72d91b147>
+

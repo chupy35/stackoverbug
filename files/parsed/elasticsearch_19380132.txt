@@ -1,0 +1,15 @@
+19380132 Elasticsearch: which documents include term?
+
+I want to perform some text mining on my elasticsearh database, i.e. calculate
+correlation between certain terms, or document clustering.
+
+What i need for that, is to know, which documents include certain term in
+given field. For example, if I have these three documents: "Head and
+shoulders" "Knees and toes" "Head or tail" than I would like to have search
+for term "head" to return either true/false vector (true, false, true), or
+list of positions of documents with this term (1 and 3)
+
+Is that somehow possible?
+
+Thanks, Zbynek
+

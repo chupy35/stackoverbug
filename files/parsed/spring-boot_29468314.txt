@@ -1,0 +1,22 @@
+29468314 How to configure wily with spring boot application
+
+I have created an application as spring boot application,Now i want to
+integrate this application with wily,where i ll passed wily parameter in
+application to configure application.
+
+The fact that it's a Spring Boot application shouldn't make any difference. If
+you're using an executable jar file, you'll need to configure the agent when
+you launch the jar, for example:
+
+    
+    
+    java -jar my-app.jar -javaagent:<Agent_Home>/Agent.jar -Dcom.wily.introscope.agentProfile=<Path_To_Agent_Profile>
+    
+
+If you're deploying your Spring Boot application as a war file to a servlet
+container or application server, you'll need to be make the equivalent
+configuration changes. The [documentation describes how to configure
+Tomcat](https://support.ca.com/cadocs/0/CA%20Application%20Performance%20Management%20as%20a%20Service%201%201%201-ENU/Bookshelf_Files/HTML/APMS
+--
+Install%20and%20Configure%20Agents/index.htm?toc.htm?install_agent_files.html).
+

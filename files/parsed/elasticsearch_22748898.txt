@@ -1,0 +1,133 @@
+22748898 How to search beginning of words with elasticsearch?
+
+How to set up an elastic search that allows me to search part of words or
+beginning of words.
+
+When I run the following script, it does not find the prefix 'inte' unless I
+make it 'inte*'.
+
+I cannot figure out what is wrong here!
+
+    
+    
+    echo "--- DELETING OLD INDEX ---"
+    
+    curl -XDELETE 'http://localhost:9200/searchtest?pretty'
+    
+    echo "--- CREATING INDEX ---"
+    
+    curl -XPUT 'http://127.0.0.1:9200/searchtest/?pretty=1' -d '{
+       "mappings" : {
+          "mytype" : {
+             "properties" : {
+               "description": {
+                  "type": "string",
+                  "index_analyzer": "my_analyzer",
+                  "search_analyzer": "standard"
+                }
+             }
+          }
+       },
+       "settings" : {
+          "analysis" : {
+             "analyzer" : {
+                "my_analyzer" : {
+                   "filter" : [ "standard", "lowercase", "stop" ],
+                   "type" : "custom",
+                   "tokenizer" : "my_tokenizer"
+                }
+             },
+             "tokenizer" : {
+                "my_tokenizer" : {
+                   "side" : "front",
+                   "max_gram" : 200,
+                   "type" : "edgeNGram"
+                }
+             }
+          }
+       }
+    }'
+    
+    echo "--- INSERTING RECORDS ---"
+    
+    curl -XPOST 'http://localhost:9200/searchtest/mytype?pretty=1' -d '{
+      "description": "Programming International!"
+    }'
+    
+    curl -XPOST 'http://localhost:9200/searchtest/mytype?pretty=1' -d '{
+      "description": "i18n is internationalizatin"
+    }'
+    
+    echo "--- REFRESH ---"
+    
+    curl -XPOST 'http://localhost:9200/_refresh?pretty=1'
+    
+    echo "--- RUNNING QUERY WITH * ---"
+    
+    curl -XGET 'http://localhost:9200/searchtest/mytype/_search?pretty' -d '
+    {
+       "query" : {
+          "query_string" : {
+             "query" : "inte*"
+          }
+       }
+    }'
+    
+    echo "--- RUNNING QUERY ---"
+    
+    curl -XGET 'http://localhost:9200/searchtest/mytype/_search?pretty' -d '
+    {
+       "query" : {
+          "query_string" : {
+             "query" : "inte"
+          }
+       }
+    }'
+    
+
+[I am using elasticsearch 0.90.9]
+
+There is nothing wrong with that, the query_string use the the query parser
+which supports wildcards as you can see
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html#_wildcards).
+
+Maybe you are looking for a prefix query, which match terms starting with a
+given prefix, take a look to this
+[link](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-prefix-query.html)
+
+    
+    
+    curl -XGET 'http://localhost:9200/searchtest/mytype/_search?pretty' -d '
+    {
+      "query" : {
+        "prefix" : {
+             "description" : {
+                "value" : "inte"
+            }
+         }
+      }
+    }'
+    
+
+i think you are looking for wildcard query...
+
+    
+    
+    curl -XPOST "http://_search" -d'
+    {
+    "query": {
+        "wildcard": {
+           "description": {
+              "value": "inte*"
+                          }
+                     }
+             }
+    }'
+    
+
+try the above query for query with wildcard and also for regex..!
+
+HOpe it helps..!
+

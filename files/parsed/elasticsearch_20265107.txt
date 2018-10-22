@@ -1,0 +1,78 @@
+20265107 mapping for objects with an arbitrary amount of properties in
+elasticsearch
+
+i have a given document:
+
+    
+    
+    {
+      "foo": {}
+    }
+    
+
+where `foo` can have an arbitrary amount of properties. lets assume i will
+import millions of documents into my index, in which each of `foo`'s
+properties do have other values.
+
+that means my mapping which will be built dynamically will grow enormous. is
+there any kind of way where i can tell elasticsearch something like
+
+> take everything you have in `foo` and just accept it as it is (or stringify
+`foo`) without having a resulting million-lines-mapping???
+
+or do i have to care by myself, before indexing documents?
+
+if so, there a 2 solutions i think
+
+  1. `JSON.stringify` `foo`
+
+  2. map every property in `foo` into key/value pairs, and create an array of objects:
+    
+        // object
+    {
+      "foo": [
+        {"key": "bar1", "value": "bar1's value"},
+        {"key": "bar2", "value": "bar2's value"}
+      ]
+    }
+    
+    // resulting mapping
+    {
+      "type": {
+        "properties": {
+          "foo": {
+            "properties": {
+              "key": {
+                "type": "string" 
+              },
+              "value": {
+                "type": "string" 
+              }
+            }
+          }
+        }
+      }   
+    }
+    
+
+would you prefer then solution 1 or 2, and why?
+
+appreciate your help!
+
+You cannot make Elasticsearch stringify it for you. You can make it ignore
+whatever's under "foo" and it'll be a part of "_source", but then it will not
+be searchable at all.
+
+The second approach can make a lot of sense, depending on how you're going to
+query it, and what you can know about the kinds of values you will accept.
+
+There is a related question at [Dynamic Type with
+Mappings](https://stackoverflow.com/questions/20138641/dynamic-type-with-
+mappings) describing this approach, with a runnable example here:
+<https://www.found.no/play/gist/7596633>
+
+The idea is that you'll have a nested document per value. This works well if
+the number of values per document is not huge. If you don't use nested
+documents, your document would be returned if you search for "key": "bar1" and
+"value": "bar2's value".
+

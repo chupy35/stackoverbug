@@ -1,0 +1,35 @@
+10109786 In elasticsearch, is there a way to show which field in a document
+was the "hit"?
+
+When searching some documents using elasticsearch, I'd like to see which field
+in the document was the "hit" that flagged it up as a search result. Is there
+a native way to do this, or do I need to do it in the search client?
+
+E.g:
+
+    
+    
+    GET /events/_search?q=nottingham
+    
+
+gives me:
+
+    
+    
+    {//elided
+        {'hits'[
+           {'id':1,
+            'name': 'Some name',
+            'nicknames': ['Nottingham']
+           }]}}
+    
+
+it's obvious from this example that the nickname matched, but can I get
+elasticsearch to flag that for me?
+
+Elasticsearch can find and highlight terms from your query in the result
+fields. See
+<http://www.elasticsearch.org/guide/reference/api/search/highlighting.html>
+for more information. Technically speaking, it's not the same as flagging
+fields that caused the "hit", but for most practical purposes, it's as useful.
+

@@ -1,0 +1,4 @@
+33118409
+How can I write a query using ElasticSearch similar to SQL "Like" Operator?
+<p>I want to convert following query to an Elasticsearch query.</p>&#xA;&#xA;<pre><code>Select * from Books where title like '%net%'&#xA;</code></pre>&#xA;
+<p>Try <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-regexp-query.html" rel="nofollow">regexp query</a>.</p>&#xA;&#xA;<pre><code>POST &lt;index&gt;/&lt;type&gt;/_search&#xA;{&#xA;    "query": {&#xA;        "regexp": {&#xA;            "title": ".*net.*"&#xA;        }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;

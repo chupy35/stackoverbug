@@ -1,0 +1,68 @@
+16327439 Elasticsearch Get The Highest Score From Groups Of Fields
+
+I am doing a name query on a document that has multiple fields where the name
+could appear. In many cases, the name is the same across each document node.
+However, in some cases, it may be different. I would like to score my query on
+the highest matching field/node.
+
+So assuming I had the following documents indexed.
+
+    
+    
+    {
+      "id" : 1,
+      {"object1": {"name" : 'Todd Hughes'}},
+      {"object2": {"name" : 'Todd Hughes'}},
+      {"object3": {"name" : 'Todd Hughes'}}
+    }
+    
+    {
+      "id" : 2,
+      {"object1": {"name" : 'Todd Hunt'}},
+      {"object2": {"name" : 'Todd Hunt'}},
+      {"object3": {"name" : 'Ken Collins'}}
+    }
+    
+    {
+      "id" : 3,
+      {"object1": {"name" : 'Todd Huddle'}},
+      {"object2": {"name" : 'Todd Huddle'}},
+      {"object3": {"name" : 'Todd Huddle'}}
+    }
+    
+
+I would like to be able to search for "Todd Hunt" and get the second record
+with the "id" of 2 first. My problem is that these fields are indexed with
+ngrams and the other documents, #1 and #3 partially match and the sum of each
+object node/fields are added together. So this does not work for me.
+
+    
+    
+    "bool" : {
+      "should" : [
+        {:field : {"object1.name" : "Todd Hunt"}},
+        {:field : {"object2.name" : "Todd Hunt"}},
+        {:field : {"object3.name" : "Todd Hunt"}}
+      ],
+      "minimum_number_should_match" : 1
+    }
+    
+
+I have tried reading up on custom scoring and ranking and my head is just
+spinning. Any ideas on how to structure a query so that the highest ranks of
+each object1, object2 or object 3 is the final score?
+
+You can use the [Dis Max
+query](http://www.elasticsearch.org/guide/reference/query-dsl/dis-max-query/)
+
+> A query that generates the union of documents produced by its subqueries,
+and that **scores each document with the maximum score for that document as
+produced by any subquery** , plus a tie breaking increment for any additional
+matching subqueries
+
+Considering that each **subquery** would be a query for a distinct field,
+you'd get the desired behavior.
+
+You can optionally use a tie breaker to "give more score" to documents that
+have matches in more than one field.
+

@@ -1,0 +1,191 @@
+17536820 How to avoid cross object search behavior with nested types in
+elastic search
+
+I am trying to determine the best way to index a document in elastic search. I
+have a document, Doc, which has some fields:
+
+    
+    
+    Doc
+      created_at
+      updated_at
+      field_a
+      field_b
+    
+
+But Doc will also have some fields specific to individual users. For example,
+field_x will have value 'A' for user 1, and field_x will have value 'B' for
+user 2. For each doc, there will be a very limited number of users (typically
+2, up to ~10). When a user searches on field_x, they must search on the value
+that belongs to them. I have been exploring nested types in ES.
+
+    
+    
+    Doc
+      created_at
+      updated_at
+      field_x: [{
+        user: 1
+        field_x: A
+      },{
+        user: 2
+        field_x: B
+      }]
+    
+
+When user 1 searches on field_x for value 'A', this doc should result in a
+hit. However, it should not when user 1 searches by value 'B'.
+
+However, [according to the
+docs](http://www.elasticsearch.org/guide/reference/mapping/nested-type/):
+
+> One of the problems when indexing inner objects that occur several times in
+a doc is that “cross object” search match will occur
+
+Is there a way to avoid this behavior with nested types or should I explore
+another type?
+
+Additional information regarding performance of such queries would be very
+valuable. Just from reading the docs, its stated that nested queries are not
+too different in terms of performance as related to regular queries. If anyone
+has real experience this, I would love to hear it.
+
+Nested type is what you are looking for, and don't worry too much about
+performance.
+
+Before indexing your documents, you need to set the mapping for your
+documents:
+
+    
+    
+    curl -XDELETE localhost:9200/index
+    curl -XPUT localhost:9200/index
+    curl -XPUT localhost:9200/index/type/_mapping -d '{
+        "type": {
+            "properties": {
+                "field_x": {
+                    "type": "nested",
+                    "include_in_parent": false,
+                    "include_in_root": false,
+                    "properties": {
+                        "user": {
+                            "type": "string"
+                        },
+                        "field_x": {
+                            "type": "string",
+                            "index" : "not_analyzed" // NOTE*
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+
+* _note: If your field really contains only singular letters like "A" and "B", you don't want to analyze the field, otherwise elasticsearch will remove these singular letter "words". If that was just your example, and in your real documents you are searching for proper words, remove this line and let elasticsearch analyze the field._
+
+Then, index your documents:
+
+    
+    
+    curl -XPUT http://localhost:9200/index/type/1 -d '
+    { 
+        "field_a": "foo",
+        "field_b": "bar",
+        "field_x" : [{
+            "user" : "1",
+            "field_x" : "A"
+        },
+        {
+            "user" : "2",
+            "field_x" : "B"
+        }]
+    }'
+    
+
+And run your query:
+
+    
+    
+    curl -XGET localhost:9200/index/type/_search -d '{ 
+        "query": {
+            "nested" : {
+                "path" : "field_x",
+                "score_mode" : "avg",
+                "query" : {
+                    "bool" : {
+                        "must" : [
+                            {
+                                "term": {
+                                    "field_x.user": "1"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "field_x.field_x": "A"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }';
+    
+
+This will result in
+
+    
+    
+    {"took":13,"timed_out":false,"_shards":{"total":5,"successful":5,"failed":0},"hits":{"total":1,"max_score":1.987628,"hits":[{"_index":"index","_type":"type","_id":"1","_score":1.987628, "_source" : 
+    { 
+        "field_a": "foo",
+        "field_b": "bar",
+        "field_x" : [{
+            "user" : "1",
+            "field_x" : "A"
+        },
+        {
+            "user" : "2",
+            "field_x" : "B"
+        }]
+    }}]}}
+    
+
+However, querying
+
+    
+    
+    curl -XGET localhost:9200/index/type/_search -d '{ 
+        "query": {
+            "nested" : {
+                "path" : "field_x",
+                "score_mode" : "avg",
+                "query" : {
+                    "bool" : {
+                        "must" : [
+                            {
+                                "term": {
+                                    "field_x.user": "1"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "field_x.field_x": "B"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }';
+    
+
+won't return any results
+
+    
+    
+    {"took":6,"timed_out":false,"_shards":{"total":5,"successful":5,"failed":0},"hits":{"total":0,"max_score":null,"hits":[]}}
+    
+

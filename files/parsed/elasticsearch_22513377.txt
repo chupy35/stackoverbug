@@ -1,0 +1,92 @@
+22513377 has_child queries fail if queryName is set
+
+I am using elasticsearch v0.90.5 and trying to set QueryName (`_name`) for a
+`has_child` query as described here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/search-
+request-named-queries-and-filters.html>
+
+But the `has_child` queries are failing if queryName is set. They also fail if
+queryName is set on a wrapping query. You can find the curl recreation here:
+<https://gist.github.com/hmrizin/9645816>
+
+    
+    
+    "query": {
+        "has_child": {
+            "query": {
+                "term": {
+                   "postid": "p1"
+                }
+            },
+            "child_type": "post",
+            "_name": "somename"
+        }
+    }
+    
+
+and
+
+    
+    
+    "query": {
+        "bool": {
+            "should": {
+                "has_child": {
+                    "query": {
+                        "term": {
+                            "postid": "p2"
+                        }
+                    },
+                    "child_type": "post"
+                }
+            },
+            "_name": "somename"
+        }
+    }
+    
+
+The error that both cause is the same:
+
+    
+    
+    {
+      "took" : 4,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 4,
+        "failed" : 1,
+        "failures" : [ {
+          "index" : "twtest",
+          "shard" : 1,
+          "status" : 500,
+          "reason" : "ElasticSearchIllegalStateException[has_child filter hasn't executed properly]"
+        } ]
+      },
+      "hits" : {
+        "total" : 1,
+        "max_score" : 1.0,
+        "hits" : [ ]
+      }
+    }
+    
+
+What am I missing?
+
+Having just run this with `v1.0.1`, it worked as-is without any changes.
+
+However, I downloaded `v0.90.5` and it got the error that you posted unless I
+removed the `_name`. It looks like you came across a bug, and in the very next
+release, `v0.90.6`, the entire class to blame (`HasChildFilter`) was
+refactored into other code.
+
+  1. `v0.90.5` package: [`org.elasticsearch.index.search.child`](https://github.com/elasticsearch/elasticsearch/tree/v0.90.5/src/main/java/org/elasticsearch/index/search/child)
+  2. `v0.90.6` package: [`org.elasticsearch.index.search.child`](https://github.com/elasticsearch/elasticsearch/tree/v0.90.6/src/main/java/org/elasticsearch/index/search/child)
+
+It looks like you came across a bug that also existed in `v0.90.4` (I
+verified), which is when the feature was added. Unfortunately, I think the
+solution to your problem is to upgrade your installation of Elasticsearch to
+at least [`v0.90.6`](http://www.elasticsearch.org/downloads/0-90-6/). Based on
+its patch notes, they may not even have been aware of the error that they
+fixed, but I was able to verify that it was fixed in that release.
+

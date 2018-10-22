@@ -1,0 +1,3 @@
+29199303
+Elasticsearch 1.1 IO Exception
+<p>I am using elasticsearch 1.1.2, but there are not so much examples for this version, so, I decided to make such first simple code:</p>&#xA;&#xA;<p><a href="http://pastebin.com/eVyL1mRr" rel="nofollow">http://pastebin.com/eVyL1mRr</a></p>&#xA;&#xA;<p>But the result was like this (it was in wrong encoding):</p>&#xA;&#xA;<pre><code>java.io.IOException: ╙фрыхээ√щ їюёЄ яЁшэєфшЄхы№эю ЁрчюЁтры ёє∙хёЄтє■∙хх яюфъы■ўх&#xA;эшх&#xA;at sun.nio.ch.SocketDispatcher.read0(Native Method)..........        at org.elasticsearch.common.netty.channel.socket.nio.NioWorker.read(NioW&#xA;orker.java:64)&#xA;at org.elasticsearch.common.netty.channel.socket.nio.AbstractNioWorker.p&#xA;rocess(AbstractNioWorker.java:108)&#xA;</code></pre>&#xA;

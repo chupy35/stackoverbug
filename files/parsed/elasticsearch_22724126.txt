@@ -1,0 +1,64 @@
+22724126 Elastic Search _suggest caching
+
+I am using ElasticSearch to power both my main search engine and as an
+autocomplete tool. I use version "1.0.1"
+
+My problem : there seem to be a pretty persistant cache on the suggester and I
+can't get rid of it.
+
+I have dropped all my mappings, restarted everything, so when I do
+
+    
+    
+    GET /myindex/film/_search
+    {
+      "from" : 0, "size" : 10000,
+      "fields": ["title"]
+    }
+    
+
+I get an empty result and I am fairly satisfied with that.
+
+BUT when I send this request :
+
+    
+    
+    GET /myindex/_suggest
+    {
+      "hits" : {
+        "text" : "south",
+        "completion" : {
+            "size" : 90,
+            "field" : "suggest"
+        }
+      }
+    }
+    
+
+I get many results of type "film" !
+
+How is that possible ? How can I get rid of them ?
+
+Don't delete the data directory as suggested by @andy. Just delete the index
+and recreate one.
+
+You should use
+
+`POST /myindex/_optimize`
+
+or if you're worried about performance
+
+`POST /myindex/_optimize?only_expunge_deletes=true`
+
+as stated here
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+suggesters-completion.html#indexing> (in the note that leads there
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-
+optimize.html>)
+
+There is no proper method for suggestors in elasticsearch.I have already faced
+the same issue at that I dropped the index and recreated it.By default it is
+taking cache for suggestors.
+
+My suggestion is drop the index and recreate it.
+

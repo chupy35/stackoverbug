@@ -1,0 +1,35 @@
+16707072 Getting error mapper parsing exception while indexing
+
+I am new to elasticsearch. I was trying to index the attachment but getting
+error. i had executed following step. Installed the Mapper-attachment plugin
+
+i had converted text file to base64 with openssl command
+
+    
+    
+          openssl enc -base64 -in test3.txt -out t3.file
+    
+
+after that i had created mapping
+
+    
+    
+         [root@n1 testcase]# curl -XPUT 'http://localhost:9200/indextryes/?pretty=1'  -d '
+          { "mappings" : { "doc" : { "properties" : {"file" : {"type" : "attachment"}}}}}'
+    
+         {
+          "ok" : true,
+            "acknowledged" : true
+         }
+    
+
+when i try to index it i got following error message
+
+    
+    
+          [root@n1 testcase]# curl -X POST "localhost:9200/indextryes/text" -d @t3.file  
+         {"error":"MapperParsingException[failed to parse]; nested: ElasticSearchParseException[Failed to derive xcontent from (offset=0, length=64): [98, 71, 86, 48, 99, 121, 66, 107, 98, 121, 66, 104, 98, 109, 57, 48, 97, 71, 86, 121, 73, 72, 82, 108, 99, 51, 81, 103, 89, 87, 53, 107, 73, 72, 90, 108, 99, 109, 108, 109, 101, 83, 66, 108, 98, 71, 70, 122, 100, 71, 108, 106, 99, 50, 86, 104, 99, 109, 78, 111, 76, 103, 61, 61]]; ","status":400}
+    
+
+thanks for help...
+

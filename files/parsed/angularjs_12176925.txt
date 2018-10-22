@@ -1,0 +1,82 @@
+12176925 AngularJS - reset of $scope.value doesn't change value in template
+(random behavior)
+
+Take a look at example on <http://jsfiddle.net/2NJ7y/3/> (version of AngularJS
+1.0.1). There is simple app, which is waiting for entering of lucky number. If
+the number is equal to 7, I reset lucky number to null. If I enter number 7
+several times, sometime/randomly the lucky number stay in input field. Why?
+How this behavior solve? Thanks.
+
+If you simply put
+
+    
+    
+    $scope.luckynumber = undefined;
+    
+
+prior to the alert you don't eliminate the race condition but you do change it
+so that 7 does get cleared properly, but sometimes you get the alert twice.
+
+If the alert code is replaced by something idempotent, like altering the DOM
+to display an error, then this issue won't be important.
+
+I've done some debugging.
+
+Firstly for me lucky number stay in input field not randomly.
+
+`enter 3 (model==3, input==3)` => `enter 7 (alert, model==null, input="")`
+
+=> `enter 3 (model==3, input==3)` => `remove 3 (model=="", input=="")`
+
+=> `enter 7 (alert, model==null, input="")`
+
+=> `enter 7 (alert, model==null, input="7")`
+
+7 stay in input field only if previous model value was null.
+
+**What happens** : when you input 7 fired input event which is handled by
+[listener
+function](https://github.com/angular/angular.js/blob/2af0348cea016e7081eab3189ae89f13f0e08213/src/ng/directive/input.js#L372)
+of [input
+directive](https://github.com/angular/angular.js/blob/2af0348cea016e7081eab3189ae89f13f0e08213/src/ng/directive/input.js#L747).
+Listener function calls
+[$setViewValue](https://github.com/angular/angular.js/blob/2af0348cea016e7081eab3189ae89f13f0e08213/src/ng/directive/input.js#L968).
+$setViewValue sets $viewValue, $modelValue, model value and calls
+$viewChangeListeners (ngChangeDirective [simply adds
+handler](https://github.com/angular/angular.js/blob/2af0348cea016e7081eab3189ae89f13f0e08213/src/ng/directive/input.js#L1122)
+to $viewChangeListeners). Alert is displayed, luckynumber is set to null.
+After all that if luckynumber differs from previous value on previous dirty
+checking [$watch
+handler](https://github.com/angular/angular.js/blob/2af0348cea016e7081eab3189ae89f13f0e08213/src/ng/directive/input.js#L998)
+and
+[$render](https://github.com/angular/angular.js/blob/2af0348cea016e7081eab3189ae89f13f0e08213/src/ng/directive/input.js#L409)
+are called.
+
+In my examples $render called if previous model value was "3" or "". If
+previous model value was null $render isn't called.
+
+**Why $timeout with 0 delay works** : when you call $timeout with 0 delay
+function with changing luckynumber to null is postponed at the end of [events
+queue](http://ejohn.org/blog/how-javascript-timers-work/) (all javascript in a
+browser executes on a single thread). $viewChangeListener is not change model
+value from 7 to null. $digest finishes. Then $timeout handler is called. Model
+value is set to null. $watch handler and $render are called. $render sets
+input value to "".
+
+At long last, a solution. Use $watch instead of ng-change:
+
+    
+    
+    $scope.$watch('luckynumber', function() {
+        if ($scope.luckynumber == 7) {
+            alert('The lucky number mustn\'t be equal 7.');
+            $scope.luckynumber = null;
+        }
+    })
+    
+
+[Fiddle](http://jsfiddle.net/mrajcok/3QtjQ/).
+
+This other [SO answer](https://stackoverflow.com/a/14420062/215945) by
+@Valentyn made me think of trying that solution to this question.
+

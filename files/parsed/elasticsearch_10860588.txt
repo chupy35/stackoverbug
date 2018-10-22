@@ -1,0 +1,72 @@
+10860588 Elasticsearch - how to return only data, not meta information?
+
+When doing a search, Elasticsearch returns a data structure that contains
+various meta information.
+
+The actual result set is contained within a "hits" field within the JSON
+result returned from the database.
+
+Is it possible for Elasticsearch to return only the needed data (the contents
+of then "hits" field) without being embedded within all the other meta data?
+
+I know I could parse the result into JSON and extract it, but I don't want the
+complexity, hassle, performance hit.
+
+thanks!
+
+Here is an example of the data structure that Elasticsearch returns.
+
+    
+    
+    {
+        "_shards":{
+            "total" : 5,
+            "successful" : 5,
+            "failed" : 0
+        },
+        "hits":{
+            "total" : 1,
+            "hits" : [
+                {
+                    "_index" : "twitter",
+                    "_type" : "tweet",
+                    "_id" : "1", 
+                    "_source" : {
+                        "user" : "kimchy",
+                        "postDate" : "2009-11-15T14:12:12",
+                        "message" : "trying out Elastic Search"
+                    }
+                }
+            ]
+        }
+    }
+    
+
+No, it's not possible at this moment. If performance and complexity of parsing
+are the main concerns, you might want to consider using different clients:
+[java client](http://www.elasticsearch.org/guide/reference/java-
+api/client.html) or [Thrift
+plugin](http://www.elasticsearch.org/guide/reference/modules/thrift.html), for
+example.
+
+You can at least filter the results, even if you cannot extract them. The
+"[common
+options](https://www.elastic.co/guide/en/elasticsearch/reference/1.7/common-
+options.html "common options")" page of the REST API explains the
+"filter_path" option. This lets you filter only the portions of the tree you
+are interested in. The tree structure is still the same, but without the extra
+metadata.
+
+I generally add the query option:
+
+    
+    
+    &filter_path=hits.hits.*,aggregations.*
+    
+
+The documentation doesn't say anything about this making your query any faster
+(I doubt that it does), but at least you could return only the interesting
+parts.
+
+  * Corrected to show only hits.hits.*, since the top level "hits" has metadata as well.
+

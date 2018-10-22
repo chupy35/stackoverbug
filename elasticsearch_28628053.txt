@@ -1,0 +1,3 @@
+28628053
+Where are the response definitions for Elasticsearch documented?
+<p>Is the response structure for different APIs or queries in Elasticsearch documented anywhere?</p>&#xA;&#xA;<p>This would be useful for languages that require some form of unmarshalling to be able to access the contents of the responses, and therefore need to know the structure of the responses up-front (and which may not have access to general-purpose JSON libraries with which to do path-queries).</p>&#xA;

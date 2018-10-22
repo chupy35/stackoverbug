@@ -1,0 +1,95 @@
+16839157 Elasticsearch facets comes as whitespace tokenized
+
+I have the following mapping for elasticsearch
+
+    
+    
+    {
+        "mappings": {
+            "hotel": {
+                'properties': {"name": {
+                    "type": "string",
+                    "search_analyzer": "str_search_analyzer",
+                    "index_analyzer": "str_index_analyzer"},
+    
+                "destination": {'properties': {'en': {
+                    "type": "string",
+                    "search_analyzer": "str_search_analyzer",
+                    "index_analyzer": "str_index_analyzer"}}},
+    
+                "country": {"properties": {"en": {
+                    "type": "string",
+                    "search_analyzer": "str_search_analyzer",
+                    "index_analyzer": "str_index_analyzer"}}},
+                "destination_facets": {"properties": {"en": {
+                    "type": "string",
+                    "search_analyzer": "facet_analyzer"
+                }}}
+    
+                }
+            }
+        },
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "str_search_analyzer": {
+                        "tokenizer": "keyword",
+                        "filter": ["lowercase"]
+                    },
+    
+                    "str_index_analyzer": {
+                        "tokenizer": "keyword",
+                        "filter": ["lowercase", "substring"]
+                    },
+                    "facet_analyzer": {
+                        "type": "keyword",
+                        "tokenizer": "keyword"
+                    },
+                },
+    
+                "filter": {
+                    "substring": {
+                        "type": "edgeNGram",
+                        "min_gram": 1,
+                        "max_gram": 20,
+                    }
+                }
+            }
+        }
+    }
+    
+
+Which I want my destination_facets to be not tokenized. But it comes as white-
+space tokenized. Is there a way to ignore all token activities?
+
+You probably need to set your `facet_analyzer` not only for the
+`search_analyzer` but also for the `index_analyzer` (Elasticsearch probably
+use this one for facetting, the `search_analyzer` is only used to parse query
+strings).
+
+Note that if you want the same analyze for both, you can just use the name
+`analyzer` in your mapping.
+
+Ex :
+
+    
+    
+    {
+      "mappings": {
+        "hotel": {
+            ...
+            "destination_facets": {"properties": {"en": {
+                "type": "string",
+                "analyzer": "facet_analyzer"
+            }}}
+    
+            }
+        }
+    },
+    "settings": {
+        ...
+    }
+    
+
+}
+

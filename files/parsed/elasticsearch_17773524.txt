@@ -1,0 +1,26 @@
+17773524 Elasticsearch mongodb river tailable curosr issue
+
+I am using elasticsearch, mongodb and elasticsearch mongodb river
+
+> <https://github.com/richardwilly98/elasticsearch-river-mongodb>
+
+When I observe my mongodb logs the river keeps on querying the oplog of my
+elasticsearch even when it is not indexing the documents and also it is taking
+long time to finish indexing the collection.
+
+Any guidance on the above mentioned issues?
+
+elasticsearch mongodb river [1] uses the recommended way [2] to query tailable
+cursor in MongoDB
+
+If you observe extra query in oplog.rs I'd suggest to try contacting MongoDB
+and especially MongoDB Java Driver [3].
+
+I am happy to fix any issue in elasticsearch mongodb river.
+
+[1] - <https://github.com/richardwilly98/elasticsearch-river-
+mongodb/blob/master/src/main/java/org/elasticsearch/river/mongodb/MongoDBRiver.java#L1326>  
+[2] - <https://github.com/mongodb/mongo-java-
+driver/blob/master/examples/ReadOplog.java#L47>  
+[3] - <https://github.com/mongodb/mongo-java-driver>
+

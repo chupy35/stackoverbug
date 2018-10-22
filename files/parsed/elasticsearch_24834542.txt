@@ -1,0 +1,102 @@
+24834542 ElasticSearch newbie - creating the first index
+
+Have a client that thinks this will be _awesome_ to use to crawl volumes of
+10MB log files. I'd agree having read up on it, but seem stuck on creating my
+first index. So far:
+
+♦ Installed `ElasticSearch 1.2.1` on Windows 8, and `Curl 7.3.7` (HTTP for
+SSL, here: paehl.com/open_source/?CURL_7.37.0)  
+♦ Successful in a response from ES (status 200, hurrah, on localhost,
+127.0.0.1 or my machine's IP all good with a 200 status)  
+♦ When I try to create an index, however, no love. Been trying to follow steps
+from both the Joel Abrahamsson's ElasticSearch 101
+(joelabrahamsson.com/elasticsearch-101/) and Park's "ES Cookbook". Errors
+range, but most recently and shortest are on par with these:  
+
+    
+    
+    C:\>curl -XPUT 'http://localhost:9200/blog/user/dilbert' -d '{ "name" : "Dilbert Brown" }'
+    curl: (1) Protocol 'http not supported or disabled in libcurl
+    curl: (6) Could not resolve host: name
+    curl: (7) Failed to connect to  port 80: Connection refused
+    curl: (6) Could not resolve host: Dilbert Brown
+    curl: (3) [globbing] unmatched close brace/bracket in column 1
+    
+
+Earlier messages were far more wordy:
+
+    
+    
+    C:\>curl -XPUT "http://localhost:9200/test1/test/1" -d' { "title" : "Godfather", "director" : "Coppola", "year" : 1972 }'
+    {"error":"MapperParsingException[failed to parse]; nested: ElasticsearchParseException[Failed to derive xcontent from (offset=0, length=1): [39]]; ","status":400}curl: (3) [globbing] unmatched brace in column 1
+    curl: (6) Could not resolve host: title
+    curl: (7) Failed to connect to  port 80: Connection refused
+    curl: (6) Could not resolve host: Godfather,
+    curl: (6) Could not resolve host: director
+    curl: (7) Failed to connect to  port 80: Connection refused
+    curl: (6) Could not resolve host: Coppola,
+    curl: (6) Could not resolve host: year
+    curl: (7) Failed to connect to  port 80: Connection refused
+    curl: (6) Could not resolve host: 1972
+    curl: (3) [globbing] unmatched close brace/bracket in column 1
+    
+
+It feels like I'm overlooking something basic, but as a newbie to ES, curl and
+JSON, I'm puzzled -- and at least from my seat, the brace/brackets appear
+balanced.
+
+Suggestions?
+
+It seems windows does not like the single quote thing around the url. I cannot
+test it for you but try it with double quotes around the url.
+
+I got this info from the following blogpost:
+<http://bartwullems.blogspot.nl/2013/08/curl-1-protocol-not-supported-or.html>
+
+It's a problem with the `cmd` of Windows. You can fix it by changing:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/blog/user/dilbert' -d '{ "name" : "Dilbert Brown" }'
+    
+
+to:
+
+    
+    
+    curl -XPUT "http://localhost:9200/blog/user/dilbert" -d "{ """name""" : """Dilbert Brown""" }"
+    
+
+Update: **(for windows 64 bit)**
+
+    
+    
+    curl -XPUT "http://localhost:9200/blog/user/dilbert" -d "{ \"name\" : \"Dilbert Brown\" }"
+    
+
+Create a local file with the json request message as indicated in the
+elasticsearch tutorial, go to this directory and execute the curl command,
+referencing this file:
+
+    
+    
+    curl -XPUT http://localhost:9200/shakespeare --data-binary "@_01_specify_schema.json"
+    
+
+where _01_specify_schema.json is a file containig:
+
+    
+    
+    {
+     "mappings" : {
+      "_default_" : {
+       "properties" : {
+        "speaker" : {"type": "string", "index" : "not_analyzed" },
+        "play_name" : {"type": "string", "index" : "not_analyzed" },
+        "line_id" : { "type" : "integer" },
+        "speech_number" : { "type" : "integer" }
+     }}}}
+    
+
+Take care to add the "@" symbol before the name of the referenced file
+

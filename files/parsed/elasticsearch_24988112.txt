@@ -1,0 +1,68 @@
+24988112 Retrieve all docs using top_hits aggregation ElasticSearch
+
+I am using `top_hits` aggregation to retrieve documents along with counts.I
+need to retrieve all the document based on my earlier post
+[here](https://stackoverflow.com/questions/24920545/include-documents-in-each-
+aggregation-with-elasticsearch), for which thought passing `size` 0 will do it
+but it throws following error.
+
+    
+    
+    org.elasticsearch.search.query.QueryPhaseExecutionException: [my-demo][3]: query[ConstantScore(*:*)],from[0],size[10]: Query Failed [Failed to execute main query]
+    at org.elasticsearch.search.query.QueryPhase.execute(QueryPhase.java:162)
+    at org.elasticsearch.search.SearchService.executeQueryPhase(SearchService.java:261)
+    at org.elasticsearch.search.action.SearchServiceTransportAction$5.call(SearchServiceTransportAction.java:206)
+    at org.elasticsearch.search.action.SearchServiceTransportAction$5.call(SearchServiceTransportAction.java:203)
+    at org.elasticsearch.search.action.SearchServiceTransportAction$23.run(SearchServiceTransportAction.java:517)
+    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+    at java.lang.Thread.run(Thread.java:744)
+    Caused by: java.lang.IllegalArgumentException: numHits must be > 0; please use TotalHitCountCollector if you just need the total hit count
+    at org.apache.lucene.search.TopScoreDocCollector.create(TopScoreDocCollector.java:254)
+    at org.apache.lucene.search.TopScoreDocCollector.create(TopScoreDocCollector.java:238)
+    at org.elasticsearch.search.aggregations.metrics.tophits.TopHitsAggregator.collect(TopHitsAggregator.java:108)
+    at org.elasticsearch.search.aggregations.bucket.BucketsAggregator.collectBucketNoCounts(BucketsAggregator.java:74)
+    at org.elasticsearch.search.aggregations.bucket.BucketsAggregator.collectExistingBucket(BucketsAggregator.java:63)
+    at org.elasticsearch.search.aggregations.bucket.BucketsAggregator.collectBucket(BucketsAggregator.java:55)
+    at org.elasticsearch.search.aggregations.bucket.terms.GlobalOrdinalsStringTermsAggregator$WithHash.collect(GlobalOrdinalsStringTermsAggregator.java:236)
+    at org.elasticsearch.search.aggregations.AggregatorFactories$1.collect(AggregatorFactories.java:114)
+    at org.elasticsearch.search.aggregations.BucketCollector$2.collect(BucketCollector.java:81)
+    at org.elasticsearch.search.aggregations.bucket.BucketsAggregator.collectBucketNoCounts(BucketsAggregator.java:74)
+    
+
+According to elasticseach, size - The maximum number of top matching hits to
+return per bucket. By default the top three matching hits are returned. so,
+size = 0 means no documents (i think) so try sending maximum values. –
+progrrammer 31 mins ago
+
+Top hit aggregation response is of format,
+
+    
+    
+     "top_tags_hits": {
+                  "hits": {
+                     "total": 25365,
+                     "max_score": 1,
+                     "hits": [
+                        {
+                           "_index": "stack",
+                           "_type": "question",
+                           "_id": "602679",
+                           "_score": 1,
+                           "_source": {
+                              "title": "Windows port opening"
+                           },
+                           "sort": [
+                              1370143231177
+                           ]
+                        }
+                     ]
+                  }
+    
+
+here hits - > total give total no of hits, you can use pagination(from, and
+size) as in search api, to get documents or use maximum integer value
+[(2^31)-1] to get all the documents.
+
+Hope this helps.
+

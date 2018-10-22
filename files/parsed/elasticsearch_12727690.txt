@@ -1,0 +1,74 @@
+12727690 Elasticsearch: Constructing mappings for Java Client
+
+In my `elasticsearch.yml` file am trying to implement some mapping where one
+field belonging to one type is indexed using a different analyzer to the rest.
+
+At present the yaml file has the following structure:
+
+    
+    
+    index:
+      bookshelf:
+        types:
+          book:
+            mappings:
+              title: {analyzer: customAnalyzer}
+      analysis:
+        analyzer:
+          # set standard analyzer with no stop words as the default
+          default:
+            type: standard
+            stopwords: _none_
+          # set custom analyser to provide relative search results
+          customAnalyzer:
+            type: custom
+            tokenizer: nGramTokenizer
+            filter: [lowercase,stopWordsFilter,asciifolding]
+        tokenizer:
+          nGramTokenizer:
+            type: nGram
+            min_gram: 1
+            max_gram: 2
+        filter:
+          nGramFilter:
+            type: nGram
+            min_gram: 1
+            max_gram: 2
+          stopWordsFilter:
+            type: stop
+            stopwords: _none_
+    
+
+This does not apply the custom analyzer to the title field, so I was hoping
+someone may be able to point me in the right direction for applying custom
+analyzers to individual fields?
+
+I answered this in the ml:
+
+If you are using Java you don't have to use an yml file. You can, but you
+don't have to.
+
+If you are using Spring, you can have a look at the ES spring factory project:
+<https://github.com/dadoonet/spring-elasticsearch>
+
+If not, there is different ways of creating index and mappings in Java:
+
+  1. You can have a look here to see how I'm doing this by reading a json mapping file:  <https://github.com/dadoonet/spring-elasticsearch/blob/master/src/main/java/fr/pilato/spring/elasticsearch/ElasticsearchAbstractClientFactoryBean.java#L616>
+
+  2. You can also use XContent objects provided by ES to build your mappings in Java:  <https://github.com/dadoonet/rssriver/blob/master/src/test/java/org/elasticsearch/river/rss/RssRiverTest.java#L14>
+
+  3. Using this object is described here: <https://github.com/dadoonet/rssriver/blob/master/src/test/java/org/elasticsearch/river/rss/AbstractRssRiverTest.java#L98>
+
+Adding the mapping as follows:
+
+    
+    
+    node .client() .admin () .indices()
+     .preparePutMapping ("yourindex" )
+     .setType ( "yourtype" )
+     .setSource ( mapping ())
+     .execute() .actionGet ();
+    
+
+I hope this could help you
+

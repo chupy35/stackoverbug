@@ -1,0 +1,109 @@
+24708104 Field norm calculation on ElasticSearch array fields
+
+Here's the mapping for one of the fields in my index:
+
+    
+    
+    "resourceId": {
+        "type": "string",
+        "index_analyzer": "partial_match",
+        "search_analyzer": "lowercase",
+        "include_in_all": true
+    }
+    
+
+Here are the custom analyzers used in the index:
+
+    
+    
+    "analysis": {
+            "filter":  {
+                "partial_match_filter":  {
+                    "type":  "ngram",
+                    "min_gram":  1,
+                    "max_gram":  50
+                }
+            },
+            "analyzer":  {
+                "partial_match":  {
+                    "type":  "custom",
+                    "tokenizer":  "whitespace",
+                    "filter":  [
+                        "lowercase",
+                        "partial_match_filter"
+                    ]
+                },
+                 "lowercase":  {
+                    "type":  "custom",
+                    "tokenizer": "whitespace",
+                    "filter":  [
+                        "lowercase"
+                    ]
+                }
+            }
+        }
+    
+
+This field will contain an array of strings, which are the multiple IDs that a
+resource can have (it can have multiple IDs due to different systems calling
+each resource by a different id).
+
+Now let's suppose that **resource #1** has has three IDs:
+
+    
+    
+    resourceId: [3]
+        0:  "ID:MATCH"
+        1:  "MATCH"
+        2:  "ID:ALT"
+    
+
+And that **resource #2** has only one ID:
+
+    
+    
+    resourceId: [1]
+        0:  "ID:MATCHFIVE"
+    
+
+And let's suppose that we run this query against my index:
+
+    
+    
+    {
+      "from": 0,
+      "size": 30,
+      "query": {
+        "query_string": {
+          "query": "resourceId:ID\\:MATCH"
+        }
+      }
+    }
+    
+
+What I'd like is for resource #1 to show up first, since its array contains an
+exact match. **However, resource #2 is the one coming on top** ;
+
+When I used the _explain_ parameter on the query request, I saw that the _tf_
+and _idf_ scores where the same for both resources. **However, the _norm_
+score was lower for resource #1**.
+
+My theory is that since resource #1 has three items in the array (which I
+assume are concatenated together during indexing), the field is considered
+larger, and thus the norm value is decreased. When it comes to resource #2, it
+has only one item (and it's shorter than the concatenation of the other
+array), so the norm is higher, bumping the resource to the top.
+
+My question, therefore, is: **when calculating the score, is it possible for
+the norm calculation to only consider the size of the item that matched in the
+array?**
+
+For example: the search for "ID:MATCH" would find the exact match on resource
+#1 on resourceId[0]. At this point, all other items in the array would be put
+aside and the _norm_ would be calculated based on that single item
+(resourceId[0]), showing a perfect match. As for resource #2, the norm would
+be lower, since the resourceId field would be larger.
+
+If this isn't possible, would there be workarounds to get the exact match to
+the top? Or maybe I'm completely off on my theory?
+

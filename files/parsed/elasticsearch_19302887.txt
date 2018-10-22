@@ -1,0 +1,75 @@
+19302887 Elasticsearch: field "title" was indexed without position data;
+cannot run PhraseQuery
+
+I have an index in ElasticSearch with the following mapping:
+
+    
+    
+    mappings: {
+        feed: {
+            properties: {
+                html_url: {
+                   index: not_analyzed
+                   omit_norms: true
+                   index_options: docs
+                   type: string
+                }
+                title: {
+                    index_options: offsets
+                    type: string
+                }
+                created: {
+                    store: true
+                    format: yyyy-MM-dd HH:mm:ss
+                    type: date
+                }
+                description: {
+                    type: string
+                }
+           }
+    }
+    
+
+getting the following error when performing phrase search ("video games"):
+
+IllegalStateException[field \"title\" was indexed without position data;
+cannot run PhraseQuery (term=video)];
+
+Single word searches work fine. Tried "index_options: positions" as well but
+with no luck. Title field contains text in multiple languages, sometimes
+empty. Interesting that it seems to fail randomly, for example it would fail
+with 200K documents or 800K using the same dataset. Is there a reason some
+titles wouldn't get indexed with positions?
+
+Elastic search version 0.90.5
+
+Just in case someone else has the same issue. There was another type/table
+(feed2) in the same index with the same "title" field that was set to
+"not_analyzed".
+
+For some reason even if you specify the type:
+<http://elasticsearchhost.com:9200/index_name/feed/_search> the other type is
+still being searched as well. Changing the mapping for feed2 type fixed the
+problem.
+
+You probably have another field named 'title' with a different mapping in
+another type **but** in the same index.
+
+Basically if you have 2 fields with the same name in the same index - even if
+they are in different types - they **cannot** have different mappings: to be
+more precise, even if they have the same type (eg: "string") but one of them
+is "analyzed" and the other is "not analyzed", problems will arise.
+
+I mean, yeah, you can try to setup 2 different mappings, and ElasticSearch
+will not complain, but when searching you get strange result and everything
+will go bananas.
+
+You can read more about this issue [here](https://www.elastic.co/blog/great-
+mapping-refactoring#conflicting-mappings) where they say:
+
+> [...] In the end, we opted to enforce the rule that all fields with the same
+name in the same index must have the same mapping [...]
+
+And yeah, considering how the promise of ElasticSearch has always been "it
+just works" this _little_ detail took a lot of people by surprise.
+

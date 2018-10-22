@@ -1,0 +1,11 @@
+22368807 Facets & multi-valued, numeric fields
+
+Can I use an elasticsearch facet (or aggregate) to get e.g. the average of the
+maximum value in each document, rather than the average of all values across
+all documents?
+
+While you can use a `script_field` for this, I'd recommend determining the
+maximum at index time and then storing it in a separate field to
+facet/aggregate on. It'll be faster, and the memory requirement for doing the
+facet will be much smaller.
+

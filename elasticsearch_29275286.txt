@@ -1,0 +1,3 @@
+29275286
+Elasticsearch - how to search long articles
+<p>I have an articles website that has legal articles. I am trying to use elastic search through searchkick gem. When I index, I get this error.</p>&#xA;&#xA;<pre><code>Document contains at least one immense term in field="detail" (whose UTF8 encoding is longer than the max length 32766)&#xA;</code></pre>&#xA;&#xA;<p>Now all the help articles I read here are about skipping/ignoring the field or not analyzing it. I don't want this field to be ignored. This field has the article. How do I search this article? </p>&#xA;&#xA;<p>Do I divide the article into field1 field2 field3 and so on keeping less than 32766 bytes in each... There must be a better way to do it I must be missing something</p>&#xA;

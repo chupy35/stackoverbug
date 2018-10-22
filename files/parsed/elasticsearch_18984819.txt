@@ -1,0 +1,154 @@
+18984819 How do I index an array of multi-part fields in Elasticsearch
+
+I will have type that has an ARRAY of a multi-part field. the data in that
+field will look like this:
+
+    
+    
+    grp type num
+    111 ABC 112233445566
+    123 DEF 192898048901
+    222 ABC 180920948012
+    333 XWZ 112233445566
+    
+
+I want to be search on just num to find my document. I also want to be able to
+search on type and num to find my doc. optionally include all three: grp=111
+type=ABC num=112233445566
+
+What I dont want is cross-matching of these compound values.. IE, type=XWZ and
+num=192898048901 would be a false hit
+
+So do I implement these as multi_fields with a custom tokenizer? (which
+presumably would concantenate to create the three key types)
+
+Or can compound word tokenfilter or some other technique help me accomplish
+this. TIA
+
+You can index combinations as additional fields:
+
+    
+    
+    "doc" : {
+        "properties" : {
+    ...
+            "array_type" : {
+                "type" : "object",
+                "properties" : {
+                    "grp" : { "type" : "integer", "index" : "not_analyzed"},
+                    "type" : { "type" : "string", "index" : "not_analyzed" },
+                    "num" : { "type" : "integer", "index" : "not_analyzed"" },
+                    "type_num" : { "type" : "string", "index" : "not_analyzed" },
+                    "grp_type_num" : { "type" : "string", "index" : "not_analyzed" },
+                    }
+                },
+    ...
+        }
+    }
+    
+
+When querying, use the field that matches the info you have. For example, to
+search for type and num, you could write a query like this:
+
+    
+    
+    {
+      "size": 20,
+      "from": 0,
+      "query": {
+        "filtered": {
+          "filter": {
+            "and": [
+              {
+                "term": {
+                  "type_num": "XWZ 112233445566"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+Well I found an easier way... Key is that I just need to be able to search by
+the three possible combinations... dont really need to directly reference grp
+typ or num.
+
+Path_analyer is doing just what I want:
+
+    
+    
+    # Create a new index with custom path_hierarchy analyzer 
+    # See http://www.elasticsearch.org/guide/reference/index-modules/analysis/pathhierarchy-tokenizer.html
+    curl -XPUT "localhost:9200/accts-test" -d '{
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "accts-analyzer": {
+                        "type": "custom",
+                        "tokenizer": "accts-tokenizer"
+                    }
+                },
+                "tokenizer": {
+                    "accts-tokenizer": {
+                        "type": "path_hierarchy",
+                        "delimiter": "-",
+                        "reverse": "true"
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "_default_": {
+              "_timestamp" : {
+                "enabled" : true,
+                "store" : true
+              }
+            },
+            "doc": {
+                "properties": {
+                    "name": { "type": "string"},
+                    "accts": {
+                        "type": "string",
+                        "index_name": "acct",
+                        "index_analyzer": "accts-analyzer",
+                        "search_analyzer": "keyword"
+                   }
+                }
+            }
+        }
+    }'
+    
+
+Then Testing it via _analyzer endpoint shows this:
+
+    
+    
+    # curious about path analyzer? test it:
+    echo testing analyzier
+    curl -XGET 'localhost:9200/accts-test/_analyze?analyzer=accts-analyzer&pretty=1' -d '111-BBB-2233445566'
+    echo
+    {
+      "tokens" : [ {
+        "token" : "111-BBB-2233445566",
+        "start_offset" : 0,
+        "end_offset" : 18,
+        "type" : "word",
+        "position" : 1
+      }, {
+        "token" : "BBB-2233445566",
+        "start_offset" : 4,
+        "end_offset" : 18,
+        "type" : "word",
+        "position" : 1
+      }, {
+        "token" : "2233445566",
+        "start_offset" : 8,
+        "end_offset" : 18,
+        "type" : "word",
+        "position" : 1
+      } ]
+    }
+    
+

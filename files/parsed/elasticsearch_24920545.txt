@@ -1,0 +1,30 @@
+24920545 Include documents in each aggregation with ElasticSearch
+
+Have a requirement to prepare search result (from server) in a way for UI to
+display something like shown on
+[this](http://datatables.net/examples/advanced_init/row_grouping.html) page.
+basically a database equivalent is `group by` queries including [average
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-avg-aggregation.html) for one or more of the sub-
+groupings.
+
+Apparently it's clear that Elastic Search doesn't have support for returning
+documents with aggregation feature which was confirmed by
+[this](https://stackoverflow.com/a/23269138) and [this](http://elasticsearch-
+users.115913.n3.nabble.com/Can-aggregation-return-the-documents-in-each-
+bucket-td4052175.html) post.
+
+while comparing elastic search with Solr one of the reasons to go with Elastic
+Search was it's [advanced aggregation
+features](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations.html), including nested aggregations and variety of other rich
+aggregations (including min,max,avg,sum,percentile etc). Given the requirement
+on hand what's the best server side workaround for achieve results(documents)
+in each aggregation?
+
+Check the latest release, it contains the top hits aggregation. This might be
+what you are looking for
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-top-hits-aggregation.html>
+

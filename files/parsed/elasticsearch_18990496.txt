@@ -1,0 +1,218 @@
+18990496 Elasticsearch: How to use two different multiple matching fields?
+
+I want to do something much like the ['and' filter
+example](http://www.elasticsearch.org/guide/reference/query-dsl/and-filter/)
+except with terms with a 'should' in each one, instead of the field types in
+the example. I came up with the following:
+
+    
+    
+        {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "ids": {
+                "type": "foo",
+                "values": [
+                  "fff",
+                  "bar",
+                  "baz",
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "filter": {
+        "and": {
+          "filters": [
+            {
+              "bool": {
+                "should": {
+                  "term": {
+                    "fruit": [
+                      "orange",
+                      "apple",
+                      "pear",
+                    ]
+                  }
+                },
+                "minimum_should_match": 1
+              }
+            },
+            {
+              "bool": {
+                "should": {
+                  "term": {
+                    "color": [
+                      "red",
+                      "yellow",
+                      "green"
+                    ]
+                  }
+                },
+                "minimum_should_match": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+However, I get this error:
+
+    
+    
+    [bool] filter does not support [minimum_should_match];
+    
+
+Is there another way to go about what I'm attempting to do, or am I on the
+right track? Or is this just not possible in elasticsearch?
+
+Each bool query clause can contain multiple clauses. A terms query
+(<http://www.elasticsearch.org/guide/reference/query-dsl/terms-query/>) is an
+easy way to specify that the query should match any of a list of terms. Here's
+that uses terms queries to say fruit must be one of orange, apple, pear and
+color must be one of red, yellow, green, in addition to the ids query you had
+before:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "ids": {
+                "type": "foo",
+                "values": [
+                  "fff",
+                  "bar",
+                  "baz"
+                ]
+              }
+            },
+            {
+              "terms": {
+                "fruit": [ "orange", "apple","pear" ],
+                "minimum_should_match": 1
+              }
+            },
+            {
+              "terms": {
+                "color": [ "red", "yellow", "green" ],
+                "minimum_should_match": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+I think you don't need to specify [bool
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/bool-filter/).
+If I understand right what you are trying to accomplish, [terms
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/terms-filter/)
+with [and filter](http://www.elasticsearch.org/guide/reference/query-dsl/and-
+filter/) should be enough. So something like this:
+
+    
+    
+    # Delete index
+    #
+    curl -s -X DELETE 'http://localhost:9200/bool-filter-test' ; echo
+    
+    # Create index
+    #
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/' -d '{
+      "mappings": {
+        "document": {
+          "properties": {
+            "color": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "fruit": {
+              "type": "string",
+              "index": "not_analyzed"
+            }
+          }
+        }
+      }
+    }' ; echo
+    
+    # Index some documents
+    #
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/document/1?pretty=true' -d '{
+      "fruit" : "apple",
+      "color" : "red"
+    }' ; echo
+    
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/document/2?pretty=true' -d '{
+      "fruit" : "apple",
+      "color" : "yellow"
+    }' ; echo
+    
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/document/3?pretty=true' -d '{
+      "fruit" : "apple",
+      "color" : "green"
+    }' ; echo
+    
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/document/4?pretty=true' -d '{
+      "fruit" : "banana",
+      "color" : "green"
+    }' ; echo
+    
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/document/5?pretty=true' -d '{
+      "fruit" : "banana",
+      "color" : "yellow"
+    }' ; echo
+    
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/document/6?pretty=true' -d '{
+      "fruit" : "pear",
+      "color" : "green"
+    }' ; echo
+    
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/document/7?pretty=true' -d '{
+      "fruit" : "pear",
+      "color" : "yellow"
+    }' ; echo
+    
+    curl -s -XPUT 'http://localhost:9200/bool-filter-test/document/7?pretty=true' -d '{
+      "fruit" : "pear",
+      "color" : "red"
+    }' ; echo
+    
+    
+    # Refresh index
+    #
+    curl -s -XPOST 'http://localhost:9200/bool-filter-test/_refresh'; echo
+    
+    
+    # This query should return only red apples and pears
+    #
+    curl -s -X POST 'http://localhost:9200/bool-filter-test/_search?pretty' -d '{
+      "query" : {
+        "match_all" : { }
+      },
+      "filter" : {
+        "and" : [
+          {
+            "terms" : { "fruit" : ["apple", "pear"] }
+          },
+          {
+            "terms" : { "color" : ["red"] }
+          }
+        ]
+      }
+    }'
+    
+
+You can even specify `execution` to `bool` (which according to documentation)
+`Generates a term filter (which is cached) for each term, and wraps those in a
+bool filter. The bool filter itself is not cached as it can operate very
+quickly on the cached term filters.`
+

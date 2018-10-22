@@ -1,0 +1,21 @@
+25066381 How sharding works in elasticsearch
+
+I have "2" "number_of_shards" and "0" "number_of_replicas" to my index. Then
+how the 2 shards are distributed across 3 nodes if i have 3 nodes cluster.How
+sharding works in elasticsearch.
+
+If you have 2 shards and 0 replicas with 3 nodes, one node will have nothing
+on it.
+
+Sharding works by dividing your ID space into equal parts (based on a hash of
+your id keys so as to randomize it and not get hot spots). From there the
+shards are distributed to nodes based on a number of critria (minimizing the
+number of shards for a given index on a node, available disk space, etc).
+
+Replicas are there to help with read scaling and data recovery if there's an
+issue.
+
+All queries are then divided into # of shards parts and a map/reduce operation
+is done to query/combine the results into the final product that you are
+getting back.
+

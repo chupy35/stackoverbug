@@ -1,0 +1,123 @@
+25102363 Elastic Search existing field mapping
+
+I am new to elastic search, I have created an index "cmn" with a type
+"mention". I am trying to import data from my existing solr to elasticsearch,
+so I want to map an existing field to the _id field.
+
+I have created the following file under /config/mappings/cmn/,
+
+    
+    
+    {
+        "mappings": {
+        "mentions":{
+            "_id" : {
+                "path" : "docKey"
+            }
+          }
+        }
+    }
+    
+
+But this doesn't seem to be working, every time I index a record the following
+_id is created,
+
+    
+    
+            "_index": "cmn",
+            "_type": "mentions",
+            "_id": "k4E0dJr6Re2Z39HAIjYMmg",
+            "_score": 1
+    
+
+Also, the mapping is not reflects. I have also tried the following option,
+
+    
+    
+    {
+        "mappings": {
+            "_id" : {
+                "path" : "docKey"
+            }
+        }
+    }
+    
+
+SAMPLE DOCUMENT: Basically a tweet.
+
+    
+    
+     {
+               "usrCreatedDate": "2012-01-24 21:34:47",
+               "sex": "U",
+               "listedCnt": 2,
+               "follCnt": 432,
+               "state": "Southampton",
+               "classified": 0,
+               "favCnt": 468,
+               "timeZone": "Casablanca",
+               "twitterId": 473333038,
+               "lang": "en",
+               "stnostem": "#ootd #ootw #fashion #styling #photography #white #pink #playsuit #prada #sunny #spring http://t.co/YbPFrXlpuh",
+               "sourceId": "tw",
+               "timestamp": "2014-04-09T22:58:00.396Z",
+               "sentiment": 0,
+               "updatedOnGMTDate": "2014-04-09T22:56:57.000Z",
+               "userLocation": "Southampton",
+               "age": 0,
+               "priorityScore": 57.4700012207031,
+               "statusCnt": 14612,
+               "name": "YazzyK",
+               "profilePicUrl": "http://pbs.twimg.com/profile_images/453578494556270594/orsA0pKi_normal.jpeg",
+               "mentions": "",
+               "sourceStripped": "Instagram",
+               "collectionName": "STREAMING",
+               "tags": "557/161/193/197",
+               "msgid": 1397084280396.33,
+               "_version_": 1464949081784713200,
+               "url2": "{\"urls\":[{\"url\":\"http://t.co/YbPFrXlpuh\",\"expandedURL\":\"http://instagram.com/p/mliZbgxVZm/\",\"displayURL\":\"instagram.com/p/mliZbgxVZm/\",\"start\":88,\"end\":110}]}",
+               "links": "http://t.co/YbPFrXlpuh",
+               "retweetedStatus": "",
+               "twtScreenName": "YazKader",
+               "postId": "454030232501358592",
+               "country": "Bermuda",
+               "message": "#ootd #ootw #fashion #styling #photography #white #pink #playsuit #prada #sunny #spring http://t.co/YbPFrXlpuh",
+               "source": "<a href=\"http://instagram.com\" rel=\"nofollow\">Instagram</a>",
+               "parentStatusId": -1,
+               "bio": "Live and breathe Fashion. Persian and proud- Instagram: @Yazkader",
+               "createdOnGMTDate": "2014-04-09T22:56:57.000Z",
+               "searchText": "#ootd #ootw #fashion #styling #photography #white #pink #playsuit #prada #sunny #spring http://t.co/YbPFrXlpuh",
+               "isFavorited": "False",
+               "frenCnt": 214,
+               "docKey": "tw_454030232501358592"
+            }
+    
+
+Also, how can we create unique mapping for each "TYPE" and not just the index.
+
+Thanks
+
+Do like this,
+
+Put the mapping as,
+
+    
+    
+    PUT index_name/type_name/_mapping
+    {
+       "type_name": {
+          "_id": {
+             "path": "docKey"
+          },
+          "properties": {
+             "docKey": {
+                "type": "string"
+             }
+          }
+       }
+    }
+    
+
+And, it will work. (When you index docKey, then _id is set). You shouldn't
+have to provide all the mapping.
+

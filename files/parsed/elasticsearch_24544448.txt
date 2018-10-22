@@ -1,0 +1,65 @@
+24544448 Using python how can I register specific mapping definition?
+
+In the [elasticsearch-py docs](http://elasticsearch-
+py.readthedocs.org/en/master/api.html) I can't find an example registering a
+mapping, which performs what these REST API
+[docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+put-mapping.html#indices-put-mapping) say:
+
+The put mapping API allows to register specific mapping definition for a
+specific type.
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/twitter/tweet/_mapping' -d '
+    {
+        "tweet" : {
+            "properties" : {
+                "message" : {"type" : "string", "store" : true }
+            }
+        }
+    }
+    '
+    
+
+Doing anything with the index involves the Indices APIs. PUTing mapping is
+also one of many Indices API. They can be found in the `Indices` section under
+`API Documentation` of the Python client docs.
+
+And you need [this: put_mapping(*args, **kwargs)](http://elasticsearch-
+py.readthedocs.org/en/master/api.html#elasticsearch.client.IndicesClient.put_mapping).
+
+Here is a complete example :
+
+    
+    
+    from elasticsearch import Elasticsearch
+    def fMap(document_type):
+        mapping={document_type:{\
+                 "properties":{\
+                 "a_field":{"type":"integer","store":"yes"},\
+                 "other_field": {"type":"string","index":"analyzed","store":"no"},\
+                 "title":{"type":"string","store":"yes","index": "analyzed","term_vector":"yes","similarity":"BM25"},\
+                 "content":{"type":"string","store":"yes","index":  "analyzed","term_vector": "yes","similarity":"BM25"}\
+                 }}}
+        return mapping
+    def dSetting(nShards,nReplicas):
+        dSetting={
+        "settings":{"index":{"number_of_shards":nShards,"number_of_replicas":nReplicas}},\
+        "analysis":{\
+            "filter":{\
+            "my_english":{"type":"english","stopwords_path":"english.txt"},\
+            "english_stemmer":{"type":"stemmer","language":"english"}},\
+            "analyzer":{"english":{"filter":["lowercase","my_english","english_stemmer"]}}}}
+        return dSetting
+    def EsSetup(con,idx,docType,dset,mapping):
+        con.indices.delete(index=idx,ignore=[400, 404])
+        con.indices.create(index=idx,body=dset,ignore=400)
+        con.indices.put_mapping(index=idx,doc_type=docType,body=mapping)
+    
+    conEs=Elasticsearch([{'host':'localhost','port':9200,'timeout':180}])
+    dMap = fMap('docTypeName')
+    dSet = dSetting(8,1)
+    EsSetup(conEs,'idxName','docTypeName',dset,dMap)
+    
+

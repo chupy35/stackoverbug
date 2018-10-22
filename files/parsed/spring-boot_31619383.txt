@@ -1,0 +1,55 @@
+31619383 ApplicationPidFileWriter doesn't produce .pid file on Spring Boot
+
+The following setup doesn't seem to generate .pid file (as described here -
+<http://www.kubrynski.com/2014/05/managing-spring-boot-application.html>:
+
+    
+    
+    public static void main(String[] args) {
+            SpringApplication app = new SpringApplication(BrokerFeedApplication.class);
+            app.addListeners(new ApplicationPidFileWriter());
+            app.run(BrokerFeedApplication.class, args);
+        }
+    
+    
+    
+        <parent>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-parent</artifactId>
+            <version>1.2.5.RELEASE</version>
+            <relativePath /> <!-- lookup parent from repository -->
+        </parent>
+    
+
+What am I missing?
+
+By using the [`static run(Object source, String...
+args)`](http://docs.spring.io/spring-
+boot/docs/current/api/org/springframework/boot/SpringApplication.html#run-
+java.lang.Object-java.lang.String...-) method in the last line you're
+disregarding the `app` configuration you did in the first two lines. See
+[Javadoc](http://docs.spring.io/spring-
+boot/docs/current/api/org/springframework/boot/SpringApplication.html#run-
+java.lang.Object-java.lang.String...-) (emphasis mine):
+
+> Static **helper** that can be used to run a SpringApplication from the
+specified source using default settings.
+
+Change the last line to use the
+[`run(java.lang.String...)`](http://docs.spring.io/spring-
+boot/docs/current/api/org/springframework/boot/SpringApplication.html#run-
+java.lang.String...-) instance method to make use the previously registered
+listener, i.e. change:
+
+    
+    
+    app.run(DemoApplication.class, args);
+    
+
+to
+
+    
+    
+    app.run(args);
+    
+

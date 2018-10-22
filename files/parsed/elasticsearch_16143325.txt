@@ -1,0 +1,117 @@
+16143325 Bool query where the one of the "should"s is a "not" in Elasticsearc
+
+I'd like to use a bool query where one of the conditions (in the should
+section, for example) is a negation of something.
+
+Specifically:
+
+1) a field does not exists. For example, i tried the query:
+
+    
+    
+    {"query":{
+                "bool":{
+                        "must":[
+                                {"match":{"field1":"val1"}},
+                                ],
+                        "should":[
+                                    {"match":{"field2":"val2"}},
+                                    {"filtered" : 
+                                                {
+                                                 "query" : {"match_all" : {}},
+                                                 "filter" : {"missing" : { "field":"field3"}}
+                                                 }
+                                     },
+                                    ],
+                        "minimum_number_should_match":1
+                        }
+             }
+    }
+    
+
+2) a field does not have a value. For example:
+
+    
+    
+    {"query":{
+                "bool":{
+                        "must":[
+                                {"match":{"field1":"val1"}},
+                                ],
+                        "should":[
+                                    {"match":{"field2":"val2"}},
+                                    {"filtered" : 
+                                                {
+                                                 "query" : {"match_all" : {}},
+                                                 "filter" : {"not" : { "field3":"val3"}}
+                                                 }
+                                     },
+                                    ],
+                        "minimum_number_should_match":1
+                        }
+             }
+    }
+    
+
+both do not work. I must be applying a filter or inserting the inner query
+wrong. How can I achieve this?
+
+I have only successfully used the **missing** and **not** filters outside of a
+bool query.
+
+For example:
+
+    
+    
+    "filtered_query":{
+      "query":{
+        "bool":{ ... }
+      },
+      {"filter": {
+        "missing":{ ... }
+      }
+    } 
+    
+
+You are not going to get any scoring on that condition (just results
+'filtered-out' or not), though you don't explicitly say you need scoring.
+
+You might want to take a look at the docs for the **missing** filter for both
+your stated requirements, since it allows you to check for fields that don't
+exist, or don't have a value. I don't think the **not** function is doing what
+you expect in your second example. For reference:
+<http://www.elasticsearch.org/guide/reference/query-dsl/missing-filter/>
+
+    
+    
+    "missing" : { 
+         "field" : "user",
+         "existence" : true,
+         "null_value" : true
+    }
+    
+
+Make sure you use the existence and null_value attributes appropriately to
+indicate whether you want a missing field to be matched ("existence": true) or
+an empty / null value to be matched ("null_value": true)
+
+Not entirely sure this is exactly answering the original question, but it's
+similar and verified via the counts lining up from running the two queries
+separately. This finds somefield that is null or true:
+
+    
+    
+    {
+        "filtered" : {
+            "filter" : {
+                "or" : [
+                    { "missing" : { "field" : "somefield" } },
+                    { "term" : {  "somefield" : "true" } }
+                ]
+            }
+        }
+    }
+    
+
+Good luck. JSON query languages make me miss SQL!
+

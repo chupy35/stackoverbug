@@ -1,0 +1,80 @@
+21322673 spring boot properties launcher unable to use
+
+i am trying to use the spring boot properties launcher
+
+    
+    
+    <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.springframework.boot.loader.PropertiesLauncher</mainClass>
+                        </manifest>
+                        <manifestEntries>
+                            <Start-Class>com.att.hadoop.loader.run.Application</Start-Class>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+    
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    
+
+when i look at manifest file it looks like this
+
+    
+    
+    $ unzip -q -c hdfsloader-0.0.1-SNAPSHOT.jar META-INF/MANIFEST.MF
+    Manifest-Version: 1.0
+    Built-By: aq728y
+    Build-Jdk: 1.7.0_25
+    Start-Class: org.springframework.boot.loader.PropertiesLauncher
+    Created-By: Apache Maven 3.1.0
+    Spring-Boot-Version: 1.0.0.RC1
+    Main-Class: org.springframework.boot.loader.JarLauncher
+    Archiver-Version: Plexus Archiver
+    
+
+any ideas on why my mainclass and startclass are wrong
+
+I want to set it as
+
+Main-Class: org.springframework.boot.loader.PropertiesLauncher
+
+Start-Class: com.att.hadoop.loader.run.Application
+
+The spring-boot-maven-plugin rewrites your manifest, and in particular it
+manages the `Main-Class` and `Start-Class` entries, so you have to configure
+those there (not in the jar plugin). The `Main-Class` in the manifest is
+actually controlled by the `layout` property of the boot plugin, e.g.
+
+    
+    
+    <plugin>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-maven-plugin</artifactId>
+      <version>1.0.0.RC1</version>
+      <configuration>
+        <mainClass>${start-class}</mainClass>
+        <layout>ZIP</layout>
+      </configuration>
+      <executions>
+        <execution>
+          <goals>
+            <goal>repackage</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
+    
+
+The layout property defaults to a guess based on the archive type (JAR or
+WAR). For the `PropertiesLauncher` the layout is "ZIP".
+

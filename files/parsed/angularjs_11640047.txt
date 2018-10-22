@@ -1,0 +1,37 @@
+11640047 Setting bindings for a directive that has a templateURL in AngularJS
+
+I'm not having any luck setting the bindings within a directive that fetches a
+template from a templateUrl.
+
+Here's what the inside of my binding code looks like:
+
+    
+    
+    templateUrl : '/path/to/template.html',
+    link : function($scope, element, attrs) {
+      $scope.title = 'test';
+    }
+    
+
+And here's what the template itself looks like:
+
+    
+    
+    <div>
+      <h4>{{title}}</h4>
+    </div>
+    
+
+The directive is fired for a data-video attribute. The directive itself gets
+fired and downloads the template, but the scope bindings are not replaced.
+
+Any ideas on how to do this?
+
+What you have looks good to me here are some suggestions:
+
+  * If `{{title}` isn't a typo make sure you use `{{title}}` instead.
+  * The demo at the bottom of the directive [documentation](http://docs.angularjs.org/guide/directive) shows something similar in case that helps.
+  * Make sure your template isn't being cached and causing confusion by making some noticeable changes and making sure you see it on refresh.
+  * If you have `replace: true` set make sure your html file doesn't have any comments outside the root level per [this post](https://stackoverflow.com/questions/11426114/angularjs-why-doesnt-replace-true-work-with-templateurl-property).
+  * The link function's scope doesn't need a $ but I don't think that will affect anything: `function(scope, element, attrs)`
+

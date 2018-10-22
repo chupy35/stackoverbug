@@ -1,0 +1,20 @@
+19518420 Are there any tools or best practices for documenting an
+ElasticSearch db
+
+I'm looking for documentation about documenting an ElasticSearch deployment
+(you can see why this is challenging to Google!).
+
+My question is really two questions. Are there best practices for documenting
+an ElasticSearch installation? -and- Are there any tools that aid in the
+visualization of an ElasticSearch installation. I guess it would be akin to a
+sql db schema (ER diagram or whatever). I've scoured Google without much luck
+and I didn't find anything on SO.
+
+Documenting ES may be a bit more challenging than documenting a sql db since
+you probably want to be able to show the relationship between end user queries
+and indexing to explain the context of each mapping. Furthermore, it would be
+useful to visualize the cluster (perhaps a separate problem that could be
+solved with existing tools).
+
+Thanks for any help.
+

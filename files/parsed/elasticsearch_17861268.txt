@@ -1,0 +1,65 @@
+17861268 How to (temporarily) stop Elasticsearch from expunging deleted
+documents?
+
+In [my usecase](https://github.com/molindo/molindo-elasticsync) I'm trying to
+synchronize two Elasticsearch indices. Due to versioning this is acutally
+[quite simple](https://github.com/Aconex/scrutineer). However, I want to keep
+writing at any time while I'm doing this.
+
+Okay, so the steps I want to perform in chronological order:
+
+  1. clients write (index, delete, update) to cluster c1
+  2. create a new index c2 (clients keep writing to c1)
+  3. copy data from cluster c1 to c2 (clients keep writing to c1)
+  4. switch clients to c2
+  5. synchronize changes from c1 to c2 (clients keep writing to c2)
+  6. shutdown c1
+
+Step #5 is the step I'm currently looking at. I have to make sure that changes
+written to c2 aren't overwritten by data from c1. Using versioning it's rather
+simple for writes as index operations will fail
+(VersionConflictEngineException). Assuming the following situation:
+
+  1. a document is updated on c1 right after #3 (v2 on c1, v1 on c2)
+  2. the same document is deleted right after #4 (v2 on c1, deleted on c2)
+  3. synchronizing will try to reindex v2 on c2
+
+I know that elasticsearch keeps deleted documents around for a while:
+
+    
+    
+    # index document 1:4
+    $ curl -XPUT 'http://localhost:9200/test/test/1?version=4&version_type=external' -d '{"message": "test"}'
+    {"ok":true,"_index":"test","_type":"test","_id":"1","_version":4}
+    
+    # delete document 1:6
+    $ curl -XDELETE 'http://localhost:9200/test/test/1?version=6&version_type=external'
+    {"ok":true,"found":true,"_index":"test","_type":"test","_id":"1","_version":6}
+    
+    # index document 1:4 (ERROR!)
+    $ curl -XPUT 'http://localhost:9200/test/test/1?version=4&version_type=external' -d '{"message": "test"}'
+    {"error":"VersionConflictEngineException[[test][2] [test][1]: version conflict, current [6], provided [4]]","status":409}
+    
+    # wait some time
+    
+    # index document 1:4 (SUCCESS!)
+    $ curl -XPUT 'http://localhost:9200/test/test/1?version=4&version_type=external' -d '{"message": "test"}'
+    {"ok":true,"_index":"test","_type":"test","_id":"1","_version":4}
+    
+
+The problem clearly is the "wait some time" part. I will have to rely on the
+deleted documents for an unknown amount of time. Therefore I need to control
+this time by disallowing any expunging of deleted documents while I'm running
+#5. How would you do this?
+
+_Crossposted to[Elasticsearch
+group](https://groups.google.com/d/msg/elasticsearch/IU0b09LYs98/Z8ysJe9wdmEJ)
+(and this [related
+question](https://groups.google.com/d/msg/elasticsearch/aclwWeLe4rU/jBjiKLzmv4IJ))_
+
+The "wait some time" part is defined by `index.gc_deletes` setting on per
+index basis and set to "60s" by default. It can be dynamically changed using
+[Update Index
+Settings](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+update-settings/) command.
+

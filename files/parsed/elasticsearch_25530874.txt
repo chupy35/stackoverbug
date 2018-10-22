@@ -1,0 +1,94 @@
+25530874 Elasticsearch Routing allocation awarness and shard allocation
+
+I have an elasticsearch cluster containing 10 nodes splited across 3 zones
+(`A`, `B`, `C`).
+
+The ES configuration file contain:
+
+    
+    
+    cluster.routing.allocation.awareness.force.zone.values = "A,B,C";
+    
+
+I have a single index (`index1`) containing `=~ 283674` docs with a size of
+`=~ 231MB`. The setting for this index contain:
+
+    
+    
+    "number_of_replicas" : "2", "number_of_shards" : "5",
+    
+
+Shards seems correctly distributed across zone but within a single zone they
+are not evenly distributed (see table below, E.g. Zone C | S = shard, (P =
+Primary | S = Secondary)
+
+What can I do to correctly distribute my shards?
+
+    
+    
+    ++------+----------------------------------------------------+
+    ||Zone A-----------------------------------------------------|
+    ||       |                                                  ||
+    || Node 1|  S1 (P)                                          ||
+    || +-----------------------------------------------------+  ||
+    ||       |                                                  ||
+    ||       |  S2 (S)          S4 (S)                          ||
+    ||       |                                                  ||
+    || Node 2|                                                  ||
+    || +-----------------------------------------------------+  ||
+    ||       |                                                  ||
+    ||       |                                                  ||
+    ||       |  S0 (S)          S3 (S)                          ||
+    ||       |                                                  ||
+    || Node 3|                                                  ||
+    |-------+----------------------------------------------------|
+    ||Zone B-----------------------------------------------------|
+    ||       |                                                  ||
+    ||       |  S0 (P)                                          ||
+    || Node 4|                                                  ||
+    || +-----------------------------------------------------+  ||
+    ||       |                                                  ||
+    ||       |                                                  ||
+    ||       |  S3 (P)          S4 (P)                          ||
+    || Node 5|                                                  ||
+    || +-----------------------------------------------------+  ||
+    ||       |                                                  ||
+    ||       |                                                  ||
+    ||       |  S1 (S)          S2 (S)                          ||
+    || Node 6|                                                  ||
+    |-------+----------------------------------------------------|
+    ||Zone C-----------------------------------------------------|
+    ||       |                                                  ||
+    ||       |  S0 (S)   S1 (S)   S2 (P)   S3 (S)   S4 (S)      ||
+    || Node 7|                                                  ||
+    || +------------------------------------------------------+ ||
+    ||       |                                                  ||
+    ||       |                                                  ||
+    ||       |                                                  ||
+    || Node 8|                                                  ||
+    || +------------------------------------------------------+ ||
+    ||       |                                                  ||
+    ||       |                                                  ||
+    ||       |                                                  ||
+    || Node 9|                                                  ||
+    || +------------------------------------------------------+ ||
+    ||       |                                                  ||
+    ||       |                                                  ||
+    ||       -                                                  ||
+    || Node 10                                                  ||
+    |------------------------------------------------------------|
+    +------------------------------------------------------------+
+    
+
+I fixed the issue by forcing the number of shard per host and changing the
+number of primary / secondary per index:
+
+    
+    
+    index.number_of_shards = "5";
+    index.number_of_replicas = "3";
+    index.routing.allocation.total_shards_per_node = "2";
+    
+
+This results in 2 shards per node evenly distributed across zone.
+

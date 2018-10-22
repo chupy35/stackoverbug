@@ -1,0 +1,84 @@
+15821184 Combining Range and Histogram Filter in ElasticSearch
+
+Consider an event log stored in ElasticSearch. Events look like this
+
+    
+    
+    {
+      "timestamp": "2013-04-04T15:38:17Z",
+      "color": "red"
+    }
+    
+    {
+      "timestamp": "2013-04-04T17:51:21Z",
+      "color": "green"
+    }
+    
+
+I want to draw frequency timelines per color. I know that I can get the
+timelines with two queries like this:
+
+    
+    
+    {
+      "query": {
+        "match": {
+          "color": "red"
+        }
+      },
+      "size": 0,
+      "facets": {
+        "freq": {
+          "date_histogram": {
+            "interval": "day",
+            "field": "timestamp"
+          }
+        }
+      }
+    }
+    
+
+The second query would `"match": { "color": "green" }`.
+
+Can I combine these queries into one, that gives my either
+
+  * count(color) / day / bucket
+  * or one facet per color, containing the histogram for that color?
+
+For two colors separate queries could work just fine, but as you might suspect
+this is a contrieved example. I am really dealing with more than ten colors
+and at this point a single query would be really nice.
+
+You can combine facets for different colors into the same request using
+[facet_filter](http://www.elasticsearch.org/guide/reference/api/search/facets/):
+
+    
+    
+    {
+        "facets": {
+            "freq_red": {
+                "date_histogram": {
+                    "interval": "day",
+                    "field": "timestamp"
+                },
+                "facet_filter": {
+                    "term": {
+                        "color": "red"
+                    }
+                }
+            },
+            "freq_green": {
+                "date_histogram": {
+                    "interval": "day",
+                    "field": "timestamp"
+                },
+                "facet_filter": {
+                    "term": {
+                        "color": "green"
+                    }
+                }
+            }
+        }
+    }
+    
+

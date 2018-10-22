@@ -1,0 +1,141 @@
+17732670 Filter Query Without Score in Elastic Search
+
+I need to modify this query so that elastic search does _not_ give it a score.
+I want my custom filter score to be the only thing giving any result a score.
+How do I accomplish this?
+
+Each record should only every have a score of 0, 100, or 1000.
+
+    
+    
+    {
+      "size":50, 
+      "from":0, 
+      "query" : {
+        "custom_filters_score" : {
+          "query" : {
+            "filtered" : {
+              "query" : {
+                "bool" : {
+                  "must" : [
+                    {"term":{"type":"alpha"}}, 
+                    {"field":{"sector":"exists"}}, 
+                    {"field":{"sector.sub":"exists"}}, 
+                    {"field":{"alpha_sector.sub.categories":"second"}}, 
+                    {"field":{"beta_sector.sub.columns":"first"}}, 
+                    {"term":{"beta_type":"beta"}}, 
+                    {"term":{"area":"624"}}
+                  ]
+                }
+              }, 
+              "filter" : {
+                "or" : [
+                  {
+                    "and" : [
+                      {"term":{"area":"624"}}, 
+                      {"term":{"start":"07242013"}}
+                    ]
+                  }, 
+                  {
+                    "and" : [
+                      {"term":{"area":"624"}}, 
+                      {"term":{"start":"blank"}}
+                    ]
+                  }
+                ]
+              }
+            }
+          }, 
+          "filters" : [
+            {"filter":{"term":{"resource":5726}}, "boost":"1000"}, 
+            {"filter":{"term":{"alpha_resource":5726}}, "boost":"100"}
+          ], 
+          "score_mode":"sum"
+        }
+      }
+    }
+    
+
+I am not quite sure what you are trying to achieve here
+
+    
+    
+                {"field":{"sector":"exists"}}, 
+                {"field":{"sector.sub":"exists"}},
+    
+
+but in general, if you don't want part of your query to affect the score, just
+make it a filter. It's also will be better to use "bool" with "term" filters
+instead of "and"/"or"/"not"
+
+    
+    
+    {
+      "size":50, 
+      "from":0, 
+      "query" : {
+        "custom_filters_score" : {
+          "query" : {
+            "filtered" : {
+              "query" : {
+                "match_all": {}
+              }, 
+              "filter" : {
+                "bool" : {
+                  "must" : [
+                    {"term":{"type":"alpha"}}, 
+                    {"query":{"field":{"sector":"exists"}}}, 
+                    {"query":{"field":{"sector.sub":"exists"}}}, 
+                    {"query":{"field":{"alpha_sector.sub.categories":"second"}}}, 
+                    {"query":{"field":{"beta_sector.sub.columns":"first"}}}, 
+                    {"term":{"beta_type":"beta"}}, 
+                    {"term":{"area":"624"}}
+                  ],
+                  "should" : [
+                    {
+                      "bool" : {
+                        "must" : [
+                          {"term":{"area":"624"}}, 
+                          {"term":{"start":"07242013"}}
+                        ]
+                      }
+                    }, 
+                    {
+                      "bool" : {
+                        "must": [
+                          {"term":{"area":"624"}}, 
+                          {"term":{"start":"blank"}}
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }, 
+          "filters" : [
+            {"filter":{"term":{"resource":5726}}, "boost":"1000"}, 
+            {"filter":{"term":{"alpha_resource":5726}}, "boost":"100"}
+          ], 
+          "score_mode":"total"
+        }
+      }
+    }
+    
+
+You should order for _doc score's field:
+
+    
+    
+     {
+       "sort": [
+        "_doc"
+       ]    
+    }
+    
+
+It is described as the best pratice for your usecase in the first note of this
+documentation's page
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-sort.html>
+

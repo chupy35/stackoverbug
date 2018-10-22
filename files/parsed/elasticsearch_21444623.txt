@@ -1,0 +1,97 @@
+21444623 ElasticSearch Limit Filter Ambiguity
+
+I'm a bit unsure about Limit Filter's in ElasticSearch. I dont think Im
+understanding them correctly.
+
+I am searching multiple shards on multiple nodes of health record information.
+I want the top lets say 50 highest scored results to my query.
+
+In the
+[docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-limit-filter.html) it says
+
+> A limit filter limits the number of documents (per shard) to execute on.
+
+And this [SO](https://stackoverflow.com/questions/8583344/elastic-search-
+limit-results) response states
+
+    
+    
+    You should use filters when you don't care about scoring, they are faster and cache-able.
+    
+
+But if scoring does matter in my case should I not use Limit Filter to limit
+my returns to the only the top 50 highest scored results?
+
+Would something like this be more accurate (in java):
+
+    
+    
+    SearchResponse response = client.prepareSearch().setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setQuery(qb).setFrom(0).setSize(50).setExplain(true).execute().actionGet();
+    
+
+**Update** I stumbled on this
+[SO](https://stackoverflow.com/questions/16487548/elasticsearch-using-
+filterbuilders) post where the response states:
+
+> Right, you should use filters to exclude documents from being even
+considered when executing the query.
+
+Okay. So in this case, perhaps I can refine my question to the following:
+
+How do I only return the top 50 scored results? Is the above java reference
+the correct solution?
+
+All the `limit` filter does is to tell each shard to stop searching when a
+certain number of matching docs has been found. It doesn't say anything about
+those docs being the BEST matches.
+
+For instance, let's say you have just one shard, and you index 10 docs with
+`"foo bar"` and another 10 docs with just `"foo"`. Then you run this search:
+
+    
+    
+    GET /_search  
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match": {
+              "text": "foo bar"
+            }
+          },
+          "filter": {
+            "limit": {
+              "value": 10
+            }
+          }
+        }
+      }
+    }
+    
+
+The `match` query looks for `foo OR bar`, so all 20 documents would match, but
+the 10 that have both terms would match better. The `limit` filter says: stop
+as soon as you have 10 docs, so you'll get 10 results back but they may not be
+the best 10 - instead, your results may include docs with just `foo` in them.
+
+(Note: the `limit` is applied per shard, not per index.)
+
+You say:
+
+> I want the top lets say 50 highest scored results to my query.
+
+The fact that you want the highest automatically precludes the use of the
+`limit` filter. Instead, all you want to do is to set the [`size`
+parameter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-from-size.html) to 50:
+
+    
+    
+    GET /_search
+    {
+       "size": 50,
+       "query": {....}
+    }
+    
+

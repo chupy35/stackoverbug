@@ -1,0 +1,68 @@
+28391529 style Property on JSX Element Not Updating Properly
+
+I have this component,
+
+    
+    
+    var ColorList = React.createClass({
+      render: function(){
+        var styles = {
+          colorBG: {
+            width: 100,
+            height: 100,
+            display: "inline-block",
+            border: "1px solid black"
+          }
+        };
+        var colors = [
+          {color: "red", hex: "#E74C3C"},
+          {color: "white", hex: "#ECF0F1"},
+          {color: "blue", hex: "#3498DB"},
+          {color: "yellow", hex: "#E7D171"},
+          {color: "green", hex: "#7AE77C"}
+        ];
+        var colorList = colors.map(function(item){
+          styles.colorBG.background = item.hex;
+          return (
+            <span style={styles.colorBG} key={item.color}>{styles.colorBG.background}</span>
+          )
+        });
+    
+        return (
+          <div>
+            {colorList}
+          </div>
+        )
+      }
+    });
+    
+
+but what's interesting is that although the text in the element
+(styles.colorBG.background) is working properly, the background color of the
+element is just the last item in the array of colors.
+
+Any ideas?
+
+[Fiddle Here](http://jsfiddle.net/uo6264ex/)
+
+The problem arises because you are setting `background` property every time on
+the actual `styles` object. If you **deep copy** your `styles` object, it
+should work fine.
+
+Here is my example with deep copy using
+[`React.addons.update`](http://facebook.github.io/react/docs/update.html#available-
+commands). But you can use other deep copy methods too.
+
+jsFiddle: <http://jsfiddle.net/wmg0eq18/>
+
+    
+    
+     var colorList = colors.map(function(item){
+          // styles.colorBG.background = item.hex;
+          var newStyle = React.addons.update(styles, {
+              colorBG: {background:  {$set: item.hex}}
+          });
+          return <span style={newStyle.colorBG} key={item.color}>{styles.colorBG.background}</span>;
+     });
+    
+

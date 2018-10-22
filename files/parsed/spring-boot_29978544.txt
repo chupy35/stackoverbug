@@ -1,0 +1,64 @@
+29978544 multiple datasources in Spring Boot application
+
+I'm trying to using two database connections w/in a Spring Boot (v1.2.3)
+application as described in the docs (<http://docs.spring.io/spring-
+boot/docs/1.2.3.RELEASE/reference/htmlsingle/#howto-two-datasources>.
+
+Problem seems to be that the secondary datasource is getting constructed with
+the properties for the primary datasource.
+
+Can someone point out what I'm missing here?
+
+    
+    
+    @SpringBootApplication
+    class Application {
+        @Bean
+        @ConfigurationProperties(prefix="spring.datasource.secondary")
+        public DataSource secondaryDataSource() {
+            return DataSourceBuilder.create().build();
+        }
+    
+        @Bean
+        public JdbcTemplate secondaryJdbcTemplate(DataSource secondaryDataSource) {
+            return new JdbcTemplate(secondaryDataSource)
+        }
+    
+        @Bean
+        @Primary
+        @ConfigurationProperties(prefix="spring.datasource.primary")
+        public DataSource primaryDataSource() {
+            return DataSourceBuilder.create().build();
+        }
+    
+        @Bean(name = "primaryJdbcTemplate")
+        public JdbcTemplate jdbcTemplate(DataSource primaryDataSource) {
+            return new JdbcTemplate(primaryDataSource)
+        }
+    
+        static void main(String[] args) {
+            SpringApplication.run Application, args
+        }
+    }
+    
+
+application.properties:
+
+    
+    
+    spring.datasource.primary.url=jdbc:oracle:thin:@example.com:1521:DB1
+    spring.datasource.primary.username=user1
+    spring.datasource.primary.password=
+    spring.datasource.primary.driverClassName=oracle.jdbc.OracleDriver
+    
+    spring.datasource.secondary.url=jdbc:oracle:thin:@example.com:1521:DB2
+    spring.datasource.secondary.username=user2
+    spring.datasource.secondary.password=
+    spring.datasource.secondary.driverClassName=oracle.jdbc.OracleDriver
+    
+
+Both `JdbcTemplate` beans will be getting created with the primary
+`DataSource`. You can use `@Qualifier` to have the secondary `DataSource`
+injected into the secondary `JdbcTemplate`. Alternatively, you could call the
+`DataSource` methods directly when creating the `JdbcTemplate` beans.
+

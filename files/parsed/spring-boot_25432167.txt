@@ -1,0 +1,38 @@
+25432167 How to override both the json and html 404 response with springboot?
+
+I've noticed the generic error controller returns the path in the response
+(provided by the user) in the 404 response for json and I'd like an override
+to configure this.
+
+So far I've turned off the basic whitelabel stuff
+
+> error.whitelabel.enabled=false
+
+Then I configured my own controller to handle the /error path but ... when I
+go to run the app springboot tries to "wire up" another BasicErrorController
+causing an exception
+
+If I want to officially override the 404 page (along w/ other http response
+types like application/json) how can I do this using springboot?
+
+Make sure your controller implements ErrorController.
+
+    
+    
+    @RestController
+    public class MyErrorController implements ErrorController{
+    
+        private static final String ERROR_PATH = "/error";
+    
+        @RequestMapping(value=ERROR_PATH)
+        public String handleError(){
+            return "something terrible happened";
+        }
+    
+        @Override
+        public String getErrorPath() {
+            return ERROR_PATH;
+        }
+    }
+    
+

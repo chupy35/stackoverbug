@@ -1,0 +1,28 @@
+23059591 Lighweight tool to monitor elasticsearch cluster
+
+I am using elastic search 90.02 version and I am looking for a tool that can
+give me simple metrics like cluster health check, memory, os stats as
+described by
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+nodes-stats.html)over time so that I can accumulate them and fine tune
+elasticsearch performance.  A list of tools are mentioned here at
+[elasticsearch
+docs](http://www.elasticsearch.org/guide/en/elasticsearch/client/community/current/health.html)
+but my exact use case is just metrics on a remote machine over time. I do not
+want any fancy ui's but a accumulative data over time with simple ui. Can you
+please suggest something by experience?
+
+The list of Elasticsearch plugins within the docs is a comprehensive one. I
+have used the first four plugins mentioned, and they each have their own pro's
+and con's. I believe [Marvel](http://www.elasticsearch.org/overview/marvel/),
+a tool written by Elasticsearch developers, will fulfil your requirements of
+viewing your cluster state over time. Depending on the activity on your
+cluster this can utilise a lot of disk space.
+
+Marvel has a fantastic UI, which may not fulfil your requirements for
+something simplistic. It is free to use outside of production, but not so in
+production, this may be a deal breaker for you use case. Otherwise, I am aware
+of no other options. Perhaps a custom application to carry these task out for
+you may appeal to you more, periodically collecting the data from ES API and
+storing these yourself.
+

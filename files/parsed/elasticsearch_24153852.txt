@@ -1,0 +1,27 @@
+24153852 Where can I find a formal definition of the elasticsearch DSL?
+
+The elasticseach documentation is very informal. For example, [Filtered
+Query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filtered-query.html) does not specify if the "query" or the "filter" part
+is required. There is a comment under "query" that says `query definition`,
+but there is no further explanation what this is supposed to mean. To
+interpret the documentation, a lot of guesswork is needed to figure out what
+is legal.
+
+Where can I find a formal definition of the elasticseach DSL?
+
+I found [Elasticsearch Query DSL
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl.html) to be quite comprehensive.
+
+I guess in the example you highlight, it is a bit tricky. Filtered Query is a
+chain to the results of another query.
+
+The `query definition` and `filter definition` of Filtered query maps to
+[queries](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-queries.html) and
+[filters](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filters.html) section of the Query DSL (probably not obvious). You could
+use any of the queries (match etc.) and any of the filter (exists etc) in the
+filtered query payload.
+

@@ -1,0 +1,98 @@
+12488828 How do I inject dependencies into AngularJS controller tests without
+using Jasmine-specific inject()
+
+I'm trying to wrap my brain around dependency injection in AngularJS. Let's
+say this is my very exciting application code:
+
+    
+    
+    function PrideRockCtrl($scope, King) {
+      $scope.king = King;
+    }
+    
+    angular.module('Characters', ['ngResource'])
+      .factory('King', function() {
+        return "Mufasa";
+      });
+    
+
+I want to test `PrideRockCtrl`. If I follow examples in the documentation and
+in the tutorial, I could use the `module('Characters')` to configure the
+injector and use `inject()` to get some dependencies. i.e.:
+
+    
+    
+    describe('Pride Rock', function() {
+      beforeEach(module('Characters'));
+      it('should be ruled by Simba', inject(function($rootScope, $controller) {
+        var scope = $rootScope.$new();
+        var ctrl = $controller(PrideRockCtrl, {$scope: scope});
+        expect(scope.king).toEqual("Mufasa");
+      }));
+    });
+    
+
+This works fine, but this isn't a cross-test-framework solution. The
+`module()` and `inject()` test helpers are only compatible with Jasmine.
+
+### What's the best way to manually accomplish the same dependency injection
+without using `module()` or `inject()`?
+
+I came up with this:
+
+    
+    
+    describe('Pride Rock', function() {
+      it('should be ruled by Mufasa', function() {
+        var $injector = angular.injector(['Characters']);
+        var $controller = $injector.get('$controller');
+        var scope = $injector.get('$rootScope').$new();
+        var king = $injector.get('King');
+        var ctrl = $controller(PrideRockCtrl, {$scope: scope, King: king});
+        expect(scope.king).toEqual("Mufasa");
+      });
+    });
+    
+
+This seems very verbose. Is there a better way?
+
+jsFiddle: <http://jsfiddle.net/johnlindquist/d63Y3/>
+
+The simplest possible version, without using modules would look like this:
+
+    
+    
+    describe('Pride Rock', function() {
+    
+        it('should be ruled by Simba', inject(function($rootScope, $controller) {
+            var scope = $rootScope.$new();
+            var ctrl = $controller(PrideRockCtrl, {
+                $scope: scope,
+                King:"Mufasa"
+            });
+            expect(scope.king).toEqual("Mufasa");
+        }));
+    });
+    
+
+In fact you were pretty close with your attempts, the only thing missing was a
+local dependency in a controller (`King:"Mufasa"`).
+
+In the tests like those, where we do focus on a one, selected class only it is
+not necessary to use the $injector, as we can manually mock / stub our
+dependencies. At the end of the day $injector is just giving instances of
+objects so we can create those our self as well.
+
+Angular controllers are just JS functions. If you don't want anything
+injected, just call them.
+
+    
+    
+    describe('king should be set', function() {
+      var scope = {};
+      var lion = "Simba";
+      PrideController(scope, lion);
+      expect(scope.king).toEqual(lion)
+    });
+    
+

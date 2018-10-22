@@ -1,0 +1,22 @@
+24483269 How to know the number of types in the elastic search index
+
+Here is my question description
+
+  * I created elastic search index named **testindex**
+  * curl -XPUT 'localhost:8080/testindex/type1/id1?pretty=true'
+  * As of now i know my testindex has one type i.e type1
+  * I have one more index called **anotherindex** ,i want to know how many types in **anotherindex** by seeing index name itself.
+  * How to know.Is there any curl command ?
+
+You can use the get mapping command:
+
+    
+    
+    curl -XGET 'http://localhost:9200/anotherindex/_mapping?pretty'
+    
+
+The command will list all the mappings for index anotherindex.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+get-mapping.html>
+

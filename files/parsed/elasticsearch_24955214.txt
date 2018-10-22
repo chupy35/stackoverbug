@@ -1,0 +1,76 @@
+24955214 Bounce Rate Query Elasticsearch
+
+i am planning to implement a query for calculating the bounce rate using
+elasticsearch query.
+
+can any body know how to use the input of aggreation results using script ?
+
+    
+    
+    {
+       "aggs":{
+          "monthly":{
+             "date_histogram":{
+                "field":"timestamp",
+                "interval":"month",
+                "script":""
+             },
+             "aggs":{
+                "visits_greater_than_one":{
+                   "terms":{
+                      "field":"sessionId",
+                      "min_doc_count":2
+                   }
+                }
+             },
+             "aggs":{
+                "visitor_count":{
+                   "cardinality":{
+                      "field":"sessionId"
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+Thanks, Ankireddy Polu
+
+i have found a little workaround for addressing this problem
+
+    
+    
+    {
+       "aggs":{
+          "monthly":{
+             "date_histogram":{
+                "field":"timestamp",
+                "interval":"month"
+             },
+             "aggs":{
+                "visits_greater_than_one":{
+                   "terms":{
+                      "field":"sessionId",
+                      "min_doc_count":2
+                   }
+                },
+                    "visitor_count":{
+                   "cardinality":{
+                      "field":"sessionId"
+                   }
+                }
+             }
+    
+          }
+       }
+    }
+    
+
+the drawback with the approach is we need to perform the calculation
+separately where ever we pares the result, we will have a two different
+buckets one will hold the number of sessions whose have more than one entry
+and total number of session during that interval. using that (visitor_count -
+visits_greater_than_one)/visitor_count will be my bounce rate (visitor_count -
+visits_greater_than_one) gives me the sessions user visited only single page
+

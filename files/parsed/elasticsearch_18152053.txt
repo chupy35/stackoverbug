@@ -1,0 +1,177 @@
+18152053 Find empty strings in elasticsearch
+
+I'm trying to `_search` documents that has some specific value in the field.
+
+    
+    
+    {
+      "query": {
+          "bool": {
+            "must": [
+             {"field": {"advs.status": "warn"}}
+           ]
+          }
+      }
+    }
+    
+
+That works find. But when I'm trying to find documents that has empty string
+in that field, I get this error:
+
+    
+    
+    ParseException[Cannot parse '' ...
+    
+
+and then - long list of what was expected instead of empty string.
+
+I try this query:
+
+    
+    
+    {
+      "query": { 
+        "bool": {
+            "must": [
+                {"term": {"advs.status": ""}}
+             ]
+            }
+      }
+    }
+    
+
+It doesn't fails but finds nothing. It works for non empty strings instead.
+How am I supposed to do this?
+
+My mapping for this type looks exactly like this:
+
+    
+    
+    {
+        "reports": {
+            "dynamic": "false",
+            "_ttl": {
+                "enabled": true,
+                "default": 7776000000
+            },
+            "properties": {
+                "@fields": {
+                    "dynamic": "true",
+                    "properties": {
+                        "upstream_status": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "advs": {
+                    "properties": {
+                        "status": {
+                            "type": "string",
+                            "store": "yes"
+                        }
+                    }
+                },
+                "advs.status": {
+                    "type": "string",
+                    "store": "yes"
+                }
+            }
+        }
+    }
+    
+
+Try using `must_not` with `missing` in your `bool`:
+
+    
+    
+    "must_not":{
+      "missing":{
+        "field":"advs.status",
+        "existence":true,
+        "null_value":true
+      }
+    }
+    
+
+Or another way to do the same thing more efficiently is to use the `exists`
+filter:
+
+    
+    
+    "exists" : {
+      "field" : "advs.status"
+    }
+    
+
+Both are valid, but this one is better :)
+
+If tou want to search for fields containing an empty string, either you change
+your mapping to set not_analyzed to this particular field or you can use a
+script filter:
+
+    
+    
+    "filter": {
+      "script": {
+        "script": "_source.advs.status.length() == 0"
+      }
+    }
+    
+
+the "missing" does work only for null values or not being there at all.
+Matching empty string was already answered here:
+<https://stackoverflow.com/a/25562877/155708>
+
+I generally use a filter if the field is not analyzed. Here is snippet:
+
+    
+    
+    {
+      "filtered": {
+        "filter": {
+          "term": {
+            "field": ""
+          }
+        }
+      }
+    },
+    
+
+You can try this temporary solution which works but isn't optimal -
+<https://github.com/elastic/elasticsearch/issues/7515>
+
+    
+    
+    PUT t/t/1
+    {
+    "textContent": ""
+    }
+    
+    PUT t/t/2
+    {
+     "textContent": "foo"
+    }
+    
+    GET t/t/_search
+    {
+     "query": {
+      "bool": {
+       "must": [
+        {
+          "exists": {
+            "field": "textContent"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "wildcard": {
+            "textContent": "*"
+          }
+         }
+       ]
+      }
+     }
+    }
+    
+

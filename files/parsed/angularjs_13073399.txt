@@ -1,0 +1,64 @@
+13073399 Dynamically adding tags in AngularJS
+
+all:
+
+Is there a way to dynamically add a tag (especially a custom tag) in
+AngularJS?
+
+I have a custom tag recently created of the type:
+
+    
+    
+    <mytag type="small" />
+    
+
+which I am attempting to manage in a larger <div> element. What I would like
+to do is place, within the div element, a button that, when pressed, causes
+the creation of a new mytag element within the div.
+
+In other words, given an initial page composition:
+
+    
+    
+    <div ng-controller="tagControl">
+       <div id="tagdiv">
+          <mytag type="small" />
+       </div>
+       <div id="Controls">
+          <button ng-click="addTag()">Add New Tag</button>
+          <button ng-click="clearTags()">Clear All Tags</button>
+       </div>
+    </div>
+    
+
+I would like to put something in the tagControl's addTag() function that adds
+a new mytag tag whenever the "Add New Tag" button is pressed, and I'd like to
+put something in the clearTags() function that removes all added tags when the
+"Clear All Tags" button is pressed.
+
+Is this possible using AngularJS? If not, can it be accomplished using a
+third- party library? In either event, how can this be done?
+
+Thanks in advance for any insights...
+
+You need to think in terms of MVC and not DOM manipulation. How many of your
+`<mytag>`s you want to show up should be driven by something in your model.
+And then your HTML would look like this:
+
+    
+    
+    <div ng-controller="tagControl">
+      <div id="tagdiv">
+         <mytag type="small" ng-repeat="foo in items" />
+      </div>
+      <div id="Controls">
+         <button ng-click="addTag()">Add New Tag</button>
+         <button ng-click="clearTags()">Clear All Tags</button>
+      </div>
+    </div>
+    
+
+Then your addTag() method would just add to the `items` model and the
+clearTags() would clear the list. Angular will add the tags for you as you
+update the model
+

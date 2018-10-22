@@ -1,0 +1,14 @@
+13243034 Is there a way to remove/ignore matches that have a low score in
+elasticsearch?
+
+I am getting results that have scores of over 40 for a search but I am also
+getting way more items with scores under 5. Is there a way to set a bottom
+threshold so I am not displaying these low-score results but only the high
+scoring ones? Or is there a better way of doing this? Thank you!
+
+Have a look at
+[min_score](http://www.elasticsearch.org/guide/reference/api/search/min-
+score.html) option in Search API.
+
+Hope this helps.
+

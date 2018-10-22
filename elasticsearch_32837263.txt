@@ -1,0 +1,3 @@
+32837263
+Elasticsearch : Query on one of the fields given in the list
+<p>Elasticsearch has documents indexed with the following fields:</p>&#xA;&#xA;<p>{"id":"1", "title":"test", "locale_1_title":"locale_test"}</p>&#xA;&#xA;<p>Given a query, following behaviour is needed at each document level:</p>&#xA;&#xA;<p>1) If locale_1_title field is not empty(""), search only on locale_1_title field. Do not search on title field.</p>&#xA;&#xA;<p>2) If locale_1_title field is empty, search on title field.</p>&#xA;&#xA;<p>What can be a simple elasticsearch query to get the above behaviour ?</p>&#xA;

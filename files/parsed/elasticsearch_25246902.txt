@@ -1,0 +1,24 @@
+25246902 In ElasticSearch is there is limit to the number of items in a terms
+query?
+
+In the ES docs it lists this sample query:
+
+    
+    
+    {
+      "terms": {
+        "tags": [
+          "blue",
+          "pill"
+        ],
+        "minimum_should_match": 1
+      }
+    }
+    
+
+Is there a limit (or a practical limit) on the number of items I could put in
+the list of possible strings to search for? Could I have a hundred items here?
+
+Yaa, you can put thousands of item there(i've tested).. just follow the
+syntax. Then you are ok.
+

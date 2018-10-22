@@ -1,0 +1,12 @@
+25155421 How to sort fields in _source for a search?
+
+I have a requirement where we are creating CSV from the search result of a
+particular query. The problem statement is:
+
+There are certain questions with values stored in the elasticsearch. For
+example A with value of 1 or 0. B with Value of 1 and 0 and so on. Now when I
+retrieve the response, the questions(fields) in _search are not in order for
+example it comes as A,C,D,F,B. What we want is something to be added to query
+so that we have a sorted field list in_source such as A,B,C,D so that it can
+directly be mapped into CSV. Does elasticsearch provide any API of this sort?
+

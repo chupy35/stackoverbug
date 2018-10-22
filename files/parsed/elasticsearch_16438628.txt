@@ -1,0 +1,24 @@
+16438628 How to alter ElasticSearch Field name
+
+My ElasticSearch mapping created
+
+    
+    
+    curl -XPUT 'http://myhostname:9200/data/my_data/_mapping' -d '
+    {
+        "my_data" : {
+            "properties" : {
+                    "empID" : {"type" : "integer"},
+                    "empName" : {"type" : "string"}
+            }
+        }
+    }'
+    
+
+so, i want to alter fieldname 'empName' to 'Emp_Name'.whether it is
+possible,and also i had data existing for this mapping.
+
+Sorry, I don't think you can alter field names. You'll have to delete your
+index, create the mapping with the name you want, and re-index your data if
+possible.
+

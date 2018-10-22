@@ -1,0 +1,21 @@
+18300443 How to GET the child record from parent child in ElasticSearch?
+
+I simply would like to GET the child record directly after inserting both the
+Parent and the Child. Must I do a search query to just get the child or can I
+just do a standard GET with just the index, type, id of the child record?
+
+thanks
+
+Answer: you need to add the routing parameter with the parent ID to retrieve
+the child record.
+
+Yes, you can just do a standard GET on the child `index`, `type` and `id`, but
+as _user983022_ mentioned, you'll need to use the `parent_id` as the `routing`
+parameter in your request, otherwise ES will likely look on the wrong shard
+for the child document.
+
+For more information on parent/child and routing, read
+<http://www.elasticsearch.org/blog/customizing-your-document-routing/> and
+<http://www.elasticsearch.org/guide/reference/api/get/> mentions using the
+`routing` parameter in `GET` requests.
+

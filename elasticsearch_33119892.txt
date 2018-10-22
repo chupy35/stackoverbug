@@ -1,0 +1,4 @@
+33119892
+How can I use an Elascicsearch plugin in a JVM local node?
+<p>I'm in the process of adding support for unicode normalization in ES with the help of the <a href="https://github.com/elastic/elasticsearch-analysis-icu" rel="nofollow">ICU analysis plugin</a>. Installing this in a dedicated cluster is relatively easy, but I also need this plugin to be available during testing, where we use a JVM local node. Since it's a JVM local node I can't simply call the commands as explained in the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-plugins.html" rel="nofollow">plugin documentation</a>. How can I get my plugin to work for this local node?</p>&#xA;
+<p>After digging through the source code of Elasticsearch I figured out the answer, and it is stupidly simple: Just make sure the plugins are in your classpath and ES will pick them up automatically. In my case adding the plugin to my <code>pom.xml</code> was enough.</p>&#xA;

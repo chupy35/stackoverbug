@@ -1,0 +1,38 @@
+25540440 ElasticSearch:exception while handling client http traffic, closing
+connection
+
+I am using ElasticSearch 1.2.1 and i am getting this error
+
+    
+    
+    [2014-08-28 09:16:47,785][WARN ][http.netty               ] [In-Betweener] Caught exception while handling client http traffic, closing connection [id: 0x5a731cf1, /127.0.0.1:55190 => /127.0.0.1:9200]
+    java.lang.IllegalArgumentException: empty text
+        at org.elasticsearch.common.netty.handler.codec.http.HttpVersion.<init>(HttpVersion.java:97)
+        at org.elasticsearch.common.netty.handler.codec.http.HttpVersion.valueOf(HttpVersion.java:62)
+        at org.elasticsearch.common.netty.handler.codec.http.HttpRequestDecoder.createMessage(HttpRequestDecoder.java:75)
+        at org.elasticsearch.common.netty.handler.codec.http.HttpMessageDecoder.decode(HttpMessageDecoder.java:189)
+        at org.elasticsearch.common.netty.handler.codec.http.HttpMessageDecoder.decode(HttpMessageDecoder.java:101)
+        at org.elasticsearch.common.netty.handler.codec.replay.ReplayingDecoder.callDecode(ReplayingDecoder.java:500)
+        at org.elasticsearch.common.netty.handler.codec.replay.ReplayingDecoder.messageReceived(ReplayingDecoder.java:435)
+        at org.elasticsearch.common.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.java:70)
+        at org.elasticsearch.common.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:564)
+        at org.elasticsearch.common.netty.channel.DefaultChannelPipeline$DefaultChannelHandlerContext.sendUpstream(DefaultChannelPipeline.java:791)
+        at org.elasticsearch.common.netty.OpenChannelsHandler.handleUpstream(OpenChannelsHandler.java:74)
+        at org.elasticsearch.common.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:564)
+        at org.elasticsearch.common.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:559)
+        at org.elasticsearch.common.netty.channel.Channels.fireMessageReceived(Channels.java:268)
+        at org.elasticsearch.common.netty.channel.Channels.fireMessageReceived(Channels.java:255)
+        at org.elasticsearch.common.netty.channel.socket.nio.NioWorker.read(NioWorker.java:88)
+        at org.elasticsearch.common.netty.channel.socket.nio.AbstractNioWorker.process(AbstractNioWorker.java:108)
+        at org.elasticsearch.common.netty.channel.socket.nio.AbstractNioSelector.run(AbstractNioSelector.java:318)
+        at org.elasticsearch.common.netty.channel.socket.nio.AbstractNioWorker.run(AbstractNioWorker.java:89)
+        at org.elasticsearch.common.netty.channel.socket.nio.NioWorker.run(NioWorker.java:178)
+        at org.elasticsearch.common.netty.util.ThreadRenamingRunnable.run(ThreadRenamingRunnable.java:108)
+        at org.elasticsearch.common.netty.util.internal.DeadLockProofWorker$1.run(DeadLockProofWorker.java:42)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:744)
+    
+
+any reason for this.?
+

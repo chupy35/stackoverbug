@@ -1,0 +1,274 @@
+21539520 Elasticsearch Inconsistent facet counts
+
+I seem to to be experiencing some inconsistent facet counts, and I was
+wondering why there is a difference between the two. I ran the two queries
+below and you can see at least one of the terms has a slightly different count
+(see term 21 towards the bottom) 948 vs 1035 is the difference. Term 43 at the
+very bottom has a delta as well.
+
+Query #1:
+
+    
+    
+    {'facets': {'primary_country_id': {'terms': {'field': 'primary_country_id', 'size': '20'}}}}
+    
+
+Query #1:
+
+    
+    
+    {'facets': {'primary_country_id': {'terms': {'field': 'primary_country_id', 'size': '30'}}}}
+    
+
+Results from Query #1:
+
+    
+    
+    {
+      "primary_country_id": {
+        "_type": "terms",
+        "missing": 3475,
+        "total": 312111,
+        "other": 4460,
+        "terms": [
+          {
+            "term": 41,
+            "count": 187293
+          },
+          {
+            "term": 9,
+            "count": 24177
+          },
+          {
+            "term": 50,
+            "count": 17200
+          },
+          {
+            "term": 15,
+            "count": 13015
+          },
+          {
+            "term": 30,
+            "count": 10296
+          },
+          {
+            "term": 32,
+            "count": 8824
+          },
+          {
+            "term": 6,
+            "count": 7703
+          },
+          {
+            "term": 23,
+            "count": 7502
+          },
+          {
+            "term": 2,
+            "count": 5614
+          },
+          {
+            "term": 33,
+            "count": 5214
+          },
+          {
+            "term": 16,
+            "count": 4691
+          },
+          {
+            "term": 24,
+            "count": 3560
+          },
+          {
+            "term": 31,
+            "count": 3126
+          },
+          {
+            "term": 7,
+            "count": 2748
+          },
+          {
+            "term": 12,
+            "count": 1430
+          },
+          {
+            "term": 19,
+            "count": 1403
+          },
+          {
+            "term": 8,
+            "count": 1342
+          },
+          {
+            "term": 46,
+            "count": 1052
+          },
+          {
+            "term": 21,
+            "count": 948
+          },
+          {
+            "term": 43,
+            "count": 513
+          }
+        ]
+      }
+    }
+    
+
+Results from Query #2:
+
+    
+    
+    {
+      "primary_country_id": {
+        "_type": "terms",
+        "missing": 3475,
+        "total": 312111,
+        "other": 0,
+        "terms": [
+          {
+            "term": 41,
+            "count": 187293
+          },
+          {
+            "term": 9,
+            "count": 24177
+          },
+          {
+            "term": 50,
+            "count": 17200
+          },
+          {
+            "term": 15,
+            "count": 13015
+          },
+          {
+            "term": 30,
+            "count": 10296
+          },
+          {
+            "term": 32,
+            "count": 8824
+          },
+          {
+            "term": 6,
+            "count": 7703
+          },
+          {
+            "term": 23,
+            "count": 7502
+          },
+          {
+            "term": 2,
+            "count": 5614
+          },
+          {
+            "term": 33,
+            "count": 5214
+          },
+          {
+            "term": 16,
+            "count": 4691
+          },
+          {
+            "term": 24,
+            "count": 3560
+          },
+          {
+            "term": 31,
+            "count": 3126
+          },
+          {
+            "term": 7,
+            "count": 2748
+          },
+          {
+            "term": 12,
+            "count": 1430
+          },
+          {
+            "term": 19,
+            "count": 1403
+          },
+          {
+            "term": 8,
+            "count": 1342
+          },
+          {
+            "term": 46,
+            "count": 1052
+          },
+          {
+            "term": 21,
+            "count": 1035
+          },
+          {
+            "term": 43,
+            "count": 910
+          },
+          {
+            "term": 22,
+            "count": 906
+          },
+          {
+            "term": 13,
+            "count": 717
+          },
+          {
+            "term": 28,
+            "count": 690
+          },
+          {
+            "term": 38,
+            "count": 415
+          },
+          {
+            "term": 26,
+            "count": 352
+          },
+          {
+            "term": 37,
+            "count": 295
+          },
+          {
+            "term": 25,
+            "count": 208
+          },
+          {
+            "term": 34,
+            "count": 207
+          },
+          {
+            "term": 4,
+            "count": 94
+          },
+          {
+            "term": 48,
+            "count": 92
+          }
+        ]
+      }
+    }
+    
+
+I think you just run into this issue:
+<https://github.com/elasticsearch/elasticsearch/issues/1305>
+
+This is something that can happen in any distributed system, as mentioned in
+the other answer there's a [github
+issue](https://github.com/elasticsearch/elasticsearch/issues/1305) for it. The
+only 100% guaranteed solution is to go for a single shard, which does not
+scale though.
+
+The problem manifests itself with high cardinality fields, fields that have a
+high amount of unique terms. You can use the `shard_size` parameter to control
+how many facet entries will be requested per shard, which can differ from the
+`size` (default 10) that tells how many entries you get back. For instance
+having `size` set to `10` and `shard_size` set to `100` should make things
+better already, but doesn't guarantee that you get all the counts totally
+accurate, it just reduces the chance that you see wrong counts. Whether you
+still get back wrong counts depends on the cardinality of the fields you facet
+on. You can imagine that if a field has 100 unique terms, `shard_size` set to
+`100` would guarantee to have perfect counts all the time.
+

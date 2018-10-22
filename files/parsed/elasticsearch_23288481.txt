@@ -1,0 +1,153 @@
+23288481 Elasticsearch - Autocomplete with corrections
+
+Here is a sample context :
+
+    
+    
+    curl -XPUT localhost:9200/testso -d '{
+      "mappings": {
+        "person": {
+          "properties": {
+            "name": {
+              "type": "string",
+              "index": "not_analyzed"
+            }
+          }
+        }
+      }
+    }
+    
+    curl -XPUT 'http://localhost:9200/testso/person/1' -d '{
+      "name" : "foo bar",
+      "context_id" : 1
+    }'
+    
+    curl -XPUT 'http://localhost:9200/testso/person/2' -d '{
+      "name" : "fou bar",
+      "context_id" : 1
+    }'
+    
+    curl -XPUT 'http://localhost:9200/testso/person/3' -d '{
+      "name" : "foo baz",
+      "context_id" : 2
+    }'
+    
+
+I'm looking about a method to help user to "correct" its writing and
+autocomplete it, in a specific context.
+
+Exemples, looking for context 1 :
+
+    
+    
+    "foo bar" => [ "foo bar", "fou bar" ]
+    "fou bar" => [ "foo bar", "fou bar" ]
+    "foo"     => [ "foo", "fou", "foo bar", "fou bar" ]
+    "fol"     => [ "foo", "fou", "foo bar", "fou bar" ]
+    
+
+I have tested some elasticsearch functionnalities... `suggest` does not take
+account of `"query"` option :
+
+    
+    
+    curl -XGET http://localhost:9200/testso/person/_search?search_type=count -d '{
+      "query" : { "query_string": { "query": "context_id:2" } },
+      "suggest": {
+        "text" : "foo baz",
+        "my_suggestion": {
+          "term" : {
+            "field" : "name"
+          }
+        }
+      }
+    }'
+    
+
+... returns suggestions "foo bar" and "fou bar", which belongs to context 1.
+
+Do you have any idea about how query elasticsearch to return things like this
+? A specific mapping ? An other functionnality ? A specific indexer ?
+
+The query option is not taken into account, as Elasticsearch uses
+[FST](http://en.wikipedia.org/wiki/Finite_state_transducer) to enable the
+prefix completion functionality. It's a very fast in memory datastructure and
+enables suggestions within 1 ms. If you would add query or filter options, you
+would slow done the suggestions process.
+
+Regarding your use case: They anounce the [context
+suggester](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/suggester-
+context.html) in their API documentation with the 1.2.0 release, which should
+serve your needs.
+
+In the meantime, you can implement some walkarounds:
+
+  * Create a separate index for the suggestions of every contextId
+  * Add the context information to the suggestion field and also to the query: The mapping
+    
+        PUT /testo/person/_mapping{
+    "properties": {
+        "name": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "name_suggestion": {
+          "type": "completion"
+        }
+      }
+    }    
+    
+
+Define the possible suggestions hits and the output
+
+    
+        PUT /testo/person/1
+    {
+      "name": "foo bar",
+      "name_suggestion": {
+      "input": [
+        "onefoo bar",
+        "onefoo",
+        "onebar"
+      ], "output": "foo bar"
+      }
+    }
+    
+    
+    PUT /testo/person/2
+    {
+      "name": "fou bar",
+      "name_suggestion": {
+      "input": [
+        "onefou bar",
+        "onefou",
+        "onebar"
+       ], "output": "fou bar"
+       }
+    }
+    
+    PUT /testo/person/3
+    {
+      "name": "foo baz",
+      "name_suggestion": {
+      "input": [
+        "twofou baz",
+        "twofou",
+        "twobaz"
+      ], "output": "foo baz"
+      } 
+    }
+    
+    POST /testo/_suggest
+    {
+      "suggest": {
+        "text": "twofoo",
+        "completion": {
+          "field": "name_suggestion"
+        }
+      }
+    }  
+    
+
+Note that the completion suggester uses the simple analyzer
+

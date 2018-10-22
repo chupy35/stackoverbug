@@ -1,0 +1,60 @@
+21429839 Changing elasticsearch mapping
+
+Take the simplest case of indexing the following document in elasticsearch
+
+    
+    
+    {
+      "name": "Mark",
+      "age": 28
+    }
+    
+
+With automatic mapping the mapping for this index would now look like
+
+    
+    
+    "properties" : {
+       "doc" : {
+         "properties" : {
+           "age" : { "type" : "long"},
+           "name" : { "type" : "string"
+        }
+      }
+    },
+    
+
+But say I then wanted to allow the case where this document should be indexed
+
+    
+    
+    {
+      "name": "Bill",
+      "age": "seven"
+    }
+    
+
+If I try this the mapping does not update and elasticsearch throws an error
+since there is a conflict with the type of the age property.  Is there any way
+to do this so both docs could be automatically indexed and consequently
+queryable?
+
+you can add new fields and update a mapping. But you cannot update a
+mapping.To do that you need to drop the index and create a new mapping and
+index the data..!
+
+For more info refer this link [reference](http://elasticsearch-
+users.115913.n3.nabble.com/How-to-update-a-mapping-td3707981.html)
+
+Mappings are defined per type so what you could do is having two types in your
+index:
+
+  1. numeric
+  2. alphabetical
+
+And split the documents according to the value in the age field. If you run a
+query you can query both types.
+
+You can't change existing mapping.You can only add new field in it. Or you
+have to delete old mapping & create a new mapping for that particular index.
+

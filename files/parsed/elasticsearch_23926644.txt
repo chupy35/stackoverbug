@@ -1,0 +1,209 @@
+23926644 How to configure number of shards per cluster in elasticsearch
+
+I don't understand the configuration of shards in ES. I have few questions
+about sharding in ES:
+
+  1. The number of primary shards is configured through `index.number_of_shards` parameter, right?
+
+So, it means that the number of shards are configured per index. If so, if I
+have 2 indexes, then I will have 10 shards on the node ?
+
+  2. Assuming I have one node (Node 1) that configured with 3 shards and 1 replica. Then, I create a new node (Node 2), in the same cluster, with 2 shards. So, I assume I will have replica only to two shards, right?
+
+In addition, what happens in case Node 1 is down, how the cluster "knows" that
+it should have 3 shards instead of 2? Since I have only 2 shards on Node 2,
+then it means that I lost the data of one of the shards in Node 1 ?
+
+**Answer 1)** yes you will have 10 shards fr 2 index with 5 shards.
+
+**Answer 2)** I think you confused with shards and index.
+
+Shards are split piece for index not for node.
+
+If you create a index with 3 shards and 1 replica.
+
+You will get 3 primary shard and 3 replica shards.
+
+If you start new node the shards will be balanced with new node.So you will
+have 3 shard in old node and 3 shards in new node.
+
+If old node fails you will survive with new node data.It will have exact copy
+of old node.
+
+To understand basic concepts of elasticsearch
+[refer](http://technyvorous.wordpress.com/elastic-search/)
+
+HOpe it helps..!
+
+So first off I'd start reading about indexes, primary shards, replica shards
+and nodes to understand the differences:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/glossary.html>
+
+This is a pretty good description:
+
+> 2.3 Index Basics
+
+>
+
+> The largest single unit of data in elasticsearch is an index. Indexes are
+logical and physical partitions of documents within elasticsearch. Documents
+and document types are unique per-index. Indexes have no knowledge of data
+contained in other indexes. From an operational standpoint, many performance
+and durability related options are set only at the per-index level. From a
+query perspective, while elasticsearch supports cross-index searches, in
+practice it usually makes more organizational sense to design for searches
+against individual indexes.
+
+>
+
+> Elasticsearch indexes are most similar to the ‘database’ abstraction in the
+relational world. An elasticsearch index is a fully partitioned universe
+within a single running server instance. Documents and type mappings are
+scoped per index, making it safe to re-use names and ids across indexes.
+Indexes also have their own settings for cluster replication, sharding, custom
+text analysis, and many other concerns.
+
+>
+
+> Indexes in elasticsearch are not 1:1 mappings to Lucene indexes, they are in
+fact sharded across a configurable number of Lucene indexes, 5 by default,
+with 1 replica per shard. A single machine may have a greater or lesser number
+of shards for a given index than other machines in the cluster. Elasticsearch
+tries to keep the total data across all indexes about equal on all machines,
+even if that means that certain indexes may be disproportionately represented
+on a given machine. Each shard has a configurable number of full replicas,
+which are always stored on unique instances. If the cluster is not big enough
+to support the specified number of replicas the cluster’s health will be
+reported as a degraded ‘yellow’ state. The basic dev setup for elasticsearch,
+consequently, always thinks that it’s operating in a degraded state given that
+by default indexes, a single running instance has no peers to replicate its
+data to. Note that this has no practical effect on its operation for
+development purposes. It is, however, recommended that elasticsearch always
+run on multiple servers in production environments. As a clustered database,
+many of data guarantees hinge on multiple nodes being available.
+
+From here: <http://exploringelasticsearch.com/modeling_data.html#sec-modeling-
+index-basics>
+
+When you create an index it you tell it how many primary and replica shards
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+create-index.html>. ES defaults to 5 primary shard and 1 replica shard per
+primary for a total of 10 shards.
+
+These shards will be balanced over how many nodes you have in the cluster,
+provided that a primary and it's replica(s) cannot reside on the same node. So
+if you start with 2 nodes and the default 5 primary shards and 1 replica per
+primary you will get 5 shards per node. Add more nodes and the number of
+shards per node drops. Add more indexes and the number of shards per node
+increases.
+
+In all cases the number of nodes must be 1 greater than the configured number
+of replicas. So if you configure 1 replica you should have 2 nodes so that the
+primary can be on one and the single replica on the other, otherwise the
+replicas will not be assigned and your cluster status will be Yellow. If you
+have it configured for 2 replicas which means 1 primary shard and 2 replica
+shards you need at least 3 nodes to keep them all separate. And so on.
+
+Your questions can't be answered directly because they are based on incorrect
+assumptions about how ES works. You don't add a node with shards - you add a
+node and then ES will re-balance the existing shards across the entire
+cluster. Yes, you do have some control over this if you want but I would not
+do so until you are much more familiar with ES operations. I'd read up on it
+here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-allocation.html> and here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+reroute.html> and here:
+<http://exploringelasticsearch.com/advanced_techniques.html#advanced-routing>
+
+From the last link:
+
+> 8.1.1 How Elasticsearch Routing Works
+
+>
+
+> Understanding routing is important in large elasticsearch clusters. By
+exercising fine-grained control over routing the quantity of cluster resources
+used can be severely reduced, often by orders of magnitude.
+
+>
+
+> The primary mechanism through which elasticsearch scales is sharding.
+Sharding is a common technique for splitting data and computation across
+multiple servers, where a property of a document has a function returning a
+consistent value applied to it in order to determine which server it will be
+stored on. The value used for this in elasticsearch is the document’s _id
+field by default. The algorithm used to convert a value to a shard id is
+what’s known as a consistent hashing algorithm.
+
+>
+
+> Maintaining good cluster performance is contingent upon even shard
+balancing. If data is unevenly distributed across a cluster some machines will
+be over-utilized while others will remain mostly idle. To avoid this, we want
+as even a distribution of numbers coming out of our consistent hashing
+algorithm as possible. Document ids hash well generally because they are
+evenly distributed if they are either UUIDs or monotonically increasing ids
+(1,2,3,4 …).
+
+>
+
+> This is the default approach, and it generally works well as it solves the
+problem of evening out data across the cluster. It also means that fetches for
+a single document only need to be routed to the shard that document hashes to.
+But what about routing queries? If, for instance, we are storing user history
+in elasticsearch, and are using UUIDs for each piece of user history data,
+user data will be stored evenly across the cluster. There’s some waste here,
+however, in that this means that our searches for that user’s data have poor
+data locality. Queries must be run on all shards within the index, and run
+against all possible data. Assuming that we have many users we can likely
+improve query performance by consistently routing all of a given user’s data
+to a single shard. Once the user’s data has been so-segmented, we’ll only need
+to execute across a single shard when performing operations on that user’s
+data.
+
+  1. Yes, the number of shards is per index. So if you had 2 indexes, each with 5 shards, then yes, you would have a total of 10 shards distributed across all your nodes.
+
+  2. The number of shards is unrelated to the number of nodes in the cluster. If you have 3 shards and one node, obviously all 3 shards will reside on that one node. However, if you then add an additional node, more shards are not magically created and you can't specify that a certain number of shards should reside on that new node. Rather, the existing shards are distributed as evenly as possible across all nodes resulting in one node with 2 shards and one node with 1 shard, for a total of 3. If you added a third node, then each node would house 1 shard for a total of 3. In other words, the number of shards is fixed and doesn't scale as you add more nodes.
+
+As to your final question, it's based on a false premise, so it's difficult to
+answer. Rather, lets take the example of above of three shards and two nodes.
+In that setup, one node will house 2 shards and one node will house 1 shard.
+If either of those nodes go down, your cluster goes down, because neither has
+a complete set of shards. The first node is missing 1 shard and the second
+node is missing 2. This is where replicas come in. By adding replicas, you can
+ensure that each node ends up with a full set of shards. For example, if you
+added 1 replica in the above scenario, then the first node would have 2 active
+shards and 1 replica of the third that lives on the other node. The second
+node would have 1 active shard and 1 replica each of the two that live on the
+first. As a result, if either node went down, the cluster can merely activate
+the replicas and still continue working.
+
+1) Yes, the number of shards is configured per index. It is a static operation
+and should be done while creating an index. If you want to change the number
+of shards at a later point of time, you have to reindex the document again and
+takes time.
+
+2) The number of shards don't depend on number of nodes in you cluster. Lets
+say you are a book seller website. You have 100 books to sell. your website
+have an elastic cluster with 3 nodes. you create a book index with 5 shards.
+Each and very shard contains 20 books. 2 shards will reside on node1, 2 shards
+will reside in node2 and 1 shard will reside in node3. now let's say node 2
+has gone down. But, still we have 2 shards in node 1 and 1 shard in node 3.
+Querying elastic search will still return the data on node 1 and node 3. i.e,
+60 books data will still be available. 40 books data is lost.
+
+But, the overall cluster status will be red meaning cluster is partially
+functioning, but somedata is not available.
+
+To make the system fault tolerant you can configure replicas. By default
+elasticsearch makes one replica of each shard. So in this case if the default
+configuration is not over written the copy of 2 shards on node 2 will be
+replicated either on node 1 or node 3 and they become the primary shards when
+node 2 is not available. So all the data is available even when node 2 is
+down.
+
+in this case the overall cluster health will be yellow, meaning cluster is
+still functional. But some nodes are lost.
+

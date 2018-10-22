@@ -1,0 +1,68 @@
+26059762 Callback when DOM is loaded in react.js
+
+I want to have a callback invoked on my react.js component when it's DOM
+element (including all child nodes) is actually loaded on the page and ready.
+Specifically, I have two components that I want to render the same size,
+choosing the maximum of whichever component has the larger natural size.
+
+It looks like `componentDidMount` is not really what I want because it is only
+called once per component, but I want my callback to be called again anytime
+the component is finished rendering. I thought I could add an `onLoad` event
+to the top level DOM element, but I guess that only applies for certain
+elements, like `<body>` and `<img>`.
+
+Looks like a combination of `componentDidMount` and `componentDidUpdate` will
+get the job done. The first is called after the initial rendering, when the
+DOM is available, the second is called after any subsequent renderings, once
+the updated DOM is available. In my case, I both have them delegate to a
+common function to do the same thing.
+
+I applied componentDidUpdate to table to have all columns same height. it
+works same as on $(window).load() in jquery.
+
+eg:
+
+    
+    
+    componentDidUpdate: function() {
+            $(".tbl-tr").height($(".tbl-tr ").height());
+        }
+    
+
+Add onload listener in componentDidMount
+
+    
+    
+    class Comp1 extends React.Component {
+     constructor(props) {
+        super(props);
+        this.handleLoad = this.handleLoad.bind(this);
+     }
+    
+     componentDidMount() {
+        window.addEventListener('load', this.handleLoad);
+     }
+    
+     handleLoad() {
+      $("myclass") //  $ is available here
+     }
+    }
+    
+
+In modern browsers, it should be like
+
+    
+    
+    try() {
+         if (!$("#element").size()) {
+           window.requestAnimationFrame(try);
+         } else {
+           // do your stuff
+         }
+    };
+    
+    componentDidMount(){
+         this.try();
+    }
+    
+

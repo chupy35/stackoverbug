@@ -1,0 +1,170 @@
+21188917 ElasticSearch return multi_field field value in query response
+
+My question is how to return the tokens of the `sub-field` of a `multi_field`
+when doing a query. I only seem to be able to get the value of the
+`multi_field` itself, not the analyzed token value.
+
+I have a `multi_field` setup on my url field to split out the file extension
+(if any). This creates the following mapping:
+
+    
+    
+    {
+      "url": {
+        "type": "multi_field",
+        "fields": {
+          "ext": {
+            "type": "string",
+            "analyzer": "url_ext_analyzer",
+            "include_in_all": false
+          },
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed",
+            "omit_norms": true,
+            "index_options": "docs",
+            "include_in_all": false
+          }
+        }
+      }
+    }
+    
+
+In my test query, I'm trying to make the `url.ext` field value return in the
+response by doing this:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "filter": {
+        "term": {
+          "url.ext": "pdf"
+        }
+      },
+      "fields": [
+        "_id",
+        "_type",
+        "url",
+        "title",
+        "url.ext"
+      ]
+    }
+    
+
+But it doesn't show up in the response. (The other fields I've asked for do
+show up in the fields array):
+
+    
+    
+    {
+      "hits": [
+        {
+          "_index": "test2",
+          "_type": "doc",
+          "_id": "1",
+          "_score": 1,
+          "fields": {
+            "url": "http://bacon.com/static/764612436137067/cms/documents/bacon-ipsum.pdf",
+            "title": "Bacon ipsum"
+          }
+        }
+      ]
+    }
+    
+
+bash script to create example:
+
+    
+    
+    curl -XDELETE localhost:9200/test2?pretty
+    curl -XPOST localhost:9200/test2?pretty -d '{
+      "index": {
+        "number_of_shards": 1,
+        "analysis": {
+          "filter": {
+          },
+          "char_filter": {
+            "myFileExtRegex": {
+              "type": "pattern_replace",
+              "pattern": "(.*)\\.([a-z]{3,5})$",
+              "replacement": "$2"
+            }
+          },
+          "analyzer": {
+            "url_ext_analyzer": {
+              "type": "custom",
+              "char_filter": [
+                "myFileExtRegex"
+              ],
+              "tokenizer": "keyword",
+              "filter": [
+                "lowercase"
+              ]
+            }
+          }
+        }
+      }
+    }'
+    
+    curl -XPUT localhost:9200/test2/doc/_mapping?pretty -d '{
+      "tweet": {
+        "index_analyzer": "standard",
+        "search_analyzer": "standard",
+        "date_formats": [
+          "yyyy-MM-dd",
+          "dd-MM-yyyy"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "analyzer": "standard"
+          },
+          "content": {
+            "type": "string",
+            "analyzer": "standard"
+          },
+          "url": {
+            "type": "multi_field",
+            "fields": {
+              "untouched": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "ext": {
+                "type": "string",
+                "analyzer": "url_ext_analyzer",
+                "stored": "yes"
+              }
+            }
+          }
+        }
+      }
+    }'
+    
+    curl -XPUT 'http://localhost:9200/test2/doc/1?pretty' -d '{
+      "content": "Bacon ipsum dolor sit amet ham drumstick jowl ham hock capicola meatball shankle pork filet mignon ground round jerky turkey prosciutto",
+      "title": "Bacon ipsum",
+      "url": "http://bacon.com/static/764612436137067/cms/documents/bacon-ipsum.pdf"
+    }'
+    
+    curl -XGET localhost:9200/test2/_mapping?pretty
+    
+
+In your mapping, you should have `"store" : "yes"` instead of `"stored":
+"yes"`. Simple typo.
+
+I'm not positive your Regex is working as expected, but returning the field in
+a search request is solved by fixing the typo. You will notice that both the
+`"url"` and `"url.ext"` fields return the same thing, which sounds like it
+might not be what you want, but I'm not sure.
+
+Here is a runnable example. I added `"store" : "yes"` to both `url` sub-
+fields, and added a couple of facets to the search request so you can see what
+the tokens are for the `url` sub-fields. I also changed `"tweet"` to `"doc"`
+in the mapping, which seems to be what you meant.
+
+<http://sense.qbox.io/gist/60c448df41827146e93daf0a93591f001d46e42f>
+

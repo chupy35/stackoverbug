@@ -1,0 +1,17 @@
+14956677 elasticsearch query with field username:a stopped working
+
+I have a CouchDB document with field `username`. The query below works for all
+values except for "a". This strange because it used to work. I deleted my
+index and tried again but makes no difference. I do not see any errors either.
+I'm using CouchDB 1.2.1 with River plugin.
+
+Works: `curl http://localhost:9200/profiles/_search?q=username:b`
+
+Does not work: `curl http://localhost:9200/profiles/_search?q=username:a`
+
+I guess you were using some mapping before that you are not using anymore?  I
+guess now you are using the default mapping, where the word 'a' is a stopword.
+Thus the word 'a' does not get indexed at all. You might want to configure the
+username field as not_analyzed in your mapping, since I guess you want to
+index it as it is, without tokenizing nor anything else.
+

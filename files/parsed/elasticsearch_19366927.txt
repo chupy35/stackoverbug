@@ -1,0 +1,38 @@
+19366927 Multiple field autocomplete with index type boost
+
+What I'm trying to accomplish on a high level is an autocomplete input field
+which queries both customers and orders on multiple fields, with customers
+ranking higher for customer name searches.
+
+It seems to me that there are various ways to approach this problem with the
+tools that elasticsearch provides.
+
+The way that I have approached this is to use `multi_match` queries with
+`prefix_phrase` type in order to get partial queries to work across multiple
+fields.
+
+For example, "bo" should return back matches for "Bob Smith" as well as "Adam
+Boss". I'm indexing fullname as a separate field from firstname and lastname,
+so that "adam boss" will return a valid prefix match as well.
+
+In addition, I'd like to boost customer results - trying to do that with a
+[`boost` param on the
+multi_match](https://stackoverflow.com/questions/19322885/multi-match-boolean-
+boost), but that doesn't seem to be working the way I'd expect it to.
+
+What would be a straight forward way to tackle this problem?
+
+One of the challenges I'm facing with the elasticsearch docs is that it's not
+always clear which properties and features apply to which others. For example,
+the [multi_match
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-multi-match-query.html) doesn't talk about using a custom boost, other
+than on a field-level.
+
+I think the best way is using completion suggester of ES (v0.90.3+), please
+refer here for a real use case:
+
+<http://www.elasticsearch.org/blog/you-complete-me/>
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+suggesters-completion.html>
+

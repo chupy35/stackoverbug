@@ -1,0 +1,2 @@
+b'namedListeners array elements are nulled out instead of spliced from the array'
+b'In $rootScope.Scope#$on the function that is returned, when called nulls out the listener from the namedListeners array. I believe that instead of nulling out the element it should be splicing the element from the array. The side effect of nulling out the element reference is that the array will continue to grow for directives that have listeners that are continually created and destroyed which I have seen in my application.\n'

@@ -1,0 +1,111 @@
+15967784 Elasticsearch Update API if a field does not exist
+
+The example for upsert is:
+
+    
+    
+    curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+        "script" : "ctx._source.counter += count",
+        "params" : {
+            "count" : 4
+        },
+        "upsert" : {
+            "counter" : 1
+        }
+    }'
+    
+
+which works if the document does not exist previously.
+
+Say i want to update a field that does not necessarily exist, but the document
+exists. For example, the document might not have a counter field yet.
+
+How do I go about doing that?
+
+You can use the update script to check if field exists:
+
+    
+    
+    curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+        "script" : "if( ctx._source.containsKey(\"counter\") ){ ctx._source.counter += count; } else { ctx._source.counter = 1; }",
+        "params" : {
+            "count" : 4
+        },
+        "upsert" : {
+            "counter" : 1
+        }
+    }'
+    
+
+> The simplest form of the update request accepts a partial document as the
+`doc` parameter, which just gets **merged with the existing document.**
+Objects are merged together, existing scalar fields are overwritten, and new
+fields are added. See [Partial Updates to
+Documents](https://www.elastic.co/guide/en/elasticsearch/guide/current/partial-
+updates.html)
+
+For example,
+
+**(1) Create a new document, with just one field`field1`**
+
+    
+    
+    curl -XPOST localhost:9200/myidx/mytp/myid?pretty -d '{
+        "field1" : 1
+    }'
+    
+
+Your document is,
+
+    
+    
+    "_source" : {
+        "field1" : 1
+    }
+    
+
+**(2) Partial update a non-existing field,`field2`**
+
+    
+    
+    curl -XPOST localhost:9200/myidx/mytp/myid/_update?pretty -d '{
+        "doc" : {
+            "field2" : 2
+        }
+    }'
+    
+
+Your document is,
+
+    
+    
+    "_source" : {
+        "field1" : 1,
+        "field2" : 2
+    }
+    
+
+**(3) Of course, you can update existing and non-existing fields
+simutaneously**
+
+    
+    
+    curl -XPOST localhost:9200/myidx/mytp/myid/_update?pretty -d '{
+        "doc" : {
+            "field2" : 200, 
+            "field3" : 3
+        }
+    }'
+    
+
+Your document is,
+
+    
+    
+    "_source" : {
+      "field1" : 1,
+      "field2" : 200,
+      "field3" : 3
+    }
+    
+

@@ -1,0 +1,19 @@
+20188627 elasticsearch update document frequently
+
+I am playing with ES. When one updates document in ES, ES automatically
+increments the version of the document.
+
+While this is great, i wander if ES keeps the old documents too?
+
+If it keeps the whole old documents, the storage on disk could grow a lot if I
+often update documents.
+
+So in general , i am planning to do daily updates on all documents in some
+index. For 1 year i will have 365 updates on every document in one index. Is
+this OK to do ? Will i have 365 documents stored in ES ?
+
+Is there a way to clean some old versions of the documents ?
+
+No it does not keep old documents, it's just for optimistic locking
+(concurrent updates). <http://www.elasticsearch.org/blog/versioning/>
+

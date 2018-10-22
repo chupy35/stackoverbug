@@ -1,0 +1,48 @@
+18389042 Is it possible to add filters when performing a GET elasticsearch?
+
+I have a situation where I want to filter the results not when performing a
+search but rather a GET using elasticsearch. Basically I have a Document that
+has a status field indicating that the entity has a state of discarded. When
+performing the GET I need to check the value of this field thereby excluding
+it if the status is indeed one of "discarded".
+
+I know i can do this using a search with a term query, but what about when
+using a GET against the index based on Document ID?
+
+Update: Upon further investigation, it seems the only way to do this is to use
+percolation or a search. I hope I am wrong if anyone has any suggestions I am
+all ears.
+
+Just to clarify I am using the Java API.
+
+thanks
+
+Try something like this:
+
+    
+    
+    curl http://domain/my_index/_search -d '{
+      "filter": {
+        "and": [
+          {
+            "ids" : {
+              "type" : "my_type",
+              "values" : ["123"]
+            }
+          },
+          {
+            "term" : {
+              "discarded" : "false"
+            }
+          }
+        ]
+      }
+    }
+    
+
+NOTE: you can also use a missing filter if the discarded field does not exist
+on some docs.
+
+NOTE 2: I don't think this will be markedly slower than a normal get request
+either...
+

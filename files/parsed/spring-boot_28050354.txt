@@ -1,0 +1,81 @@
+28050354 Spring Boot - replace default embedded Tomcat connector
+
+I need to add an AJP connector to embedded Tomcat and **disable (or replace)
+the default connector** that listens on 8080.
+
+I've tried customizing this with EmbeddedServletContainerCustomizer, but I
+can't get a handle on the Tomcat object to replace the default connector
+created there. As a result I end up with the http port on 8080 in addition to
+my AJP ports.
+
+Next, I've tried extending
+[TomcatEmbeddedServletContainerFactory](https://github.com/spring-
+projects/spring-boot/blob/master/spring-
+boot/src/main/java/org/springframework/boot/context/embedded/tomcat/TomcatEmbeddedServletContainerFactory.java)
+and overriding its getTomcatEmbeddedServletContainer method. Per the JavaDoc,
+this appears to be the perfect place to replace the default connector, but it
+still ends up being enabled (and doesn't create my AJP connector either). Any
+ideas what I might be missing? I've verified with the debugger that my
+configuration is being run.
+
+**Per answer below, here's the cleanest solution:**
+
+    
+    
+    @Bean
+    public EmbeddedServletContainerFactory tomcat() {
+        TomcatEmbeddedServletContainerFactory myFactory = new TomcatEmbeddedServletContainerFactory();
+        myFactory.setProtocol("AJP/1.3");
+        myFactory.setPort(9000);
+        return myFactory;
+    }
+    
+    @Bean
+    public EmbeddedServletContainerCustomizer containerCustomizer2() {
+        return new EmbeddedServletContainerCustomizer() {
+            @Override
+            public void customize(ConfigurableEmbeddedServletContainer container) {
+                TomcatEmbeddedServletContainerFactory tomcat = (TomcatEmbeddedServletContainerFactory) container;
+                tomcat.addConnectorCustomizers(new TomcatConnectorCustomizer() {
+                    @Override
+                    public void customize(Connector connector) {
+                        connector.setRedirectPort(9001);
+                    }
+                });
+            }
+        };
+    } 
+    
+
+You can use a `TomcatConnectorCustomizer` to configure the existing connector
+to use AJP by adding it to the `TomcatEmbeddedServletContainerFactory`.
+
+Just create a `EmbeddedServletContainerCustomizer` bean and reconfigure it to
+AJP:
+
+    
+    
+    @Configuration
+    public class ServletConfig {
+    
+        // AJP port defined in properties (default 666)
+        @Value("${tomcat.ajp.port:666}")
+        private Integer ajpPort;
+    
+        @Bean
+        public EmbeddedServletContainerCustomizer ajpContainerCustomizer() {
+            return new EmbeddedServletContainerCustomizer() {
+    
+                @Override
+                public void customize(ConfigurableEmbeddedServletContainer container) {
+                    TomcatEmbeddedServletContainerFactory tomcat = (TomcatEmbeddedServletContainerFactory) container;
+                    tomcat.setProtocol("AJP/1.3");
+                    tomcat.setPort(ajpPort);
+                }
+    
+            };
+        }
+    
+    }
+    
+

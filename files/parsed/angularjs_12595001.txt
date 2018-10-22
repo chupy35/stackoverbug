@@ -1,0 +1,35 @@
+12595001 Angular $resource POST
+
+I got this following example working with GET.. But 'doSave' is not working
+for POST. Am I overlooking some?
+
+* * *
+    
+    
+        $scope.obj1 = $resource('http://localhost:port/srv/:id',
+                {port: '\:8080', id:'2', callback: 'JSON_CALLBACK'},
+                {get:{method:'JSONP'}, save:{'POST'});
+    
+    
+        $scope.doSearch = function () {
+        $scope.Result = $scope.obj1.get({id:$scope.term});
+        }
+    
+        $scope.doSave = function () {
+        $scope.Result.save();
+        }
+    
+
+Except for the query/get methods, the rest are called prefixed with $
+($resource.$save(), $resource.$remove(), etc)
+
+So in doSave you need
+
+    
+    
+    $scope.Result.$save();
+    
+
+More details in the [official
+docs](http://docs.angularjs.org/api/ngResource.%24resource)
+

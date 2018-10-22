@@ -1,0 +1,366 @@
+21496023 Elasticsearch query innerobject
+
+I want to filter on an inner object but I'm not able to get my data. I have
+the following elasticsearch mapping:
+
+    
+    
+    {
+      "settings" : {
+        "number_of_shards" : 1,
+        "analysis" : {
+          "filter" : {
+            "technologies_synonym" : {
+              "type" : "synonym",
+              "synonyms_path" : "elasticsearch/synonyms/technologies.txt"
+            }
+          },
+          "analyzer" : {
+            "technologies_synonyms" : {
+              "tokenizer" : "whitespace",
+              "filter" : ["standard", "lowercase", "stop", "technologies_synonym"],
+              "type" : "custom"
+            }
+          }
+        }
+      },
+      "mappings": {
+        "company" : {
+          "properties" : {
+            "name" : { "type" : "string", "store" : "yes" },
+            "logo" : { "type" : "string", "store" : "yes" },
+            "website" : { "type" : "string", "store" : "yes" },
+            "employees" : { "type" : "string", "store" : "yes" },
+            "technologies" : { "type" : "string", "store" : "yes", "analyzer" : "technologies_synonyms" },
+            "locations" : {
+              "properties": {
+                "city" : { "type" : "string", "store" : "yes" },
+                "country" : { "type" : "string", "store" : "yes" },
+                "coordinates" : { "type" : "geo_point", "store" : "yes" },
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+My mapping use an inner object for locations, because a company can be located
+in several places. I also tried to replace the inner object by a nested.
+
+    
+    
+    {
+      "mapping" : {
+        "properties" : {
+          # ...
+          "locations" : { "type" : "nested" }
+        }
+    }
+    
+
+When I query my companies objects on the other fields, I'm able to get the
+expecting results, but when I filter on a country I have no results.
+
+Tried queries:
+
+    
+    
+    curl 'http://localhost:9200/myapp/company/_search?pretty=true' -XPOST -d '{
+       "query": {
+         "filtered": {
+           "query": { "match_all": {} },
+           "filter": {
+             "nested": {
+               "path": "locations",
+               "filter": {
+                 "bool": {
+                   "must": [
+                     {
+                       "term": { "locations.country": "France" }
+                     }
+                   ]
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+    
+     curl 'http://localhost:9200/tekusage/company/_search?pretty=true' -XPOST -d '{
+         "query": {
+           "filtered": {
+             "filter": {
+               "bool": {
+                 "must": [
+                   {
+                     "term": {
+                       "technologies": "ruby"
+                     }
+                   },
+                   {
+                     "term": {
+                       "company.locations.country": "France"
+                     }
+                   },
+                   {
+                     "term": {
+                       "company.locations.city": "Lille"
+                     }
+                   }
+                 ]
+               }
+             }
+           }
+         }
+       }'
+    
+
+Do you have some idea to help me to get my data ?
+
+Thanks, Kevin
+
+As far as I can tell, your problem is just that since you do not specify an
+analyzer for the `"locations.company"` field, it is analyzed with the
+[standard
+analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html), which means that `"France"` gets tokenized as
+`"france"` into the lookup table. Then you are trying a [term
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-term-filter.html) against that field, which means the filter text is not
+analyzed. The text `"France"` does not exist in the lookup table, so you get
+no results. But if you try querying `"france"` with what you have you should
+get a result.
+
+Or if you change the `"locations.company"` to `""index": "not_analyzed""` in
+your mapping then you will get a hit on `"France"`.
+
+By way of example in the first case (with `"nested"` type on `"locations"`,
+though it also works without that if you don't use a `"nested"` query), I
+built a simplified version of your index with a couple of docs:
+
+    
+    
+    curl -XPUT "http://localhost:9200/test_index/" -d'
+    {
+       "settings": {
+          "number_of_shards": 1
+       },
+       "mappings": {
+          "company": {
+             "properties": {
+                "name": {
+                   "type": "string"
+                },
+                "locations": {
+                   "type": "nested",
+                   "properties": {
+                      "country": {
+                         "type": "string"
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }'
+    
+
+then added a couple of docs:
+
+    
+    
+    curl -XPUT "http://localhost:9200/test_index/company/1" -d'
+    {
+        "name" : "company1",
+        "locations" : [
+            { "country" : "England" }
+        ]
+    }'
+    
+    curl -XPUT "http://localhost:9200/test_index/company/2" -d'
+    {
+        "name" : "company2",
+        "locations" : [
+            { "country" : "France" }
+        ]
+    }'
+    
+
+then query against it with `"france"`:
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_index/company/_search" -d'
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "nested": {
+                   "path": "locations",
+                   "filter": {
+                      "term": {
+                         "locations.country": "france"
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }'
+    
+
+and I get the response:
+
+    
+    
+    {
+       "took": 1,
+       "timed_out": false,
+       "_shards": {
+          "total": 1,
+          "successful": 1,
+          "failed": 0
+       },
+       "hits": {
+          "total": 1,
+          "max_score": 1,
+          "hits": [
+             {
+                "_index": "test_index",
+                "_type": "company",
+                "_id": "2",
+                "_score": 1,
+                "_source": {
+                   "name": "company2",
+                   "locations": [
+                      {
+                         "country": "France"
+                      }
+                   ]
+                }
+             }
+          ]
+       }
+    }
+    
+
+In the second case, I set up the same way but with `"index": "not_analyzed"`
+on the `"locations.country"` field:
+
+    
+    
+    curl -XPUT "http://localhost:9200/test_index2/" -d'
+    {
+       "settings": {
+          "number_of_shards": 1
+       },
+       "mappings": {
+          "company": {
+             "properties": {
+                "name": {
+                   "type": "string"
+                },
+                "locations": {
+                   "type": "nested",
+                   "properties": {
+                      "country": {
+                         "type": "string",
+                         "index": "not_analyzed"
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }'
+    
+    curl -XPUT "http://localhost:9200/test_index2/company/1" -d'
+    {
+        "name" : "company1",
+        "locations" : [
+            { "country" : "England" }
+        ]
+    }'
+    
+    curl -XPUT "http://localhost:9200/test_index2/company/2" -d'
+    {
+        "name" : "company2",
+        "locations" : [
+            { "country" : "France" }
+        ]
+    }'
+    
+
+Then search with the filter text `"France"`
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_index2/company/_search" -d'
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "nested": {
+                   "path": "locations",
+                   "filter": {
+                      "term": {
+                         "locations.country": "France"
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }'
+    
+
+and I get my result back this way too:
+
+    
+    
+    {
+       "took": 1,
+       "timed_out": false,
+       "_shards": {
+          "total": 1,
+          "successful": 1,
+          "failed": 0
+       },
+       "hits": {
+          "total": 1,
+          "max_score": 1,
+          "hits": [
+             {
+                "_index": "test_index2",
+                "_type": "company",
+                "_id": "2",
+                "_score": 1,
+                "_source": {
+                   "name": "company2",
+                   "locations": [
+                      {
+                         "country": "France"
+                      }
+                   ]
+                }
+             }
+          ]
+       }
+    }
+    
+
+I used the `"nested"` type in these examples, but it works with an inner
+object as well (just use term filter in your query instead of nested filter).
+
+Here is a runnable example you can play with:
+
+<http://sense.qbox.io/gist/553e28fcf17d1ebd1d00bee38103d671d19ceb13>
+

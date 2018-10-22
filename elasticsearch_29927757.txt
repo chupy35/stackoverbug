@@ -1,0 +1,3 @@
+29927757
+Elasticsearch: Renew expired document (_ttl expired)
+<p>I created a Index with a default ttl time from x days. I have documents, which will updated in the persistent database (postgres, mysql or so). If a document updated, it must be renew in Elasticsearch. But after a document expired only the Exception throws:</p>&#xA;&#xA;<pre><code>{&#xA;   "error": "RemoteTransportException[[es][inet[/127.0.0.1:9300]][indices:data/write/index]]; nested: MapperParsingException[failed to parse [_ttl]]; nested: AlreadyExpiredException[already expired [index]/[type]/[1] due to expire at [146901939600] and was processed at [1430247194395]]; ",&#xA;   "status": 400&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>Any possibilities to renew a document if its already expired?</p>&#xA;

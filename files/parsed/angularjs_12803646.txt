@@ -1,0 +1,34 @@
+12803646 Angularjs, watching variable value change
+
+I have the AngularJS module declaration as below. Here I have declared value
+**AppModel**.  I wanted to write code which will be triggered when
+`AppModel.currentTable` is changed, How can I **watch** for this value change
+?
+
+    
+    
+    angular.module('MIIApp', ['MIIServices']).
+    value("AppModel",{
+        currentTable:"TESTME-h",
+        currentUser:null
+    });
+    
+
+Any help!!!.
+
+I don’t think you should be doing this. As you can see
+[here](http://docs.angularjs.org/api/AUTO.%24provide#value) a value is
+intended to be a constant:
+
+> value(name, value)
+
+>
+
+> A short hand for configuring services if the $get method is a constant.
+
+In AngularJS a service is a
+[singleton](http://en.wikipedia.org/wiki/Singleton_pattern) and a value is the
+most simple of the possible services, when called returns always the same. I
+don’t know what you need, but could it be you are confusing models with
+services?
+

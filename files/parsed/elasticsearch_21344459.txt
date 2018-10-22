@@ -1,0 +1,16 @@
+21344459 How to wipe out elasticsearch local node?
+
+I'm using local nodes for testing (I know about `elasticsearch-test` but don't
+see how it can be used when the client is dependency injected) and each time I
+run the test, the count increments. What I really want is for the Node to
+start fresh each time. How can this be done?
+
+It looks like I can wipe out the `data/elasticsearch` directory but was hoping
+for a more elegant solution.
+
+You can fire a DeleteIndex query when starting the test.
+
+But I found that cleaning dir is fine. See
+<https://github.com/elasticsearchfr/hands-
+on/blob/answers/src/test/java/org/elasticsearchfr/handson/StartNode.java#L21>
+

@@ -1,0 +1,72 @@
+18688905 Custom index or unique constraint
+
+I want to store urls in an index but I want unique url.
+
+I'm making POST request to store my documents but I want to avoid duplicate
+document based on the url field.
+
+Is there a way to specify a unique constraint on the url field ?
+
+I do not know, but you can use your url as the document ID instead, that would
+make it effectively unique.
+
+Here's a two-step solution to _index_ only unique values:
+
+  1. You could use the [Unique Tokenfilter](http://www.elasticsearch.org/guide/reference/index-modules/analysis/unique-tokenfilter/) on the url field to store only unique urls:
+    
+        {
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "uniqueTokenfilter": {
+                    "type": "custom",
+                    "tokenizer": "keyword",
+                    "filter": "unique"
+                }
+            }
+        }
+    },
+    "mappings": {
+        "index" : {
+            "properties": {
+                "url": {
+                    "type": "string",
+                     "analyzer": "unique"
+                 }
+             }
+         }
+     }
+     }
+    
+
+  2. Then, you could perform a Scroll Term Query to return only documents with unique urls. You could direct these returned documents to a separate index, creating an index with only unique urls.
+    
+        curl -XGET localhost:9200/index/doc/_search?scroll=5m -d '{
+       "query": {
+           "term" : "url"
+        }
+    }'
+    
+
+`
+
+**What you may want instead is to index all docs, but _query_ for only unique
+field values. This is known as [grouping/field
+collapsing](https://github.com/elasticsearch/elasticsearch/issues/256) and is
+not currently supported in Elasticsearch.
+
+The strategy you need to adopt here would be to create a unique key per
+document. In your case choose the URL as the document ID.
+
+Taking checksum using sha1 or similar algorithm will do the job for getting
+the unique key for the URL, in case URL is long. Make this the document ID so
+that only one page occurs at all point of time. Again use _create API to index
+if you don't want new duplicates to be indexed (More efficient), and in case
+you want the new ones to be the document use normal indexing.
+
+In case you need to modify the original document in case of discovery of
+duplicate document, use upser.
+
+I have gone to a great deal of this topic in this
+[blog](https://qbox.io/blog/minimizing-document-duplication-in-elasticsearch).
+

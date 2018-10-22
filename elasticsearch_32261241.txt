@@ -1,0 +1,4 @@
+32261241
+ElasticSearch - Operational Insights , and Trends
+<p>Given an ElasticSearch Installation, I want to know current trends and insights. I am not sure if Aggregators would help here.  </p>&#xA;&#xA;<ol>&#xA;<li>What are the top queries for last 24 hours?</li>&#xA;<li>Most frequently searched terms in last 24 hours? etc.</li>&#xA;<li>Most accessed documents in last 24 hours?</li>&#xA;</ol>&#xA;&#xA;<p>Is there any way to collect and get hold of these metrics from ElasticSearch.  </p>&#xA;&#xA;<p>A typical use case- As a user visits the homepage, i want to show the trending searches, and top content.</p>&#xA;
+<p>One alternative if you do not want to load your existing ElasticSearch installation with additional metrics is to send this data to a log management solution on the cloud -- such as Loggly, Logentries, etc.</p>&#xA;

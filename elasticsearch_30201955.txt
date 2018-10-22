@@ -1,0 +1,3 @@
+30201955
+How can I do partial word matching with stemming in elasticsearch?
+<p>I'm able to configure ES to either do stemming or partial match, but not both. Is there a way?</p>&#xA;&#xA;<p>Thanks.</p>&#xA;

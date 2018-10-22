@@ -1,0 +1,32 @@
+12836390 Common Controller for ng-view
+
+Is there a way to call a common controller everytime ng-view is changed? i.e i
+want a common controller to be called everytime a new $route is loaded.
+
+If you have specified custom controllers for your different routes, then
+there's no way that I know of that you can also specify a common controller
+that always gets invoked, unless you use some kind of inheritance and always
+call a method in the base controller.
+
+An alternative approach is to subscribe to the events the route service
+broadcasts.
+
+Example:
+
+    
+    
+    function MyController($rootScope, [...]) {
+        $rootScope.$on('$routeChangeSuccess', function (current, previous) {
+            // ...
+        });
+    }
+    
+
+You have a list of available events and their parameters
+[here](http://docs.angularjs.org/api/ng.%24route#Events).
+
+I believe you also can add properties, methods etc. to `$rootScope` which you
+can use in bindings in your views thanks to how Angular's binding mechanism
+works. If it doesn't find it on the current scope, it checks its parent etc.
+up to the root scope.
+

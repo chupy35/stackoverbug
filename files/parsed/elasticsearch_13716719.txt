@@ -1,0 +1,66 @@
+13716719 Elasticsearch URI based query with AND operator
+
+How do I specify AND operation in URI based query? I'm looking for something
+like:
+
+    
+    
+    http://localhost:9200/_search?q="profiletype:student AND username:s*"
+    
+
+According to documentation, it should work as you described it. See
+<http://www.elasticsearch.org/guide/reference/query-dsl/query-string-
+query.html>
+
+That said, you can also use the following:
+
+    
+    
+    http://localhost:9200/_search?q="+profiletype:student +username:s*"
+    
+
+For [URI
+search](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+uri-request.html) in ElasticSearch, you can use either the AND operator
+`profiletype:student AND username:s`, as you say but without quotes:
+
+    
+    
+      _search?q=profiletype:student AND username:s*
+    
+
+You can also set the default operator to `AND`
+
+    
+    
+      _search?q=profiletype:student username:s*&default_operator=AND
+    
+
+Or you can use the `+`
+[operator](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html) for terms that must be present, i.e. one would
+use `+profiletype:student +username:s` as query string. This doesn't work
+without URL encoding, though. In URL encoding `+` is `%2B`and space is `%20`,
+therefore the alternative would be
+
+    
+    
+      _search?q=%2Bprofiletype:student%20%2Busername:s*
+    
+
+i had to combine the default operator and + sign to make it work
+
+    
+    
+    curl -XGET 'localhost:9200/apm/inventory/_search?default_operator=AND&q=tenant_id:t2+_all:node_1'
+    
+
+You can try bellow line.
+
+    
+    
+    http://localhost:9200/_search?q=profiletype:student%20AND%20username:s*
+    
+    http://localhost:9200/_search?q=profiletype:student AND username:s*
+    
+

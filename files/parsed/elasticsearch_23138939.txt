@@ -1,0 +1,42 @@
+23138939 Elasticsearch inverted search
+
+I want to query data from elasticsearch similar to this:
+
+    
+    
+    Select * From tbl where field not in (...)
+    
+
+Is there a way to add not in type logic to the elasticsearch query below?
+
+    
+    
+    GET /index/type/_search
+    {
+        "query": {
+            "match": {
+                "FIELD": "TEXT"
+             }
+        }
+    }
+    
+
+Use boolQuery and within bool query use mustNot
+
+    
+    
+    {
+    "query": {
+        "bool": {
+            "must_not": [
+               {
+                  "match": {
+                     "FIELD": "TEXT"
+                  }
+               }
+            ]
+        }
+    }
+    }
+    
+

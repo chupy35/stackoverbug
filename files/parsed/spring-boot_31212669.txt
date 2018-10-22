@@ -1,0 +1,32 @@
+31212669 How to store request parameter in cache
+
+I want to store my request in cache for the future reference because my method
+is void. I don't know how. My methods syntax is:
+
+    
+    
+    @CacheEvict(key="Key",value="AirSegment",beforeInvocation=true)
+        private void cahingAndStoringSegment(String Key,TypeBaseAirSegment AirSegment){
+        --- doing some operation
+    }
+    
+
+I am new in spring boot so please help me out.
+
+It isn't clear what you are trying to do. Usually you use the @Cacheable
+attribute to prevent your method from going to a slow backend resource on each
+invocation. The @Cacheable annotation uses all the method arguments as the
+key. However since your operation is void its unclear what you are trying to
+cache.
+
+@CacheEvict is used when you want invocation of a method to clear the cache.
+
+There is also the @CachePut tag. @CachePut(value=AirSegment,key=key) would add
+the the passed AirSegment in your operation to the cache.
+
+<http://docs.spring.io/spring/docs/current/spring-framework-
+reference/html/cache.html#cache-annotations-cacheable>
+
+If you think of a CRUD operation, the @Cachable would be used on the Read
+operations, and the @CacheEvict on the Create, Update and Delete operations.
+

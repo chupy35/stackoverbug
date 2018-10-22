@@ -1,0 +1,48 @@
+17739240 Does elasticsearch support conditional queries?
+
+I know that solr supports if conditions in the query (e.g.,
+`fl=if(min(2,myField),2,myField)`). I am not able to find similar
+functionality in elasticsearch. The closest I can find is [script
+fields](http://www.elasticsearch.org/guide/reference/api/search/script-
+fields/).
+
+  1. Does elasticsearch support nested function queries like `min(max(myField,0),1)`?
+  2. If so, does it support such queries for sorting as well, like `sort=min(max(myField,0),1)`?
+
+[Scripting](http://www.elasticsearch.org/guide/reference/modules/scripting/)
+is what you're looking for. The default scripting language is
+[mvel](http://mvel.codehaus.org/), but you can easily install plugins that
+support other languages, like
+[javascript](https://github.com/elasticsearch/elasticsearch-lang-javascript),
+[groovy](https://github.com/elasticsearch/elasticsearch-lang-groovy),
+[python](https://github.com/elasticsearch/elasticsearch-lang-python). You can
+also write your own native script in Java.
+
+You can use scripts in different apis, here are some examples:
+
+  * [script fields](http://www.elasticsearch.org/guide/reference/api/search/script-fields/) as you mentioned, to get back fields that are not in your documents but created on-the-fly
+  * script based [sorting](http://www.elasticsearch.org/guide/reference/api/search/sort/), to sort your documents based on the result of a script
+  * [script filter](http://www.elasticsearch.org/guide/reference/query-dsl/script-filter/), to filter based on a script
+  * boosting using [custom score query](http://www.elasticsearch.org/guide/reference/query-dsl/custom-score-query/) and [custom filters score query](http://www.elasticsearch.org/guide/reference/query-dsl/custom-filters-score-query/)
+  * making [facets](http://www.elasticsearch.org/guide/reference/api/search/facets/)
+
+It's possible to preload scripts placing them on file system, from the
+documentation page:
+
+> Scripts can always be provided as part of the relevant API, but they can
+also be preloaded by placing them under `config/scripts` and then referencing
+them by the script name (instead of providing the full script). This helps
+reduce the amount of data passed between the client and the nodes.
+
+>
+
+> The name of the script is derived from the hierarchy of directories it
+exists under, and the file name without the lang extension. For example, a
+script placed under `config/scripts/group1/group2/test.py` will be named
+`group1_group2_test`.
+
+Only native scripts written in java have to implement an interface. In case of
+either mvel, javascript python or groovy, you can just write the script that
+you need on file instead of passing it together with the relevant api and
+refer to it using its name.
+

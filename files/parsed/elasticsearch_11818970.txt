@@ -1,0 +1,22 @@
+11818970 Setting Up Elastic Search for my Website
+
+I am completely new to web development and I want to set up a database search
+client on a website I am making because I do not want to write my own
+inefficient MySQL query strings. My plan is to use Elastic Search for this and
+my main question is:
+
+Once my site is on a dedicated server somewhere, how do I install Elastic
+Search to the server, and/or what should I look for in a server so that I will
+be able to use Elastic Search?
+
+You'll need a JRE, that's about it as far just getting started.
+
+See <http://www.elasticsearch.org/guide/reference/setup/installation.html> for
+more details.
+
+You'll probably want to run it as a service, If your using Windows you can
+download installers here. <https://github.com/rgl/elasticsearch-
+setup/downloads>
+
+Hit me up if you need any help.
+

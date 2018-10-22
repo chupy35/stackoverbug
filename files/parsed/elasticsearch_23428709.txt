@@ -1,0 +1,12 @@
+23428709 Elasticsearch: What operation can only be executed on master node?
+
+It seems that for every node in the cluster, you can curl port 9200 to call
+most of the REST api. I wonder, is there any operation (or an extensive list
+of such operations) that can only be executed by accessing the master node?
+
+There is no operation that can only be asked to the master node, becaue when
+you ask something to any node it will route it to the correct node. So if you
+ask something that should be traited by the master node to a non master node,
+it will be be routed by the non master node to the master node. This feature
+allow Elasticsearch to elect a new master node without breaking any code!
+

@@ -1,0 +1,116 @@
+24070780 ElasticSearch: min_doc_count on lower/lowest level nested aggregation
+
+I have this query with some nested aggregations
+
+    
+    
+    {
+       "aggs": {
+          "by_date": {
+             "date_histogram": {
+                "field": "timestamp",
+                "interval": "day"
+             },
+             "aggs": {
+                "new_users": {
+                   "filter": {
+                      "query": {
+                         "match": {
+                            "action": "USER_ADD"
+                         }
+                      }
+                   },
+                   "aggs": {
+                      "unique_users": {
+                         "cardinality": {
+                            "field": "user"
+                         }
+                      }
+                   }
+                }
+             }
+          }
+       },
+       "size": 0
+    }
+    
+
+It yields results that look like this
+
+    
+    
+    "aggregations": {
+          "by_date": {
+             "buckets": [
+                {
+                   "key_as_string": "1970-01-07T00:00:00.000Z",
+                   "key": 518400000,
+                   "doc_count": 210,
+                   "new_users": {
+                      "doc_count": 0,
+                      "unique_users": {
+                         "value": 0
+                      }
+                   }
+                },
+                {
+                   "key_as_string": "1970-01-09T00:00:00.000Z",
+                   "key": 691200000,
+                   "doc_count": 6,
+                   "new_users": {
+                      "doc_count": 0,
+                      "unique_users": {
+                         "value": 0
+                      }
+                   }
+                },
+           ......
+    
+
+What I want to happen is apply min_doc_count on the most nested sub-
+aggregation such that I don't see zero values for "unique_users" (in this
+case) returned.
+
+The issue is that min_doc_count can't be applied to my query other than the
+date_histogram at the top level.
+
+Does the ES query language support something like this? Any know workarounds?
+
+Thanks, George
+
+As per ElasticSearch Documentation min_doc_count can used with any aggregation
+including histogram
+
+for example
+
+    
+    
+    {
+        "aggs" : {
+            "tags" : {
+                "terms" : {
+                    "field" : "tag"
+                }
+            }
+        }
+    }
+    
+
+the above query is not date_histogram still you can apply the min_doc_count
+
+    
+    
+    {
+        "aggs" : {
+            "tags" : {
+                "terms" : {
+                    "field" : "tag",
+                    "min_doc_count" : 1
+                }
+            }
+        }
+    }
+    
+
+only thing is min_doc_count can be applied to any aggregation
+

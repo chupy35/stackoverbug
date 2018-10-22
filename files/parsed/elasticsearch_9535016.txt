@@ -1,0 +1,109 @@
+9535016 Is it possible to sort nested documents in ElasticSearch?
+
+Lets say I have the following mapping:
+
+    
+    
+    "site": {
+      "properties": {
+        "title":       { "type": "string" },
+        "description": { "type": "string" },
+        "category":    { "type": "string" },
+        "tags":        { "type": "array" },
+        "point":       { "type": "geo_point" }
+        "localities":  { 
+          type: 'nested',
+          properties: {
+            "title":       { "type": "string" },
+            "description": { "type": "string" },
+            "point":       { "type": "geo_point" }
+          }
+        }
+      }
+    }
+    
+
+I'm then doing an "_geo_distance" sort on the parent document and am able to
+sort the documents on "site.point". However I would also like the nested
+localities to be sorted by "_geo_distance", inside the parent document.
+
+Is this possible? If so, how?
+
+Unfortunately, no (at least not yet).
+
+A query in ElasticSearch just identifies which documents match the query, and
+how well they match.
+
+To understand what nested documents are useful for, consider this example:
+
+    
+    
+    {
+        "title":    "My post",
+        "body":     "Text in my body...",
+        "followers": [
+            {
+                "name":     "Joe",
+                "status":   "active"
+            },
+            {
+                "name":     "Mary",
+                "status":   "pending"
+            },
+        ]
+    }        
+    
+
+The above JSON, once indexed in ES, is functionally equivalent to the
+following. Note how the `followers` field has been flattened:
+
+    
+    
+    {
+        "title":            "My post",
+        "body":             "Text in my body...",
+        "followers.name":   ["Joe","Mary"],
+        "followers.status": ["active","pending"]
+    }        
+    
+
+A search for: `followers with status == active and name == Mary` would match
+this document... incorrectly.
+
+Nested fields allow us to work around this limitation. If the `followers`
+field is declared to be of type `nested` instead of type `object` then its
+contents are created as a separate (invisible) sub-document internally. That
+means that we can use a [nested
+query](http://www.elasticsearch.org/guide/reference/query-dsl/nested-
+query.html) or [nested
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/nested-
+filter.html) to query these nested documents as individual docs.
+
+However, the output from the nested query/filter clauses only tells us if the
+main doc matches, and how well it matches. It doesn't even tell us which of
+the nested docs matched. To figure that out, we'd have to write code in our
+application to check each of the nested docs against our search criteria.
+
+There are a few [open
+issues](https://github.com/elasticsearch/elasticsearch/issues/search?q=nested&state=open&assignee=)
+requesting the addition of these features, but it is not an easy problem to
+solve.
+
+The only way to achieve what you want is to index your sub-docs as separate
+documents, and to query and sort them independently. It may be useful to
+establish a parent-child relationship between the main doc and these separate
+sub-docs. (see [parent-type
+mapping](http://www.elasticsearch.org/guide/reference/mapping/parent-
+field.html), the Parent & Child section of the [index api
+docs](http://www.elasticsearch.org/guide/reference/api/index_.html), and the
+[top-children](http://www.elasticsearch.org/guide/reference/query-dsl/top-
+children-query.html) and [has-
+child](http://www.elasticsearch.org/guide/reference/query-dsl/has-child-
+query.html) queries.
+
+Also, an ES user has mailed the list about a new [`has_parent`
+filter](https://github.com/elasticsearch/elasticsearch/issues/792) that they
+are currently working on in a
+[fork](https://github.com/hlian/elasticsearch/branches/has_parent). However,
+this is not available in the main ES repo yet.
+

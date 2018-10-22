@@ -1,0 +1,37 @@
+24519156 React JS triggering re-render when props sorted
+
+I have a react component for a list of data comprised of two sub components
+
+    
+    
+    <List>
+       <SortingAndFiltering data={this.state.data}/>
+       <RowsDisplay data={this.state.data}/>
+    </List>
+    
+
+One subcomponent handles sorts and filters and the other renders the actual
+bulk of the data.
+
+When I perform a sort on the props.data inside SortingAndFiltering the event
+isn't propagated up the chain.
+
+Whats the correct way to signal that a consumer of a prop has made a change to
+this prop?
+
+React doesn’t do _two-way data bindings_ by default and for good reasons.
+
+However, there is an add-on called `ReactLink` that could be of use:
+<http://facebook.github.io/react/docs/two-way-binding-helpers.html>
+
+If you are using Backbone as data models, there are mixins that provide
+listeners for model changes that can re-render the app when signals are
+received from anywhere in the hierarchy.
+
+To dig deeper regarding unidirectional data flow, I recommend this video that
+explains the Flux concept used by Facebook:
+<http://facebook.github.io/react/docs/flux-overview.html>
+
+checkout <http://facebook.github.io/react/docs/thinking-in-react.html> step
+5,which is similar to yours.
+

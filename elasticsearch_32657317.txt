@@ -1,0 +1,4 @@
+32657317
+Two+ node elasticsearch cluster - mirroring?
+<p>We wish to place an elasticsearch cluster on top of a kubernetes cluster (currently with 2 nodes, but we have plans to increase this).</p>&#xA;&#xA;<p>Is it possible to configure elasticsearch in such a way that every node in the cluster contains identical data? so that if a node is lost then the remaining nodes in the cluster can continue to function?</p>&#xA;
+<p>Yes, you need to set the number of <a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/replica-shards.html" rel="nofollow">replicas</a> equal to the number of nodes minus one.</p>&#xA;

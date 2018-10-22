@@ -1,0 +1,56 @@
+24682470 using valueLink, child input field unable to change
+
+I'm starting to play with reactjs, and for this project, I have ->
+
+  * an input field
+  * a button that toggles a modal
+    * the modal has another input field.
+
+**How do we make both input fields stay in sync?**
+
+What I though I would need to do use to use the LinkedState mixin.
+
+So, I do something like this ->
+
+    
+    
+    MainFoo = React.createClass
+      mixins: [React.addons.LinkedStateMixin]
+      getInitialState: ->
+        searchTerm: ''
+      render: ->
+        input valueLink: @linkState('searchTerm') # this works
+        CustomReactChild
+          searchTermLink: @linkState('searchTerm') #passing into child.
+    
+    CustomReactChild = React.createClass
+      renderModal:
+        unless @modal
+          $anchor = $('<div>').appendTo('body');
+          comp = (Modal 
+                   body: (CustomReactChildchild 
+                             searchTermLink: @props.searchTermLink)
+                 ) #custom react modal class
+          @modal = React.renderComponent comp, anchor
+        @modal.show()
+      render: ->
+        label
+          onClick: @renderModal
+    # Deep inside CustomReactChild
+    CustomReactChildsChild = React.createClass
+      render: ->
+        input valueLink: @props.searchTermLink # Am unable to change the value via this input
+    
+
+Am I using this incorrectly? How can I get the second input to change the
+value of the parent's input and vice versa?
+
+@Douglas popped in an awesome answer in the comments -->
+
+> Looking at the logs here, jsfiddle.net/kb3gN/3602 - I think part of the
+problem is that the modal popup is re-rendering (or at least running the
+"Controlled Input" handler) before MainFoo has updated its state. I'd suggest
+merging the models together, so that there is only one React.renderComponent
+call, or factor out the state into a shared Store which both inputs update and
+get change events from.  ```
+

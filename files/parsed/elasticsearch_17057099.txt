@@ -1,0 +1,98 @@
+17057099 Creating an Elastic Search AND OR Query
+
+I am trying to write a query that requires "area" to be 530 and "starts" to be
+06192013 OR "area" to be "530" and "starts" to be "blank". Additionally, in
+both of those scenarios "space" to be "top" OR "space2" to be "bottom". This
+query seems to be grabbing anything that matches any of these scenarios, how
+do I change it to make it work like I would like?
+
+    
+    
+    {
+      "size":25, 
+      "from":0,
+      "query": {
+        "custom_filters_score": {
+          "query": {
+            "filtered": {
+              "query": {
+                "bool": {
+                  "must": [
+                    {"term":{"type":"ghost"}}, 
+                    {"term":{"area":"530"}}
+                  ]
+                }
+              }, 
+              "filter" : {
+                "or": [
+                  {"terms":{"space": ["top"]}}, 
+                  {"terms":{"space2":["bottom"]}}, 
+                  {
+                    "and": [
+                      {"term":{"area":"530"}}, 
+                      {"term":{"start":"06192013"}}
+                    ]
+                  }, 
+                  {
+                    "and": [
+                      {"term":{"area":"530"}}, 
+                      {"term":{"starts":"blank"}}
+                    ]
+                  }
+                ]
+              }
+            }
+          }, 
+          "filters": [
+            {"filter":{"term":{"filter1":5743}}, "boost":"1000"}, 
+            {"filter":{"term":{"filter2":4451}}, "boost":"64"}, 
+            {"filter":{"term":{"filter3":["tech"]}}, "boost":"16"}, 
+            {"filter":{"terms":{"filter4":[]}}, "boost":"8"}, 
+            {"filter":{"terms":{"filter5":[]}}, "boost":"5"}, 
+            {"filter":{"term":{"access":"1"}}, "boost":"2"}
+          ], 
+          "score_mode":"total"
+        }
+      }
+    }
+    
+
+You are almost there! Try this:
+
+    
+    
+    ...
+    "query" : { "match_all":{} },
+    "filter" : {
+        "and": [
+            {
+                "or": [
+                    {"term":{"space": "top"}}, 
+                    {"term":{"space2":"bottom"}}
+                ]
+            },
+            {
+                "and": [
+                     {"term":{"area":"530"}}, 
+                     {
+                         "or": [
+                             {"term":{"start":"06192013"}},
+                             {"term":{"starts":"blank"}}
+                         ]
+                     }
+                ]
+            }
+        ]
+    }
+    ...
+    
+
+Unless you need scoring (which it doesnt look like) you should do all of this
+with filters, they don't calculate scores and are faster because of this.
+
+The `"query" : { "match_all":{} }` will end up giving all docs witch match the
+filter the **same score**.
+
+Note: I also turned your `terms` query with an array of one element to a
+`term` query...
+

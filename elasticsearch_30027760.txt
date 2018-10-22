@@ -1,0 +1,4 @@
+30027760
+Join operation on parent child in elasticsearch
+<p>I have company and employee information.&#xA;I was successfully able to index them as parent and children document.&#xA;has_children query works fine , but then i need both matching parent and children.&#xA;Is this possible in Elasticsearch</p>&#xA;
+<p>It seems you are looking to join the results and give both parent and children documents.&#xA;From Elasticsearch version 1.5.0 , they have introduced a feature called <a href="http://www.elastic.co/guide/en/elasticsearch/reference/1.5/search-request-inner-hits.html" rel="nofollow">inner hits</a> which can achieve it. </p>&#xA;

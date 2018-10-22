@@ -1,0 +1,144 @@
+23319516 Elastic Search using Java APIs
+
+I need to index sql databases to elastic search using java api. I searched a
+lot on google, but couldn't find a good detailed tutorial on how to start. I
+am totally new to this. Any help is much awaited.
+
+I will write the elasticsearch example with Java API, before this I want to
+give you a advise : use Query Runner for database, you will not regret trust
+me :
+
+**Database Examples :** <http://commons.apache.org/proper/commons-
+dbutils/examples.html>
+
+**Download Jars from :** <http://commons.apache.org/proper/commons-
+dbutils/download_dbutils.cgi> <http://commons.apache.org/proper/commons-
+dbcp/download_dbcp.cgi> <https://commons.apache.org/proper/commons-
+pool/download_pool.cgi>
+
+**Database example from me you can use it :**
+
+    
+    
+    public class Dt_page {
+    
+    public static DataSource getDataSource(int server) {
+    
+        String database_driver = null;
+        String database_adres = null;
+        String dbuser = null;
+        String dbpass = null;
+        System.out.println("sasdasd");
+        ConnectionFactory connectionFactory;
+        switch (server) {
+    
+            case 1://profile server
+                database_driver = "com.mysql.jdbc.Driver";
+                database_adres = "jdbc:mysql://facebook.example.com:3306/?useUnicode=true&characterEncoding=UTF-8&rewriteBatchedStatements=true";
+                dbuser = "yourdatabasenamehere";
+                dbpass = "yourdatabasepasswordhere";
+    
+        }
+    
+        try {
+            Class.forName(database_driver);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(Dt_page.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    
+        Properties props = new Properties();
+        props.put("user", dbuser);
+        props.put("password", dbpass);
+        props.put("autoReconnect", "true");
+        props.put("autoReconnectForPools", "true");
+    
+        props.put("validationQuery", "SELECT 1 from dual;");
+        props.put("testWhileIdle", "true");
+    
+        connectionFactory = new DriverManagerConnectionFactory(database_adres, props);
+        GenericObjectPool connectionPool = new GenericObjectPool(null, 12,         GenericObjectPool.WHEN_EXHAUSTED_GROW, 60 * 30, 12, true, true);
+        GenericKeyedObjectPoolFactory keyedObjectPoolFactory = new GenericKeyedObjectPoolFactory(null);
+    
+        PoolableConnectionFactory poolableConnectionFactory
+                = new PoolableConnectionFactory(connectionFactory,
+                        connectionPool,
+                        keyedObjectPoolFactory,
+                        "select 1",
+                        30,
+                        null,
+                        false,
+                        true);
+    
+        PoolingDataSource dataSource = new PoolingDataSource(connectionPool);
+        System.out.println("return");
+        return dataSource;
+    
+    }
+    
+    }
+    
+
+**There is the Elastich Search Index Example :**
+
+    
+    
+    public class ElasticSearch {
+    
+    static ElasticSearch ss = new ElasticSearch();
+    Node node = nodeBuilder().node();
+    Client client = node.client(); // you must define these.
+    
+    
+     /*
+      *  NOTE : Search on google, you should define the (I'm really not sure but must be the JAVA_HOME)
+      *  to MyComputer-->Environment Variables 
+      */
+    
+    public static void main(String[] args) {
+       ss.getvaluesandindex();      
+    }
+    
+      void getvaluesandindex(){
+    
+        QueryRunner qr = new QueryRunner(Dt_page.getDataSource(1));
+    
+         List<Object[]> query2= qr.query("Select post_id,post_likes_count,shares,post_comment_count,page_name,message,status_type,Record_time from faruk.backupposts2", new ArrayListHandler());            
+            Object[][] degerler = new Object[query2.size()][8];
+            System.out.println(query2.size());
+            for (int i = 0; i < degerler.length; i++) {
+    
+                degerler[i][0]=query2.get(i)[0]; // get value from database and give them to degerler
+                degerler[i][1]=query2.get(i)[1];
+                degerler[i][2]=query2.get(i)[2];
+                degerler[i][3]=query2.get(i)[3];
+                degerler[i][4]=query2.get(i)[4];
+                degerler[i][5]=query2.get(i)[5];
+                degerler[i][6]=query2.get(i)[6];
+                degerler[i][7]=query2.get(i)[7];
+    
+                System.out.println(" Page Name : "+degerler[i][4]); // control here
+    
+            }
+    
+           for (int i = 0; i < degerler.length; i++) { // You will index all of your collecting data
+    
+                IndexResponse response = client.prepareIndex("Graph".toLowerCase(),"Api",Integer.toString(i))
+                        .setSource(jsonBuilder()
+                                .startObject()
+                                .field("Post Id", degerler[i][0].toString())
+                                .field("Post Like Count", degerler[i][1].toString())
+                                .field("Post Shares Count", degerler[i][2].toString())
+                                .field("Post Comment Count", degerler[i][3].toString())
+                                .field("Page Name",degerler[i][4].toString())// Boşluk ile birlikte uzun cümleleri keyworde göre 
+                                .field("Message", degerler[i][5].toString())
+                                .field("Status Type", degerler[i][6].toString())
+                                .field("Record Time", degerler[i][7].toString()) //  "values" is optional
+                                .endObject()
+                        )
+                        .execute()
+                        .actionGet(); 
+    
+                System.out.println("Index is over");
+            }
+    
+

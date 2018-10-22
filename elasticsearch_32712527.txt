@@ -1,0 +1,3 @@
+32712527
+Get neighboring results for an ElasticSearch query
+<p>Is it possible to get nearby results for ElasticSearch query?</p>&#xA;&#xA;<p><strong>Example 1</strong>. If I have items, named as:</p>&#xA;&#xA;<pre><code>one&#xA;two&#xA;three &#xA;four&#xA;</code></pre>&#xA;&#xA;<p>then search "three", ordered, for example, by name, ascending, should return something like (given number of neighbors is 1):</p>&#xA;&#xA;<pre><code>one&#xA;*three*&#xA;two&#xA;</code></pre>&#xA;&#xA;<p><strong>Example 2</strong>. I have query results and ID of an document in it, I want IDs of next and previous document. The order is set in query.</p>&#xA;

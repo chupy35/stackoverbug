@@ -1,0 +1,78 @@
+18410243 remove unallocated elasticsearch shard
+
+My installation is working fine, but one index is showing yellow health due to
+2 'extra' unassigned shards shown in it. How do I remove these extra shards?
+My current settings are 0 replicas and 2 shards.
+
+    
+    
+    curl -XGET 'http://localhost:9200/_cluster/health/tags?level=shards&pretty=true'
+    {
+      "cluster_name" : "elasticsearch_inspire",
+      "status" : "yellow",
+      "timed_out" : false,
+      "number_of_nodes" : 1,
+      "number_of_data_nodes" : 1,
+      "active_primary_shards" : 2,
+      "active_shards" : 2,
+      "relocating_shards" : 0,
+      "initializing_shards" : 0,
+      "unassigned_shards" : 2,
+      "indices" : {
+        "v1_tags" : {
+          "status" : "yellow",
+          "number_of_shards" : 2,
+          "number_of_replicas" : 1,
+          "active_primary_shards" : 2,
+          "active_shards" : 2,
+          "relocating_shards" : 0,
+          "initializing_shards" : 0,
+          "unassigned_shards" : 2,
+          "shards" : {
+            "0" : {
+              "status" : "yellow",
+              "primary_active" : true,
+              "active_shards" : 1,
+              "relocating_shards" : 0,
+              "initializing_shards" : 0,
+              "unassigned_shards" : 1
+            },
+            "1" : {
+              "status" : "yellow",
+              "primary_active" : true,
+              "active_shards" : 1,
+              "relocating_shards" : 0,
+              "initializing_shards" : 0,
+              "unassigned_shards" : 1
+            }
+          }
+        }
+      }
+    }
+    
+
+Restarting the node seemed to be the only way to solve it.
+
+If anyone has a less-aggressive solution, please post it :)
+
+I recently had this issue where ES process was restarted on all nodes and I
+had some unassigned shards (cluster health was red). I did the following to
+assign the shards manually and that did the trick for me (no restart was
+needed)
+
+    
+    
+    curl -XPOST 'localhost:9200/_cluster/reroute' -d '{
+      "commands": [
+        {
+          "allocate": {
+            "index": "INDEXNAME",
+            "shard": "SHARDNUMBER",
+            "node": "PICKANODE",
+            "allow_primary": 1
+          }
+        }
+      ]
+    }'
+    
+

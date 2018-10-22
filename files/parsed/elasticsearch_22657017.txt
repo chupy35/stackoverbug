@@ -1,0 +1,134 @@
+22657017 ElasticSeach query not return results
+
+I got 2 querys, the different between them is just 1 filter term.
+
+The first query:
+
+    
+    
+    GET _search
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "query_string": {
+                        "query": "*"
+                    }
+                },
+                "filter": {
+                    "and": {
+                        "filters": [
+                            {
+                                "term": {
+                                    "type": "log"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "context.blueprint_id": "adv1"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "context.deployment_id": "deploy1"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    
+
+return this result:
+
+    
+    
+    {
+                "_source": {
+                   "level": "info",
+                   "timestamp": "2014-03-24 10:12:41.925680",
+                   "message_code": null,
+                   "context": {
+                      "blueprint_id": "Adv1",
+                      "execution_id": "27efcba7-3a60-4270-bbe2-9f17d602dcef",
+                      "deployment_id": "deploy1"
+                   },
+                   "type": "log",
+                   "@version": "1",
+                   "@timestamp": "2014-03-24T10:12:41.927Z"
+                }
+             }
+    
+
+The second query is:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "query_string": {
+                        "query": "*"
+                    }
+                },
+                "filter": {
+                    "and": {
+                        "filters": [
+                            {
+                                "term": {
+                                    "type": "log"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "context.blueprint_id": "adv1"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "context.deployment_id": "deploy1"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "context.execution_id": "27efcba7-3a60-4270-bbe2-9f17d602dcef"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    
+
+return empty results.
+
+the different between them is in the second query, i just add this term:
+
+    
+    
+                        {
+                            "term": {
+                                "context.execution_id": "27efcba7-3a60-4270-bbe2-9f17d602dcef"
+                            }
+                        }
+    
+
+and in the result we can see that there is result match to that query, but it
+still not work.
+
+what i'm doing wrong here?
+
+thanks.
+
+By default, ElasticSearch will treat string fields as text and will analyze
+them (i.e. tokenize, stem etc. before indexing). This means you might not be
+able to find them when searching for their exact content.
+
+You should make sure the mapping for the `execution_id` field is not analyzed.
+Start with `GET /_mappings` and work from there. :)
+

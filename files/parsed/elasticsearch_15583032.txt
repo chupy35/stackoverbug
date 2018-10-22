@@ -1,0 +1,190 @@
+15583032 Nested documents in Elasticsearch
+
+I'm writing an asset management application. It lets users store arbitrary
+asset attributes by adding an html control such as a text field, select menu,
+etc. to the asset. A JSON representation of the attribute then becomes part of
+the asset JSON document stored in couchdb. An asset has the following
+structure in couchdb:
+
+    
+    
+    {
+       "_id": "9399fb27448b1e5dfdca0181620418d4",
+       "_rev": "12-fa50eae8b50f745f9852e9fab30ef5d9",
+       "type": "asset",
+       "attributes": [
+           {
+               "id": "9399fb27448b1e5dfdca01816203d609",
+               "type": "text",
+               "heading": "Brand",
+               "data": "",
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816203e68e",
+               "type": "userSelectMenu",
+               "heading": "Assigned To",
+               "data": "",
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816203e9c9",
+               "type": "categories",
+               "heading": "Categories",
+               "data": [
+                   "0d7e6233e5f48b4f55c5376bf00b1be5",
+                   "0d7e6233e5f48b4f55c5376bf00d94cf"
+               ],
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816207uy5a",
+               "type": "radio",
+               "heading": "Radio Buttons",
+               "data": [
+                   {
+                       "text": "Button 1",
+                       "checked": false
+                   },
+                   {
+                       "text": "Button 2",
+                       "checked": true
+                   }
+               ],
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816205tgh6",
+               "type": "checkboxes",
+               "heading": "Checkboxes",
+               "data": [
+                 {
+                     "text": "Box 1",
+                     "checked": false
+                 },
+                 {
+                     "text": "Box 2",
+                     "checked": true
+                 }
+               ],
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca0181620k81gt",
+               "type": "select",
+               "heading": "Select Menu",
+               "data": [
+                   {
+                       "text": "Option 1",
+                       "checked": false
+                   },
+                   {
+                       "text": "Option 2",
+                       "checked": true
+                   }
+               ],
+               "requiredBySystem": true
+           }
+       ]
+    }
+    
+
+I'm not sure if putting attributes in an array is the best way to allow
+searching for an asset based on an attribute value. Would it be better to
+attach the attribute directly to the asset as a property? I'm experimenting
+now in elasticsearch. If I try and store the document as is, elasticsearch
+returns an error:
+
+"error" : "MapperParsingException[Failed to parse [attributes.data]]; nested:
+ElasticSearchIllegalArgumentException[unknown property [text]]; "
+
+I"m using the following mapping:
+
+    
+    
+    "mappings" : {
+        "asset" : {
+          "properties" : {
+            "_id": {
+              "type" : "string",
+              "index" : "not_analyzed"
+            },
+            "_rev": {
+              "type" : "string",
+              "index" : "not_analyzed"
+            },
+            "type": {
+              "type" : "string",
+              "index" : "not_analyzed"
+            },
+            "attributes": {
+              "properties" : {
+                "id" : {
+                  "type" : "string"
+                },
+                "type" : {
+                  "type" : "string",
+                  "index" : "not_analyzed"
+                },
+                "heading" : {
+                  "type" : "string"
+                },
+                "data" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    
+
+Not sure where I'm going wrong here. Thanks for your help!
+
+Troy
+
+The problem is arising from the way your document is structured.
+`attribute.data` is both a string/array of strings and a full, inner object.
+ES doesn't allow the "type" of a property to change.
+
+Basically, you can't have this: `
+
+    
+    
+    "data": [
+      "0d7e6233e5f48b4f55c5376bf00b1be5",
+      "0d7e6233e5f48b4f55c5376bf00d94cf"
+    ],
+    
+
+`
+
+and this:
+
+    
+    
+    "data":[
+      {
+        "text":"Button 1",
+        "checked":false
+      },
+      {
+        "text":"Button 2",
+        "checked":true
+      }
+    ],
+    
+
+`
+
+in the same document. The first instance of `data` tells ES that "data is an
+array of strings". But then the second instance of `data` says "Hey, I'm an
+object!", which is why ES is throwing an error.
+
+You can sidestep this issue by explicitly declaring `data` as an object and
+setting **enabled: false** , but this is probably not the solution you want
+(since that just tells ES to store `data` as a text field, with no parsing.
+
+The other option is to either restructure your data, or split `data` into it's
+document (e.g. Parent/Child mapping)
+

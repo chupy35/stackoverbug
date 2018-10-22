@@ -1,0 +1,58 @@
+21276552 Remove of data folder is not synced in Elasticsearch upon index
+delete
+
+We have an ES cluster with 2 nodes. When we delete an index not all folders in
+the cluster (on filesystem) are deleted which causes some problems when
+restarting one server.
+
+Then our deleted indices gets distributed with some weird state indicating
+that the cluster health is not green.
+
+Example. We delete index with name someIndex and after deletion we check file
+system, one can see this:
+
+Node1  
+ElasticSearch\data\clustername\nodes\0\indices\  
+ElasticSearch\data\clustername\nodes\1\indices\
+
+Node2  
+ElasticSearch\data\clustername\nodes\0\indices\
+ElasticSearch\data\clustername\nodes\1\indices\someIndex (<\-- still present)
+
+Anyone know whats causing this?
+
+ES-version: 0.90.5
+
+There are two nodes directories for each on your filesystem (these are nodes\0
+and nodes\1).
+
+When you start Elasticsearch, you start up a node (in ES-lingo). Your machine
+can host multiple nodes, which happens if you start Elasticsearch multiple
+times. The [default
+settings](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+http.html#modules-http) for the http port is `9200-9300`, that means, ES is
+looking for a free port in that range and binds its node to it (the same is
+true for the [transport
+module](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+transport.html#modules-transport) with `9300-9400`)
+
+So, if you start an ES process while another is still running, that is, it's
+bound to a port, you start a second node and ES will create a new directory
+for it. Maybe this has happened if you issued a restart, but ES couldn't shut
+down in time before the new node started up.
+
+But now you have a third node in your cluster and ES will assign shards to it.
+Then you do a cluster restart or something similar and you start one node on
+each of your machine. ES cannot find the shards that were assigned to the
+third node, because it's not spun up, and it will show you a red or yellow
+state, depending on what shards live on the third node. If you delete you
+index data, you won't delete the data from this missing node.
+
+If you don't care about the data, you can just shutdown ES and delete these
+directories or start two ES nodes on each of your machines and then delete the
+index again.
+
+Then you could change the port settings to one specific port, that would
+prevent second processes from starting up, since they won't be able to bind to
+a free port.
+

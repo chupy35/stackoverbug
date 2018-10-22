@@ -1,0 +1,5 @@
+32133277
+Ajax request error with elasticsearch
+<p>I simple make get req with ajax to elasticsearc to get all indices,&#xA;in browser it works here:&#xA;<a href="https://i.stack.imgur.com/xUPnU.png" rel="nofollow noreferrer"><img src="https://i.stack.imgur.com/xUPnU.png" alt="enter image description here"></a></p>&#xA;&#xA;<p>its same in my ajax, I expected the json data in browser return to my success method but failed:</p>&#xA;&#xA;<p><a href="https://i.stack.imgur.com/2bXm2.png" rel="nofollow noreferrer"><img src="https://i.stack.imgur.com/2bXm2.png" alt="enter image description here"></a></p>&#xA;
+<p>It should work if you replace <code>json</code> by <code>jsonp</code> in your dataType parameter, like this:</p>&#xA;&#xA;<pre><code>$.ajax({&#xA;    url: "http://localhost:9200/dicoms/dicoms/_search",&#xA;    dataType: "jsonp",              &lt;--- change this&#xA;    type: "GET",&#xA;    success: function(data) {&#xA;    ...&#xA;});&#xA;</code></pre>&#xA;
+<p><strong>Response is not JSON</strong>, <br/>you can change the response to a JSON in your server program.</p>&#xA;

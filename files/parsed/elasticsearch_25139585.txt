@@ -1,0 +1,41 @@
+25139585 Elastic Search Load Testing
+
+I have a single node elastic search server running on ec2. I want to do some
+load testing using search requests with random search queries. I am using
+JMeter for load testing with two different approaches -
+
+  1. HTTP Client - When I test using these clients with 10k/20k/50k of requests, it works fine.
+  2. ES Transport Client - This works fine with approx 2k of requests.
+
+Here are the steps I have followed -
+
+  1. Instantiating client on every run and close it once the test finished.
+  2. Once client instantiates, I start the jmeter sampling and send the search request.
+  3. After this run, stops the sampling.
+
+I am getting **No Node Available Exception** after 2k of request with
+transport client.
+
+ES Server is running with 3g of memory and have given 6g of memory to load
+tester.
+
+Please help me if there is some config modification required and if I am not
+using the correct approach to test the load.
+
+Thanks in Advance.
+
+What kind of responses are you getting from the http test? Have you verified
+you are getting valid responses for all 10~50k requests? It might be perhaps
+your cluster cannot take on the load you're putting on it for either test.
+Since TransportClient is more intimately coupled to the ES server, you will
+explicitly see errors that come back from TransportClient, but if you're
+simply sending requests via HTTP without validating the response, it's easy to
+miss any issues.
+
+Although, before taking a stab in the dark like I just did, I would also check
+to see what kind of QPS you are getting using the HTTP method vs the TC
+method, what your CPU/memory look like throughout both tests, what the
+response times look like, etc. It helps to monitor the health of your system
+throughout the process to detect any symptoms that might help explain the
+cause.
+

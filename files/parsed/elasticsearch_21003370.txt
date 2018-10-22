@@ -1,0 +1,81 @@
+21003370 ElasticSearch returns document in search but not in GET
+
+I'm doing a search of documents in my index, then subsequently trying to get
+some of them by `_id`. Despite receiving a set of results, some of the
+documents can not be retrieved with a simple get. Worse still, I CAN get the
+same document with a URI search where `?_id:<the id>`
+
+Just for example, running a simple GET
+
+    
+    
+    curl -XGET 'http://localhost:9200/keepbusy_process__issuer_application/KeepBusy__Activities__Activity/neHSKSBCSv-OyAYn3IFcew'
+    
+
+Gives me the result:
+
+    
+    
+    {
+      "_index" : "keepbusy_process__issuer_application",
+      "_type" : "KeepBusy__Activities__Activity",
+      "_id" : "neHSKSBCSv-OyAYn3IFcew",
+      "exists" : false
+    }
+    
+
+But if I do a search with same _id:
+
+    
+    
+    curl -XGET 'http://localhost:9200/keepbusy_process__issuer_application/KeepBusy__Activities__Activity/_search?q=_id:neHSKSBCSv-OyAYn3IFcew'
+    
+
+I get the expected result:
+
+    
+    
+    {
+      "took": 2,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 1,
+        "max_score": 1.0,
+        "hits": [
+          {
+            "_index": "keepbusy_process__issuer_application",
+            "_type": "KeepBusy__Activities__Activity",
+            "_id": "neHSKSBCSv-OyAYn3IFcew",
+            "_score": 1.0,
+            "_source": {
+              "template_uid": "KeepBusy__Activities__Activity.create application",
+              "name": "create application",
+              "updated_at": "2014-01-08T10:02:33-05:00",
+              "updated_at_ms": 1389193353975
+            }
+          }
+        ]
+      }
+    }
+    
+
+I'm indexing documents through the stretcher ruby API, and immediately after
+indexing I'm doing a refresh. My local setup is **2 nodes**. I'm running
+**v0.90.9**
+
+There is nothing obvious in the logs why this should fail. I've restarted the
+cluster and everything appears to start correctly, but the result is the same.
+
+Is there something I'm missing or some way I can further diagnose this issue?
+
+This issue typically occurs when documents are indexed with non-default
+routing (either explicitly set or deducted from parent's id in case of
+parent/child documents). If this is the case, try specifying correct
+[routing](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+get.html#get-routing) in you get request.
+

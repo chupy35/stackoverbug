@@ -1,0 +1,40 @@
+25113194 Boost filter in elasticsearch
+
+I have a book index with fields title, description, author_name, library_id
+(where the book located). I want to query books that match a provided string,
+and I also give an array of library_ids for ranking purpose. The results with
+library_ids that belong to the provided list of library_ids should be ranked
+higher (higher score).
+
+Is it possible to perform this type of query?
+
+You can try using ids query
+
+    
+    
+    {
+       "query": {
+          "function_score": {
+             "functions": [
+                {
+                   "boost_factor": "50",
+                   "filter": {
+                     "ids": {
+                        "values": [
+                           "library_ids"
+                        ]
+                     }
+                   }
+                }
+             ],
+             "query": {
+                "match_all": {}
+             },
+             "score_mode": "sum"
+          }
+       }
+    }
+    
+
+library_id must be the "_id" field.
+

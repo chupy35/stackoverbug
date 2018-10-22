@@ -1,0 +1,123 @@
+14629136 How do I build an elastic search query such that each token in a
+document field is matched?
+
+**I need to make sure that each token of a field is matched by at least one
+token in a user's search.**
+
+This is a generalized example for the sake of simplification.
+
+Let `Store_Name = "Square Steakhouse"`
+
+It is simple to build a query that matches this document when the user
+searches for Square, or Steakhouse. Furthermore, with kstem filter attached to
+the default analyzer, Steakhouses is also likely to match.
+
+    
+    
+    {
+      "size": 30,
+      "query": {
+        "match": {
+          "Store_Name": {
+            "query": "Square",
+            "operator": "AND"
+          }
+        }
+      }
+    }
+    
+
+Unfortunately, I need each token of the Store_Name field to be matched. I need
+the following behavior:
+
+    
+    
+    Query: Square Steakhouse    Result: Match
+    Query: Square Steakhouses   Result: Match
+    Query: Squared Steakhouse   Result: Match
+    Query: Square               Result: No Match
+    Query: Steakhouse           Result: No Match
+    
+
+**In summary**
+
+  * It is not an option to use not_analyzed, as I do need to take advantage of analyzer features
+  * I intend to use kstem, custom synonyms, a custom char_filter, a lowercase filter, as well as a standard tokenizer
+
+However, I need to make sure that each tokens of a field is matched
+
+Is this possible in elastic search?
+
+**Here is a good method.**
+
+It is not perfect, but it is a good compromise in terms of simplicity,
+computation, and storage.
+
+  * Index the token count of the field
+  * Obtain the token count of the search text
+  * Perform a filtered query and enforce the number of tokens between the results to be equal
+
+You will want to use the analyze API in order to get the token count. Make
+sure to use the same analyzer as the field in question. Here is a VB.NET
+function to obtain token count:
+
+    
+    
+    Private Function GetTokenCount(ByVal RawString As String, Optional ByVal Analyzer As String = "default") As Integer
+        If Trim(RawString) = "" Then Return 0
+    
+        Dim client = New ElasticConnection()
+        Dim result = client.Post("http://localhost:9200/myindex/_analyze?analyzer=" & Analyzer, RawString) 'Submit analyze request usign PlainElastic.NET API
+        Dim J = JObject.Parse(result.ToString()) 'Populate JSON.NET JObject
+        Return (From X In J("tokens")).Count() 'returns token count using a JSON.NET JObject
+    
+    End Function
+    
+
+You will want to use this at index-time to store the token count of the field
+in question. Make sure there is an entry in the mapping for TokenCount
+
+Here is a good elastic search query for utilizing this new token count
+information:
+
+    
+    
+    {
+      "size": 30,
+      "query": {
+        "filtered": {
+          "query": {
+            "match": {
+              "MyField": {
+                "query": "[query]",
+                "operator": "AND"
+              }
+            }
+          },
+          "filter": {
+            "term": {
+              "TokenCount": [tokencount]
+            }
+          }
+        }
+      }
+    }
+    
+
+  * Replace [query] with the search terms
+  * Replace [tokencount] with the number of tokens in the search terms (using the GetTokenCount function above
+
+This makes sure that all there are at least as many matches as tokens in
+`MyField`.
+
+There are some drawbacks to the above. For example, if we are matching the
+field "blue red", and the user searches for "blue blue", the above will
+trigger a match. So, you may want to use a [unique token
+filter](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/unique-tokenfilter.html). You may also wish to adjust the
+filter so that
+
+**Reference**
+
+  * [Clinton Gormely inspired the solution](https://groups.google.com/forum/?fromgroups=#!topic/elasticsearch/ttJTE52hXf8)
+

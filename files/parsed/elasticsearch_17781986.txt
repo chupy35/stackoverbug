@@ -1,0 +1,84 @@
+17781986 ElasticSearch has_parent query
+
+I am experimenting with Elasticsearch parent/child with some simple examples
+from [fun-with-elasticsearch-s-children-and-nested-
+documents/](http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-
+children-and-nested-documents/). I am able to query child elements by running
+the query in the blog
+
+    
+    
+    curl -XPOST localhost:9200/authors/bare_author/_search -d '{
+    
+
+However, I could not tweak the example for has_parent query. Can someone
+please point what I am doing wrong, as I keep getting 0 results.
+
+This is what I tried
+
+    
+    
+    #Returns 0 hits    
+    curl -XPOST localhost:9200/authors/book/_search -d '{
+      "query": {
+        "has_parent": {
+          "type": "bare_author",
+          "query" : {
+            "filtered": {
+              "query": { "match_all": {}},
+              "filter" : {"term": {  "name": "Alastair Reynolds"}}            
+              }
+            }
+          }
+        }
+      }'
+    
+    
+    #did not work either
+    curl -XPOST localhost:9200/authors/book/_search -d '{
+    "query": {
+        "has_parent" : {
+            "type" : "bare_author",
+           "query" : {
+            "term" : {
+                    "name" : "Alastair Reynolds"
+                }
+            }
+        }
+    }
+    }' 
+    
+
+This works with match but its just matching the first name
+
+    
+    
+        #works but matches just first name
+    curl -XPOST localhost:9200/authors/book/_search -d '{
+    "query": {
+        "has_parent" : {
+            "type" : "bare_author",
+           "query" : {
+            "match" : {"name": "Alastair"}
+            }
+        }
+      }
+    }' 
+    
+
+I suppose you are using the default mappings, thus analysing the name field
+using the [standard
+analyzer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/standard-analyzer/). On the other hand, term query and term
+filter don't support text analysis thus you search for the token `Alastair
+Reynolds` while in the index you have `alastair` and `reynolds` as two
+different tokens and lowercased.
+
+The match query returns result because it's analyzed, thus underneath
+lowercased and it finds matches. You can just change your [term
+query](http://www.elasticsearch.org/guide/reference/query-dsl/term-query/) and
+make it a [match query](http://www.elasticsearch.org/guide/reference/query-
+dsl/match-query/), it will find matches even with multiple terms, because in
+that case it will be tokenized on whitespaces and will generate a boolean or
+dismax query out of the different terms provided.
+

@@ -1,0 +1,248 @@
+14386053 Elastic Search queries not working with curl
+
+Running the command:
+
+    
+    
+    curl -XGET http://127.0.0.1:9200/30556/_search -d '{
+        "query": {
+            "constant_score" : {
+                "filter" : {
+                    "term" : { "portal_type" : "Folder"}
+                }
+            }
+        }
+    }'
+    
+
+yields 0 results. The output is:
+
+    
+    
+    {"took":1,"timed_out":false,"_shards":{"total":5,"successful":5,"failed":0},"hits":{"total":0,"max_score":null,"hits":[]}}
+    
+
+If fact, I can't get any queries to yield results.
+
+However, when I run the same query using the head plugin, it works fine.
+
+I'm on elasticsearch 0.20.2 on Mac OS X. I'm starting elastic search using the
+command:
+
+    
+    
+    bin/elasticsearch -f
+    
+
+Is there something obvious I'm missing? Seems like I have the correct syntax
+and I don't get any errors.
+
+Mapping:
+
+    
+    
+    {
+      "30556": {
+        "portal_catalog": {
+          "properties": {
+            "CreationDate": {
+              "type": "date",
+              "format": "dateOptionalTime"
+            },
+            "Creator": {
+              "type": "string"
+            },
+            "Date": {
+              "type": "date",
+              "format": "dateOptionalTime"
+            },
+            "Description": {
+              "type": "string"
+            },
+            "ModificationDate": {
+              "type": "date",
+              "format": "dateOptionalTime"
+            },
+            "SearchableText": {
+              "type": "string"
+            },
+            "Title": {
+              "type": "string"
+            },
+            "Type": {
+              "type": "string"
+            },
+            "UID": {
+              "type": "string"
+            },
+            "allowedRolesAndUsers": {
+              "type": "string"
+            },
+            "created": {
+              "type": "date",
+              "format": "dateOptionalTime"
+            },
+            "effective": {
+              "type": "date",
+              "format": "dateOptionalTime"
+            },
+            "effectiveRange": {
+              "dynamic": "true",
+              "properties": {
+                "effectiveRange1": {
+                  "type": "date",
+                  "format": "dateOptionalTime"
+                },
+                "effectiveRange2": {
+                  "type": "date",
+                  "format": "dateOptionalTime"
+                }
+              }
+            },
+            "exclude_from_nav": {
+              "type": "boolean"
+            },
+            "expires": {
+              "type": "date",
+              "format": "dateOptionalTime"
+            },
+            "getId": {
+              "type": "string"
+            },
+            "getObjPositionInParent": {
+              "type": "long"
+            },
+            "getObjSize": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "is_default_page": {
+              "type": "boolean"
+            },
+            "is_folderish": {
+              "type": "boolean"
+            },
+            "listCreators": {
+              "type": "string"
+            },
+            "meta_type": {
+              "type": "string"
+            },
+            "modified": {
+              "type": "date",
+              "format": "dateOptionalTime"
+            },
+            "object_provides": {
+              "type": "string"
+            },
+            "path": {
+              "dynamic": "true",
+              "properties": {
+                "depth": {
+                  "type": "long"
+                },
+                "path": {
+                  "type": "string"
+                }
+              }
+            },
+            "portal_type": {
+              "type": "string"
+            },
+            "review_state": {
+              "type": "string"
+            },
+            "sortable_title": {
+              "type": "string"
+            },
+            "total_comments": {
+              "type": "long"
+            }
+          }
+        }
+      }
+    }
+    
+
+Example Indexed Document:
+
+    
+    
+    {
+            "_index": "30556",
+            "_type": "portal_catalog",
+            "_id": "30613",
+            "_score": 1,
+            "_source": {
+              "sortable_title": "news",
+              "exclude_from_nav": false,
+              "meta_type": "ATFolder",
+              "Date": "2013-01-14T09:24:56-06:00",
+              "CreationDate": "2013-01-14T09:24:56-06:00",
+              "path": {
+                "depth": 2,
+                "path": "/el/news"
+              },
+              "allowedRolesAndUsers": [
+                "Anonymous"
+              ],
+              "portal_type": "Folder",
+              "id": "news",
+              "UID": "3116b6c7ec384a9393f238fdde778612",
+              "expires": "2499-12-31T00:00:00-06:00",
+              "Subject": [],
+              "is_folderish": true,
+              "is_default_page": false,
+              "effectiveRange": {
+                "effectiveRange1": "1000-01-01T00:00:00-06:00",
+                "effectiveRange2": "2499-12-31T00:00:00-06:00"
+              },
+              "commentators": [],
+              "created": "2013-01-14T09:24:56-06:00",
+              "getRawRelatedItems": [],
+              "cmf_uid": [],
+              "Creator": "admin",
+              "end": [],
+              "modified": "2013-01-14T09:24:56-06:00",
+              "Description": "Site News",
+              "ModificationDate": "2013-01-14T09:24:56-06:00",
+              "total_comments": 0,
+              "in_reply_to": [],
+              "getIcon": "",
+              "effective": "1000-01-01T00:00:00-06:00",
+              "SearchableText": "news  News  Site News ",
+              "getObjPositionInParent": 61,
+              "object_provides": [
+                "collective.syndication.interfaces.ISyndicatable",
+                "Products.ATContentTypes.interfaces.folder.IATFolder",
+                "Products.CMFCore.interfaces._content.IContentish",
+                "z3c.relationfield.interfaces.IHasIncomingRelations",
+                "webdav.interfaces.IWriteLock"
+              ],
+              "last_comment_date": null,
+              "review_state": "published",
+              "start": [],
+              "Type": "Folder",
+              "listCreators": [
+                "admin"
+              ],
+              "getId": "news",
+              "getObjSize": "1 kB",
+              "Title": "News"
+            }
+    
+
+Try to use lower case index names.
+
+Does it work?
+
+If not, can you provide your indexed document and mapping if any?
+
+UPDATE: You use default analyzer so your field is broken into tokens which are
+lowercased. A TermFilter is not analyzed So it does not match.
+
+You can lowercase you TermFilter or use a MatchQuery which is analyzed or
+change your mapping and set the field to not_analyzed.
+

@@ -1,0 +1,97 @@
+22726514 In elasticsearch I'm trying to multi search multiple fields with
+multiple values is it possible?
+
+I have firstname and lastname mapped to "not_analyzed"
+
+    
+    
+    curl -XDELETE "http://127.0.0.1:9200/data/_query" -d'
+    {
+      "multi_match" : {
+        "query":    "Will"
+        "fields": [ "firstname" ] 
+      },{
+        "query":    "Smith"
+        "fields": [ "lastname" ] 
+      }
+    }'
+    
+
+It doesn't seem to work.
+
+What am I doing wrong? Thanks
+
+Do you want to delete all documents matching your query or search for them? If
+you want to search for them. Try:
+
+    
+    
+    curl -XPOST "http://localhost:9200/data/_search" -d'{
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "term": {
+                            "firstname": "Will"
+                        }
+                    },
+                    {
+                        "term": {
+                            "lastname": "Smith"
+                        }
+                    }
+                ]
+            }
+        }
+    }'
+    
+
+The missing piece to a lot of Elasticsearch's documentation is that the
+queries are themselves within a `query` (or `filter`) and that is meant to be
+implied.
+
+Now, since they are different fields _with different values_ , you can go in a
+few different directions, but I think that the best option would be to use a
+[`bool
+query`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-query.html):
+
+    
+    
+    {
+      "query" : {
+        "bool" : {
+          "must" : [
+            { "term" : { "firstname" : "Will" } },
+            { "term" : { "lastname" : "Smith" } }
+          ]
+        }
+      }
+    }
+    
+
+That should match:
+
+    
+    
+    {
+      "firstname" : "Will",
+      "lastname" : "Smith"
+    }
+    
+
+If you had a structure like
+
+    
+    
+    {
+      "name" : {
+        "first" : "Will",
+        "last" : "Smith"
+      }
+    }
+    
+
+then you would just change `"firstname"` and `"lastname"` to `"name.first"`
+and `"name.last"` respectively.
+

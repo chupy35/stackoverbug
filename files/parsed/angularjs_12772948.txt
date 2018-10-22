@@ -1,0 +1,38 @@
+12772948 check dropdown option selected in angularjs
+
+I have a form in my page that is mapped to a JSON via angular model,
+unfortunately when the page is loaded I have no way of knowing if the select
+element is going to be null, zero or have a value.
+
+What is the easier way for me to check the value of the select when the page
+loads so I can determine the next action.
+
+As you can see in the fiddle, I have a "State" dropdown that on page load I
+need to check and see if any of the options are marked as selected, if so, I
+need to extract the one that is selected and do an ajax call with it.
+
+I thought on leveraging $pristine but that is only for inputs, I don't think
+it applies to select elements, correct?
+
+For illustration purposes, I copied a piece of the json onto the fiddle so you
+can see what I see when i load the page.
+
+the second question is similar, but for input elements, where the json could
+come back (based on preloaded data) with null, zero or some value in it. So
+how do I check on page load for this field and see what the value is?
+
+The json is passed to me by the server after the backend calls the database so
+I have no idea what type of values are coming in.
+
+here is the fiddle: <http://jsfiddle.net/jorgecas99/S8gMr/>
+
+It is still not quite clear from your fiddle and question what you need but I
+had a play with your fiddle and produced something that does what I would
+expect it to do :-)
+
+<http://jsfiddle.net/Td2NZ/>
+
+Checked Dropdownlist with angularjs
+
+<http://jsfiddle.net/nimeshvaghasiya/f9fGD/>`enter code here`
+

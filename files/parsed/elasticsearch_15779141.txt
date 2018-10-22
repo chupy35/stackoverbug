@@ -1,0 +1,22 @@
+15779141 What's the performance difference between Elasticsearch _all field
+search and multi-match
+
+I know Elasticsearch enables _all field as default. But for some reason
+(scoring) I don't want to use it. Instead I use multi_match, where I have
+almost 10 fields. Is the performance of multi_match worse than _all field? And
+how much?
+
+IMHO, it depends more on the query than on the field itself. I think, you are
+talking about `query_string` which by default use `_all` field.
+
+That said, using `match` query (or `multi_match`) instead of `query_string`
+query will probably be faster. And using multi match on a list of fields than
+on `_all` field will probably be faster as match queries are optimized and
+uses the _best internal query_ depending on the field and the query content
+themselves.
+
+I can not tell how much it's faster. But, you can run test easily for your use
+case and measure that.
+
+HTH
+

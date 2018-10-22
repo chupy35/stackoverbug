@@ -1,0 +1,121 @@
+10415494 Elasticsearch sort by single nested document key in array
+
+I have documents which look like this (here are two examples):
+
+    
+    
+    {
+        "id": 1234,
+        "title": "the title",
+        "body": "the body",
+        "examples": [
+            {
+                "evidence_source": "friend",
+                "source_score": 15
+            },
+            {
+                "evidence_source": "parent",
+                "source_score": 12
+            }
+        ]
+    }
+    
+
+and
+
+    
+    
+    {
+        "id": 6346,
+        "title": "new title",
+        "body": "lots of content",
+        "examples": [
+            {
+                "evidence_source": "friend",
+                "source_score": 10
+            },
+            {
+                "evidence_source": "parent",
+                "source_score": 27
+            },
+            {
+                "evidence_source": "child",
+                "source_score": 4
+            }
+        ]
+    }
+    
+
+The format of the sub-documents in the `examples` array will always have an
+`evidence_source` and a `source_score` but there will be a variable amount of
+these sub-documents, each with different `evidence_source` values.
+
+I am wondering if it is possible to sort documents with this format based on
+one of the `source_score` values matched to a specific `evidence_source`
+value. I'd really like to be able to do this:
+
+  * Sort documents by `source_score` descending where the related `evidence_source` is `friend`. The resulting ordering of the document `id`s would be 1234,6346.
+  * Sort documents by `source_score` descending where the related `evidence_source` is `parent`. The resulting ordering of the document `id`s would be 6346,1234.
+
+The closest results that I'm come up with for doing something like this are
+[1](https://stackoverflow.com/questions/6465852/how-to-search-by-array-
+elements-in-elasticsearch) and [2](http://elasticsearch-
+users.115913.n3.nabble.com/Query-Syntax-for-arrays-and-nested-objects-
+td212582.html) but I don't believe that they get at exactly what I want to do.
+
+Any ideas about how I might go about this? I've contemplated some ideas based
+on indexing these `examples` sub-documents separately, but I'm fairly new to
+elasticsearch and so am looking for some advice on a how to achieve my goal in
+the most straightforward manner (which may be a pipe-dream...)
+
+**Update** : A post on the [elasticsearch mailing
+list](https://groups.google.com/forum/?fromgroups#!topic/elasticsearch/ldRIB0YYbB4/discussion)
+seems to indicate that this is NOT possible, but I'm wondering if someone else
+here has any different ideas!
+
+Support for sorting based on fields inside of nested documents was added to
+elasticsearch in 0.90:
+
+<https://github.com/elasticsearch/elasticsearch/issues/2662>
+
+> The sorting by nested field support has the following parameters on top of
+the already existing sort options:
+
+>
+
+>   * `nested_path` \- Defines the on what nested object to sort. The actual
+sort field must be a direct field inside this nested object. The default is to
+use the most immediate inherited nested object from the sort field.
+
+>   * `nested_filter` \- A filter the inner objects inside the nested path
+should match with in order for its field values to be taken into account by
+sorting. Common case is to repeat the query / filter inside the nested filter
+or query. By default no `nested_filter` is active.
+
+>
+
+Given your example data, the following query should give you what you're
+after:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "sort": [
+        {
+          "examples.source_score": {
+            "order": "desc",
+            "nested_path": "examples",
+            "nested_filter": {
+              "term": {
+                "examples.evidence_source": "friend"
+              }
+            }
+          }
+        }
+      ]
+    }
+    
+

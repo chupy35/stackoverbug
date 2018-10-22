@@ -1,0 +1,57 @@
+24715243 Elasticsearch change field date format
+
+When i created my index and type a while ago I specified the date format of a
+field in the mapping as:
+
+    
+    
+    {"type": "date","format" : "dd/MM/yyyy HH:mm:ss"}
+    
+
+Is there a way to change the format of the field knowing that now i have more
+than 6000 docs indexed in my index ? I want the format to be:
+
+    
+    
+    {"type": "date","format" : "dd-MM-yyyy HH:mm:ss"}
+    
+
+You cannot change field mappings after you have indexed documents into
+Elasticsearch. You can add new fields but you cannot change existing fields.
+
+You could create a new index with the new mappings and then re-index all the
+data into it. You could then delete the old index and create a new index alias
+with the old name point to the new index.
+
+There are a few strategies documented for minimizing downtime when changing
+mappings in the Elasticsearch blog:
+<http://www.elasticsearch.org/blog/changing-mapping-with-zero-downtime/>
+
+Overall I'd highly suggest using index aliases - they provide a high level of
+abstraction and flexibility over using index names directly within your
+application. Perfect for situations like this where you want to make a change
+to the underlying index:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+aliases.html>
+
+You can update format mapping on an existing date field with the PUT mapping
+API:
+
+    
+    
+    PUT twitter/_mapping/user 
+    {
+      "properties": {
+        "myDate": {
+          "format": "dd-MM-yyyy HH:mm:ss"
+        }
+      }
+    }
+    
+
+_format_ is one of the few mappings that can be updated on existing fields
+without losing data
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/2.0/mapping-date-
+format.html>
+

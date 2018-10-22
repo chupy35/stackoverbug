@@ -1,0 +1,135 @@
+25182929 Elasticsearch function_score with nested_objects
+
+I have a problem with a query.I used a query for boosting documents with no
+nested_objects. Now i use nested_objects and changed the query to use a nested
+filter but nothing is boosted. I get the documents i expected but with no
+_score changes.
+
+Am i doing something wrong ??
+
+    
+    
+    GET index/type/_search
+    {
+       "query": {
+          "function_score": {
+             "filter": {
+                "bool": {
+                   "must": [
+                      {
+                         "term": {
+                            "parent.child": "test"
+                         }
+                      }
+                   ]
+                }
+             },
+             "functions": [
+                {
+                   "boost_factor": "100",
+                   "filter": {
+                      "nested": {
+                         "path": "parent",
+                         "filter": {
+                            "bool": {
+                               "must": [
+                                  {
+                                     "term": {
+                                        "child": "test"
+                                     }
+                                  }
+                               ]
+                            }
+                         }
+                      }
+                   }
+                }
+             ],
+             "score_mode": "sum"
+          }
+       },
+       "sort": "_score",
+       "from": 0,
+       "size": 320
+    }
+    
+
+EDIT: Could it be caused by
+
+> nested filter
+
+>
+
+> A nested filter behaves much like a nested query, except that it doesn’t
+accept the score_mode parameter. It can only be used in “filter context” —
+such as inside a filtered query — and it behaves like any other filter: it
+includes or excludes, but it doesn’t score.
+
+>
+
+> While the results of the nested filter itself are not cached, the usual
+caching rules apply to the filter inside the nested filter.
+
+>
+
+> <http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/nested-
+query.html>
+
+I get the feeling your JSON should look closer this (maybe not exactly though,
+I havent tested it).
+
+    
+    
+    {
+       "query": {
+          "function_score": {
+             "query": {
+               "nested": {
+                   "path": "parent",
+                   "query": {
+                      "bool": {
+                         "must": [
+                            {
+                               "term": {
+                                  "parent.child": "test"
+                               }
+                            }
+                         ]
+                      }
+                   }
+                }
+             },
+             "functions": [
+                {
+                   "boost_factor": "100"
+                }
+             ],
+             "score_mode": "sum"
+          }
+       },
+       "sort": "_score",
+       "from": 0,
+       "size": 320
+    }
+    
+
+Specifically, you dont want to filter the `boost_factor`, you just want to
+boost this `function_score` by 100. The actual nested query though goes in the
+`query` section of the `function_score`, and the `functions` section just
+contains the `boost_factor`. I think.
+
+As the documentation says:
+
+nested filter
+
+A nested filter behaves much like a nested query, except that it doesn’t
+accept the score_mode parameter. It can only be used in “filter context” —
+such as inside a filtered query — and it behaves like any other filter: it
+includes or excludes, but **it doesn’t score**.
+
+While the results of the nested filter itself are not cached, the usual
+caching rules apply to the filter inside the nested filter.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/nested-
+query.html>
+

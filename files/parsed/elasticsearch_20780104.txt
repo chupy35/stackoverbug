@@ -1,0 +1,127 @@
+20780104 Get matched keywords while searching on an analysed field
+
+Is there a way to get only the matched keywords while searching on an analysed
+field. My case is I have a 'content' field (string analysed) against which a
+query is run like this:
+
+    
+    
+    GET /posts/post/_search?pretty=true
+    {
+        "query": {
+            "query_string": {
+                "query": "content:(obama or hilary)"
+            }
+        },
+        "fields": ["id", "interaction_id", "sentiment", "tweet_created_at", "content"]
+    }
+    
+
+I get output like this:
+
+    
+    
+    "hits": [
+             {
+                "_index": "posts_v1",
+                "_type": "post",
+                "_id": "51764639fdccca097f03d095",
+                "_score": 2.024847,
+                "fields": {
+                   "content": "UGANDA HILARY",
+                   "id": "51764639fdccca097f03d095",
+                   "sentiment": 0,
+                   "tweet_created_at": "2012-11-24T14:59:25Z",
+                   "interaction_id": "1e236478961ca480e0744001f05ca8b8"
+                }
+             },
+             {
+                "_index": "posts_v1",
+                "_type": "post",
+                "_id": "51c2bae26c8f1806cb000001",
+                "_score": 1.9791828,
+                "fields": {
+                   "content": "Obama in Berlin — looking back",
+                   "id": "51c2bae26c8f1806cb000001",
+                   "sentiment": 0,
+                   "tweet_created_at": "2013-06-20T08:18:39Z",
+                   "interaction_id": "1e2d98202c55a980e07493a024172cb6"
+                }
+             },
+             {
+                "_index": "posts_v1",
+                "_type": "post",
+                "_id": "51c3a6b06c8f185fcb000001",
+                "_score": 1.7071226,
+                "fields": {
+                   "content": "Knowing Barack Obama, Hilary Clintonr",
+                   "id": "51c3a6b06c8f185fcb000001",
+                   "sentiment": 0,
+                   "tweet_created_at": "2013-06-21T01:04:45Z",
+                   "interaction_id": "1e2da0e8fb5fa480e07407b3fa87ab72"
+                }
+             }
+    ]
+    
+
+So, I need to have something like this:
+
+    
+    
+    "hits": [
+             {
+                "_index": "posts_v1",
+                "_type": "post",
+                "_id": "51764639fdccca097f03d095",
+                "_score": 2.024847,
+                "fields": {
+                   "content": "UGANDA HILARY",
+                   "id": "51764639fdccca097f03d095",
+                   "sentiment": 0,
+                   "tweet_created_at": "2012-11-24T14:59:25Z",
+                   "interaction_id": "1e236478961ca480e0744001f05ca8b8",
+                   "content_tags": ["hilary"]
+                }
+             },
+             {
+                "_index": "posts_v1",
+                "_type": "post",
+                "_id": "51c2bae26c8f1806cb000001",
+                "_score": 1.9791828,
+                "fields": {
+                   "content": "Obama in Berlin — looking back",
+                   "id": "51c2bae26c8f1806cb000001",
+                   "sentiment": 0,
+                   "tweet_created_at": "2013-06-20T08:18:39Z",
+                   "interaction_id": "1e2d98202c55a980e07493a024172cb6",
+                   "content_tags": ["obama"]
+                }
+             },
+             {
+                "_index": "posts_v1",
+                "_type": "post",
+                "_id": "51c3a6b06c8f185fcb000001",
+                "_score": 1.7071226,
+                "fields": {
+                   "content": "Knowing Barack Obama, Hilary Clintonr",
+                   "id": "51c3a6b06c8f185fcb000001",
+                   "sentiment": 0,
+                   "tweet_created_at": "2013-06-21T01:04:45Z",
+                   "interaction_id": "1e2da0e8fb5fa480e07407b3fa87ab72",
+                   "content_tags": ["obama", "hilary"]
+                }
+             }
+    ]
+    
+
+Please note the `content_tags` field in the second hits structure. Is there a
+way to acheive this?
+
+Elasticsearch doesn't support returning which terms matched which field
+directly though I think it could implement one reasonably easily as an
+additional "highlighter". I think you have two options at this point:
+
+  1. Do something hacky with highlighting like asking for the text length to be the max(all_strings.map(strlen).max, min_highlight_length), strip the text that isn't highlighted, and dedupe. I believe min_highlight_length is 13 characters or something. That might only apply to the FVH, which I don't suggest you use, so maybe you can ignore that.
+
+  2. Do two searches either via multisearch or sequentially.
+

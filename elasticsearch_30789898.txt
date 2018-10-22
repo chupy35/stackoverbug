@@ -1,0 +1,4 @@
+30789898
+ElasticSearch query for subset: what Lego project can I build using only pieces I own?
+<p>I'm having trouble figuring out how to construct a query that works something like this. Let's say a user has a bunch of Lego pieces and they want to find out what projects they can build that use all or some of the user's pieces but don't use any they don't have.</p>&#xA;&#xA;<p>I already have a nested document setup with piece id and quantity, how do I structure the query so that it returns projects that use pieces that are a subset of the user's library?</p>&#xA;&#xA;<p>Thank you.</p>&#xA;
+<p>I ended up indexing each project with pieces it is made out of and pieces it doesn't use. Then I query for all pieces it <code>must</code> not contain and for pieces it <code>should</code> contain.</p>&#xA;

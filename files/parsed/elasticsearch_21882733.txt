@@ -1,0 +1,67 @@
+21882733 SUM aggregations rounds each value?
+
+My index contains two elements:
+
+    
+    
+    {
+      "pound" : 1.5
+    }
+    
+
+When ES sums the two elements together thanks to the `SUM` aggregation, each
+`pound` value are rounded to `1` instead of keeping `1.5`. Why?
+
+The result should be `3`, not `2`.
+
+Here's my ES request:
+
+    
+    
+    POST foo/bar/_search
+    {
+       "aggs": {
+          "sumPound": {
+             "sum": {
+                "field": "pound"
+             }
+          }
+       }
+    }
+    
+
+And the response:
+
+    
+    
+    {
+       ...,
+       "hits": {
+          "total": 2,
+          "max_score": 1,
+          "hits": [
+             {
+                ...,
+                "_source": {
+                   "pound": 1.5,
+                }
+             },
+             {
+                ...,
+                "_source": {
+                   "pound": 1.5,
+                }
+             }
+          ]
+       },
+       "aggregations": {
+          "sumPound": {
+             "value": 2          <-- 1.5 + 1.5 == 2 ???
+          }
+       }
+    }
+    
+
+Verify your mapping, is the type of the `pound` field is set to `double` ? It
+looks like it's an `integer`.
+

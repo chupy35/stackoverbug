@@ -1,0 +1,20 @@
+26329875 Spring Boot and Jackson, JSR310 in response body
+
+The JacksonAutoConfiguration initializes an ObjectMapper with the JSR310Module
+registered. Then HttpMessageConvertersAutoConfiguration initializes a
+MappingJackson2HttpMessageConverter. But this MessageConverter never gets
+plugged in the RequestResponseBodyMethodProcessor.
+
+As a result:
+
+  * If the controller returns a object which should be jsonified by Jackson, dates are poorly converted because the wrong MappingJackson2HttpMessageConverter is used (initialized in WebMvcConfigurationSupport#addDefaultHttpMessageConverters)
+  * But, if the ObjectMapper is injected in the controller and used to jsonify the same object, then the date format is alright.
+
+How can I can wake the WebMvcAutoConfigurationAdapter up? What should I do to
+bind the configured Jackson ObjectMapper with Spring MVC and make it handle
+response bodies?
+
+If you use `@EnableWebMvc` that would explain your symptoms So the rule thumb
+is: do not use `@EnableWebMvc` with Spring Boot, unless you wan't to customize
+Web MVC configuration?
+

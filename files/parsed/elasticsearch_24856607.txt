@@ -1,0 +1,111 @@
+24856607 Elasticsearch: filter for a substring in the value of a document
+field?
+
+I am new to Elasticsearch. I have the following mapping for a string field:
+
+    
+    
+    "ipAddress": {
+      "type": "string",
+      "store": "no",
+      "index": "not_analyzed",
+      "omit_norms": "true",
+      "include_in_all": false
+    }
+    
+
+A document with value in the ipAddress field looks like:
+
+    
+    
+    "ipAddress": "123.3.4.12 134.4.5.6"
+    
+
+Notice that in the above there are two IP addresses, separated by a blank.
+
+Now I need to filter documents based on this field. This is an example filter
+value
+
+    
+    
+    123.3.4.12
+    
+
+And the filter value is always a single IP address as shown above.
+
+I look at the filters at
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filters.html>
+
+and I cannot seem to be able to find right filter for this. I tried the term
+filter,
+
+    
+    
+    {
+        "query": {
+            "filtered" : {
+                "query" : {
+                    "match_all" : {}
+                },
+                "filter": {
+                    "term" : { "ipAddress" : "123.3.4.12" }
+                }
+            }
+        }
+    }
+    
+
+but it seems that it returns a document only when the filter value 100%
+matches the value of a document's field.
+
+Can anyone help me out on this?
+
+**Update:**
+
+Based on John Petrone's suggestion, I got it working by defining a whitespace
+tokenizer based analyzer as follows:
+
+    
+    
+    {
+      "settings": {
+        "index": {
+          "analysis": {
+            "analyzer": {
+              "blank_sep_analyzer": {
+                "tokenizer": "whitespace"
+              }
+            }
+          }
+        }
+      },
+      "mappings": {
+        "ipAddress": {
+          "type": "string",
+          "store": "no",
+          "index": "analyzed",
+          "analyzer": "blank_sep_analyzer",
+          "omit_norms": "true",
+          "include_in_all": false
+        }
+      }
+    }
+    
+
+The problem is that the field is not analyzed, so if you have 2 IP addresses
+in it the term is actually the full field, e.g. "123.3.4.12 134.4.5.6".
+
+I'd suggest a different approach - if you are always going to have lists of IP
+addresses separated by spaces consider using the whitespace tokenizer to
+create tokens as whitespaces - should create several tokens that the IP
+address will then match:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+whitespace-tokenizer.html>
+
+Another approach could be storing the IP addresses as an array. And then the
+current mappings would work. You would just have to separate the IP addresses
+when indexing the document.
+

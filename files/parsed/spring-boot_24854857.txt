@@ -1,0 +1,18 @@
+24854857 Why, in RelaxedPropertyResolver, getProperty and getSubProperties
+behave differently?
+
+Two similar methods don't behave similarly:
+
+  * RelaxedPropertyResolver#getProperty calls PropertySourcesPropertyResolver#getProperty where the first PropertySource having the value for the key wins
+  * RelaxedPropertyResolver#getSubProperties calls PropertySourceUtils#getSubProperties where the last PropertySource having the value for a key in the sub tree wins
+
+Obviously PropertySources are sorted the most important/specific first, the
+least important last. So when I call RelaxedPropertyResolver#getSubProperties
+I get default values instead of customized ones.
+
+Is there a reason? Is it documented somewhere?
+
+Sorry, it's a bug. We have [an issue](https://github.com/spring-
+projects/spring-boot/issues/1259) open for it and it's currently targeted at
+1.1.5.
+

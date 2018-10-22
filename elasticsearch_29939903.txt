@@ -1,0 +1,3 @@
+29939903
+elasticsearch query traceID
+<p>I put some data into elasticsearch through logstash.&#xA;Then I run the first command:</p>&#xA;&#xA;<pre><code>curl 'http://localhost:9200/_search?q=traceID=1428074818422&amp;pretty=true'&#xA;</code></pre>&#xA;&#xA;<p>the elasticsearch return the result that which traceID is 1428074818422.</p>&#xA;&#xA;<p>But when I use the second command:</p>&#xA;&#xA;<pre><code>curl 'http://localhost:9200/_search？pretty=true' -d'{&#xA;    "query":{&#xA;    "term" : {"traceID" : "1428074818422"}&#xA;    }&#xA;}'&#xA;</code></pre>&#xA;&#xA;<p>the elastcsearch can not find any result.</p>&#xA;&#xA;<p>I want to kown the reason about this problem and how can I solve it,thanks.</p>&#xA;

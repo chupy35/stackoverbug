@@ -1,0 +1,60 @@
+17600269 Elasticsearch: Handling JSONs with arrays
+
+I have a large JSON with many fields that contain arrays. Say one field is
+"Top" that contains many fields: "Middle1", "Middle2", "Middle3". Each of
+these "Middle" fields contains an array. Is there any simple way to search
+every element only within Middle1 and return back individual elements? When I
+try "Middle1.description":"blahblahblah" in a query with a match,
+elasticsearch returns all of Middle1. I've also tried changing the default
+mapping by elasticsearch to nested and it tells me:
+
+    
+    
+    [object mapping [Middle1] can't be changed from non-nested to nested]
+    
+
+I'm at a loss here.
+
+Also, if ES could search through all of these arrays and return individual
+elements that match, that would be fantastic.
+
+You can only make backward compatible changes the mapping. That's why you get
+back that error when trying to change the type of an object to nested. You
+should reindex your document and create the nested type upfront, before
+actually indexing any document. You can either submit your mapping through the
+[create index api](http://www.elasticsearch.org/guide/reference/api/admin-
+indices-create-index/) while creating the index or update it afterwards using
+the [put mapping api](http://www.elasticsearch.org/guide/reference/api/admin-
+indices-put-mapping/).
+
+Even using nested documents, you are always going to get back the whole
+document that you indexed. What the nested type allows is to make a
+distinction between the different children and return proper matches, that
+belong to the same child. That's useful when mapping one to many relations and
+you make multiple queries on the children at the same time. Have a look at the
+following articles to know more:
+
+<http://euphonious-intuition.com/2013/02/managing-relations-in-elasticsearch/>
+<http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-children-and-
+nested-documents/>
+
+As mentioned in the article parent/child is the alternative to nested
+documents, less performant but more flexible. Parents and children can be
+indeed independently and you can either retrieve children querying the parents
+or parents querying the children.
+
+I'm not sure though if parent/child is going to be helpful in your case,
+especially if your problem is only to return the matching children.
+
+May be a bit late, but i encountered the same issue `[object mapping [...]
+can't be changed from non-nested to nested]` on a "Nested" mapped field, that
+I 've resolved by setting the mapping to "Object".
+
+Example with springdata annotation :
+
+    
+    
+    @Field(type = FieldType.Object)
+    List<Component> components;
+    
+

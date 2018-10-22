@@ -1,0 +1,80 @@
+23258534 Elasticsearch sum total values for specific hours within a month
+
+I have an elasticsearch server with fields: `timestamp`, `user` and
+`bytes_down` (among others)
+
+I would like to total the bytes_down value for a user for a month BUT only
+where the hours are between 8am and 8pm
+
+I'm able to get the daily totals with the date histogram with following query
+(I'm using the perl API here) but can't figure out a way of reducing this down
+to the hour range for each day
+
+    
+    
+    my $query = {
+    index => 'cm',
+        body  => {
+            query => {
+                filtered => {
+                    query => {
+                        term => {user => $user}
+                    },
+                    filter => {
+                        and => [
+                        {
+                            range => {
+                                timestamp => {
+                                    gte => '2014-01-01',
+                                    lte => '2014-01-31'
+                                }
+                            }
+                        },
+                        {
+                            bool => {
+                                must => {
+                                    term => { zone => $zone }
+                                }
+                            }
+                        }
+                        ]
+                    }
+                }
+            },
+            facets => {
+                bytes_down => {
+                    date_histogram => {
+                        field => 'timestamp',
+                        interval => 'day',
+                        value_field => 'downstream'
+                    }
+                }
+            },
+            size => 0
+        }
+    };
+    
+
+Thanks Dale
+
+Add a bool must range filter for every hour, I'm not sure if you're looking to
+do this forever or for the specific day, but this slide show from Zachary Tong
+is a good way to understand what you could be doing, especially with filters
+in general. <https://speakerdeck.com/polyfractal/elasticsearch-query-
+optimization?slide=28>
+
+I think you need to use
+[`script`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-script-filter.html) filter instead of `range` filter and then you need to
+put it in `facet_filter` section of your facet:
+
+    
+    
+    "facet_filter" => {
+        "script" => {
+            "script" => "doc['timestamp'].date.getHourOfDay() >= 8 &&
+                         doc['timestamp'].date.getHourOfDay() < 20"
+        }
+    }
+    
+

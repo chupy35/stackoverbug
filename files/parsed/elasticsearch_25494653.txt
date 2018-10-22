@@ -1,0 +1,61 @@
+25494653 Elasticsearch search perform cross reference between 2 types
+
+I have a elasticsearch index which contains 2 types, 'product' and 'brand'
+
+I have a request to filter out the brands that don't have products are active
+(`status='active'`).
+
+The product has following fields:
+
+    
+    
+    brand_uuid
+    status
+    name
+    ...
+    
+
+The brand has following fields:
+
+    
+    
+    uuid
+    name
+    ...
+    
+
+So far I am trying my luck:
+
+<http://search.localhost:9200/site/brand,product/>
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": {
+                "status": "active"
+              }
+            },
+            *** Don't know how to cross reference between types for the second query ***
+          ]
+        }
+      }
+    }
+    
+
+I am new to elasticsearch and have not done this before, is it possible to
+perform such search?
+
+Use a parent/child relationship between brand (parent) and product(child).
+Have a look at the 'parent/child' section in this blog post:
+
+<http://www.elasticsearch.org/blog/managing-relations-inside-elasticsearch/>
+
+You can then use a '[has_child'
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-has-child-filter.html) that will only return brands where the products'
+status is `active`.
+

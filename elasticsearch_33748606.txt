@@ -1,0 +1,3 @@
+33748606
+How to eliminate hits from elasticsearch response?
+<p>I have my query performing only aggregations. But the response which I get after querying shows hits. I just need the total hits number and the aggregation results. Is there any way by which I can do this in elasticsearch?. </p>&#xA;

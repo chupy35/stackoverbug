@@ -1,0 +1,75 @@
+18471542 How to define a mapping in elasticsearch that doesn't accept fields
+other that the mapped ones?
+
+Ok, in my elastisearch I am using the following mapping for an index:
+
+    
+    
+    {
+    
+        "mappings": {
+            "mytype": {
+                "type":"object",
+                "dynamic" : "false",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "published": {
+                        "type": "date"
+                    }
+    
+                }
+            }
+        }
+    }
+    
+
+it works. In fact if I put a malformed date in the field "published" it
+complains and fails. Also I've the following configuration:
+
+    
+    
+    ...
+    node.name : node1
+    index.mapper.dynamic : false
+    index.mapper.dynamic.strict : true
+    ...
+    
+
+And without the mapping, I can't really use the type. The problem is that if I
+insert something like:
+
+{ "name":"boh58585", "address": "hiohio", "published": "2014-4-4", "test":
+"hophiophop" }
+
+it will happily accept it. Which is not the behaviour that I expect, because
+the field `test` is not in the mapping. How can I restrict the fields of the
+document to only those that are in the mapping???
+
+The use of `"dynamic": false` tells Elasticsearch to never allow the mapping
+of an index to be changed. If you want an error thrown when you try to index
+new documents with fields outside of the defined mapping, use `"dynamic":
+"strict"` instead.
+
+From the docs: "The dynamic parameter can also be set to strict, meaning that
+not only new fields will not be introduced into the mapping, parsing
+(indexing) docs with such new fields will fail."
+
+Since you've defined this in the settings, I would guess that leaving out the
+`dynamic` from the mapping definition completely will default to `"dynamic":
+"strict"`.
+
+Is your problem with the malformed date field?
+
+I would fix the date issue and continue to use `dynamic: false`.
+
+You can read about the [ways to set up the date field mapping for a custom
+format here](http://www.elasticsearch.org/guide/reference/mapping/date-
+format/).
+
+Stick the date format string in a `{type: date, format: ?}` mapping.
+

@@ -1,0 +1,167 @@
+28819590 react developer console not showing up
+
+I have react chrome extension installed and I know its working since it shows
+up on instagram.com. However, I'm going through the React tutorial
+(<http://facebook.github.io/react/docs/tutorial.html>) and the react tab is
+not showing up in my console window here is all the code I have:
+
+    
+    
+    <!-- index.html -->
+    <html>
+      <head>
+        <title>Hello React</title>
+        <script src="http://fb.me/react-0.12.2.js"></script>
+        <script src="http://fb.me/JSXTransformer-0.12.2.js"></script>
+        <script src="http://code.jquery.com/jquery-1.10.0.min.js"></script>
+      </head>
+      <body>
+        <div id="content"></div>
+        <script type="text/jsx">
+        var data = [
+          {author: "Derp", text: "this is another comment"},
+          {author: "Derp", text: "this is a comment"}
+        ];
+    
+          var CommentBox = React.createClass({
+            loadCommentsFromServer: function() {
+              $.ajax({
+                url: this.props.url,
+                dataType: 'json',
+                success: function(data) {
+                  this.setState({data: data});
+                }.bind(this),
+                error: function(xhr, status, err) {
+                  console.error(this.props.url, status, err.toString());
+                }.bind(this)
+              });
+            },
+            handleCommentSubmit: function(comment) {
+              $.ajax({
+                url: this.props.url,
+                dataType: 'json',
+                type: 'POST',
+                data: comment,
+                success: function(data) {
+                  this.setState({data: data});
+                }.bind(this),
+                error: function(xhr, status, err) {
+                  console.error(this.props.url, status, err.toString());
+                }.bind(this)
+              });
+            },
+            getInitialState: function() {
+              return {data: []};
+            },
+            componentDidMount: function() {
+              this.loadCommentsFromServer();
+              setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+            }
+            render: function() {
+              return (
+                <div className="commentBox">
+                  <h1>Comments</h1>
+                  <CommentList data={this.state.data}/>
+                  <CommentForm onCommentSubmit={this.handleCommentSubmit}/>
+                </div>
+              );
+            }
+          });
+    
+          var CommentList = React.createClass({
+            render: function() {
+              var comments = this.props.data.map(function (comment){
+                return (
+                  <Comment author={comment.author}>
+                    {comment.text}
+                  </Comment>
+                )
+              })
+    
+              return (
+                <div className="commentList">
+                  {comments}
+                </div>
+              );
+            }
+          });
+    
+          var Comment = React.createClass({
+            render: function() {
+              return (
+                <div className="comment">
+                  <h2 className="commentAuthor">
+                    {this.props.author}
+                  </h2>
+                  {this.props.children}
+                </div>
+              );
+            }
+          })
+    
+          var CommentForm = React.createClass({
+            handleSubmit: function(e) {
+              e.preventDefault();
+              var author = this.refs.author.getDOMNode().value.trim();
+              var text = this.refs.text.getDOMNode().value.trim();
+              if(!text || !author) {
+                return;
+              }
+              this.props.onCommentSubmit({author: author, text: text});
+              this.refs.author.getDOMNode().value = '';
+              this.refs.text.getDomNode().value = '';
+            },
+            render: function() {
+              return (
+                <div className="commentForm">
+                  <form className="commentForm">
+                    <input type="text" placeholder="your name" ref="something"/>
+                    <input type="text" placeholder="say something" ref="someting" />
+                    <input type="submit" value="Post" />
+                  </form>
+                </div>
+              );
+            }
+          });
+    
+          React.render(
+            <CommentBox url="comments.json" pollInterval={2000}/>,
+            document.getElementById('content')
+          );
+        </script>
+      </body>
+    </html>
+    
+
+my console says the following:
+
+    
+    
+    Download the React DevTools for a better development experience: http://fb.me/react-devtools
+    
+    You are using the in-browser JSX transformer. Be sure to precompile your JSX for production - http://facebook.github.io/react/docs/tooling-integration.html#jsx
+    
+    Uncaught Error: Parse Error: Line 41: Unexpected identifier
+    
+
+I have a bug in there somewhere, but I'm trying to get the React tab to show
+up for the time being and not too sure how to do it.
+
+I had the same issue: I installed `React Developer Tools` plugin, but the
+`React` tab didn't appear. The solution was simple: I just closed the Chrome
+tab and opened it again - and it was there.
+
+You can read about other possible reasons on their official GitHub page
+<https://github.com/facebook/react-devtools#user-content-the-react-tab-doesnt-
+show-up>
+
+This was happening to me because I didn not have global React object, or a
+global require that is able to require('react') from global scope.  
+I was able to make the extension work by requiring react in my gulpfile. I'm
+sure it would work the same in a webpack file:
+
+    
+    
+    var React = require('react');
+    
+

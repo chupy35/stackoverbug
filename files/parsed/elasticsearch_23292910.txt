@@ -1,0 +1,19 @@
+23292910 Is multiple Elasticsearch nodes on a single server faster?
+
+My Elasticsearch index is very small (about 200,000 items). But I have a very
+large query volume (5000-10000 queries/second).
+
+I have a dedicated server with 48GB RAM and a powerful CPU (20 cores). When I
+run a single ES node on this server, it consumes very little memory and RAM.
+But with high query volume, ES will time out.
+
+My question are:
+
+Is this better for me to create 10 nodes on the same server to fully utilize
+the server's RAM and CPU?
+
+Will it be the same as creating 10 servers, each with 5 GB RAM and 2 cores?
+
+(I read somewhere that normally, I should have one node per server, but it's a
+waste if we can't utilize our powerful server).
+

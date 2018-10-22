@@ -1,0 +1,24 @@
+23881826 Elasticsearch delete after field time
+
+I have an index containing data with the field "expirationDate" which is a
+datetime object. I want to set these documents to automatically delete after
+that time has passed? Is there anyway to do this, or anyway I can cron this
+within elasticsearch to automatically run once an hour?
+
+You need to enable TTL for your index (see
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+ttl-field.html#_enabled_2)) and then add `_ttl` field to documents containing
+number of milliseconds till `expirationDate`.
+
+Of course, you need to remember to update `_ttl` field whenever
+`expirationDate` changes.
+
+* * *
+
+The only way (I can think of) to set the document to expire on specific time
+is definitely hacky. You could configure
+[`_timestamp`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+timestamp-field.html) path to point to your `expirationDate` field and set
+`_ttl` to 1 millisecond. It could work, but for me it sounds a little bit like
+a 'feature abuse'.
+

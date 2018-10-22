@@ -1,0 +1,51 @@
+12002560 AngularJS: ngResource and array of object as params to URL
+
+I have variable `$scope.data= [{column:"age", operator: ">", value: "50"},
+{column:"name", operator: "=", value: "Tonda"}]`. And service for submitting
+data to server:
+
+    
+    
+    angular.module('myServices', ['ngResource']).
+      factory('serverApp', function($resource, $scope){
+        return $resource('myurl/', {}, {
+            saveData: {method:'POST', params: $scope.data}
+        });
+    });
+    
+
+Why URL contains "nonsense" after calling `serverApp.saveData()? - .../myurl?
+**0=%5Bobject+Object%5D &1=%5Bobject+Object%5D** \- It seems, that params can
+be only simple (1D) object.
+
+How can I properly serialize object `$scope.cfgcondition` into params of
+service `serverApp` (eg. to URL)? Thanks.
+
+The 'params' attribute defines URL query params, which I assume is intended
+behavior. If it was just a simple object, not an array, then you could just
+use $save something like
+
+    
+    
+    var MyRequest = $resource('/notreally'); 
+    $scope.data = new MyRequest;
+    // get stuff into $scope.data
+    $scope.doSubmit = function() { $scope.data.$save(); }
+    
+
+To post an array you need to define your own action and pass the data in as
+second parameter.
+
+    
+    
+    $scope.data= [{column:"age", operator: ">", value: "50"}, 
+                  {column:"name", operator: "=", value: "Tonda"}]; 
+    var MyRequest = $resource('/notreally', {}, {saveData: {method:'POST', isArray: true}}); 
+    $scope.doSubmit = function() { MyRequest.saveData({}, $scope.data);
+    
+
+<http://docs.angularjs.org/api/ngResource>.$resource
+<https://docs.angularjs.org/api/ngResource/service/$resource>
+
+*Edited to fix misstatements regarding arrays - I thought $resource could not POST arrays, but figured out that I was wrong!
+

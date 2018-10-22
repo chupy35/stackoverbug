@@ -1,0 +1,58 @@
+24795822 Search keyword using double quotes to get exact match in
+elasticsearch
+
+If user searches by giving quotes around keyword like "flowers and mulch" then
+exact matches should be displayed.
+
+I tried using query_string which is almost working but not satisfied with
+those results.
+
+Can anyone help me out please.
+
+    
+    
+    {
+        "query": {
+            "query_string": {
+               "fields": ["body"], 
+               "query": "\"flowers and mulch\""
+            }
+        }
+    }
+    
+
+You should be using phrase_match for exact matches of phrases:
+
+    
+    
+    {
+        "query": {
+            "match_phrase": {
+                "body": "flowers and mulch"
+            }
+        }
+    }
+    
+
+> **Phrase matching**
+
+>
+
+> In the same way that the match query is the “go-to” query for standard full
+text search, the match_phrase query is the one you should reach for when you
+want to find words that are near to each other.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/phrase-
+matching.html>
+
+As I put in the comment of the question, I think knowing what the OP found not
+satisfying about `query_string` would be great. I would recommend using
+query_string for these cases. Note that there are multiple options that could
+be set, such as: `auto_generate_phrase_queries`, `split_on_whitespace`, or
+`quote_field_suffix` (example:
+[here](https://www.elastic.co/guide/en/elasticsearch/reference/current/recipes.html#mixing-
+exact-search-with-stemming)), which makes it quite versatile.
+
+The case `one "two three"`could be addressed using default parameters of
+`query_string`
+

@@ -1,0 +1,173 @@
+11459404 Injecting a mock service for an angularjs controller test
+
+I'm trying to test a controller that depends on a service I built myself. I'd
+like to mock this service since the service talks to the DOM.
+
+Here's my current test:
+
+    
+    
+    describe('Player Controllers', function () {
+    
+        beforeEach(function () {
+            this.addMatchers({
+                toEqualData: function (expected) {
+                    return angular.equals(this.actual, expected);
+                }
+            });
+        });
+    
+        describe('TestPSPlayerModule', function () {
+            var $httpBackend, scope, ctrl;
+    
+            beforeEach(module('PSPlayerModule'));
+    
+            beforeEach(inject(function (_$httpBackend_, $rootScope, $controller) {
+                $httpBackend = _$httpBackend_;
+    
+                scope = $rootScope.$new();
+                ctrl = $controller(PlayerController, { $scope: scope });
+            }));
+    
+            it('should request a clip url from the server when clipClicked is called', function () {
+                expect(1).toBe(1);
+            });
+        });
+    
+    });
+    
+
+My controller looks like this:
+
+    
+    
+    w.PlayerController = function ($scope, $http, $window, speedSlider, $location) {
+        ...
+    }
+    
+
+so it's the speedSlider I want to mock.
+
+I had the idea to use a module I created in my test code that could provide a
+faked implementation of the speed slider, so I added the following to the top
+of the test.js file:
+
+    
+    
+    module('TestPSPlayerModule', []).factory('speedSlider', function () {
+        return = {
+           ...
+        };
+    });
+    
+
+and then list that module in the beforeEach() call instead of the concrete
+one, but if I do that I get the following error:
+
+    
+    
+    Injector already created, can not register a module!
+    
+
+So I figure there must be a better way for me to provide a mock implementation
+of one of my services. Something I can perhaps use sinon.js for....
+
+Make sure when you use module after its definition that you don't have the
+extra brackets.  So `module('TestPSPlayer')` instead of
+`module('TestPSPlayer',[])`.
+
+Also be sure you're not trying to do this inside an inject function call:
+
+This will throw the error:
+
+    
+    
+        beforeEach(inject(function(someOtherService) {
+            module('theApp', function($provide) {
+                myMock = {foo: 'bar'};
+                $provide.value('myService', myServiceMock);
+                someOtherService.doSomething();
+            });
+        }));
+    
+
+This will not:
+
+    
+    
+        beforeEach(function() {
+            module('theApp', function($provide) {
+                myMock = {foo: 'bar'};
+                $provide.value('myService', myServiceMock);
+            });
+    
+            inject(function(someOtherService) {
+               someOtherService.doSomething();
+            });
+        });
+    
+
+In my case this didn't worked:
+
+    
+    
+    beforeEach(module('user'));
+    beforeEach(inject(function ($http) {
+    }));
+    
+    beforeEach(module('community'));
+    beforeEach(inject(function ($controller, $rootScope) {
+    }));
+    
+
+I've changed to this to make it to work:
+
+    
+    
+    beforeEach(module('user'));
+    beforeEach(module('community'));
+    
+    beforeEach(inject(function ($http) {
+    }));
+    beforeEach(inject(function ($controller, $rootScope) {
+    }));
+    
+
+If your provider does not use global init you can use the original injected
+provider and mock it. in the example below the testedProvider is your
+controller.
+
+    
+    
+    var injectedProviderMock;
+    
+    beforeEach(function () {
+        module('myModule');
+    });
+    
+    beforeEach(inject(function (_injected_) {
+        injectedProviderMock  = mock(_injected_);
+    }));
+    
+    
+    var  testedProvider;
+    beforeEach(inject(function (_testedProvider_) {
+        testedProvider = _testedProvider_;
+    }));
+    
+    it("return value from injected provider", function () {
+        injectedProviderMock.myFunc.andReturn('testvalue');
+        var res = testedProvider.executeMyFuncFromInjected();
+        expect(res).toBe('testvalue');
+    });
+    
+    //mock all provider's methods
+    function mock(angularProviderToMock) {
+    
+        for (var i = 0; i < Object.getOwnPropertyNames(angularProviderToMock).length; i++) {
+            spyOn(angularProviderToMock,Object.getOwnPropertyNames(angularProviderToMock)[i]);
+        }
+        return angularProviderToMock;
+    }
+    
+

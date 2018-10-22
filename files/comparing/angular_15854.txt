@@ -1,0 +1,2 @@
+b'fix($rootScope): provide correct value of one-time bindings in watchGroup'
+b"I don't recall how or why I came across this issue, and it's confusing me, but I found this stashed and the tests do make sense...?"

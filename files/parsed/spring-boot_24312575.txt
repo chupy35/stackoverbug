@@ -1,0 +1,30 @@
+24312575 Disallow Bean Definition Overriding?
+
+I want to disallow bean definition overriding in a `SpringApplication`. In
+other words, I want the effect of invoking
+`GenericApplicationContext.setAllowBeanDefinitionOverriding(false)`. Is there
+a recommended way for doing that in Spring Boot?
+
+Well, you can achieve it with some Boot features and context customization:
+
+    
+    
+    @EnableAutoConfiguration
+    public class MyApp {
+    
+        public static void main(String[] args) throws InterruptedException {
+            ConfigurableApplicationContext ctx = new SpringApplicationBuilder(MyApp.class)
+                    .initializers(new ApplicationContextInitializer<GenericApplicationContext>() {
+                        @Override
+                        public void initialize(GenericApplicationContext applicationContext) {
+                            applicationContext.setAllowBeanDefinitionOverriding(false);
+                        }
+                    }).run(args);
+        }
+    
+    }
+    
+
+All other info you can find from source code and JavaDocs of mentioned
+classes.
+

@@ -1,0 +1,38 @@
+25115976 ElasticSearch automatic nested mapping
+
+I want to be able to insert documents and preferably map all inner objects to
+nested ones automatically. Is this possible?
+
+  1. My specific use case is that I am collecting documents of the same type that may or may not have the same fields of those currently in the store. So I would prefer if it can just automatically do the nested mapping without me having to tell it to do so.
+
+  2. Barring that could I potentially update the index before I insert an object with new fields? And would it be ok if I just set the type of the nested property to nested without specifying the fields of the property? 
+
+Code:
+
+    
+    
+    client.IndicesPutMapping("captures", "capture", new
+    {
+    
+        capture = new
+        {
+            properties = new
+            {
+                CustomerInformations = new
+                {
+                    type = "nested",
+                    //...do not specify inner fields ?
+                }
+            }
+    
+        }
+    });
+    
+
+  3. Is partially mappings allowed when overriding mappings. In other words if I have the mapping above will the other properties of the capture objects still be mapped in a default way?
+
+For those still struggling with the issue:
+<https://github.com/elastic/elasticsearch/issues/20886>
+
+The problem has been resolved in V5
+

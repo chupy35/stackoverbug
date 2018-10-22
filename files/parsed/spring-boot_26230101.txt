@@ -1,0 +1,57 @@
+26230101 Spring boot - Serving static content
+
+I have issues configuring Spring boot 1.2.0.M1 to serve static content. As
+soon as I add a **@RestController** component in my application, the static
+content is not displayed and I get the _whitelabel_ error page instead. My
+resources are in the _src/main/resources/static_ folder.
+
+I followed the instructions at <http://spring.io/blog/2013/12/19/serving-
+static-web-content-with-spring-boot> and managed to have them displayed by
+setting the _ResourceHandlerRegistry_ priority to -1. But i guess it is not
+the standard and right way to do it. It seems that the handler of the REST
+resources takes priority over the resource handler registry. Is there a
+possibility to configure the handler for rest resource to be used for a sub-
+context only like _/api_ ?
+
+**Update:**
+
+I have put the DispatcherServlet in debug and I have better understanding on
+why this is happening but still not sure what would be the best way to deal
+with it. I have noticed that the following handlers are registered in the
+Dispatch servlet in the respective order by default :
+
+  1. SimpleUrlHandlerMapping -> favico
+  2. RequestMappingHandlerMapping -> annotated @RestController methods registered
+  3. SimpleUrlHanderMapping -> / (home page handling ?)
+  4. BeanNameUrlHandlerMapping
+  5. SimpleUrlHandlerMapping -> handles resources configured in the resources registry
+  6. WebMVCConfigurationSupport handler
+
+When I perform a POST on the REST resource 2. handles it. When I perform a GET
+on a static resource 2. throws a _HttpRequestMethodNotSupportedException_
+because it cannot find the resource (in its handleNoMatch method).
+
+If i change the priorities using
+_ResourceHandlerRegistry#setOrder(Ordered.HIGHEST_PRECEDENCE)_ ; 5. is placed
+before 2. but in this case i cannot perform a POST /user/api intended for my
+REST resource, it is not matched as a resource (i have configured a /**
+pattern for the resource handler).
+
+If i compare to what node.js/express does for instance is that you configure
+routes for your controllers and if none matches the request, the request is
+handled by the handler for static resources or templates.
+
+Do you know how if it is possible through annotation to have the 2 (i.e
+RequestMappingHandlerMapping ) not throw an exception but just pass the
+request to the next handler in the chain in case of no-match ? I'd like
+avoiding having a specific context (/static for static resources).
+
+**Update 2** :
+
+Actually it was just a misconfiguration of my annotated REST controller
+**@RestController** I configured the path in the value attribute of the
+annotation that is not meant for that but to store the controller's name I
+forgot to add the **@RequestMapping** therefore the handler
+RequestMappingHandlerMapping was enabled for any url path and the get request
+did not match any annotated methods, therefore it returned an error.
+

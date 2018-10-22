@@ -1,0 +1,165 @@
+23627105 How to aggregate sub buckets of each bucket on nested documents
+
+Full sample code:
+
+<https://gist.github.com/anonymous/329eaaf5654096c529da>
+
+I have a simple, standard product/options mapping like this for a standard
+ecommerce site:
+
+    
+    
+    "mappings": {
+            "product": {
+                "properties" : {
+                    "name":
+                    {
+                        "type": "string",
+                        "fields": {
+                            "raw":   { "type": "string", "analyzer": "lowercase" }
+                        },
+                        "analyzer": "default"
+    
+                    },
+                    "options" : {
+                        "type": "nested",
+                        "properties": {
+                            "id": {"type": "integer"}, 
+                            "name": {"type": "string"},
+                            "values": {"type": "nested"}
+                        }
+                    },
+                    "price":{"type": "integer"},
+                    "createdAt": {
+                        "type": "date",
+                        "format": "basic_date_time"
+                    }
+                }
+            }
+        }
+    
+
+Please note that 1 product has multiple options, and each option can have
+multiple values (ie.: a Shirt with option Color including blue, red; and
+option Size including M, XL)
+
+Currently, after the query to search for products using multiple conditions, I
+aggregate the result to get a list of all options and options values in the
+result set:
+
+    
+    
+    "aggregations": {
+          "options": {
+             "nested": {
+                "path": "options"
+             },
+             "aggs": {
+                "options_ids": {
+                   "terms": {
+                      "field": "id"
+                   }
+                },
+                "aggs": {
+                   "nested": {
+                      "path": "options.values"
+                   },
+                   "aggs": {
+                      "options_values_ids": {
+                         "terms": {
+                            "field": "options.values.id"
+                         }
+                      }
+                   }
+                }
+             }
+          }
+    }
+    
+
+All work well except I get something like this
+
+    
+    
+    "aggregations": {     
+          "options": {
+             "doc_count": 4,
+             "options_ids": {
+                "buckets": [
+                   {
+                      "key": 1,
+                      "doc_count": 2
+                   },
+                   {
+                      "key": 2,
+                      "doc_count": 2
+                   }
+                ]
+             },
+             "aggs": {
+                "doc_count": 7,
+                "options_values_ids": {
+                   "buckets": [
+                      {
+                         "key": 1,
+                         "doc_count": 2
+                      },
+                      {
+                         "key": 5,
+                         "doc_count": 2
+                      },
+                      {
+                         "key": 2,
+                         "doc_count": 1
+                      },
+                      {
+                         "key": 3,
+                         "doc_count": 1
+                      },
+                      {
+                         "key": 6,
+                         "doc_count": 1
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    
+
+As you can see, there is no way for me to know which option values belong to
+which options from the result. It will be much better if the available options
+values can be listed under each option. Is that possible at all?
+
+You would need to nest your aggregations:
+
+    
+    
+    "aggregations": {
+       "options" : {
+          "aggs" : {
+             "options_ids" : {
+                "aggs" : {
+                   "aggs" : {
+                      "options_values_ids" : {
+                         "terms" : {
+                            "field" : "options.values.id"
+                         }
+                      }
+                   },
+                   "nested" : {
+                      "path" : "options.values"
+                   }
+                },
+                "terms" : {
+                   "field" : "id"
+                }
+             }
+          },
+          "nested" : {
+             "path" : "options"
+          }
+       }
+    }
+    
+

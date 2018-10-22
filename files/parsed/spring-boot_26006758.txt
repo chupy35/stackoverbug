@@ -1,0 +1,92 @@
+26006758 Java Configuration of Spring Boot ApplicationPidListener
+
+I read in the Spring Boot reference guide here
+
+<http://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#production-ready-process-monitoring>
+
+that an ApplicationPidListener can be programmatically set on a Spring Boot
+app. This is great, but of course I would like a little more.
+
+When I set the ApplicationPidListener per the Reference guide like this
+
+    
+    
+    
+    app.addListeners(new ApplicationPidListener(pidFileName));
+    
+    
+
+followed by starting the app like this
+
+    
+    
+    
+    app.run(arguments.toArray(new String[arguments.size()]))
+    
+    
+
+whereupon I obseved that any command line overrides of properties are not
+available that might have been used to instantiate the ApplicationPidListener
+pid file location. Of course, I could parse the command line arguments myself,
+looking for a property that should be used to instantiate the
+ApplicationPidListener, but I would rather not do that.
+
+My problem could perhaps be solved if I could provide the
+ApplicationPidListener as a Bean in a Java Configuration like this
+
+    
+    
+    
+        @Configuration
+        public static class TestConfig {
+            @Bean
+            public ApplicationListener pidListener(@Value("${pidFile:app.pid}") String prop) {
+                return new ApplicationPidListener(prop);
+            }
+        }
+    
+    
+
+and provide this Configuration to the constructor of the SpringApplication via
+configurationSources.toArray()
+
+    
+    
+    
+    new SpringApplication(null, configurationSources.toArray())
+    
+    
+
+In this way, the ApplicationPidListener would have full visibility into the
+Spring Boot-resolved properties, including command line overrides. However,
+even though this Config leads to the Bean being created, of course, it is
+apparently not used by the application context to create the PID file.
+
+My question is am I programmatically constrained to adding the listener before
+I call run, which means I have to look into the command line arguments to see
+if there is a pid file override there?
+
+Thank you.
+
+> Am I programmatically constrained to adding the listener before I call run?
+
+Yes, you are. At the moment `ApplicationPidListener` writes the PID out in
+response to an `ApplicationStartedEvent`. This event is published very early
+in the lifecycle of an application. From the
+[javadoc](http://docs.spring.io/spring-
+boot/docs/current/api/org/springframework/boot/context/event/ApplicationStartedEvent.html):
+
+> Event published as early as conceivably possible as soon as a
+`SpringApplication` has been started - before the `Environment` or
+`ApplicationContext` is available, but after the `ApplicationListener`s have
+been registered
+
+This prevents `ApplicationPidListener` from being configured as a Spring bean.
+There's an [open issue](https://github.com/spring-projects/spring-
+boot/issues/1579) that discusses making the location of the pid file
+configurable. The current proposal is to make the event that is listened for
+configurable and to use the `Environment` (e.g. an entry in
+`application.properties` or `application.yaml`), when it's available, to
+provide the location.
+

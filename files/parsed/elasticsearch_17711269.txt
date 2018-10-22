@@ -1,0 +1,91 @@
+17711269 What are the consequences of Elasticsearch various cardinality
+possibilities of Indexes and Types?
+
+From the elasticsearch.org site, I could not find any document that explains
+how to organize the **Index name** and **Index Type** that will be inserted
+into Elasticsearch.
+
+For instance, it is clear that to put data for indexing, you can use a REST
+api such as :
+
+    
+    
+    curl -XPUT localhost:9200/<INDEX>/<TYPE>/<id> -d '{ mydata : "someData" }'
+    
+
+What is not clear is what is the consequence of having:
+
+1) INDEX : this is the **database** according to the video overview, but what
+is the implication in performance if these are too high
+
+2) TYPE : this is like a **table** according to the video overview. What if it
+is used a a fixed value for all of the data
+
+In my implementation, I want to have this operate a **multitenant** scenario,
+using the INDEX as a TENANT_ID and the TYPE as a single bucket name ("STUFF").
+The amount of tenants may be vastly large ( thousands ). Is this a good
+approach or should I have a single INDEX and place the TENANT_IDs under the
+TYPE ? In particular, what option will consume more resources (open files /
+performance ) ?
+
+Indexes are stored as separate files. Types are logical namespaces inside
+indexes.
+
+  * If you know what index to search in then splitting data into indexes is faster, as you are physically searching less data/shards (2 indexes 5 shards each vs 1 index 10 shards - a single index search can be 5 shards vs 10). Conversely if you don't know what index to look in or you want to search across the entire index set often, you might end up searching many shards and concatenating the results
+  * If you have many many indexes then you will have many many open files. [This can lead to issues](http://elasticsearch-users.115913.n3.nabble.com/More-indices-vs-more-types-td3999423.html#a4002051). If you're going to have many hundreds of indexes you might want to experiment.
+
+In your case I would use an index per tenant if you expect only a few big
+"enterprise" tenants. If you're going down the route of hundreds of tiny sites
+(like tumblr) then types instead.
+
+Forget about database analogies. There's no such thing as a table in elastic
+search and the analogies just break at multiple levels. A schema is not quite
+the same as an Index. A type has nothing to do with tables. Rows don't exist
+anywhere in Lucene, etc.
+
+It's better to think in terms of the number of shards, as @monkjack suggests.
+Indexes, types, and aliases are basically logical means to organize shards. A
+shard is a more or less independent group of lucene indexes (for each field)
+that is managed as a whole. Given a collection of documents that go in a type
+in an index, that collection will be broken into n shards that each have their
+own set of files (per field).
+
+The number of shards that your cluster has to juggle has consequences for
+memory, number of file handles, etc. A well balanced cluster allocates a small
+enough amount of shards to each node such that it can utilize its RAM
+efficiently. So if you have 10 indices, with 10 shards each, you have 100
+shards. If they are replicated once, you have effectively 200 shards. So if
+you have 4 nodes, you have 50 shards per node. Depending how large the shards
+are that may or may not be a problem. Elastic search is pretty effective
+handling multiple shards and doing things like indexing concurrently on shards
+or searching across shards. So, 1 shard per node is probably not that great
+and a 1000 shards per node is probably going to cause a bit of overhead. More
+shards means that you can utilize more nodes. If you have only 2 shards and 10
+nodes, you are going to have some machines idling. The other way around is
+probably a better idea. Etc.
+
+Index: group of shards. Has replication and shard settings. These are
+important. They can't be changed after you create the index. Solution if you
+have to: use aliases, create a new index, reindex the data, switch the alias
+over, delete the old index.
+
+Type: group of documents. Belongs to an index. An Index can have multiple
+types but they all share the same shards. The number of shards does not change
+when you create types. Types can occur in multiple indices and you can create
+queries that span multiple types and indices.
+
+Alias: alternative name for one or more indices. This is a very powerful
+feature that allows you to implement e.g. schema migrations or create a fresh
+index every day simply by changing the alias to point at the new index.
+
+So in your case having thousands of tenants each with their own index is going
+to result in a massive amount of shards. Probably not the best idea. You don't
+want a direct link between the number of shards and the number of tenants. You
+might get away with it only if if load per tenant is trivial, and the number
+of docs per tenant is insignificant.
+
+It's probably a better idea to give each tenant its own type under a single
+index or multiple indices if you want to have e.g. different quality of
+service per index. This way you can control the number of shards and keep the
+tenants isolated at the type level.
+

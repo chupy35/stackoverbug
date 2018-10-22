@@ -1,0 +1,72 @@
+17027671 defining merge policy parameters for elasticsearch
+
+According to <http://www.elasticsearch.org/guide/reference/index-
+modules/merge/> I can control the merge policy and the parameters of the merge
+policy.
+
+I am unclear on how to do that. When creating the index, if I want to limit
+the size of a segment, can I do:
+
+    
+    
+    curl -XPUT 'http://ec2-23-22-207-150.compute-1.amazonaws.com:9200/my_index/' -d '{
+        "settings" : {"index":{
+            "number_of_shards" : 10,
+            "number_of_replicas" : 2,
+        "merge":{"policy":{"max_merged_segmentss" : "2gb"}}}
+        }
+    }'
+    
+
+This seems to work. Such that:
+
+    
+    
+    curl -XGET 'http://localhost:9200/my_index/_settings?pretty=true'
+    
+
+yields:
+
+    
+    
+    {
+      "my_index" : {
+        "settings" : {
+          "index.number_of_replicas" : "2",
+          "index.number_of_shards" : "10",
+          "index.merge.policy.max_merged_segment" : "2gb",
+          "index.version.created" : "900199"
+        }
+      }
+    }
+    
+
+However, If i instead change `max_merged_segment` with some random flag
+`some_random` it will just yield:
+
+    
+    
+    {
+      "my_index" : {
+        "settings" : {
+          "index.number_of_replicas" : "2",
+          "index.number_of_shards" : "10",
+          "index.merge.policy.some_random" : "2gb",
+          "index.version.created" : "900199"
+        }
+      }
+    }
+    
+
+which leads me to suspect I am doing something wrong.
+
+Also, how would I change the actual merge policy, say from `tiered` to
+`log_byte_size`? Can I do this at runtime, or only at index creation?
+
+As of Elasticsearch 2.0, none of these settings are configurable anymore
+(although this is surely not the problem you were having at the time as that
+was well before 2.0) *
+<https://www.elastic.co/guide/en/elasticsearch/reference/2.0/breaking_20_setting_changes.html#_merge_and_merge_throttling_settings>
+* <https://discuss.elastic.co/t/tiered-merge-policy-settings-not-documented-
+in-2-x-gone/61470/2>
+

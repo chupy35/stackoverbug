@@ -1,0 +1,15 @@
+30617388 What is the best way to @Conditional on the inclusion of the actuator
+feature?
+
+I'd like to make some of our auto configurations classes conditional on the
+presence of the SpringBoot actuator feature on the classpath.
+
+Against which class should I write my @ConditionalOnClass annotation? Possible
+candidates are:
+
+  * `org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration`
+  * `org.springframework.boot.actuate.endpoint.EndPoint`
+
+It doesn't matter, which one you choose, as long as it is packaged in the
+actuator JAR (which is the case for both of the classes you mentioned).
+

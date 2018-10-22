@@ -1,0 +1,60 @@
+25354701 Creating a mapping for an existing index with a new type in
+elasticsearch
+
+I found an article on elasticsearch's site describing how to 'reindex without
+downtime', but that's not really acceptable every time a new element is
+introduced that needs to have a custom mapping
+(<http://www.elasticsearch.org/blog/changing-mapping-with-zero-downtime/>)
+
+Does anyone know why I can't create a mapping for an existing index but a new
+type in elasticsearch? The type doesn't exist yet, so why not? Maybe I'm
+missing something and it IS possible? If so, how can that be achieved?
+
+Thanks, Vladimir
+
+Here is a simple example to create two type mapping in a index, (one after
+another)
+
+I've used **i1** as index and **t1** and **t2** as types,
+
+  1. **Create index**
+    
+        curl -XPUT "http://localhost:9200/i1"
+
+  2. **Create type 1**
+    
+        curl -XPUT "http://localhost:9200/i1/t1/_mapping" -d
+    {
+       "t1": {
+          "properties": {
+             "field1": {
+                "type": "string"
+             },
+             "field2": {
+                "type": "string"
+             }
+          }
+       }
+    }'
+
+  3. **Create type 2**
+    
+        curl -XPUT "localhost:9200/i1/t2/_mapping" -d'
+    {
+       "t2": {
+          "properties": {
+             "field3": {
+                "type": "string"
+             },
+             "field4": {
+                "type": "string"
+             }
+          }
+       }
+    }'
+
+Now Looking at mapping( `curl -XGET "http://localhost:9200/i1/_mapping"` ), It
+seems like it is working.
+
+Hope this helps!! Thanks
+

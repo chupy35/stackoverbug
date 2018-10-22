@@ -1,0 +1,61 @@
+11038425 $resource relations in Angular.js [updated]
+
+> I'm trying to figure out the best way to write a model that relates to other
+models, such as an Order that has 1 or more OrderItems.
+
+How can I get respective OrderItems when a Order is loaded?
+
+    
+    
+    angular
+        .module('MyApp.services', ['ngResource'])
+            .factory('Order', function($resource) {
+                return $resource('/api/v1/Order/:orderId?format=json', {}, {});
+            });
+            .factory('OrderItem', function($resource) {
+                return $resource('/api/v1/OrderItem/:orderitemId?format=json', {}, {});
+            });
+    
+
+I tried a callback function on get Order to load OrderItems, but didn't work.
+
+* * *
+
+there is a very similar question, but it is obsolete: [$resource relations in
+Angular.js](https://stackoverflow.com/q/9981090/599991)
+
+You could wrap the function in another that gets order items?
+
+    
+    
+    myApp.factory('Order', function($resource) {
+      var res = $resource('/api/Order/:orderId', {}, {
+        '_get': { method: 'GET' }
+      });
+    
+      res.get = function(params, success, error) {
+        return res._get(params, function(data) { 
+          doOrderItemStuff();
+          success(data);
+        }, error);
+      }
+      return res;
+    }
+    
+
+Before Andy's answer, I was workarounding it in Controllers. To do this, just
+add:
+
+    
+    
+    function OrderCtrl($scope, $routeParams, $resource, Order, OrderItem) {
+    
+        $scope.order = Order.get({
+            orderId : $routeParams.orderId
+        }, function(order) {
+                    doOrderItemStuff();
+        });
+    
+    }
+    
+

@@ -1,0 +1,51 @@
+10440075 Can elasticsearch create histograms by X occurences of a field?
+
+I'm not seeing how this would be done, but is it possible to have a facet that
+uses an interval to give the stats on every X number of occurrences? As an
+example, if net was a sequence of numbers ordered by date like:
+
+    
+    
+    1,2,3,4,5,6,7
+    
+
+and I set the interval to 2, I would like to get back a histogram like:
+
+    
+    
+    count: 2
+    value: 3,
+    
+    count: 2,
+    value: 7,
+    
+    count: 2,
+    value: 11,
+    
+    ...
+    
+
+Elasticsearch doesn't support such operation out of the box. It's possible to
+write such facet, but it's not very practical since it would require writing
+quite complex custom facet processor and optionally controlling the way
+records are split into shards (so called routing).
+
+In elasticsearch, any operation that relies on global order of elements is
+somewhat problematic from the architectural perspective. Elasticsearch splits
+records into shards, and most operations including searching and facet
+calculation occur on shards and then results of these shard-level operations
+are collected and merged into a global result. This is basically map/reduce
+architecture, and it is the key for horizontal scalability of elasticsearch.
+Optimal implementation of your facet would require changing routing in such a
+way that records are split into shards based on their order rather than hash
+code of id. Alternatively, it can be done by limiting shard-level phase to
+just extraction of the field values and performing the actual calculation of
+the facet in the merge phase. The latter approach seems to be more practical
+but at the same time it is not much different from simply extracting field
+values for all records and doing calculations on the client side, which is
+exactly what I would suggest doing here. Just extract all values using desired
+sort order and calculate all stats on the client. If the number of records in
+your index is large, you can use [Scroll
+API](http://www.elasticsearch.org/guide/reference/api/search/scroll.html) to
+retrieve all records using multiple requests.
+

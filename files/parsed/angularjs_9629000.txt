@@ -1,0 +1,20 @@
+9629000 Uncaught TypeError: Cannot call method 'put' of undefined
+
+I am facing this issue when i am trying to store data in my angular controller
+page using the `$cookieStore`. Are there any additional configurations that I
+have left out ?
+
+    
+    
+    function fbLogin($cookieStore){
+    
+        $cookieStore.put("userid",'12345');
+        validateUser(userid);
+        alert(userid);
+    }
+    
+
+You're not actually defining `userId` anywhere to JavaScript. You're setting a
+cookie whose value is `userid=12345`, but then calling `validateUser` with an
+unknown variable, `userId` which has the undefined value.
+

@@ -1,0 +1,4 @@
+34356096
+Allocation of single sharded indexes among multiple nodes
+<p>I create monthly indexes for my time-based data set. If each index had only 1 shard and I had 2 nodes, how would the indexes be allocated between the two nodes? More precisely, would the shards be balanced between the 2 nodes?</p>&#xA;
+<p>By default Elasticsearch will try to allocate the same number of shards on each node.</p>&#xA;

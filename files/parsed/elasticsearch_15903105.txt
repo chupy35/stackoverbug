@@ -1,0 +1,193 @@
+15903105 Too many open files warning from elasticsearch
+
+Getting the below warning messages continuously. Not sure what should be done.
+Saw some of the relevant posts asking to increase the number of file
+descriptors.
+
+How to do the same?
+
+Even if I increase now, Will I encounter the same issue on addition of new
+indices.  (presently working with around 400 indices, 6 shards and 1 replica).
+The number of indices tend to grow more.
+
+    
+    
+    [03:58:24,165][WARN ][cluster.action.shard     ] [node1] received shard failed for [index9][2], node[node_hash3], [P], s[INITIALIZING], reason [Failed to start shard, message [IndexShardGatewayRecoveryException[[index9][2] failed recovery]; nested: EngineCreationFailureException[[index9][2] failed to open reader on writer]; nested: FileNotFoundException[/data/elasticsearch/whatever/nodes/0/indices/index9/2/index/segments_1 (Too many open files)]; ]] 
+    [03:58:24,166][WARN ][cluster.action.shard     ] [node1] received shard failed for [index15][0], node[node_hash2], [P], s[INITIALIZING], reason [Failed to create shard, message [IndexShardCreationException[[index15][0] failed to create shard]; nested: IOException[directory '/data/elasticsearch/whatever/nodes/0/indices/index15/0/index' exists and is a directory, but cannot be listed: list() returned null]; ]] 
+    [03:58:24,195][WARN ][cluster.action.shard     ] [node1] received shard failed for [index16][3], node[node_hash3], [P], s[INITIALIZING], reason [Failed to start shard, message [IndexShardGatewayRecoveryException[[index16][3] failed recovery]; nested: EngineCreationFailureException[[index16][3] failed to open reader on writer]; nested: FileNotFoundException[/data/elasticsearch/whatever/nodes/0/indices/index16/3/index/segments_1 (Too many open files)]; ]] 
+    [03:58:24,196][WARN ][cluster.action.shard     ] [node1] received shard failed for [index17][0], node[node_hash3], [P], s[INITIALIZING], reason [Failed to start shard, message [IndexShardGatewayRecoveryException[[index17][0] failed recovery]; nested: EngineCreationFailureException[[index17][0] failed to open reader on writer]; nested: FileNotFoundException[/data/elasticsearch/whatever/nodes/0/indices/index17/0/index/segments_1 (Too many open files)]; ]] 
+    [03:58:24,198][WARN ][cluster.action.shard     ] [node1] received shard failed for [index21][4], node[node_hash3], [P], s[INITIALIZING], reason [Failed to start shard, message [IndexShardGatewayRecoveryException[[index21][4] failed recovery]; nested: EngineCreationFailureException[[index21][4] failed to create engine]; nested: LockReleaseFailedException[Cannot forcefully unlock a NativeFSLock which is held by another indexer component: /data/elasticsearch/whatever/nodes/0/indices/index21/4/index/write.lock]; ]] 
+    
+
+Output of nodes api
+
+    
+    
+    curl -XGET 'http://localhost:9200/_nodes?os=true&process=true&pretty=true'
+    
+    { 
+      "ok" : true, 
+      "cluster_name" : "whatever", 
+      "nodes" : { 
+        "node_hash1" : { 
+          "name" : "node1", 
+          "transport_address" : "transportip1", 
+          "hostname" : "myhostip1", 
+          "version" : "0.20.4", 
+          "http_address" : "httpip1", 
+          "attributes" : { 
+            "data" : "false", 
+            "master" : "true" 
+          }, 
+          "os" : { 
+            "refresh_interval" : 1000, 
+            "available_processors" : 8, 
+            "cpu" : { 
+              "vendor" : "Intel", 
+              "model" : "Xeon", 
+              "mhz" : 2133, 
+              "total_cores" : 8, 
+              "total_sockets" : 8, 
+              "cores_per_socket" : 16, 
+              "cache_size" : "4kb", 
+              "cache_size_in_bytes" : 4096 
+            }, 
+            "mem" : { 
+              "total" : "7gb", 
+              "total_in_bytes" : 7516336128 
+            }, 
+            "swap" : { 
+              "total" : "30gb", 
+              "total_in_bytes" : 32218378240 
+            } 
+          }, 
+          "process" : { 
+            "refresh_interval" : 1000, 
+            "id" : 26188, 
+            "max_file_descriptors" : 16384 
+          } 
+        }, 
+        "node_hash2" : { 
+          "name" : "node2", 
+          "transport_address" : "transportip2", 
+          "hostname" : "myhostip2", 
+          "version" : "0.20.4", 
+          "attributes" : { 
+            "master" : "false" 
+          }, 
+          "os" : { 
+            "refresh_interval" : 1000, 
+            "available_processors" : 4, 
+            "cpu" : { 
+              "vendor" : "Intel", 
+              "model" : "Xeon", 
+              "mhz" : 2400, 
+              "total_cores" : 4, 
+              "total_sockets" : 4, 
+              "cores_per_socket" : 32, 
+              "cache_size" : "20kb", 
+              "cache_size_in_bytes" : 20480 
+            }, 
+            "mem" : { 
+              "total" : "34.1gb", 
+              "total_in_bytes" : 36700303360 
+            }, 
+            "swap" : { 
+              "total" : "0b", 
+              "total_in_bytes" : 0 
+            } 
+          }, 
+          "process" : { 
+            "refresh_interval" : 1000, 
+            "id" : 24883, 
+            "max_file_descriptors" : 16384 
+          } 
+        }, 
+        "node_hash3" : { 
+          "name" : "node3", 
+          "transport_address" : "transportip3", 
+          "hostname" : "myhostip3", 
+          "version" : "0.20.4", 
+          "attributes" : { 
+            "master" : "false" 
+          }, 
+          "os" : { 
+            "refresh_interval" : 1000, 
+            "available_processors" : 4, 
+            "cpu" : { 
+              "vendor" : "Intel", 
+              "model" : "Xeon", 
+              "mhz" : 2666, 
+              "total_cores" : 4, 
+              "total_sockets" : 4, 
+              "cores_per_socket" : 16, 
+              "cache_size" : "8kb", 
+              "cache_size_in_bytes" : 8192 
+            }, 
+            "mem" : { 
+              "total" : "34.1gb", 
+              "total_in_bytes" : 36700303360 
+            }, 
+            "swap" : { 
+              "total" : "0b", 
+              "total_in_bytes" : 0 
+            } 
+          }, 
+          "process" : { 
+            "refresh_interval" : 1000, 
+            "id" : 25328, 
+            "max_file_descriptors" : 16384 
+          } 
+        } 
+      } 
+    
+
+How to increase the maximum number of allowed open files depends slightly on
+your linux distribution. Here are some instructions for ubuntu and centos:
+
+<http://posidev.com/blog/2009/06/04/set-ulimit-parameters-on-ubuntu/>
+<http://pro.benjaminste.in/post/318453669/increase-the-number-of-file-
+descriptors-on-centos-and>
+
+The elasticsearch documentation recommends setting the maximum file limit to
+32k or 64k. Since you are at 16k and are already hitting a limit, I'd probably
+set it higher; something like 128k. See:
+<http://www.elasticsearch.org/guide/reference/setup/installation/>
+
+After upping the number of open files and restarting elasticsearch you will
+want to verify that it worked by re-running the curl command you mentioned:
+
+    
+    
+    curl -XGET 'http://localhost:9200/_nodes?os=true&process=true&pretty=true'
+    
+
+As you add more indices (along with more documents), you will also see the
+number of files elasticsearch keeps track of increase. If you notice
+performance degradation with all of the indicies and documents, you can try
+adding a new node to your cluster:
+<http://www.elasticsearch.org/guide/reference/setup/configuration/> \- since
+you already have a sharded, replicated configuration, this should be a
+relatively painless process.
+
+  1. Stop ElasticSearch. if you start from command like (bin/elasticsearch) then please specific this to set up heap while starting. For ex, I use a 16GB box so my command is
+
+a. **bin/elasticsearch -Xmx8g -Xms8g**
+
+b. Go to config (elasticsearch/config/elasticsearch.yml) and ensure that
+
+**bootstrap.mlockall: true**
+
+c. Increase **ulimits -Hn** and **ulimits -Sn** to **more than 200000**
+
+  2. If you start as a service, then do the following
+
+a. export ES_HEAP_SIZE=10g b. Go to config
+(/etc/elasticsearch/elasticsearch.yml) and ensure that
+
+**bootstrap.mlockall: true** c. Increase **ulimits -Hn** and **ulimits -Sn**
+to **more than 200000**
+
+_Make sure that the size you enter is not more than 50% of the heap whether
+you start it as a service or from command line_
+

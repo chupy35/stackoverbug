@@ -1,0 +1,24 @@
+24996937 Listen for spring boot embedded tomcat failure
+
+If the embedded tomcat instance within spring-boot fails (port already in use
+for example). The spring boot application is unaware. The
+TomcatEmbeddedServletContainer adds connectors using "StandardSerice" which
+just catches the exception and logs it. StandardService is a tomcat class and
+so can't be changed within the scope of spring-boot.
+
+Does anyone have a solution to perhaps listen for tomcat lifecycle events to
+catch this failure within the spring application and exit?
+
+This is using spring boot 1.1.4. The same behaviour is seen either by
+launching the Main class of the application from eclipse or by running the
+executable jar built using the spring-boot maven plugin.
+
+You don't say which version of Spring Boot you're using, or how you're running
+your application which makes it very hard to provide a definitive answer.
+
+In 1.1.4.RELEASE running with `java -jar`, `gradle bootRun` or `mvn spring-
+boot:run` should fail and exit in the event of a port clash. If you're running
+your application directly in your IDE then there's a [known
+problem](https://github.com/spring-projects/spring-boot/issues/1232) that
+meant the application wouldn't exit. It's fixed in the latest 1.1.5 snapshots.
+

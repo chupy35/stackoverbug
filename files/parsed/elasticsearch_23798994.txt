@@ -1,0 +1,36 @@
+23798994 Elastic search runtime metrics
+
+My question is more research related.
+
+We have elastic search handling various tasks including taking log entries
+from remote clients. The problem is that there are times that the clients
+overload elastic search.
+
+Is there a way to query ES to get runtime metrics like number of queries in
+last n minutes and so on. I'm hoping we can use these to throttle the client
+logging as load increases.
+
+Data on number of search and get requests per second can be obtained by
+querying [indices
+stats](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+stats.html).
+
+There are [multiple
+tools](http://www.elasticsearch.org/guide/en/elasticsearch/client/community/current/health.html)
+that provide elasticsearch monitoring, most of them open-source. Having a look
+at their source code may be helpful.
+
+Please also note that throttling requests client-side based on elasticsearch
+stats may not be optimal solution, as it is hard to coordinate with variable
+number of clients. Using circuit breakers that trigger on request timeouts may
+be more robust.
+
+Also an option is to set a reverse proxy in front of elasticsearch. Moreoever,
+some problems related to many indexing requests can be solved by throttling IO
+for merge operations in elasticsearch itself, as is discussed
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-store.html#store-throttling).
+
+Try using LucidWorks SiLK instead - it uses Solr and that's more scalable.
+Download it from here: <http://www.lucidworks.com/lucidworks-silk>
+

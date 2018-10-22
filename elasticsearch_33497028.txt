@@ -1,0 +1,4 @@
+33497028
+Is there an Eleasticsearch equivalent for INSERT INTO SELECT?
+<p>From an index containing apache log entries, I want to write a query that will return a list of ip numbers. Next, I want to store that list of ip numbers in a new document.</p>&#xA;&#xA;<p>I understand this can be easily achieved in 2 steps with a search and an index statement, but since the list of ip numbers can be very large, I'm looking for a way to achieve this in elasticsearch without having to actually send the list back to the client and use it as input to a separate index statement.</p>&#xA;&#xA;<p>Is there a way to do this server-side, similar to an INSERT INTO SELECT from the sql world?</p>&#xA;
+<p>As far as i know , there is no such functionalities as of now in Elasticsearch.</p>&#xA;

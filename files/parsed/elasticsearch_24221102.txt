@@ -1,0 +1,95 @@
+24221102 How to update child document in Elastic search using update API?
+
+I use parent-child documents in Elastic Search. I can do partial updates of
+the master document using the _update api. However, if I use the _update APi
+on a child document, the content of the document is completely replaced by the
+content of my script. Something goes wrong ... and I do not know what ....
+
+See example below:
+
+**CREATE CHILD DOCUMENT**
+
+    
+    
+    POST to /indexName/comment/c006?parent=b003
+    {
+      "authorId": "ps101",
+      "authorFullName": "Lieven",
+      "body": "Comment text comes here",
+      "isApproved": false
+    }
+    
+
+**GET CHILD**
+
+    
+    
+    GET to /indexName/comment/c006?parent=b003
+    {
+    _index: "indexName"
+    _type: "comment"
+    _id: "c006"
+    _version: 20
+    found: true
+    -_source: {
+       authorId: "ps101"
+       authorFullName: "Lieven"
+       body: "Comment text comes here."
+       isApproved: false
+      }
+    }
+    
+
+**PARTIAL UPDATE**
+
+    
+    
+    POST TO /indexName/comment/c006?parent=b003/_update
+    {
+       "script" : "ctx._source.isAcceptedAnswer=value",
+       "params" : {
+          "value" : true
+       }
+    }
+    
+
+**NOW, GET AGAIN THE CHILD**
+
+    
+    
+    GET to /indexName/comment/c006?parent=b003
+    {
+    _index: "indexName"
+    _type: "comment"
+    _id: "c006"
+    _version: 21
+    found: true
+    -_source: {
+       script: "ctx._source.isAcceptedAnswer=value"
+       -params: {
+       value: true
+       }
+      }
+    }
+    
+
+Source is completely wrong ...
+
+Hope somebody can help Marc
+
+Change
+
+    
+    
+    POST TO /indexName/comment/c006?parent=b003/_update
+    
+
+to
+
+    
+    
+    POST TO /indexName/comment/c006/_update?parent=b003
+    
+
+The ? is the beginning of the query string, and it goes on the end.
+

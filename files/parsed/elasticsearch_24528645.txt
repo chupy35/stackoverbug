@@ -1,0 +1,43 @@
+24528645 unique value from each bucket in elastic search
+
+I have a sample database of 1000 bank accounts.
+
+    
+    
+    {"account_number":1,"balance":39225,...,"state":"IL"}
+    
+
+What I want is list of highest balance accounts in each state. Using a terms
+aggregator I received collected count of accounts from each state. eg.
+
+    
+    
+    "aggregations" : {
+        "states" : {
+          "buckets" : [ {
+            "key" : "tx",
+            "doc_count" : 30
+          }, ....
+    
+
+But this doesn't returns the required list. Any suggestions?
+
+Use max aggregation
+
+    
+    
+    {
+        "aggs" : {
+            "max_price" : { "max" : { "field" : "price" } }
+        }
+    }
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-max-aggregation.html>
+
+You should look at significant terms aggregation
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-significantterms-aggregation.html> \- this generates
+buckets with related terms. Explore it
+

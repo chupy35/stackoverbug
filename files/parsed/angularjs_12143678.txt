@@ -1,0 +1,42 @@
+12143678 Angularjs -- change view based on browser/platform?
+
+Is there any in-built services/directives/routes to change the view (or page
+using routing) based on the type of browser/platform the user is accessing
+from? I'd like phones and tablets to have a different view than desktop users.
+
+I don't know of anything built into Angular, but you can do this by inserting
+logic into your routing rules. For example:
+
+    
+    
+    angular.module('browser-routing', []).
+      config(function($routeProvider) {
+        $routeProvider.
+          when('/', {templateUrl: getBrowser() + '.html'})
+    });
+    
+
+In this example, if getBrowser() returns `'iphone'` it will render the view
+`iphone.html`
+
+You can use  [BrowserDetect](http://www.quirksmode.org/js/detect.html) to do
+what the name implies.
+
+[fiddle example for Chrome and Firefox
+detection](http://jsfiddle.net/5dWYW/1/)
+
+Although AngularJS does not have any particular feature to do that out-of-the-
+box, there are many different approaches to accomplishing something like that:
+
+  1. Using [CSS3 media queries to make a responsive design](https://www.ibm.com/developerworks/mydeveloperworks/blogs/bobleah/entry/code_example_of_responsive_web_design_using_css3_media_queries13?lang=en). Depending on your needs, this may be your best bet, as you can avoid re-implementing features for multiple viewports.
+  2. You can write a service to check and make the route change:
+    
+        myApp.factory('checkWidth', function ($location, $window) {
+      return function () {
+        if ($window.document.width < 700) {
+          $location.url('/mobile');
+        }
+      }
+    });
+    
+

@@ -1,0 +1,102 @@
+23940309 Elasticsearch - How to boost score by the results of an aggregation?
+
+My use case is as follows: Execute a search against Products and boost the
+score by its salesRank relative to the other documents in the results. The top
+10% sellers should be boosted by a factor of 1.5 and the top 25-10% should be
+boosted by a factor of 1.25. The percentiles are calculated on the results of
+the query, not the entire data set. This is feature is being used for on-the-
+fly instant results as the user types, so single character queries would still
+return results.
+
+So for example, if I search for "Widget" and get back 100 results, the top 10
+sellers returned will get boosted by 1.5 and the top 10-25 will get boosted by
+1.25.
+
+I immediately thought of using the [percentiles aggregation
+feature](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-percentile-aggregation.html) to calculate the 75th and
+90th percentiles of the result set.
+
+    
+    
+    POST /catalog/product/_search?_source_include=name,salesRank
+    {
+      "query": {
+        "match_phrase_prefix": {
+          "name": "N"
+        }
+      },
+      "aggs": {
+        "sales_rank_percentiles": {
+          "percentiles": {
+            "field" : "salesRank",
+            "percents" : [75, 90]
+          }
+        }
+      }
+    }
+    
+
+This gets me the following:
+
+    
+    
+    {
+       "hits": {
+          "total": 142,
+          "max_score": 1.6653868,
+          "hits": [
+             {
+                "_score": 1.6653868,
+                "_source": {
+                   "name": "nylon",
+                   "salesRank": 46
+                }
+             },
+             {
+                "_score": 1.6643861,
+                "_source": {
+                   "name": "neon",
+                   "salesRank": 358
+                }
+             },
+             ..... <SNIP> .....
+          ]
+       },
+       "aggregations": {
+          "sales_rank_percentiles": {
+             "values": {
+                "75.0": 83.25,
+                "90.0": 304
+             }
+          }
+       }
+    }
+    
+
+So great, that gives me the results and the percentiles. But I would like to
+boost "neon" above "nylon" because it's a top 10% seller in the results (note:
+in our system, the salesRank value is descending in precedence, higher value =
+more sales). The text relevancy is very low since only one character was
+supplied, so sales rank should have a big effect.
+
+It seems that a [function core
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html) could be used here, but all of the examples in
+the documentation uses doc[] to use values from the document. There aren't any
+for using other information from the top-level of the response, e.g. "aggs"
+{}. I would basically like to boost a document if its sales rank falls within
+the 100-90th and 89th-75th percentiles, by 1.5 and 1.25 respectively.
+
+Is this something Elasticsearch supports or am I going to have to roll my own
+with a custom script or plugin? Or try a different approach entirely? My
+preference would be to pre-calculate percentiles, index them, and do a
+constant score boost, but stakeholder prefers the run-time calculation.
+
+I'm using Elasticsearch 1.2.0.
+
+What if you keep sellers as a parent document and periodically updates their
+stars (and some boosting factor), say, via some worker. Then you match
+products using `has_parent` query, and use a combination of score mode, custom
+score query to match top products from top sellers?
+

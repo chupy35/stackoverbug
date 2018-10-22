@@ -1,0 +1,43 @@
+23829377 Can I rescore on the basis of max score and/or max value of my custom
+field in elasticsearch?
+
+All I want to do is re-score my query according to this formula,
+
+NEW SCORE = OLD SCORE/max(OLD SCORES) +
+doc.value['custom']/max(doc.value['custom'])
+
+Is this possible? I am able to rescore using the following code
+
+    
+    
+    { 
+          "query": {
+          "function_score": {
+          "query": {}
+         , "script_score": {
+           "script": "_score * doc['custom'].value"
+           }
+          }
+         }
+     }
+    
+
+Also, it would be great if someone could tell how to use values of one script
+in another.
+
+Not sure it would feet your need, but maybe you could use some _flattening_
+application, where you would force max score to be 1, assuming that you can
+find a score value (score_thresh) above which results are good anyway and your
+field `doc.value['custom']` will do the ranking job.
+
+A method such as:
+
+    
+    
+    1 / (score_thresh - min(_score, score_thresh - 1))
+    
+
+would do the trick, but be a bit harsh on your score curve. It does work for
+me as all I want from my old_score is to select documents, a rescore query
+taking care of the ranking.
+

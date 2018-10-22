@@ -1,0 +1,145 @@
+29999671 Unable to run repacked spring boot jar caused by "Unable to open
+nested entry"
+
+I am setting up a build pipeline for a spring boot project.
+
+It has three stages so far:
+
+    
+    
+    build: compile-->unit test-->archive the jar
+    deploy acceptance test: repack the jar for acc environment (replacing datasource.properties etc)
+    deploy uat test: repack the jar for uat environment (replacing datasource.properties etc)
+    
+
+I don't want to build the jar from scratch for different environments as it
+wastes time and potentially has risk of building inconsistent artifacts. For
+traditional war project, I just extract the war, replace the config files and
+repack. But this time with spring boot, somehow it does not work. When I run
+the repacked jar, it reports
+
+    
+    
+    java.lang.IllegalStateException: Unable to open nested entry 'lib/antlr-2.7.7.jar'. It has been compressed and nested jar files must be stored without compression. Please check the mechanism used to create your executable jar file
+        at org.springframework.boot.loader.jar.JarFile.createJarFileFromFileEntry(JarFile.java:378)
+        at org.springframework.boot.loader.jar.JarFile.createJarFileFromEntry(JarFile.java:355)
+        at org.springframework.boot.loader.jar.JarFile.getNestedJarFile(JarFile.java:341)
+        at org.springframework.boot.loader.archive.JarFileArchive.getNestedArchive(JarFileArchive.java:108)
+        at org.springframework.boot.loader.archive.JarFileArchive.getNestedArchives(JarFileArchive.java:92)
+        at org.springframework.boot.loader.ExecutableArchiveLauncher.getClassPathArchives(ExecutableArchiveLauncher.java:68)
+        at org.springframework.boot.loader.Launcher.launch(Launcher.java:60)
+        at org.springframework.boot.loader.JarLauncher.main(JarLauncher.java:45)
+    
+
+I extracted the origin jar and the repacked jar and don't find differences
+with lib folder.
+
+    
+    
+    task extractArtifact() {
+        doLast {
+    
+            def outputDirName = "${buildDir}/tmp/under_config"
+            def outputDir = file(outputDirName)
+            assert outputDir.deleteDir()  // cleanup workspace
+    
+            def zipFile = file("${buildDir}/libs/${getArtifactName()}")
+    
+            copy {
+                from zipTree(zipFile)
+                into outputDir
+            }
+    
+            copy {
+                from file("${buildDir}/env")
+                into file("${buildDir}/tmp/under_config")
+            }
+    
+        }
+    }
+    
+    task repackConfiguredArtifact(type: Zip, dependsOn: extractArtifact)  {
+        archiveName = "${getArtifactName()}"
+        destinationDir = file("${buildDir}/libs/${getEnv()}")
+        from file("${buildDir}/tmp/under_config")
+    }
+    
+
+Does anyone have an idea?
+
+Or how do you guys config the jar for different environment (without re-
+compile the binary).
+
+I have a solution after looking up the spring-boot reference.
+
+  1. turn default spring boot repackage off since I need to repack it anyway.
+
+  2. extract the traditional jar and copy the config files 
+
+  3. Use jar type task to repack it 
+  4. Use BootRepackage type task to assemble a spring-boot jar.
+
+here is the code:
+
+    
+    
+    bootRepackage {
+        enabled = false
+    }
+    
+    task extractArtifact() {
+        doLast {
+    
+            def outputDirName = "${buildDir}/tmp/under_config"
+            def outputDir = file(outputDirName)
+            assert outputDir.deleteDir()  // cleanup workspace
+    
+            def zipFile = file("${buildDir}/libs/${getArtifactName()}")
+    
+            copy {
+                from zipTree(zipFile)
+                into outputDir
+            }
+    
+            copy {
+                from file("${buildDir}/env")
+                into file("${buildDir}/tmp/under_config")
+            }
+    
+            assert zipFile.delete()
+        }
+    }
+    
+    task clientJar(type: Jar, dependsOn: extractArtifact) {
+        archiveName = "${getArtifactName()}"
+        from file("${buildDir}/tmp/under_config")
+    }
+    
+    task repackConfiguredArtifact(type: BootRepackage, dependsOn: clientJar) {
+        withJarTask = clientJar
+    }
+    
+
+I found that if you had a directory called 'resources/lib' the spring-boot
+executable JAR would assume the contents were zipped and throw the above
+exception. Renaming to 'resources/static' worked for me.
+
+You shoud add -0 to store only; use no ZIP compression
+
+    
+    
+    $jar -cvf0m yourproject.jar META-INF/MANIFEST.MF .
+    
+
+There is another soulution: [Set the active Spring
+profiles](https://docs.spring.io/spring-
+boot/docs/current/reference/html/howto-properties-and-configuration.html)
+
+    
+    
+    $java -jar -Dspring.profiles.active=production demo-0.0.1-SNAPSHOT.jar
+    
+
+You can use application-${profile}.properties to specify profile-specific
+values.
+

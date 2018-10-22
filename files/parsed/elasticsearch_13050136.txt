@@ -1,0 +1,50 @@
+13050136 Register and call query in ElasticSearch
+
+Is it possible to register query (like the percolate process) and call them by
+name to execute them. I am building an application that will let the user save
+search query associated with a label. I would like to save the query generated
+by the filter in ES.
+
+If I save the query in an index, I have to call ES first to retrieve the
+query, extract the field containing the query and then call ES again to
+execute it. Can I do it in one call ?
+
+The other solution is to register queries (labels with _percolator with an
+identifier of the user: /_percolate/transaction/user1_label1
+
+    
+    
+    {
+      "userId": "user1",
+      "query":{
+         "term":{"field1":"foo" }
+       }
+    }
+    
+
+and when there is a new document use the percolator in a non indexing mode
+(filtered per userId) to retrieve which query match, and then update the
+document by adding a field "label":["user1_label1", "user1_label2"] and finaly
+index the document. SO the labelling is done at indexing time.
+
+What do you think ?  Thanks in advance.
+
+Try [Filter Aliases.](http://www.elasticsearch.org/guide/reference/api/admin-
+indices-aliases.html)
+
+    
+    
+    curl -XPOST 'http://localhost:9200/_aliases' -d '
+    {
+        "actions" : [
+             {
+                "add" : {
+                     "index" : "the_real_index",
+                     "alias" : "user1",
+                     "filter" : { "term" : { "field1" : "foo" } }
+                }
+            }
+        ]
+    }'
+    
+

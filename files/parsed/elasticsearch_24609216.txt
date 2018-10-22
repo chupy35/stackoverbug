@@ -1,0 +1,31 @@
+24609216 What is exactly flush in node stats?
+
+When i see the node stat of my cluster using node stats API
+http://:9200_nodes/stats?pretty=true
+
+it is show flush like this:
+
+    
+    
+    "flush" : {
+              "total" : 30,
+              "total_time_in_millis" : 6964
+            }
+    
+
+My translog flush interval is 180 minutes or 1200 mb , so i think flush should
+be done based on these values & i am sure that i am not reaching 1200 mb
+limit.
+
+But if i keep on checking my node stats then flush values (total) are keep on
+increasing, so what is it means? is something else also flushing ?
+
+flush also happens based on the number of operations executed. In general, you
+shouldn't change the default settings in ES with regards to flush, there are
+continuous improvements to the defaults based on the internal enhancements, so
+best simply stay with the default. Its quite delicate, and increasing flush
+(or making refresh unbounded as another example), can have confusing results,
+for example, to a degree where indexing slows down since the indexing thread
+in Lucene has to do the internal Lucene flush when it reaches its buffer
+limit.
+

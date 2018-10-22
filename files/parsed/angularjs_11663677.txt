@@ -1,0 +1,20 @@
+11663677 How to introduce AngularJS into an existing app that uses Backbone &
+JQuery?
+
+I am building an application using jQuery and Backbone and I am finding myself
+writing a lot of boilerplate code over and over again. I have been looking
+into AngularJS and it is a much better fit for my application than backbone
+and jQuery. I would like to introduce Angular on a few pages and gradually
+convert from Backbone to Angular provided I don't run into problems with
+Angular.
+
+Is it possible to use AngularJS on a page that also uses Backbone & JQuery?
+
+The short answer, I believe, is 'YES'. Angular does have an inline template
+construct that should help you gradually migrate from backbone and once you
+are ready, you can move those inlines into external partials. Which, IMHO,
+will be a big plus for readability/maintainability. Angular also has a
+mechanism for associating an app (module) with only a subset of your page (a
+div element). I've used this technique with .NET apps. I have done some
+backbone dev, and am pretty sure you can make the 2 coexist.
+

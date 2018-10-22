@@ -1,0 +1,27 @@
+11548390 angularJS notification when element is removed
+
+I am creating a new directive and I wondering how to be notified when angular
+remove the element from the DOM.  
+My aim is to add a jquery animation when an element is removed.
+
+If you are trying to animate the removal of element you need to do this before
+it is removed.
+
+I've created a [fiddle](http://jsfiddle.net/ShadowBelmolve/sg4tK/2/)
+demonstrating this.
+
+In the first section you listen the `$destroy` event that angular call to
+elements that are being removed from DOM.
+
+In the second case I've created a directive that fadeOut and remove the
+element automatic.
+
+In the third case the directive just fadeOut the element and the removal is
+passed to controller.
+
+If you want to fadeOut the element that are removed then you can't use the
+first option.
+
+Between the second and the third I personally suggest the third because it is
+more flexible.
+

@@ -1,0 +1,78 @@
+28684228 Externalizing route paths using react-router
+
+I have a simple React Router Handler:
+
+    
+    
+    var routes = (
+        <Route name="main" path="/" handler={require('./main')}>
+            <Route name="page1" path="/page1" handler={require('./page1')}/>
+            <Route name="page2" path="/page2" handler={require('./page2')}/>
+            <Route name="page3" path="/page3" handler={require('./page3')}/>
+    
+            <DefaultRoute handler={require('./signin')}/>
+        </Route>
+    );
+    
+
+I'd like to externalize the page1, page2, page3 properties in a separate file
+(say a json file) and iterate that within the routes. Something like this:
+
+    
+    
+    var routes = (
+      <Route name="main" path="/" handler={require('./main')}>
+        _.each (routes, function(r) {
+          <Route name={r.name} path={r.path} handler={require(r.module)}/>
+        });
+    
+        <DefaultRoute handler={require('./main')}/>
+      </Route>
+    );
+    
+
+Obviously I cannot have such a construct within routes, what is the React way
+of achieving this?
+
+Or is there a way to alter the routes via an api?
+
+For eg:
+
+    
+    
+    routes.addRoute({name: r.name, path: r.path, handler: r.module}) ?
+    
+
+I think you should be able to do it with `jsx`, but there is an error in your
+`jsx` syntax. Try this:
+
+    
+    
+    var routes = (
+      <Route name="main" path="/" handler={require('./main')}>
+        {
+         _.each (routes, function(r) {
+             return <Route name={r.name} path={r.path} handler={require(r.module)}/>;
+         });
+        }
+        <DefaultRoute handler={require('./main')}/>
+      </Route>
+    );
+    
+
+react-router just added top-level API for defining routes without JSX in
+version 0.12.2:
+
+    
+    
+    Router.createRoute()
+    Router.createDefaultRoute()
+    Router.createNotFoundRoute()
+    Router.createRedirect()
+    
+
+The doc annotations in the [Route.js](https://github.com/rackt/react-
+router/blob/master/modules/Route.js) source and the detailed [commit
+note](https://github.com/rackt/react-router/commit/c5a24a5) are probably the
+best places to look while you wait until official docs and examples appear.
+

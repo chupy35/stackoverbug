@@ -1,0 +1,102 @@
+22139046 Handle undefined fields Elasticsearch
+
+I use py-elasticsearch with bulk feature e.g.:
+
+    
+    
+    //loop
+       action = {
+        "_index": "venue",
+        "_type": "venue",
+        "_id": tempid,
+        "_source": item
+       }
+       actions.append(action)
+    
+    helpers.bulk(es, actions)
+    
+
+However in my results I see:
+
+    
+    
+    "hits": [
+         {
+            "_index": "venue",
+            "_type": "venue",
+            "_id": "52e6d42fc36b4408dbe907d1",
+            "_score": 4.0977435,
+            "_source": {
+               "city": "Athens",
+               "name": "Half Note Jazz Club",
+               "address": "17 Trivonianou Street",
+            }
+         },
+         {
+            "_index": "venue",
+            "_type": "venue",
+            "_id": "530391abc36b442b25e8a514",
+            "_score": 4.023251,
+            "_source": {
+               "city": null,   <--- this
+               "name": "life Jazz Cafe-bar",               
+               "address": null  <---- and this
+            }
+         }
+      ]
+    
+
+Assuming that when I "bulk-feed" ES I have not defined the city and the
+address, is there a way to have those fields omitted in ES as well?
+
+Or will ES always create a null value even if this document does not have this
+field? Is ES by architecture this way or should I search for a bug in my code?
+
+**Update**
+
+My full mapping is the following:
+
+    
+    
+    <type>: {
+        mappings: {
+            <index>: {
+                properties: {                
+                    address: {
+                        type: "string"
+                    },
+                    city: {
+                        type: "string"
+                    },
+                    country: {
+                        type: "string"
+                    },
+                    location: {
+                        properties: {
+                            coordinates: {
+                                type: "geo_point"
+                            },
+                            type: {
+                                type: "string"
+                            }
+                        }
+                    },
+                    name: {
+                        type: "string"
+                    }
+                }
+            }
+        }
+    }
+    
+
+I'm not familiar with py-elasticsearch, but either the bug is in the library
+or in your code as the `_source` field always returns exactly what was sent to
+elasticsearch in the first place.
+
+The null_value in your mapping would be "null". So if you want to omit a field
+which is not present in the document to be indexed, dont specify the
+null_value in the
+mapping[null_value](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html)
+

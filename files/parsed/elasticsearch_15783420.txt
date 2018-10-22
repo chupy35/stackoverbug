@@ -1,0 +1,123 @@
+15783420 Elasticsearch deeper level Parent-child relationship (grandchild)
+
+I need to index 3 levels (or more) of child-parent. For example, the levels
+might be an author, a book, and characters from that book.
+
+However, when indexing more than two-levels there is a problem with has_child
+and has_parent queries and filters. If I have 5 shards, I get about one fifth
+of the results when running a "has_parent" query on the lowest level
+(characters) or a has_child query on the second level(books).
+
+My guess is that a book gets indexed to a shard by it's parent id and so will
+reside together with his parent (author), but a character gets indexed to a
+shard based on the hash of the book id, which does not necessarily complies
+with the actual shard the book was indexed on.
+
+And so, this means that all character of books of the same author do not
+necessarily reside in the same shard (kind of crippling the whole child-parent
+advantage really).
+
+Am I doing something wrong? How can I resolve this, as I am in real need for
+complex queries such as "what authors wrote books with female characters" for
+example.
+
+I mad a gist showing the problem, at: <https://gist.github.com/eranid/5299628>
+
+Bottom line is, that if I have a mapping:
+
+    
+    
+    "author" : {          
+          "properties" : {
+        "name" : {
+          "type" : "string"
+        }
+          }
+        },
+    "book" : {        
+          "_parent" : {
+        "type" : "author"
+          },
+          "properties" : {
+        "title" : {
+          "type" : "string"
+        }
+          }
+        },
+    
+    "character" : {       
+          "_parent" : {
+        "type" : "book"
+          },
+          "properties" : {
+        "name" : {
+          "type" : "string"
+        }
+          }
+        }
+    
+
+and a 5 shards index, I cannot make queries with "has_child" and "has_parent"
+
+The query:
+
+    
+    
+    curl -XPOST 'http://localhost:9200/index1/character/_search?pretty=true' -d '{
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "has_parent": {
+                "parent_type": "book",
+                "query": {
+                  "match_all": {}
+                }
+              }
+            }
+          ]
+        }
+      }
+    }'
+    
+
+returns only a fifth (approximately) of the characters.
+
+You are correct, parent/child relationship can only work when all children of
+a given parent resides in the same shard as the parent. Elasticsearch achieves
+this by using parent id as a routing value. It works great on one level.
+However, it breaks on the second and consecutive levels. When you have
+parent/child/grandchild relationship parents are routed based on their id,
+children are routed based on the parent ids (works), but then grandchildren
+are routed based on the children ids and they end up in wrong shards. To
+demonstrate it on an example, let's assume that we are indexing 3 documents:
+
+    
+    
+    curl -XPUT localhost:9200/test-idx/author/Douglas-Adams -d '{...}'
+    curl -XPUT localhost:9200/test-idx/book/Mostly-Harmless?parent=Douglas-Adams -d '{...}'
+    curl -XPUT localhost:9200/test-idx/character/Arthur-Dent?parent=Mostly-Harmless -d '{...}'
+    
+
+Elasticsearch uses value `Douglas-Adams` to calculate routing for the document
+`Douglas-Adams` \- no surprise here. For the document `Mostly-Harmless`,
+Elasticsearch sees that it has parent `Douglas-Adams`, so it uses again
+`Douglas-Adams` to calculate routing and everything is good - same routing
+value means same shard. But for the document `Arthur-Dent` Elasticsearch sees
+that it has parent `Mostly-Harmless`, so it uses value `Mostly-Harmless` as a
+routing and as a result document `Arthur-Dent` ends up in wrong shard.
+
+The solution for this is to explicitly specify routing value for the
+grandchildren equal to the id of the grandparent:
+
+    
+    
+    curl -XPUT localhost:9200/test-idx/author/Douglas-Adams -d '{...}'
+    curl -XPUT localhost:9200/test-idx/book/Mostly-Harmless?parent=Douglas-Adams -d '{...}'
+    curl -XPUT localhost:9200/test-idx/character/Arthur-Dent?parent=Mostly-Harmless&routing=Douglas-Adams -d '{...}'
+    
+
+For the grandpa docs, you need to get the _id as the _routing.  For the father
+docs, just use the _parent (grandpa._id) as the _routing. For the children
+docs, just use the grandpa._id as the _routing.
+

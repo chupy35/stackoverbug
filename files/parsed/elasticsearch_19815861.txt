@@ -1,0 +1,43 @@
+19815861 ElasticSearch 0.90.5 throws occasional NoNodeAvailableException using
+Java API
+
+I am using ElasticSearch 0.90.5. Single node cluster and using Java API for
+all communication to the node (both for indexing and searching).
+
+I have a continuous stream of documents being fed into the server every 10
+mins. Using Bulk indexing API for optimal performance. Subsequent queries
+either retrieve a single document or run More-Like-This queries.
+
+Every now and then (sometimes a bit too often) we get the following exception
+:
+
+**Caused by: org.elasticsearch.client.transport.NoNodeAvailableException: No
+node available**
+
+I can assure you that the server is up and running just fine. This is an
+occasional issue we see. NewRelic Server monitor shows very little strain on
+the box itself. Highest CPU usage was **50%** that too during a small time
+period. ES logs are not showing me anything useful. No GC messages in logs for
+the affected time periods.
+
+Has anyone else encountered this exception when using the API. Any insights
+will be appreciated.
+
+Relevant stack trace:
+
+    
+    
+    Caused by: org.elasticsearch.client.transport.NoNodeAvailableException: No node available
+            at org.elasticsearch.client.transport.TransportClientNodesService$RetryListener.onFailure(TransportClientNodesService.java:249)
+            at org.elasticsearch.action.TransportActionNodeProxy$1.handleException(TransportActionNodeProxy.java:84)
+            at org.elasticsearch.transport.TransportService$Adapter$2$1.run(TransportService.java:311)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+    
+
+Could you post full stack trace by any chance?
+
+Also by looking through elasticsearch message board (<http://elasticsearch-
+users.115913.n3.nabble.com/>) for similar exceptions, you might want to try to
+increase `client.transport.ping_timeout` and see if that would help
+

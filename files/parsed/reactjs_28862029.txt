@@ -1,0 +1,51 @@
+28862029 React: passed element doesn't instantiate
+
+Basic ReactJS question. I have the following React components:
+
+    
+    
+    var TopLevelElement = React.createClass({
+        render: function () {
+            return (
+                <Grouper top={Top} bottom={Bottom} />
+            );
+        }
+    });
+    
+    var Grouper = React.createClass({
+        render: function () {
+            return (
+                <div>
+                    <div className="top">{this.props.top}</div>
+                    <div className="bottom">{this.props.bottom}</div>
+                </div>
+            );
+        }
+    });
+    
+
+`Top` and `Bottom` are React components that just have a render() that outputs
+some markup.
+
+When I do a `React.render(<TopLevelElement />, el);` it only outputs the
+markup in Grouper, not in `Top` or `Bottom`. I've confirmed that those
+elements do work fine independently.
+
+Looks like the children aren't being instantiated at all. Any idea what I'm
+doing wrong?
+
+Thanks!
+
+Try this instead:
+
+    
+    
+    var TopLevelElement = React.createClass({
+        render: function () {
+            return (
+                <Grouper top={<Top />} bottom={<Bottom />} />
+            );
+        }
+    });
+    
+

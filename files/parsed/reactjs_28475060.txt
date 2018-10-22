@@ -1,0 +1,76 @@
+28475060 Reactjs: Are there advantages to using React components over normal
+functions?
+
+Taking for example [this
+sample](http://facebook.github.io/react/docs/multiple-components.html) from
+the React.js docs
+
+    
+    
+    var Avatar = React.createClass({
+      render: function() {
+        return (
+          <div>
+            <ProfilePic username={this.props.username} />
+            <ProfileLink username={this.props.username} />
+          </div>
+        );
+      }
+    });
+    
+    var ProfilePic = React.createClass({
+      render: function() {
+        return (
+          <img src={'http://graph.facebook.com/' + this.props.username + '/picture'} />
+        );
+      }
+    });
+    
+    var ProfileLink = React.createClass({
+      render: function() {
+        return (
+          <a href={'http://www.facebook.com/' + this.props.username}>
+            {this.props.username}
+          </a>
+        );
+      }
+    });
+    
+    React.render(
+      <Avatar username="pwh" />,
+      document.getElementById('example')
+    );
+    
+
+For cases like this, with components with no state, and if I'm _not_ going to
+use jsx: are there any disadvantages (performance or otherwise) to just using
+functions instead of creating components? IE, reducing it to something like
+this (written in ES6)
+
+    
+    
+    var { a, div, img } = React.DOM;
+    
+    var Avatar = (username) =>
+        div({}, ProfilePic(username), ProfileLink(username));
+    
+    var ProfilePic = (username) => 
+        img({src: `http://graph.facebook.com/${username}/picture`});
+    
+    var ProfileLink = (username) =>
+        a({href: `http://www.facebook.com/${username}`}, username);
+    
+    React.render(Avatar(username), document.getElementById('example'))
+    
+
+If you are not using JSX, and do not need any of the run-time features of the
+core classes (like `componentDidMount`, etc), then there is no advantage to
+creating the classes unnecessarily, and in fact, it will be (slightly) more
+efficient overall.
+
+By creating concrete (yet very simple) wrapper functions such as you've done
+with `Avatar`, it improves code readability. However, if you ever do start
+using JSX, you'll need to switch to `createClass` so that properties are
+properly passed (since the initial properties are not passed to the
+constructor function as they are in your code).
+

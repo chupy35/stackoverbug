@@ -1,0 +1,49 @@
+23910585 How to monitor queries sent to Elastic search
+
+For debugging purposes, we want to monitor the queries that our .Net
+application (hosted on Azure) is sending to Elastic Search (hosted at QBox).
+We have a problem with terms that are not well mapped / included in the REST
+call and want to have a view on what is exactly sent to ES.
+
+thx Marc
+
+I would give the elasticsearch-jetty plugin a try. It supports configurable
+request logging:
+
+> Overview
+
+>
+
+> The elasticsearch-jetty plugin brings full power of Jetty and adds several
+new features to elasticsearch. With this plugin elasticsearch can now handle
+SSL connections, support basic authentication, and log all or some incoming
+requests in plain text or json formats.
+
+<https://github.com/sonian/elasticsearch-jetty>
+
+I've not yet used it myself but we are considering it for debugging of
+malformed queries.
+
+Or you can try using the slow query log mechanism with the threshold set to 0
+ms:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-slowlog.html>
+
+If you are using the NEST client for Elasticsearch. You can get access to the
+actual JSON request being sent to your Elasticsearch index by examining the
+`ConnectionStatus` property of your search response.
+
+I am doing this today in my application with something similar to the
+following:
+
+    
+    
+       var response = client.Search<ElasticsearchProject>(s => s
+               .Query(q => q.MatchAll()));
+       var connectionStatus = response.ConnectionStatus;
+    
+       //output search request send to Elasticsearch
+       Console.WriteLine(connectionStatus.Request);
+    
+

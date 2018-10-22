@@ -1,0 +1,21 @@
+17130667 filtering out docs that have a word from a stop list
+
+I have a search query for some such as `"match":{"product name":"glasses
+car"}` so that I am looking for glasses or cars (or both).
+
+But I want to exclude the docs that have `google glass` or `google car` in
+them. so how would I filter them out?
+
+I could use a bool query and use must_not for `google`, but then I will lose
+the scoring and get a constant score.
+
+You should use a `filtered query` with a `filter` to exclude words like
+`google` and keep your main search as the `query`.
+
+The `filter` does not affect scoring, only the `query` part of the filtered
+query does.
+
+You can find a small example on the [Filtered Query
+page](http://www.elasticsearch.org/guide/reference/query-dsl/filtered-query/)
+in the ElasticSearch documentation.
+

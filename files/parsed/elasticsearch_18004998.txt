@@ -1,0 +1,31 @@
+18004998 ElasticSearch - maintain original timestamp across versions
+
+I have enabled automatic _timestamp on my indexes but every time an index is
+updated during a _bulk request (or a regular update) the timestamp is also
+updated. This makes sense.
+
+I want to know if there's a way to keep the original timestamp after an
+update? So we only ever see the timestamp for version 1 no matter how many
+times it is updated to a new version.
+
+I have over 4 millions indexes and bulk update in chunks of 1000 so I'd rather
+not iterate through every single item to compare timestamps.
+
+Any tips?
+
+For anyone who comes across this issue in the future I ended up using a
+combination of bulk update with script to upsert a date. This only happens
+when an index is created and left alone during updates. I'm not sure if this
+is the most elegant solution but it works.
+
+    
+    
+    { "update": {"_id" : "1"} },
+    { "script": "", "upsert" : {"og_index_date" : 20130826}},
+    { "update": {"_id" : "1"} },
+    { "doc": {"field1" : "one", "field2": "two"}, "doc_as_upsert" : True }
+    
+
+Even though you're doubling your writes, it will maintain this date across
+versions.
+

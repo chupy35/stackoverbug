@@ -1,0 +1,119 @@
+24251332 How to filter terms aggregation
+
+Currently I have something like this
+
+    
+    
+    aggs: {
+      categories: {
+        terms: {
+          field: 'category'
+        }
+      }
+    }
+    
+
+and this is giving me number of products in each category. But I have
+additional condition. I need to get number of products in each category which
+are not sold already, so I need to perform filter on `terms` somehow.
+
+Is there some elegant way of doing this using aggregation framework, or I need
+to write filtered query?
+
+Thank you
+
+You can merge between [Terms
+Aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html) and [Filter
+Aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-filter-aggregation.html), and this is how it should look:
+(tested)
+
+    
+    
+        aggs: {
+          categories: {            
+            filter: {term: {sold: true}},
+            aggs: {
+              names: {
+                terms: {field: 'category'}
+              }
+            }
+          }
+        }
+    
+
+You can add also more conditions to the filter, I hope this helps.
+
+You can use [Filter
+Aggregation](https://www.elastic.co/guide/en/elasticsearch/reference/2.3/search-
+aggregations-bucket-filters-aggregation.html) to wrap sub aggregation list.
+
+    
+    
+        .Aggregations(c => c.Filter(filterAggKey, tp => tp.Filter(g => g.Terms(gt => gt.Field("storeProductList.apiStatu").Terms(_apiStatuIdArray)))
+    
+             .Aggregations(f => f.Terms(termAggKey, t => t.Field(termField)
+    
+                       .Aggregations(z => z.TopHits(topHitAggKey, cv => cv.Size(1)
+                                                                    .Source(src => src.Include(fs => fs
+                                                                    .Field("storeName")
+                                                                    .Field("marketPlaceId")
+                                                                    .Field("storeId")))))                                                                                                                                       
+    
+                                                                    ))))));
+    
+
+Just to add to the other answer, you can also use a nested query. This is
+similar to what I had to do. I'm using Elasticsearch 5.2.
+
+From the docs, here is the basic syntax:
+
+    
+    
+    "aggregations" : {
+        "<aggregation_name>" : {
+            "<aggregation_type>" : {
+                <aggregation_body>
+            }
+            [,"aggregations" : { [<sub_aggregation>]+ } ]?
+        }
+        [,"<aggregation_name_2>" : { ... } ]*
+    }
+    
+
+This is how I implemented it:
+
+    
+    
+    GET <path> core_data/_search
+    {
+      "aggs": {
+        "NAME": {
+          "nested": {
+            "path": "ATTRIBUTES"
+          },
+          "aggs": {
+            "NAME": {
+              "filter": {
+                "term": {
+                  "ATTRIBUTES.ATTR_TYPE": "EDUCATION_DEGREE"
+                }
+              },
+              "aggs": {
+                "NAME": {
+                  "terms": {
+                    "field": "ATTRIBUTES.DESCRIPTION",
+                    "size": 100
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+This filtered the data down to one bucket, which is what I needed.
+

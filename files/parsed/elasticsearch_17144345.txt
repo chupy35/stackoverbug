@@ -1,0 +1,39 @@
+17144345 how to search and retrieve data based on of indexed data in
+elasticsearch
+
+i had indexed the data and elasticsearch allocate it a version. Now I had
+updated the indexes by **update API** a new version will be allocate to it.
+Now I want to search data based on version. For eg: my original indexed data
+is (version=1) :
+
+    
+    
+      {
+         "name":"Lav"
+      }
+    
+
+after execution of update query (version=2) :
+
+    
+    
+      {
+         "name":"Lav",
+         "message":"hello elasticsearch"
+      }
+    
+
+Now I want to perform search operation first in version 1 and then in version
+2 . How it can be done
+
+If I understand well your question, you want to make a search based on the
+values your document had in its version 1.
+
+In fact, the `version` field is just an additional information added to the
+document. ElasticSearch doesn't keep the values of fields for older versions.
+Therefore, it's not possible to do a search on the data of an older version.
+
+The `version` field is useful primarily to do some "Optimistic concurrency
+control" like explained in [this blog
+post](http://www.elasticsearch.org/2011/02/08/versioning/).
+

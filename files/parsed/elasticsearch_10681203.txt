@@ -1,0 +1,90 @@
+10681203 Index huge data into Elasticsearch
+
+I am new to elasticsearch and have huge data(more than 16k huge rows in the
+mysql table). I need to push this data into elasticsearch and am facing
+problems indexing it into it.  Is there a way to make indexing data faster?
+How to deal with huge data?
+
+Try bulk api
+
+<http://www.elasticsearch.org/guide/reference/api/bulk.html>
+
+This may be an old thread but I though I would comment anyway for anyone who
+is looking for a solution to this problem. The JDBC river plugin for Elastic
+Search is very useful for importing data from a wide array of supported DB's.
+
+[Link to JDBC' River source here..](http://goo.gl/69b7LY) Using Git Bash' curl
+command I **PUT** the following configuration document to allow for
+communication between ES instance and MySQL instance -
+
+    
+    
+    curl -XPUT 'localhost:9200/_river/uber/_meta' -d '{
+    "type" : "jdbc",
+    "jdbc" : {
+     "strategy" : "simple",
+     "driver" : "com.mysql.jdbc.Driver",
+     "url" : "jdbc:mysql://localhost:3306/elastic",
+     "user" : "root",
+     "password" : "root",
+     "sql" : "select * from tbl_indexed",
+     "poll" : "24h",
+     "max_retries": 3,
+     "max_retries_wait" : "10s"
+     },
+     "index": {
+     "index": "uber",
+     "type" : "uber",
+     "bulk_size" : 100
+     }
+    }'
+    
+
+Ensure you have the **mysql-connector-java-VERSION-bin** in the river-jdbc
+plugin directory which contains jdbc-river' necessary JAR files.
+
+## Expanding on the [Bulk
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html)
+
+You will make a POST request to the `/_bulk`
+
+Your payload will follow the following format where `\n` is the newline
+character.
+
+    
+    
+    action_and_meta_data\n
+    optional_source\n
+    action_and_meta_data\n
+    optional_source\n
+    ...
+    
+
+**Make sure your json is not pretty printed**
+
+The available actions are `index`, `create`, `update` and `delete`.
+
+* * *
+
+## Bulk Load Example
+
+To answer your question, if you just want to bulk load data into your index.
+
+    
+    
+    { "create" : { "_index" : "test", "_type" : "type1", "_id" : "3" } }
+    { "field1" : "value3" }
+    
+
+The first line contains the action and metadata. In this case, we are calling
+`create`. We will be inserting a document of type `type1` into the index named
+`test` with a manually assigned id of `3` (instead of elasticsearch auto-
+generating one).
+
+The second line contains all the fields in your mapping, which in this example
+is just `field1` with a value of `value3`.
+
+You will just concatenate as many as these as you'd like to insert into your
+index.
+

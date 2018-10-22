@@ -1,0 +1,56 @@
+23090938 Do I need to remove the "query" part from Elastic search query when
+data to be find is empty?
+
+I have a query that searches a given term in 2 fields. The term is coming from
+an input field in the UI.If the input field is blank, the query returns no
+data whereas I expect that all data should be returned.
+
+A solution is to remove the query part from the _search query, but then I need
+to dynamically compose my query parts.
+
+What is the recommende way of doing this ?
+
+My query:
+
+    
+    
+    {
+     "query":{
+        "filtered":{
+            "query":{
+              "bool":{
+                  "should":
+                      [
+                        {
+                          "match":{
+                              "lastName":{
+                                "query": "Gevaert",
+                                "fuzziness": 0.2
+                              }           
+                          }
+                        },
+                        {
+                          "match":{
+                              "organization":{
+                                "query": "Gevaert",
+                                "fuzziness": 0.2
+                              }           
+                          }
+                        }
+                      ]
+              }
+            }
+            ,
+            "filter":{
+                "term":{
+                    "category.id":"CAT102"
+                }
+            }
+        }
+     }
+    }
+    
+
+You can also add "zero_terms_query": "all" to the match query and in that
+case, if no matches found, then all matches will be returned
+

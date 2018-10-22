@@ -1,0 +1,19 @@
+23512427 Can I use filters to annotate matches in elasticsearch
+
+When I do a search on Elasticsearch, I want to have a filter that can indicate
+which of the results matched the filter and which ones didn't.
+
+Is there a way to use a filter (or something that works similarly) that
+doesn't filter, but instead reports?
+
+I use a pretty complex filter to remove results, but I would rather have the
+filtered results differentiated from ones that didn't match the filter. I
+could do it with multiple queries, but that seems wasteful.
+
+Is [named queries and
+filters](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-named-queries-and-filters.html) what you want?
+
+I can interpret your need in a few ways, so I'm not entirely sure. Maybe you
+could have a tautology filter with named sub-filters.
+

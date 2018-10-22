@@ -1,0 +1,13 @@
+18924352 How can I do a range query on an array in ElasticSearch?
+
+I have documents in ElasticSearch that look like this:
+
+    
+    
+    {"foo": "bar", "params": [ 123, 456] }
+    
+
+How can I search for documents that have the first element of params between
+100 and 200? Normally I would just use "range" but I don't know how to refer
+to the first index of params when specifying the query.
+

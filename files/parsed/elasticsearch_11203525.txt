@@ -1,0 +1,62 @@
+11203525 elastic search faceted query returns incorrect count
+
+I need help in aggregate / faceted queries in elastic search. I have used
+faceted query to group the results but I’m not getting grouped result with
+correct count.
+
+Please suggest on how to get grouped results from elastic search.
+
+    
+    
+    { 
+       "query" : { 
+         "query_string" : {"query" : "pared_cat_id:1"} } ,
+         "facets" : { 
+            "subcategory" : { 
+               "terms" : { 
+                            "field": "sub_cat_id", 
+                             "size" : 50, 
+                             "order" : "term", 
+                             "all_terms" : true 
+                         }
+                     } 
+               }, 
+         "from" : 0, 
+         "size": 50 
+      }
+    
+
+Trying to get grouped results for sub category id for passed parent category
+id.
+
+Elasticsearch faceting queries works very well in terms of accuracy, at least
+I have not seen any problem yet.  
+Just a few questions:
+
+  1. What field is this string or numeric,give example?
+  2. Have you applied any custom mapping or you have used default "standard" analyzer
+
+Please state the kind of inaccuracy like `"aa" should have count 100 but its
+50` or is there any other kind of inaccuracy?
+
+"query_string" : {"query" : "pared_cat_id:1"} } ,
+
+This is applied to overall data and not on the facets counts.
+
+FOr this you need to use facet query in which you can specify same which you
+are specifying in the main query string.
+
+So facets count which are being shown to you now are based on the results
+without applying "query_string" : {"query" : "pared_cat_id:1"} } , ie. to the
+whole data. Incase you want facets counts after applying "query_string" :
+{"query" : "pared_cat_id:1"} } , provide it in the facet query.
+
+Elasticsearch facets query returns incorrect count if the number of shards is
+>1, so as for now Facets are deprecated and will be removed in a future
+release. You are encouraged to migrate to aggregations instead.
+
+I suggest that you take a look at
+[this](https://www.found.no/foundation/elasticsearch-aggregations/) blog post
+in which Alex Brasetvik give a good description along with some examples on
+how to use the aggregations feature properly.
+

@@ -1,0 +1,57 @@
+24711168 Elasticsearch Dynamic Scripting Disabled
+
+I am trying the following query on aggregation:
+
+    
+    
+    aggs:{
+        total:{
+            sum:{
+                script: "doc['comments'].value + doc['likes'].value + doc['shares'].value"
+            }   
+        }
+    }
+    
+
+and it throws the following exception:
+
+`ScriptException[dynamic scripting disabled]`
+
+Any idea how can I fix this. Refer:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-sum-aggregation.html>
+
+By default dynamic scripting is disabled in elasticsearch, we need to add the
+following line in elasticsearch.yml file:
+
+`script.disable_dynamic: false`
+
+Refer:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.5/modules-
+scripting.html#_enabling_dynamic_scripting>
+
+Also we need to make sure when we are enabling dynamic scripting, the
+elasticsearch ports are not public. specially the port used by nodes for
+communication. (9300 by default) Otherwise it has security vulnerability and
+allows attackers to join the cluster and do port scanning or make DDOS
+attacks.
+
+**UPDATE**
+
+For ES Version 1.6+
+
+It is possible to enable scripts based on their source, for every script
+engine, through the following settings that need to be added to the
+config/elasticsearch.yml file on every node.
+
+    
+    
+    script.inline: on
+    script.indexed: on
+    
+
+Refer:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-
+scripting.html#enable-dynamic-scripting>
+

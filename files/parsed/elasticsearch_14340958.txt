@@ -1,0 +1,85 @@
+14340958 In elasticsearch, how important is it to fully define a mapping
+during mapping-creation?
+
+**I am creating a mapping like this**
+
+    
+    
+    "institution" : {
+      "properties" : {        
+        "InstitutionCode" : {
+          "type" : "string",
+          "store" : "yes"
+        },
+        "InstitutionID" : {
+          "type" : "integer",
+          "store" : "yes"
+        },
+        "Name" : {
+          "type" : "string",
+          "store" : "yes"
+        }
+      }
+    }
+    
+
+**However, when I perform actual indexing operations for institutions, I am
+adding an Alias property (0 or more aliases per institution)**
+
+    
+    
+    "institution" : {
+      "properties" : {   
+        "Aliases" : {
+          "dynamic" : "true",
+          "properties" : {
+            "InstitutionAlias" : {
+              "type" : "string"
+            },
+            "InstitutionAliasTypeID" : {
+              "type" : "long"
+            }
+          }
+        },     
+        "InstitutionCode" : {
+          "type" : "string",
+          "store" : "yes"
+        },
+        "InstitutionID" : {
+          "type" : "integer",
+          "store" : "yes"
+        },
+        "Name" : {
+          "type" : "string",
+          "store" : "yes"
+        }
+      }
+    }
+    
+
+This is actually a simplified example, as I am actually adding more fields
+than just Aliases during the actual indexing of records.
+
+**How important is it to to fully define a mapping during mapping-creation?**
+
+Am I going to suffer any penalties by having the mapping automatically
+adjusted during indexing operations due to the indexing of institution records
+with additional properties? I expect institutions to gain additional
+properties over time and I wonder if I need to maintain the mapping-creation
+code in addition to the institution-indexing code.
+
+I believe the overhead of dynamic mapping is fairly negligible...using them
+won't hurt indexing speed. However, you can run into some unexpected
+situations where ElasticSearch auto-detects a field type incorrectly.
+
+A common example is detecting an integer because the first example of a field
+is a number ("25"), when in reality the rest of the data for that field is a
+string. Or seeing an integer when the rest of the data is actually a float.
+Etc etc.
+
+If your data is well standardized that isn't much of a problem.
+
+Alternatively, you can use [dynamic
+templates](http://www.elasticsearch.org/guide/reference/mapping/root-object-
+type.html) to apply mappings to new fields based on a regex pattern.
+

@@ -1,0 +1,95 @@
+15650574 No query registered for [match]
+
+I'm working through some examples in the ElasticSearch Server book and trying
+to write a simple match query
+
+    
+    
+    { 
+      "query" : { 
+        "match" : {
+            "displayname" : "john smith"
+        }
+      }
+    }
+    
+
+This gives me the error:
+
+    
+    
+    {\"error\":\"SearchPhaseExecutionException[Failed to execute phase [query],      
+    ....
+    SearchParseException[[scripts][4]: from[-1],size[-1]: Parse Failure [Failed to parse source 
+    ....
+    QueryParsingException[[kb.cgi] No query registered for [match]]; }
+    
+
+I also tried
+
+    
+    
+    { 
+        "match" : {
+        "displayname" : "john smith"
+        }
+    }
+    
+
+as per examples on <http://www.elasticsearch.org/guide/reference/query-
+dsl/match-query/>
+
+EDIT: I think the remote server I'm using is not the latest 0.20.5 version
+because using "text" instead of "match" seems to allow the query to work
+
+I've seen a similar issue reported here: <http://elasticsearch-
+users.115913.n3.nabble.com/Character-escaping-td4025802.html>
+
+Your first query looks fine, but perhaps the way you use in the request is not
+correct. Here is a complete example that works:
+
+    
+    
+    curl -XDELETE localhost:9200/test-idx
+    curl -XPUT localhost:9200/test-idx -d '{
+        "settings": {
+            "index": {
+                "number_of_shards": 1,
+                "number_of_replicas": 0
+            }
+        },
+        "mappings": {
+            "doc": {
+                "properties": {
+                    "name": {
+                        "type": "string", "index": "analyzed"
+                     }
+                }
+            }
+        }
+    }
+    '
+    curl -XPUT localhost:9200/test-idx/doc/1 -d '{
+        "name": "John Smith"
+    }'
+    curl -XPOST localhost:9200/test-idx/_refresh
+    echo
+    curl "localhost:9200/test-idx/_search?pretty=true" -d '{
+        "query": {
+            "match" : {
+                "name" : "john smith"
+            }
+        }
+    }
+    '
+    echo
+    
+
+It appears the remote server I'm using is not the latest 0.20.5 version of
+ElasticSearch, consequently the "match" query is not supported - instead it is
+"text", which works
+
+I came to this conclusion after seeing a similar issue reported here:
+<http://elasticsearch-users.115913.n3.nabble.com/Character-escaping-
+td4025802.html>
+

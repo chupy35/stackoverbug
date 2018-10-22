@@ -1,0 +1,27 @@
+11253032 elasticsearch handling typos
+
+is it possible elasticsearch to handle **queries containing typos**. Example
+
+    
+    
+    trying to query "colthes" would return results of "clothes"
+    
+
+If that's possible, how to do it ? (which **analyzer**? which **tokenizer**?
+which **filter**?)
+
+Could you show an example? Is it possible to apply the configuration for non-
+english languages (i'm looking for french)
+
+Yes it is certainly possible. A working example for french can be seen [on
+this site](http://med-
+code.info/?utf8=%E2%9C%93&search=abbendice&catalog=icd&country=ch&locale=fr),
+which uses Elasticsearch as a back-end. For example by searching for
+"abbendice" the query returns "appendice" (appendix in english). Specifically
+what you're looking for is the [fuzzy
+query](http://www.elasticsearch.org/guide/reference/query-dsl/fuzzy-
+query.html).
+
+Be aware though that it may not be suitable depending on the size of data
+you're trying to index. Hope that helps.
+

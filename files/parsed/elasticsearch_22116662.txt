@@ -1,0 +1,69 @@
+22116662 Return field from first and last document in Elasticsearch
+aggregation
+
+I have a sorted elasticsearch histogram aggregation that works fine as is.
+
+I need to return a field from the first and last document of each aggregation
+bucket.
+
+Current query (ruby-style syntax):
+
+    
+    
+    {
+      query: {
+        filtered: {
+          filter: {
+            bool: {
+              must: [
+                { term: { some_id: 'something' } },
+                { range: {
+                    completed_at: {
+                      gte: start,
+                      lte: end
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          _cache: true,
+          _cache_key: "special-query"
+        }
+      },
+      aggs: {
+        intervals: {
+          histogram: {
+            field: 'completed_at',
+            interval: 24.hours.to_i,
+            min_doc_count: 0,
+            order: { _key: 'asc' }
+          },
+          aggs: {
+            start_at: { min: { field: 'completed_at' } },
+            end_at: { max: { field: 'completed_at' } },
+            price_stats: { extended_stats: { field: 'rate' } },
+          }
+        }
+      }
+    }
+    
+
+I have searched through the documentation and googled extensively but can't
+find any solutions. Currently I have to send a second query to the database to
+explicitly fetch all the values for this field but I would like to roll that
+functionality in to my elasticsearch query.
+
+You want to return a result per aggregation right?
+
+That's called Field Collapsing and unfortunately isn't yet available in
+Elasticsearch, see:
+<https://github.com/elasticsearch/elasticsearch/issues/256>
+
+**Update sept 2014**
+
+As per @bpierce in comments below: Now that [Elasticsearch
+1.3.x](http://www.elasticsearch.org/blog/elasticsearch-1-3-0-released/) is
+out, field collapsing is available via the top_hits aggregation. I'm currently
+using it in a query similar to this one.
+

@@ -1,0 +1,29 @@
+21222512 Disable IDF calculation
+
+In my particular use case, the IDF-factor that gets calculated as part of the
+TF-IDF algorithm messes up the scoring for my queries. Basically, I want the
+queries to only take the term frequency into account. Is it possible to
+disable the IDF factor, i.e set it to 1, for a particular index? I have looked
+into the similarity module (in version 0.90.X), but haven't really found
+anything that could help; same goes for the function_score query. Do I need to
+write a custom Similarity class in java? Or is there a plugin for what I'm
+trying to achieve?
+
+What about constant_score query?
+
+See
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/ignoring-
+tfidf.html>
+
+Don't hesitate to use ?explain=true to see how scoring is working.
+
+As you can here without constant_filter:
+
+![With IDF](https://i.stack.imgur.com/xsH5i.jpg)
+
+And with constant_filter query (that wraps your real query):
+
+![Without IDF](https://i.stack.imgur.com/9d1Sy.jpg)
+
+  * Screenshots made with <https://beemapp.me>
+

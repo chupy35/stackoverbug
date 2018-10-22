@@ -1,0 +1,156 @@
+28258465 How to add logical if statement when rendering React components?
+
+if I have code that looks like this...
+
+    
+    
+    var Lounge = React.createClass({displayName: "Lounge",
+      render: function() {
+        return (
+                React.createElement("a", {href:"/lounge/detail/" + this.props.id +  "/"},
+                React.createElement("div", {className: "lounge"},
+                React.createElement("h2", {className: "loungeAuthor"},
+                  this.props.author.name
+                ),
+                React.createElement("p", {className: "loungeArticle"},
+                  this.props.article
+                ),
+                React.createElement("img", {className: "loungeImage", src: this.props.image})
+              )
+            )
+        );
+      }
+    });
+    
+
+I need to do a logical if check to only render the "img" component if the
+image data exists. Does anybody know the best way to go about this using
+React?
+
+Okay so this may be clear to a lot of people, for some reason I didn't see it,
+then again I'm quickly scanning through the documents and I'm not using JSX
+(really don't like it)
+
+Therefore the JavaScript way of adding logical if checks when rendering react
+components would be done like this. (keep in mind undefined works just fine,
+so assuming the if statement is not hit it will still render just fine)
+
+    
+    
+    var Lounge = React.createClass({displayName: "Lounge",
+      render: function() {
+        if (this.props.image != "") {
+           var imageElement = React.createElement("img", {className: "loungeImage", src: this.props.image});
+        }
+        return (
+                React.createElement("a", {href:"/lounge/detail/" + this.props.id +  "/"},
+                React.createElement("div", {className: "lounge"},
+                React.createElement("h2", {className: "loungeAuthor"},
+                  this.props.author.name
+                ),
+                React.createElement("p", {className: "loungeArticle"},
+                  this.props.article
+                ),
+                imageElement
+              )
+            )
+        );
+      }
+    });
+    
+
+If you want to do it inline, you can do:
+
+    
+    
+    {this.props.image && <img className="loungeImage" src={this.props.image}/>}
+    
+    this.props.image && React.createElement("img", {className: "loungeImage", src: this.props.image})
+    
+
+If the value you want to check is falsy but would result in _something_ being
+rendered by React, like an empty string, you might want to convert it to its
+boolean equivalent in the check by using `!!`:
+
+    
+    
+    {!!this.props.image && <img className="loungeImage" src={this.props.image}/>}
+    
+    !!this.props.image && React.createElement("img", {className: "loungeImage", src: this.props.image})
+    
+
+Keeping this logic inline as well as using JSX may help with readability
+
+    
+    
+    import React from 'react';
+    import PropTypes from 'prop-types';
+    import s from './Lounge.css'; // See CSS Modules
+    
+    // Stateless functional component (since there is no state)
+    function Lounge({ id, article, author, imageUrl }) {
+      return (
+        <a href={`/lounge/detail/${id}/`}>
+          <span className={s.lounge}>
+            <span className={s.author}>{author.name}</span>
+            <span className={s.article}>{article}</span>
+            {imageUrl && <img className={s.image} src={imageUrl} />} // <==
+          </span>
+        </a>
+      );
+    }
+    
+    // Props validation
+    Lounge.propTypes = {
+      id: PropTypes.number.isRequired,
+      article: PropTypes.string.isRequired,
+      imageUrl: PropTypes.string,
+      author: PropTypes.shape({
+        name: PropTypes.string.isRequired
+      }).isRequired
+    };
+    
+    export default Lounge;
+    
+
+You can use [React if component](https://github.com/gfdev/javascript-react-if-
+component):
+
+    
+    
+    var Node = require('react-if-comp');
+    
+    var Lounge = React.createClass({
+        displayName: 'Lounge',
+        render: function() {
+            return (
+                <a href={'/lounge/detail/' + this.props.id + '/'}>
+                    <div className='lounge'>
+                        <h2 className='loungeAuthor'>{author.name}</h2>
+                        <p className='loungeArticle'>{article}</p>
+                        <Node if={this.props.image}
+                            then={<img className='loungeImage'
+                            src={this.props.image} />} />
+                    </div>
+                </a>
+            );
+        }
+    });
+    
+
+Using JSX + IIFE (Immediately-Invoked function) can come pretty handy and
+explicit:
+
+    
+    
+    {(() => {
+      if (isEmpty(routine.queries)) {
+        return <Grid devices={devices} routine={routine} configure={() => this.setState({configured: true})}/>
+      } else if (this.state.configured) {
+        return <DeviceList devices={devices} routine={routine} configure={() => this.setState({configured: false})}/>
+      } else {
+        return <Grid devices={devices} routine={routine} configure={() => this.setState({configured: true})}/>
+      }
+    })()}
+    
+

@@ -1,0 +1,89 @@
+20750987 ElasticSearch : field not returned
+
+I am new to ElasticSearch, please forgive my stupidity.
+
+I cant seem to get the keepalive field out of ES.
+
+    
+    
+    {
+          "_index" : "2013122320",
+          "_type" : "log",
+          "_id" : "Y1M18ZItTDaap_rOAS5YOA",
+          "_score" : 1.0
+        }
+    
+
+I can get other field out of it cdn:
+
+    
+    
+    {
+          "_index" : "2013122320",
+          "_type" : "log",
+          "_id" : "2neLlVNKQCmXq6etTE6Kcw",
+          "_score" : 1.0,
+          "fields" : {
+            "cdn" : "-"
+          }
+    }
+    
+
+The mapping is there:
+
+    
+    
+    {
+      "log": {
+        "_timestamp": {
+          "enabled": true,
+          "store": true
+        },
+        "properties": {
+          "keepalive": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+    
+
+**EDIT**
+
+We create a new index every hour using the following perl code
+
+    
+    
+    create_index(
+     index   => $index,
+     settings => {
+      _timestamp => { enabled => 1, store => 1 },
+      number_of_shards      => 3,
+      number_of_replicas    => 1,
+     },
+     mappings => {
+      varnish => {
+       _timestamp => { enabled => 1, store => 1 },
+       properties  => {
+        content_length => { type => 'integer' },
+        age => { type => 'integer' },
+        keepalive => { type => 'integer' },
+        host        => { type => 'string', index => 'not_analyzed' },
+        time        => { type => 'string', store => 'yes' },
+    <SNIPPED>
+        location    => { type => 'string', index => 'not_analyzed' },
+    
+       }
+      }
+     }
+    );
+    
+
+With so little informations, I can only guess :  In the mapping you gave,
+keepalive is not explicitely stored and alasticsearch defaults to no. If you
+do not store a field, you can only get it via the complete source, wich is
+stored by default. Or you change, the mapping, adding ("store" : "yes") to
+your field and reindex.
+
+Good luck with ES, It is well worth a few days of learning.
+

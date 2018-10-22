@@ -1,0 +1,38 @@
+25198861 SearchResponse - from and size info in response
+
+I have started to play around with ES, and trying to figure out something with
+the responses and the data which was returned.
+
+I have set up basic environment by following the tutorials on ES
+documentation, and was able to index some sample docs.
+
+When I query ES with:
+
+    
+    
+    TransportClient client = new TransportClient().addTransportAddress(new InetSocketTransportAddress(server.elasticHost, Integer.valueOf(server.elasticPort)));
+      SearchResponse response = client.prepareSearch("testme").setTypes("tester").setQuery(elasticQuery).execute().actionGet();
+    
+
+I got some docs as response but cant find the "from" and "size" ("start" and
+"row" values in Solr, if you are familiar with it)in the JAVA API.
+
+Am I supposed to use some other classes for search retrieval or add some more
+params while I am querying ES? I have also come up with
+[Scroll](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-scroll.html), so is this the way that I can get from - size data?
+
+In your request you haven't set the `from` or `size` parameters, so `from`
+defaults to 0 and `size` defaults to 10. If you want to change the defaults or
+use `from` and `size` for pagination do so in the request.
+
+    
+    
+     SearchResponse response = client.prepareSearch("testme")
+            .setTypes("tester")
+            .setQuery(elasticQuery)
+            .setFrom(21)
+            .setSize(20)
+            .execute().actionGet();
+    
+

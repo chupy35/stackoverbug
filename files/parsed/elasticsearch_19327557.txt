@@ -1,0 +1,22 @@
+19327557 Elasticsearch shard dispursment
+
+I'm still trying to understand how elasticsearch is setup. We have 4 EC2
+servers and a loadbalancer, but looking at the elasticsearch _head plugin, the
+shards look to be scattered a bit. Is this common, or is there something I'm
+missing that I need to look into?
+
+![elastic shards](https://i.stack.imgur.com/H2UoR.png)
+
+**EDIT:**
+
+as javanna said below, this is just default setup. He explains it in amazing
+detail [here in this
+post](https://stackoverflow.com/questions/15694724/shards-and-replicas-in-
+elasticsearch "here")
+
+Looks like you have four shards for your index and two replicas for each shard
+spread over four machines. Each shard exists on two machines. Some machines
+have more shards than others. So, seems fine to me and it looks like you are
+using the default settings. You will probably want to read up on the
+configuration options for this.
+

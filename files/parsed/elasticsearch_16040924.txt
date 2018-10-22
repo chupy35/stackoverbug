@@ -1,0 +1,94 @@
+16040924 Range filter not working
+
+I'm using the elasticsearch search engine and when I run the code below, the
+results returned doesn't match the range criteria(I get items with published
+date below the desired limit):
+
+    
+    
+    #!/bin/bash
+    curl -X GET 'http://localhost:9200/newsidx/news/_search?pretty' -d '{
+    
+        "fields": [
+            "art_text",
+            "title",
+            "published",
+            "category"
+        ],
+        "query": {
+            "bool": {
+    
+                "should": [
+                    {
+                        "fuzzy": {"art_text": {"boost": 89, "value": "google" }}
+                    },
+                    {
+                        "fuzzy": {"art_text": {"boost": 75, "value": "twitter" }}
+                    }
+                ],
+                "minimum_number_should_match": 1
+            }
+        },
+        "filter" : {
+            "range" : {
+                "published" : {
+                    "from" : "2013-04-12 00:00:00"
+                }
+            }
+        }
+    
+    }
+    
+    '
+    
+
+I also tried putting the range clause in a must one, inside the bool query,
+but the results were the same.
+
+Edit: I use elasticsearch to search in a mongodb through a river plugin. This
+is the script I ran to search the mongodb db with ES:
+
+    
+    
+    #!/bin/bash
+    curl -X PUT localhost:9200/_river/mongodb/_meta -d '{
+            "type":"mongodb",
+            "mongodb": {
+                    "db": "newsful",
+                    "collection": "news"
+            },
+        "index": {
+                "name": "newsidx",
+            "type": "news"
+        }
+    }'
+    
+
+Besides this, I didn't create another indexes.
+
+Edit 2:
+
+A view to the es mappings:
+
+    
+    
+    http://localhost:9200/newsidx/news/_mapping
+    
+    published: {
+        type: "string"
+    }
+    
+
+The reason is in your mapping. The published field, which you are using as a
+date, is indexed as a string. That's probably because the [date
+format](http://www.elasticsearch.org/guide/reference/mapping/date-format/) you
+are using is not the default one in elasticsearch, thus the field type is not
+auto-detected and it's indexed as a simple string.
+
+You should change your mapping using the [put mapping
+api](http://www.elasticsearch.org/guide/reference/api/admin-indices-put-
+mapping/). You need to define the published field as a date there, specifying
+the format you're using (can be more than one) and reindex your data.
+
+After that your range filter should work!
+

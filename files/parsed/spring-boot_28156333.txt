@@ -1,0 +1,9 @@
+28156333 Spring-Boot jndi email lookup support
+
+Does spring-boot allow you to define a jndi lookup for mail-server resource? I
+could not find any documentation indicating that it does support it.
+
+There's no support in Spring Boot for looking up a `javax.mail.Session` from
+JNDI. If it's something you'd like to see, please [open an enhancement
+request](https://github.com/spring-projects/spring-boot/issues/new).
+

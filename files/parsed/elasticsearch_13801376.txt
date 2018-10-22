@@ -1,0 +1,45 @@
+13801376 ElasticSearch: Query based on array value
+
+Needed some help. I need to query documents based on the inner values of an
+array.
+
+    
+    
+    {id:1 , version:[1],…} 
+    {id:1 , version:[2],….} 
+    {id:2 , version:[1,2],…}
+    
+
+I needed to do faceted search and also query based on version value. Example
+if i query for version 1, i should get:
+
+    
+    
+    {id:1 , version:[1],…} 
+    {id:2 , version:[1,2],…}
+    
+
+Example if i query for version 2, i should get:
+
+    
+    
+    {id:1 , version:[2],….} 
+    {id:2 , version:[1,2],…}
+    
+
+please help, Karan
+
+this is helpful if data type of version is mapped as string
+
+    
+    
+    curl -XGET 'localhost:9200/<index_name>/<type_name>/_search?pretty=1' -d '
+    {
+      "query":
+      {
+         "query_string":{"query":"1*","fields":["version"]}
+      },
+      "facets":{"version_facet":{"terms":{"field":"version"}}}
+    }'
+    
+

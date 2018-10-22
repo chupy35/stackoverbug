@@ -1,0 +1,3 @@
+30567098
+Query chaning in elasticseacrh
+<p>I have one Index that is <strong>projectRecords</strong> in Elasticsearch.It contains some documents.Each document has one <strong>docType</strong> field,contains "Article", "Generation" like this.There is a relation between Article and Generation.My requirment is&#xA;1) I get all records match <strong>org</strong> field "user" value and <strong>docType</strong> type "Article" value.&#xA;2) Take first query output as input to second query based on this we can filter documents with date.&#xA;But i will do this with one query but i want in query chaining.&#xA;How can do this.&#xA;Thank in advance</p>&#xA;

@@ -1,0 +1,25 @@
+23935370 aggregations causing out of memory elasticsearch
+
+I have an index with some 10m records. When I try to find distincts in one
+field (around 2m) my Java runs out of memory. Can I implement a scan and
+scroll on this aggregation to retrieve the same data in smaller parts.
+
+Thanks
+
+Check that how much RAM you have allocated for ElasticSearch, since it is
+optimized to be super fast it likes to consume lots of memory.
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-
+configuration.html>
+
+I'm not sure if this applies to cardinality aggregations (or are you using
+terms aggregation?), but I got some success with using "doc_values" fielddata
+format (see <http://www.elasticsearch.org/blog/disk-based-field-data-a-k-a-
+doc-values/>), this takes more disk space but keeps less stuff in RAM. How
+many distinct values do you have? Returning back a JSON response on terms
+aggregation with a million distinct values is going to be fairly big.
+Cardinality aggregation just counts the number of distinct values without
+returning their individual values.
+
+You could also try re-indexing your data with a larger number of shards, too
+big shards don't perform as well as a few smaller ones.
+

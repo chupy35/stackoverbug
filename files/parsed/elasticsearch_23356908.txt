@@ -1,0 +1,6 @@
+23356908 Elasticsearch getting data repeatedly
+
+I search data from MYSQL with elasticsearch but when I restart the
+elasticsearch, Then search result comes duplicate. What should I do? Can
+anybody help?
+

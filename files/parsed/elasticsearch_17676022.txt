@@ -1,0 +1,55 @@
+17676022 Delete records from Elasticsearch by query
+
+I am trying to delete specific date records from Elasticsearch. My query is
+the following:
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/twitter/twit/_query' -d '
+    {
+        "filter" : {
+                "range" : {
+                    "date_time" : { "from" : "2012-10-01 00:00:01", "to" : "2013-05-01 11:59:59"}
+                }
+            }
+    }'
+    
+
+but it is not deleting any records. so it is correct one or are there some
+other methods to delete records.
+
+Prior to 1.0, the delete by query does not use filters. The syntax goes
+directly to what is the "query" block in the search API. You need to use the
+[range query](http://www.elasticsearch.org/guide/reference/query-dsl/range-
+query/) instead.
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/twitter/twit/_query' -d '
+    {
+        "range" : {
+            "date_time" : { "from" : "2012-10-01 00:00:01", "to" : "2013-05-01 11:59:59"}
+        }
+    }'
+    
+
+delete by query was deprecated since 2.0. Use scroll/scan to find all document
+ids you want to remove and call delete by ids
+
+> Deprecated in 1.5.3.
+
+>
+
+> "Delete by Query will be removed in 2.0: it is problematic since it silently
+forces a refresh which can quickly cause OutOfMemoryError during concurrent
+indexing, and can also cause primary and replica to become inconsistent.
+Instead, use the scroll/scan API to find all matching ids and then issue a
+bulk request to delete them..
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/1.7/docs-delete-by-
+query.html>
+
+Also there is a [delete-by-
+query](https://www.elastic.co/guide/en/elasticsearch/plugins/current/plugins-
+delete-by-query.html) plugin you can use.
+

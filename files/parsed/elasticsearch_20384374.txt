@@ -1,0 +1,251 @@
+20384374 Elastic search for terms with spaces
+
+I'm having trouble implementing an autocomplete for elasticsearch, here's my
+setup:
+
+Create an analyzer for autocomplete
+
+    
+    
+    curl -XPUT http://localhost:9200/autocomplete/ -d '{
+      "index": {
+        "analysis": {
+          "analyzer": {
+            "placeNameIndexAnalyzer": {
+              "type": "custom",
+              "tokenizer": "keyword",
+              "filter": [
+                "trim",
+                "lowercase",
+                "asciifolding",
+                "left_ngram"
+              ]
+            }
+          },
+          "filter": {
+            "left_ngram": {
+              "type": "edgeNGram",
+              "side": "front",
+              "min_gram": 3,
+              "max_gram": 12
+            }
+          }
+        }
+      }
+    }'
+    
+
+Then I create a type in autocomplete, using the analyzer in the "alias"
+property:
+
+    
+    
+    curl -XPUT http://localhost:9200/autocomplete/geo/_mapping/ -d '{
+      "geo": {
+        "properties": {
+          "application_id": {
+            "type": "string"
+          },
+          "alias": {
+            "type": "string",
+            "analyzer": "placeNameIndexAnalyzer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "object_type": {
+            "type": "string"
+          }
+        }
+      }
+    }'
+    
+
+Afterwards; add a document:
+
+    
+    
+    curl -XPOST http://localhost:9200/autocomplete/geo -d '{
+      "application_id": "982",
+      "name": "Buenos Aires",
+      "alias": [
+        "bue",
+        "buenos aires",
+        "bsas",
+        "bs as",
+        "baires"
+      ],
+      "object_type": "cities"
+    }'
+    
+
+When I run the following:
+
+    
+    
+    curl -XGET 'localhost:9200/autocomplete/geo/_search?q=alias:bs%20as'
+    
+
+result is
+
+    
+    
+    {
+      "took": 2,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 0,
+        "max_score": null,
+        "hits": []
+      }
+    }
+    
+
+and
+
+    
+    
+    curl -XGET 'localhost:9200/autocomplete/geo/_search?q=alias:bs as'  
+    curl: (52) Empty reply from server
+    
+
+But I should be getting my document for in the "alias" field I have a "bs as".
+
+I tried using the `_analyze` API and I get what I think is the correct answer
+with the expected tokens:
+
+    
+    
+    curl -XGET 'localhost:9200/autocomplete/_analyze?analyzer=placeNameIndexAnalyzer' -d 'bs as'
+    
+
+result:
+
+    
+    
+    {
+      "tokens": [
+        {
+          "token": "bs ",
+          "start_offset": 0,
+          "end_offset": 5,
+          "type": "word",
+          "position": 1
+        },
+        {
+          "token": "bs a",
+          "start_offset": 0,
+          "end_offset": 5,
+          "type": "word",
+          "position": 1
+        },
+        {
+          "token": "bs as",
+          "start_offset": 0,
+          "end_offset": 5,
+          "type": "word",
+          "position": 1
+        }
+      ]
+    }
+    
+
+Any Hints?
+
+**EDIT:** when I run analyze with the actual type I get this:
+
+    
+    
+    curl -XGET 'localhost:9200/autocomplete/_analyze?analyzer=placeNameIndexAnalyzer' -d 'bs as'
+    
+
+result:
+
+    
+    
+    {
+      "_index": "autocomplete",
+      "_type": "geo",
+      "_id": "_analyze",
+      "exists": false
+    }
+    
+
+The query_string query that is used on the `q` parameter parses the query
+string first by splitting it on spaces. You need to replace it with something
+else that preserves spaces. The `match` query would be a good choice here. I
+would also use different analyzer for searching - you don't need to apply
+ngram there:
+
+    
+    
+    curl -XPUT http://localhost:9200/autocomplete/ -d '
+    {
+          "index": {
+            "analysis": {
+               "analyzer": {
+                    "placeNameIndexAnalyzer" : {
+                        "type": "custom",
+                        "tokenizer": "keyword",
+                        "filter" : ["trim", "lowercase", "asciifolding", "left_ngram"]
+                    },
+                    "placeNameSearchAnalyzer" : {
+                        "type": "custom",
+                        "tokenizer": "keyword",
+                        "filter" : ["trim", "lowercase", "asciifolding"]
+                    }
+                },
+                "filter": {
+                    "left_ngram": {
+                        "type" : "edgeNGram",
+                        "side" : "front",
+                        "min_gram" : 3,
+                        "max_gram" : 12
+                    }
+                }
+            }
+        }
+    }'
+    curl -XPUT http://localhost:9200/autocomplete/geo/_mapping/ -d '
+    {
+        "geo": {
+            "properties": {
+                "application_id": {
+                        "type": "string"
+                },
+                "alias": {
+                        "type": "string",
+                        "index_analyzer": "placeNameIndexAnalyzer",
+                        "search_analyzer": "placeNameSearchAnalyzer"
+                },
+                "name": { 
+                        "type": "string"
+                },
+                "object_type": { 
+                        "type": "string"
+                }
+            }
+        }
+    }'
+    curl -XPOST "http://localhost:9200/autocomplete/geo?refresh=true" -d '
+    {    
+        "application_id":"982",
+        "name":"Buenos Aires",
+        "alias":["bue", "buenos aires", "bsas", "bs as", "baires"],
+        "object_type":"cities"
+    }'
+    
+    curl -XGET 'localhost:9200/autocomplete/geo/_search' -d '{
+        "query": {
+            "match": {
+                "alias": "bs as"
+            }
+        }
+    }'
+    
+

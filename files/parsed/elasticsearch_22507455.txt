@@ -1,0 +1,39 @@
+22507455 Why does my naive Elasticsearch update fail frequently with a
+document version conflict?
+
+I'm using version 0.9 and I have this very naive approach to update documents,
+which essentially does a compare and swap:  
+(only relevant code is shown)
+
+    
+    
+        for (int i = 0; i < MAX_RETRY; i++) {
+            GetResponse get = client.prepareGet().execute().actionGet();
+            // Assume document already exists
+             try {
+                  client
+                    .prepareIndex()
+                    .setId(id)
+                    .setSource(newDoc)
+                    .setVersion(get.getVersion())
+                    .execute()
+                    .actionGet();
+                    // Successfully updated
+             } catch (VersionConflictEngineException e) {
+                 continue; //retry
+             }
+             throw UpdateFailedException();
+        } 
+    
+
+The code works for most of the updates, but also fails more frequent than I'd
+expect with version conflict. Curiously, it always seems that the server
+document is +1 the expected version when it fails. Is there anything obvious
+that I'm missing?
+
+I understand Elasticsearch has a proper update functionality but I can't use
+this ATM.
+
+Turns out I was just legitimately updating documents very frequently due to a
+bug.
+

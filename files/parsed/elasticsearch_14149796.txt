@@ -1,0 +1,12 @@
+14149796 Is there any way in elasticsearch to get a part of searching result?
+
+I want to know if there is some way to get a part of result in elasticsearch?
+For exmaple, there are 100 searching results and want to get 20 results from
+50 to 70.
+
+You can use `from` and `size` fields on
+[URI](http://www.elasticsearch.org/guide/reference/api/search/uri-
+request.html) or in the search
+[request](http://www.elasticsearch.org/guide/reference/api/search/from-
+size.html).
+

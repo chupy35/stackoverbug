@@ -1,0 +1,12 @@
+23469501 Elasticsearch 200 and Green status - no response
+
+After many trials and errors, here is the pattern: 1 Node: Works perfect 2
+Nodes: root / query show 200, and cluster health is green, but cannot index
+new doc (no response). Search query has no response too. But once I shut down
+one node, everything would work again.
+
+I do make sure that port 9300 firewall is open between the nodes. Am I missing
+other important config? The cluster API reports 2 nodes, so the communication
+should be fine. But is there other factor that prevent new documents from
+indexing in the two nodes?
+

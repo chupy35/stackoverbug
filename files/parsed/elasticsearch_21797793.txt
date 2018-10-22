@@ -1,0 +1,69 @@
+21797793 Specify AND operator for ElasticSearch query in Angular JS
+
+Following is the part of code for querying elasticsearch using angularjs. The
+query bydefault is taking OR if I give "India Delhi" I want the operator to be
+"AND".(like operator: 'AND') How do i add it to the existing function.
+
+Moreover if I have to specify the fuzziness, how do i do it ?
+
+    
+    
+    myServices.factory('searchService', ['es',  function(es) {
+      return {
+        textSearch: function(query){
+          return es.search({
+            index: 'country',
+            type: 'state',
+            q: query
+          })
+        }
+      };
+    }]);
+    
+
+Below is the controller
+
+    
+    
+    var myControllers = angular.module('myControllers', []);
+    
+    myControllers.controller('SearchController', ['$scope', 'es','searchService',
+        function($scope, es, searchService) {
+         $scope.search = function() {
+           var hits = searchService.textSearch($scope.query || '*');
+           hits.then(function(resp) {
+             $scope.results = resp.hits.hits;
+           });
+         };
+    
+        angular.element(document).ready(function () {
+          $scope.search();
+        });
+            }]);
+    
+
+You'd want to make sure to use a Match Query with operator set to _and_ , [see
+the
+docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-match-query.html).
+
+In your case, this would be something along the following lines:
+
+    
+    
+    return es.search({
+            index: 'country',
+            type: 'state',
+            q: 
+            {"match" : {
+                 "field" : {
+                  "query" : query,
+                  "operator" : "and"
+               }
+             }
+           }
+          })
+    
+
+Set "field" to the field you want to search in
+

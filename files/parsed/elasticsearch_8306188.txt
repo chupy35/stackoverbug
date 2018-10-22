@@ -1,0 +1,75 @@
+8306188 Query DSL - Misunderstanding of filters
+
+I have a query that looks like this:
+
+    
+    
+    {
+      "query": {
+        "constant_score": 
+          "filter": {
+            "missing": {
+              "field": "parent_id"
+            }
+          }
+      }
+    },
+    "size": limit,
+    "from": offset
+    }
+    
+
+My type has a `parent_id` and a `wall_id` field. How can I modify this query
+so that I can get all types that do not have a `parent_id` and do not have a
+`wall_id`? I can't seem to decipher it from the docs. Thanks for any help
+offered!
+
+**UPDATE**
+
+I have the following query that works, but I don't like the catchall `query`
+on the title. Is there a way to do this without having to add a "catchall?
+
+    
+    
+    {
+      "query":{
+      "filtered":{
+         "query":{
+            "field":{ "title":"*" }
+         },
+         "filter":{
+            "and":{
+               "filters":[
+                  {
+                     "missing":{ "field":"parent_id" }
+                  },
+                  {
+                     "missing":{ "field":"wall_id" }
+                  }
+               ]
+            }
+         }
+      }
+     }, "size":10, "from":0
+    }
+    
+
+You're almost there, you just need to use the `and` filter under your
+`constant_score` query:
+
+    
+    
+    {
+      "query": {
+        "constant_score": {
+          "filter": {
+            "and":[
+              { "missing":{ "field":"parent_id" }},
+              { "missing":{ "field":"wall_id" }}
+            ]
+          }
+        }
+      }
+    }
+    
+

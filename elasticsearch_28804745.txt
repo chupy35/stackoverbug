@@ -1,0 +1,4 @@
+28804745
+Elasticsearch view indexed data
+<p>I have filter which replace characters </p>&#xA;&#xA;<pre><code>                        char_filter:&#xA;                            lt_characters:&#xA;                                type: mapping&#xA;                                mappings: ["a=&gt;bbbbbb", "c=&gt;tttttt", "ddddddd=&gt;k" ]&#xA;</code></pre>&#xA;&#xA;<p>I'm add this filter to index, now how to check does this filter work, where I can found indexed data ?</p>&#xA;&#xA;<p>I mean exactly view replacments.</p>&#xA;
+<p>To see what tokens are created with your <code>char_filter</code> you can use the <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-analyze.html" rel="nofollow">Analyze API</a>.</p>&#xA;&#xA;<pre><code>curl -XGET 'localhost:9200/_analyze?char_filters=lt_characters' -d 'this is a test'&#xA;</code></pre>&#xA;

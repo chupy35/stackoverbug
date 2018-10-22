@@ -1,0 +1,54 @@
+23394220 Elasticsearch High CPU When Idle
+
+I'm fairly new to Elasticsearch and I've bumped into an issue that I'm having
+difficulties in even troubleshooting. My Elasticsearch (1.1.1) is currently
+spiking the cpu even though no searching or indexing is going on. CPU usage
+isn't always at 100%, but it jumps up there quite a bit and load is very high.
+
+Previously, the indices on this node ran perfectly fine for months without any
+issue. This just started today and I have no idea what's causing it.
+
+The problem persists even after I restart ES and I even restarted the server
+in pure desperation. No effect on the issue.
+
+Here are some stats to help frame the issue, but I'd imagine there's more
+information that's needed. I'm just not sure what to provide.
+
+Elasticsearch 1.1.1  
+Gentoo Linux 3.12.13  
+java version "1.6.0_27"  
+OpenJDK Runtime Environment (IcedTea6 1.12.7) (Gentoo build 1.6.0_27-b27)  
+OpenJDK 64-Bit Server VM (build 20.0-b12, mixed mode)  
+
+One node, 5 shards, 0 replicas
+
+32GB RAM on system, 16GB Dedicated to Elasticsearch  
+RAM does not appear to be the issue here.
+
+Any tips on troubleshooting the issue would be appreciated.
+
+Edit: Info from top if it's helpful at all.
+
+    
+    
+    top - 19:56:56 up  3:22,  2 users,  load average: 10.62, 11.15, 9.37
+    Tasks: 123 total,   1 running, 122 sleeping,   0 stopped,   0 zombie
+    %Cpu(s): 98.5 us,  0.6 sy,  0.0 ni,  0.7 id,  0.2 wa,  0.0 hi,  0.0 si,  0.0 st
+    KiB Mem:  32881532 total, 31714120 used,  1167412 free,   187744 buffers
+    KiB Swap:  4194300 total,        0 used,  4194300 free, 12615280 cached
+    
+      PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                  
+     2531 elastic+  20   0  0.385t 0.020t 3.388g S 791.9 64.9 706:00.21 java  
+    
+
+As Andy Pryor mentioned, the background merging might have been what was
+causing the issue. Our index rollover had been paused and two of our current
+indices were over 200GB. Rolling them over appeared to have resolved the issue
+and we've been humming along just fine since.
+
+Edit: The high load when seemingly idle was determined to have been caused by
+merges on several very large indices that were not being rolled over on a
+weekly basis. This was a failure of an internal process to roll over indices
+on a weekly basis. After addressing this oversight the merge times were short
+and the high load subsided.
+

@@ -1,0 +1,65 @@
+25383650 Get crossfields match functionality using SimpleQueryString
+
+I have a large MultiSearch query using the Nest api. For each subquery I'm
+using Simple Query String so I can allow for wildcards (* and ?) and the
+exclusion character (-). However I've also found that replacing simple query
+string with a Multimatch query that uses cross-fields is slightly more
+accurate. If there a way to get both features in one? (crossfields and
+wildcards)
+
+Here is a snippet of my query:
+
+    
+    
+    result = esClient
+        .MultiSearch(search => search
+            .Search<ElasticSearchCompany>(a => a
+                .Query(q => q
+                    .MultiMatch(query=>query  //This line can be replaced with .SimpleQueryString(query=>query...
+                        .Type(TextQueryType.CrossFields)
+                        .OnFieldsWithBoost(b => b
+                            .Add(f => f.Summary, 1.6)
+                            .Add(f => f.Summary.Suffix("ngram"), 1.5)
+                            .Add(f => f.Description, 1.0)
+                            .Add(f => f.City.Suffix("ngram"), 1.1)
+                            .Add(f => f.City, 1.0))
+                        .Query(searchQuery))))
+            .Search<ElasticSearchContact>(a => a
+                .Query(q => q
+                    .MultiMatch(query => query
+                        .Type(TextQueryType.CrossFields)
+                        .OnFieldsWithBoost(b => b
+                            .Add(f => f.Summary, 1.6)
+                            .Add(f => f.Summary.Suffix("ngram"), 1.5)
+                            .Add(f => f.Description, 1.0)
+                            .Add(f => f.Email, 1.1)
+                            .Add(f => f.Email.Suffix("ngram"), 1.0)
+                            .Add(f => f.Title, 1.1)
+                            .Add(f => f.Title.Suffix("ngram"), 1.0))
+                        .Query(searchQuery))))
+            .Search<ElasticSearchCorporation>(a => a
+                .Query(q => q
+                    .MultiMatch(query => query
+                        .Type(TextQueryType.CrossFields)
+                        .OnFieldsWithBoost(b => b
+                            .Add(f => f.Summary, 1.6)
+                            .Add(f => f.Summary.Suffix("ngram"), 1.5)
+                            .Add(f => f.Description, 1.0))
+                        .Query(searchQuery))))
+    
+                        //......Much longer query, but you get the idea
+    
+
+EDIT:  Here's the code in json: Request url:
+`"http://servername:9200/_msearch"`
+
+    
+    
+    {"index":"indexName","type":"Company"}
+    {"size":100,"query":{"multi_match":{"type":"cross_fields","query":"test","fields":["summary^1.6","summary.ngram^1.5","description^1","city.ngram^1.1","city^1"]}}}
+    {"index":"indexName","type":"Contact"}
+    {"size":100,"query":{"multi_match":{"type":"cross_fields","query":"test","fields":["summary^1.6","summary.ngram^1.5","description^1","email^1.1","email.ngram^1","title^1.1","title.ngram^1"]}}}
+    {"index":"indexName","type":"Corporate Group"}
+    {"size":100,"query":{"multi_match":{"type":"cross_fields","query":"test","fields":["summary^1.6","summary.ngram^1.5","description^1"]}}}
+    
+

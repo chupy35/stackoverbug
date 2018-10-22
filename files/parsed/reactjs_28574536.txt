@@ -1,0 +1,119 @@
+28574536 Reactjs Component Structure and creating new entries for Child
+Components
+
+I have a Categories component that gets it's data (an array of flat object
+literals) and then lists the data in a child Category component:
+
+# Categories.jsx
+
+    
+    
+    var Categories = React.createClass({
+        render: function () {
+    
+            // this.state.categories is already defined as is array of objects
+            // example: [{categoryID: 1, categoryName: 'Test', ...},]
+            this.state.categories.map(function (category) {
+                categories.push(<Category category={category} key={category.categoryID} />);
+            });
+    
+            return (
+                <div className="categories">
+                    {categories}
+                </div>
+            );
+        }
+    });
+    
+
+# Category.jsx
+
+    
+    
+    var Category = React.createClass({
+        render: function () {
+            return (
+                <div className="category" id={this.props.category.categoryID}>
+                    <div className="toggle">
+                        <input type="checkbox" className="toggle-category" checked={this.props.category.isActive} />
+                    </div>
+                    <div className="name">
+                        {this.props.category.categoryName}
+                    </div>
+                </div>
+            );
+        }
+    });
+    
+
+I need to make it so that when the user Clicks on a category (or an `edit`
+button in the category that has yet to be put in) I need to load that data
+into a `form` that is populated with the `Category` props (as dictated to it
+by the `Categories` state);
+
+However, every time I've tried (via state, props, etc.) the `defaultValue` is
+never initialized with the correct data as the `defaultValue` is usually empty
+because I'm getting the category data via Ajax.
+
+# EditCategories.jsx
+
+    
+    
+    var EditCategory = React.createClass({
+        render: function () {
+    
+            return (
+                <div>
+                    <input type="text" defaultValue={this.props.category.categoryID} />
+                </div>
+            );
+        }
+    
+    });
+    
+
+which is in turn mounted like this in `Categories.jsx`:
+
+    
+    
+    <EditCategory category={this.state.categoryBeingEdited} />;
+    
+
+I can successfully get the `categoryBeingEdited` to update via click events in
+`Categories.jsx` and dispatching a `CATEGORY_SELECTED` action, but I'm not
+sure how to allow editing of the state of `categoryBeingEdited` as the mount
+of `EditCategory` only ever happens once, so loading into text field with a
+previously set `defaultValue` is, again, impossible.
+
+This is one of my least favorite things about React. The solution we use is to
+not use `defaultValue` and set `value` to a state variable when the input
+changes. For example (note that this is untested):
+
+    
+    
+    var EditCategory = React.createClass({
+    
+      getInitialState: function() {
+        return {categoryID: this.props.category.categoryID};
+      },
+    
+      componentWillReceiveProps: function(nextProps) {
+        this.setState({categoryID: nextProps.category.categoryID});
+      },
+    
+      handleChange: function(event) {
+        this.setState({categoryID: event.target.value});
+      },
+    
+      render: function () {
+    
+        return (
+            <div>
+                <input type="text" onChange={this.handleChange} value={this.state.categoryID} />
+            </div>
+        );
+      }
+    
+    });
+    
+

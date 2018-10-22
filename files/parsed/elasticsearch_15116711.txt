@@ -1,0 +1,82 @@
+15116711 searching child-parent in elasticsearch
+
+If I have a child-parent mapping in elastic search. How would I go about
+searching for parents based on statistics of their children.
+
+Example:
+
+    
+    
+    {
+      'parent':{
+        '_id':{
+          'path':'parent_id'
+        },
+        'properties':{
+          'parent_id':{
+            'type':'string'
+          },
+          'name':{
+            'type':'string'
+          },
+          'job':{
+            'type':'string'
+          },
+          'age':{
+            'type':'integer'
+          },
+    
+        }
+      }
+    }{
+      'child':{
+        '_parent':{
+          'type':'parent'
+        },
+        '_id':{
+          'path':'child_id'
+        },
+        'properties':{
+          'child_id':{
+            'type':'string'
+          },
+          'name':{
+            'type':'string'
+          },
+          'favorite_toy':{
+            'type':'string'
+          },
+          'age':{
+            'type':'integer'
+          },
+    
+        }
+      }
+    }
+    
+
+How would I:
+
+  1. get all the parents that have a child named 'bob'?
+  2. count all the parents that have a child named 'bob'?
+  3. get all the parents that have more than two children?
+  4. get all the parents that have 2 children older than 5?
+
+1) and 2) - you can simply wrap your query into has_child query:
+
+    
+    
+    {
+      "has_child":{
+        "type":"child",
+        "query":{
+          "match":{
+            "name":"bob"
+          }
+        }
+      }
+    }
+    
+
+3) and 4) - I don't think this is possible at the moment.
+

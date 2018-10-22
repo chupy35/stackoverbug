@@ -1,0 +1,143 @@
+19709155 Exact match a field in Elasticsearch
+
+In each of the documents I am indexing I have a field called "permalink" which
+I would like to exact match on.
+
+An example document:
+
+    
+    
+    {
+        "entity_type": "company",
+        "entity_id": 1383221763,
+        "company_type": "developer",
+        "name": "Runewaker Entertainment",
+        "permalink": "runewaker-entertainment"
+    }
+    
+
+The mapping for these documents is:
+
+    
+    
+    {
+        "properties": {
+            "entity_id": {
+                "type": "integer",
+                "include_in_all": false
+            },
+            "name": {
+                "type": "string",
+                "include_in_all": true,
+            },
+            "permalink": {
+                "type": "string",
+                "include_in_all": true,
+                "index": "not_analyzed"
+            },
+            "company_type": {
+                "type": "string",
+                "include_in_all": false,
+                "index": "not_analyzed"
+            }
+        }
+    }
+    
+
+When I run the following query then I don't get any hits:
+
+    
+    
+    POST /companies/company/_search HTTP/1.1
+    Host: localhost:8082
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                },
+                "filter": {
+                    "term": { "permalink": "runewaker-entertainment" }
+                }
+            }
+        }
+    }
+    
+
+but I get match with this query:
+
+    
+    
+    POST /companies/company/_search HTTP/1.1
+    Host: localhost:8082
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                },
+                "filter": {
+                    "term": { "permalink": "runewaker" }
+                }
+            }
+        }
+    }
+    
+
+It appears any permalink with a hyphen in it results in a failed query but I
+was under the impression that if the mapping for a property has the index set
+to `not_analyzed` then ElasticSearch wouldn't analyze the field at all.
+
+What should the correct query be?
+
+Thank you
+
+* * *
+
+**UPDATE:**
+
+getMapping result on the Companies index:
+
+    
+    
+    {
+      "companies" : {
+        "company" : {
+          "properties" : {
+            "company_type" : {
+              "type" : "string"
+            },
+            "entity_id" : {
+              "type" : "long"
+            },
+            "entity_type" : {
+              "type" : "string"
+            },
+            "name" : {
+              "type" : "string"
+            },
+            "node_id" : {
+              "type" : "long"
+            },
+            "permalink" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    }
+    
+
+What you described is correct.
+
+I tested and it works as expected. So you probably have some problem with your
+index. Maybe you indexed the document before you set the mapping?  
+Try to do it again -  
+delete your index or create a new one.  
+do a putMapping with your mapping.  
+index the document.
+
+The search should work as expected.
+

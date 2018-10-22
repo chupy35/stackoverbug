@@ -1,0 +1,76 @@
+22748200 Elasticsearch high memory usage
+
+Iam using elasticsearch on our development machine currently. Be we want to
+move productive in a few weeks. Today i typed "top" and i was shocked what i
+was seeing.
+
+    
+    
+     PID   USER      PR   NI  VIRT  RES   SHR S  %CPU %MEM    TIME+   COMMAND
+     28972 elastics  20   0   27.4g 1.4g  39m S  186  4.3     2:11.19 java
+    
+
+Is this normal for elasticsearch to use so much memory. I never configured
+something that way. What is the perfect configuration if we have up to 5
+indices on one machine with 32 GB of RAM. How many Replicas/Shards should i
+configure? How can i control the memory usage?
+
+I dont want to get the same problems we have with Solr => Unexpected
+Shutdowns.
+
+Thanks for your help!
+
+After Es 1.0 version. the default file storage mode is
+[Mmapfs](http://elasticsearch-users.115913.n3.nabble.com/mlockall-and-mmapfs-
+store-type-clarification-td4039211.html).the mamapfs stores data in HD.But it
+use virtual memory concept.though data are present in HD,it looks like
+fetching data from RAM.It is more faster than other file system.
+
+So the mmapfs might look consuming more space and It blocks some address
+space.But its is healthy and no problem at all.
+
+To configure **optimal no of shards and replicas** [refer
+this](https://stackoverflow.com/questions/22544461/elasticsearch-optimal-
+number-of-shards-per-node/22558656#22558656).
+
+To get rid of Unexpected shutdowns and data loss .configure following terms..
+
+1) **ulimit** for no of file to be open for certain user must increase as much
+as can.
+
+2) No of threads should be pre configured..following are some example
+configurations
+
+    
+    
+        # Search pool
+    threadpool.search.type: fixed
+    threadpool.search.size: 5
+    threadpool.search.queue_size: 200
+    
+    # Bulk pool
+    threadpool.bulk.type: fixed
+    threadpool.bulk.size: 5
+    threadpool.bulk.queue_size: 300
+    
+    # Index pool
+    threadpool.index.type: fixed
+    threadpool.index.size: 5
+    threadpool.index.queue_size: 200
+    
+    # Indices settings
+    indices.memory.index_buffer_size: 30%
+    indices.memory.min_shard_index_buffer_size: 12mb
+    indices.memory.min_index_buffer_size: 96mb
+    
+    # Cache Sizes
+    indices.fielddata.cache.size: 15%
+    indices.fielddata.cache.expire: 6h
+    indices.cache.filter.size: 15%
+    indices.cache.filter.expire: 6h
+    
+    # Indexing Settings for Writes
+    index.refresh_interval: 30s
+    index.translog.flush_threshold_ops: 50000
+    
+

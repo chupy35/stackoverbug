@@ -1,0 +1,151 @@
+23694073 elasticsearch sort not working with partial_fields
+
+I have this kind of sort:
+
+    
+    
+    "sort": [
+        {
+            "_script": {
+                "script": "return doc.score*10 + doc['field2'].value",
+                "type": "number",
+                "order": "asc"
+            }
+        }
+    ]
+    
+
+partial fields:
+
+    
+    
+    "filter": {
+            "partial_fields": {
+                "fields": {
+                    "exclude": [
+                        "field5*"
+                    ]
+                }
+            }
+        }
+    
+
+Problem is that sort does not work if partial_fields is set.. is there a
+reason for this ? or how do I have to remove partial_fields in order to get
+sort working ?
+
+here's the whole query:
+
+    
+    
+    {
+    "size": 10,
+    "query": {
+        "filtered": {
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "text": {
+                                "name_en": {
+                                    "query": "testing",
+                                    "operator": "or",
+                                    "boost": 20
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "filter": {
+                "and": [
+                    {
+                        "term": {
+                            "_type": "test"
+                        }
+                    }
+                ]
+            }
+        },
+        "filter": {
+            "partial_fields": {
+                "fields": {
+                    "exclude": [
+                        "field2*"
+                    ]
+                }
+            }
+        }
+    },
+    "sort": [
+        {
+            "_script": {
+                "script": "return doc.score*1000 + doc['field2'].value",
+                "type": "number",
+                "order": "asc"
+            }
+        }
+    ]
+    }
+    
+
+Thanks.
+
+According to the [documentation for partial
+fields](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-fields.html#partial), I do not see the usage as being nested under a
+`filter` node in the JSON request. I think this could be your issue, try
+moving the `partial_fields` section up to the same level as `sort` like the
+following:
+
+    
+    
+    {
+    "size": 10,
+    "query": {
+        "filtered": {
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "text": {
+                                "name_en": {
+                                    "query": "testing",
+                                    "operator": "or",
+                                    "boost": 20
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "filter": {
+                "and": [
+                    {
+                        "term": {
+                            "_type": "test"
+                        }
+                    }
+                ]
+            }
+        }    
+    },
+    "partial_fields": {
+           "fields": {
+               "exclude": [
+                   "field2*"
+               ]
+           }
+    },
+    "sort": [
+        {
+            "_script": {
+                "script": "return doc.score*1000 + doc['field2'].value",
+                "type": "number",
+                "order": "asc"
+            }
+        }
+    ]
+    } 
+    
+

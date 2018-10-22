@@ -1,0 +1,60 @@
+11211999 Using AngularJS Controllers created with
+angular.module().controller()
+
+I am still very new to AngularJS and am working through setting up my first
+application. I would like to be able to do the following:
+
+    
+    
+    angular.module('App.controllers', [])
+      .controller('home', function () {
+        $scope.property = true;
+      }]);
+    
+    angular.module('App', ['App.controllers'])
+      .config(['$routeProvider', function($routeProvider) {
+        $routeProvider.when('/', {templateUrl: 'partials/home.html', controller: home});
+      }]);
+    
+
+Using this setup the following error is generated:
+
+    
+    
+    Uncaught ReferenceError: home is not defined from App
+    
+
+My question is: How can I register controllers using
+`angular.module.controller()` (or `$controllerProvider.register()` directly)
+and use the registered controller elsewhere in my app.
+
+My motivation: I would like to avoid using either global constructor functions
+as my controllers (as most of the examples on angularjs.org use) or complex
+namespacing. If I can register and use controllers as single variable names
+(that are not then put in the global scope) that would be ideal.
+
+Try using a string identifier.
+
+`routeProvider.when('/', {templateUrl: 'partials/home.html', controller:
+'home'});`
+
+When you use a literal, it is looking for a variable called `home`, but that
+doesn't exist in this case.
+
+If you are getting controller is not defined error you have to write your
+controller name within the quotes.
+
+or define your controller like this
+
+    
+    
+    function controllerName()
+    {
+       //your code here
+    }
+    
+
+refer this: [Uncaught ReferenceError:Controller is not defined in
+AngularJS](http://coding-issues.blogspot.in/2013/07/uncaught-
+referenceerrorcontroller-is.html)
+

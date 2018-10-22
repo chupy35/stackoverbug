@@ -1,0 +1,43 @@
+21959298 Elasticsearch questions: search, performance and caching
+
+I'm new to elasticsearch, have been reading their API and some things are not
+clear to me
+
+**1) It is said that filters are cached.** what does that mean? if i send a
+`query` with a `filter` on it, what gets cached? The results of that query? If
+i send a different `query` with the same `filter`, will the cache help me
+somehow?  
+I know the question is kinda vague, but so is ElasticSearch's documentation
+for this.
+
+**2)** Is there a real **performance difference between a query matching** a
+term X to the `"_all"` field or to a specific field? As far i understand, both
+queries will be compared against all documents that contain X in **one** of
+their fields, and the only difference is in how many fields will be matched
+against X, in these documents. is that correct?
+
+1) For your first question take a look at this
+[link](http://www.elasticsearch.org/blog/all-about-elasticsearch-filter-
+bitsets/).  To quote from the post "Filters don’t score documents – they
+simply include or exclude. If a document matches a filter, it is represented
+with a one in the BitSet; otherwise a zero. This means that Elasticsearch can
+store an entire segment’s filter state (“who matches this particular filter?”)
+in a single, compact BitSet.
+
+The first time Elasticsearch executes a filter, it parses Lucene segment data
+structures to determine what matches your filter. Instead of throwing away
+this information, it caches it inside a BitSet.
+
+The next time the same filter is executed, Elasticsearch can reference the
+compact BitSet instead of the Lucene segments. This has huge performance
+benefits."
+
+2) "The idea of the _all field is that it includes the text of one or more
+other fields within the document indexed. It can come very handy especially
+for search requests, where we want to execute a search query against the
+content of a document, without knowing which fields to search on. **This comes
+at the expense of CPU cycles and index
+size**."[link](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+all-field.html) So if you know what fields you are going to query use
+specifics fields to search on.
+

@@ -1,0 +1,36 @@
+24700611 Exclude some documents, wrong query
+
+I'm using this query to get some documents:
+
+    
+    
+        $rawQuery = array(
+            'query' => array(
+                'custom_score' => array(
+                    'query'  => array(
+                        'bool' => array(
+                            'must'     => array(
+                                "terms"=> ...
+                            )                       
+                        ),
+                    ),
+                    'script' => "_score * ...."
+                )
+            ),
+            'from'  => $from,
+            'size'  => $size,
+        );
+    
+
+What I'd like is including something like this:
+
+    
+    
+    'must_not' => array('terms' => array('is_something' => 'no')),
+    
+
+but I don't figure out where I should put this, I tried in the same level of
+"must", but it didn't work
+
+In the must_not I changed the "terms" for "term" and worked.
+

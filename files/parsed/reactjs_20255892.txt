@@ -1,0 +1,51 @@
+20255892 How to listen for changes in prop state in React.js?
+
+I am porting over a Backbone.View into React. I might be missing something,
+but I cannot figure out the idiomatic way to make the state of a component
+dependent on the states of their sibling. For example, say that I have a
+component like this:
+
+    
+    
+    <Timeline>
+      <Page selected="true" onClick={this.handleClick} />
+      <Page selected="false" onClick={this.handleClick}/>
+    </Timeline>
+    
+
+And let's say all handleClick does it to `setState({selected: true})`. My
+question is how do I make sure that the state of the siblings of this
+component are set to false before it is set to true.
+
+My ideal solution would be to listen for changes in prop state and forceRender
+the sub-components from the Timeline component, but I don't know if this is an
+accepted approach.
+
+I am also looking for alternative ways to implement this component, since I
+understand the [recommended way to decompose the
+components](http://facebook.github.io/react/docs/interactivity-and-dynamic-
+uis.html#what-components-should-have-state) is to keep them as stateless as
+possible to ensure they can be reused elsewhere.
+
+In cases where siblings seem to have interdependent state, you'll want to
+hoist up the relevant pieces of state up to the parent component.
+
+In this case, you probably want to store `selectedPage` on the parent's state
+object, causing the render method to look like
+
+    
+    
+    <Timeline>
+      <Page selected={this.state.selectedPage === 1} onClick={this.handleClick} />
+      <Page selected={this.state.selectedPage === 2} onClick={this.handleClick} />
+    </Timeline>
+    
+
+or similar. When you want to change the selected page, simply change the
+`selectedPage` value stored on the parent, possibly from within a callback
+passed to the children.
+
+By following this pattern, you can ensure that the two pages are always in
+sync with each other -- each time the parent rerenders the props will be
+updated simultaneously on the two children.
+

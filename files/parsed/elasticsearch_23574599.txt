@@ -1,0 +1,48 @@
+23574599 Is it possible to eliminate "empty" facets with Elastic Search?
+
+I've finally managed to get Elastic Search indexing to work the way I want it
+to work, indexing the raw values of certain fields using subfields and
+`not_analyzed`. The facets are what I expect, however, in some cases, due to
+the source data having null/empty values for those fields, I get results like
+this in the facets section:
+
+    
+    
+      "things": {
+         "_type": "terms",
+         "missing": 187,
+         "total": 12214,
+         "other": 10608,
+         "terms": [
+            {
+               "term": "foo",
+               "count": 912
+            },
+            {
+               "term": "",
+               "count": 532
+            },
+            {
+               "term": "bar",
+               "count": 37
+            }
+         }
+      }
+    
+
+Note the "" in the second item. I can see why ElasticSearch wouldn't
+automatically exclude this, as one might want to know how many documents don't
+have the field. But for my purposes I'd like to just not have this returned.
+
+Is there some way that I can configure ElasticSearch to ignore these, either
+in the indexing or in the query?
+
+Try putting
+
+    
+    
+            "exclude" : ""
+    
+
+in your aggregation terms
+

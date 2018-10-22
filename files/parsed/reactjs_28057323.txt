@@ -1,0 +1,85 @@
+28057323 Update react component on Timer in external object
+
+I'm building a simple game in react. I assume that [this
+example](http://cjlarose.com/2014/01/09/react-board-game-tutorial.html) has it
+right in using react as the view layer ONLY, and putting all the game logic in
+it's own, external object. Is that correct?
+
+In that example, the game is only updated via the user clicking the screen -
+so, it's always interaction with react components themselves that trigger
+updates to the game. In my example, the game can also be updated based on a
+timer (which I would think should live within the game object itself, not in a
+react component).
+
+My question is, how should I update a react component, each time an external
+timer (within my game object) fires?
+
+The code below demonstrates how the board game example that I linked to
+handles updates to the game state - basically, by passing
+`this.onBoardUpdate.bind(this)` to its child component, which can call that
+function to update the board game.
+
+    
+    
+    var ContainerView = React.createClass({
+        getInitialState: function() {
+            return {'board': this.props.board};
+        },
+        onBoardUpdate: function() {
+            this.setState({"board": this.props.board});
+        },
+        render: function() {
+            return (
+                <div>
+                    <AlertView board={this.state.board} />
+                    <PassView board={this.state.board} />
+                    <BoardView board={this.state.board} 
+                        onPlay={this.onBoardUpdate.bind(this)} />
+                </div>
+            )
+        }
+    });
+    
+    var board = new Board(19);
+    
+    React.renderComponent(
+        <ContainerView board={board} />,
+        document.getElementById('main')
+    );
+    
+
+So, for my 'update on timer' issue, solutions I can think of are:
+
+a) Have the timer live in the game object, and just re-render the whole
+component on each tick
+
+b) Have the timer live in the game object. At some point, pass a function from
+the react component back into the game object, (kinda like the example above,
+which passes `this.onBoardUpdate.bind(this)`) so that the game can update the
+react component itself.
+
+c) Have the timer live in the react component, and the timer calls the `tick`
+function on the game object, then updates it's own state. This means the game
+object itself will know how to `tick`, but not _when_ to `tick`.
+
+None of these seem very tidy to me. Which is best? Or is there a better way?
+
+Lastly, in the above example, it somehow seems funny that the `onBoardUpdate`
+method simply sets `board` within the component's state to the value of
+`board` within the components prop's: `this.setState({"board":
+this.props.board});`. Is this a normal pattern?
+
+(in case you hadn't guessed, I'm brand new to react!)
+
+It is probably best to have the timer live in the game object, and have it
+"re-render the whole component on each tick." The great benefit of React is
+that you just tell it what to render, and it determines the minimal number of
+changes it needs to make to the DOM to get to that point. As a result, re-
+renders are extremely fast. Your React components should be concerned with how
+to render the view given particular this.state and this.props, not how to
+update when they change.
+
+That said, if only one of the components here is affected by the timer
+(PassView, say), then you might want it to "own" the timer state, rather than
+the ContainerView component.
+

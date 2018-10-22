@@ -1,0 +1,80 @@
+21758103 React: Passing Props to Descendants
+
+Is there a recommended pattern for passing props to descendant components in
+React?
+
+Below, I'm passing the prop `callback` to a child component:
+
+    
+    
+    Master = React.createClass({
+      render: function() {
+        return (
+          <div>
+            <ListComp items={this.props.items} callback={this.handleClick} />
+          </div>
+        );
+      }
+    });
+    
+    ListComp = React.createClass({
+      render: function() {
+    
+        this.props.items.forEach(function(item) {
+          items.push(<ItemView item={item} callback={this.props.callback} />);
+        }, this);
+    
+        return (
+          <ul>{items}</ul>
+        );
+      }
+    });
+    
+
+And then the `callback` prop gets handed down to the descendant component:
+
+    
+    
+    ItemComp = React.createClass({
+      render: function() {
+        return (
+          <li><a onClick={this.handleClick} href="#">Link</a></li>
+        );
+      },
+    
+      handleClick: function(e) {
+        e.preventDefault();
+        this.props.callback();
+      }
+    });
+    
+
+Is it correct to pass the prop down twice like this or should I be referencing
+its inheritance somehow?
+
+I see a `transferPropsTo` method in the docs, and from logging it looks like I
+could get to `callback` from the descendant via `this.props.__owner__.props`
+but those double-double underscores make me think I shouldn't.
+
+Yes, this is idiomatic. Think of each component as a function whose arguments
+are the props – with that perspective, passing around the props explicitly
+seems a lot more normal. We've found that it makes things more maintainable to
+have everything be explicit so you can see what all the inputs to a component
+are and exactly what you're passing.
+
+(A future version of React will probably include a feature called "contexts"
+which makes it possible to pass things down implicitly, but it will probably
+make code harder to reason about so I'd still favor explicitness almost all of
+the time.)
+
+**UPDATE** (not by original author)
+
+The documentation has finally been added (it was added sometime between summer
+2015 and summer 2016, probably with release 0.14):
+
+[Official React Context
+Documentation](https://facebook.github.io/react/docs/context.html).
+
+Note that this is also how [`react-redux`](https://github.com/reactjs/react-
+redux) simplifies passing of stores through the hierarchy.
+

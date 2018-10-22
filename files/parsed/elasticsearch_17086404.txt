@@ -1,0 +1,13 @@
+17086404 Using _create in bulk operation
+
+I know I can use the optype to only index a document if it does not exists.
+for example:
+
+    
+    
+    curl -XPUT 'http://localhost/my_index/my_doc/some_id/_create' -d '{"hello":"world"}'
+    
+
+but what if I want to do this using the bulk API. how do I insert the _create
+flag there?
+

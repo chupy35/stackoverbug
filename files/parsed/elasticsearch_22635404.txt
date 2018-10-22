@@ -1,0 +1,58 @@
+22635404 Elasticsearch - Match string OR empty value
+
+I have to check if a field matches a specific text OR is empty. Is it possible
+to do that?
+
+Thank you.
+
+You can achieve this by using the
+[missing](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-missing-filter.html) filter. For example:
+
+    
+    
+    POST /my_index/items
+    {
+        "field1": "value1"
+    }
+    
+    POST /my_index/items
+    {
+        "field1": "value2"
+    }
+    
+    POST /my_index/items
+    {
+        "field1": ""
+    }
+    
+    POST /my_index/_refresh
+    
+    POST /my_index/_search
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "or": {
+                   "filters": [
+                      {
+                         "term": {
+                            "field1": "value1"
+                         }
+                      },
+                      {
+                         "missing": {
+                            "field": "field1"
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    }
+    
+

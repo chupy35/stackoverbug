@@ -1,0 +1,122 @@
+22235606 Elasticsearch query on fields with mulitple values, one match scored
+equal
+
+I have an index that is storing some fields as arrays as they could have
+multiple values, like first/last names as we keep historical data on maiden
+name, nickname ect
+
+    
+    
+         {
+            "_index": "structured",
+            "_type": "entity",
+            "_id": "0000230799",
+            "_score": 1,
+            "_source": {
+               "FIRST_NAME": [
+                  "Deborah",
+                  "Debbie"
+               ],
+    
+               "LAST_NAME": [
+                  "Loverde",
+                  "Frogameni"
+               ]
+            }
+         },
+         {
+            "_index": "structured",
+            "_type": "entity",
+            "_id": "0000309483",
+            "_score": 1,
+            "_source": {
+               "FIRST_NAME": [
+                  "Anthony",
+                  "Tony"
+               ],
+               "LAST_NAME": "Frogameni",
+         },
+    
+
+however, when i do a search where a doc has more than one value on the
+property, it will give a lower score than a doc that only had one value on the
+property that matched
+
+using the index above, it scores the second record higher, due to the first
+record having two last names versus the second record's one
+
+how can i say if i match one value on a field with multiple values, it is
+scored the same  as a field with only one value? like max i need matched here
+is 1
+
+    
+    
+       POST /structured/entity/_search?explain=true
+        {
+         "query": { 
+            "bool":{
+                "should":[
+                { 
+    
+                       "match_phrase_prefix":{
+                        "FIRST_NAME":{"query":"debbi"}
+                        }
+    
+                },
+                { 
+    
+                       "match_phrase_prefix":{
+                        "LAST_NAME":"frogameni"
+                        }
+    
+                }  
+    
+         ]
+            }
+    
+        }
+    }
+    
+
+any help greatly appreciated
+
+You are applying the minimum should match setting in the wrong place. You also
+need to set it to 2 rather than 1 so you have to match both terms. Try this
+instead
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "match_phrase_prefix": {
+                "FIRST_NAME": {
+                  "query": "debbi"
+                }
+              }
+            },
+            {
+              "match_phrase_prefix": {
+                "LAST_NAME": "frogameni"
+              }
+            }
+          ],
+          "minimum_should_match": 2
+        }
+      },
+      "from": "0",
+      "size": "11"
+    }
+    
+
+Consider switching to the [BM25-similarity
+model](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-similarity.html#bm25). Specifically, you want to set the `b`-value to
+`0`.
+
+Also, here's a more in depth comparison of Elasticsearch/Lucene's default
+similarity model and BM25: [Similarity in
+Elasticsearch](https://www.found.no/foundation/similarity/).
+

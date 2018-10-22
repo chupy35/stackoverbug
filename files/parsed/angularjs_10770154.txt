@@ -1,0 +1,97 @@
+10770154 Anything like template references in AngularJS?
+
+I'm trying to create a form whose layout is entirely data driven.
+
+Example data source:
+
+    
+    
+    {
+        title : "Form Test",
+        fields : [{
+                name : "FieldA",
+                type : "string",
+                value : "initial value"
+            }, {
+                name : "FieldB",
+                type : "selection",
+                options : ["1", "2", "3"],
+                value : "2"
+            }, {
+                name : "FieldC",
+                type : "struct",
+                value :
+                [{
+                        name : "FieldC1",
+                        type : "string",
+                        value : "initial value"
+                    }, {
+                        name : "FieldC2",
+                        type : "string",
+                        value : "initial value"
+                    }
+                ]
+            }
+        ]
+    }
+    
+
+I think can use ng-repeat and ng-switch to choose the form element depending
+on the 'type', however I get stuck when it comes to doing this recursively
+when I get to 'FieldC'.
+
+    
+    
+    <span ng-switch on="field.type">
+        <div ng-switch-when="string">STRING: {{field.value}}</div>
+        <div ng-switch-when="selection">SELECTION: {{field.value}}</div>
+        <div ng-switch-when="struct">STRUCT: ????</div>
+        <div ng-switch-default>DEFAULT:{{field.value}}</div>
+    </span>
+    
+
+Essentially I want a way that when I encounter a "struct" it recursively
+applies the ng-switch to the struct fields? Is there any way to "reference"
+the template so it can be used in multiple places on the same page? The
+support for template "partials" seems to need to be coordinated server-side
+via routes which seems like overkill here. Is this something where I need to
+start digging into creating my own directives?
+
+**EDIT** I just stumbled across
+[this](http://jsfiddle.net/brendanowen/uXbn6/8/) that looks like it has a
+decent chance of doing what I want (I have yet to properly test it), is that
+in the right direction?
+
+You'll want to build a directive that takes this kind of data and builds the
+form from it.
+
+The way to treat the recursion is to treat every level, including the top
+level, as another struct. I built a version here:
+<http://jsfiddle.net/U5Kyp/9/>
+
+Make sure you read the directive guide in the docs so you understand what's
+happening: <http://docs.angularjs.org/guide/directive>
+
+Here is an update of accepted answer for angular.js 1.0.1 There were a few
+non-compatible changes in stable version:
+
+  1. ng-app is now required directive
+  2. scope syntax and semantics were changed
+
+<http://jsfiddle.net/9qAfM/1/>
+
+In my opinion this is a bad case of the [inner platform
+effect](http://en.wikipedia.org/wiki/Inner-platform_effect). Quoting
+wikipedia: "tendency of software architects to create a system so customizable
+as to become a replica, and often a poor replica, of the software development
+platform they are using".
+
+AngularJS already has a powerful mechanism for traversing a tree of objects
+and building a stack of scopes and controllers out of it. You could argue that
+it is **exactly what AngularJS IS**.
+
+If you are forced to build forms out of such abominable JSON, I think the
+easiest way is to turn them into HTML (by means of a simple template language
+of any kind, server side or client side) and then using the $compile service
+to turn them into an angularjs application.
+

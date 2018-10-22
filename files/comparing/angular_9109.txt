@@ -1,0 +1,2 @@
+b'When I mix class + expression with ng-class, the ng-class is not being compiled if expression is broken or fails to return anything'
+b'I noticed when I mix `ng-class` with `class + expression` (class="something-{{data}}"), if the expression fails to return anything (does not exist for example), than the `ng-class` will not get compiled at all.\n\nAlso, it only happens when the broken expression is in the middle of the `class` `<div class="stuff-{{ok}} another-{{nothing}} third-{{ok}}"></div>`. \n\nHere is fiddle example: http://jsfiddle.net/seefeld/4z4s4hhs/6/\n'

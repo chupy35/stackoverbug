@@ -1,0 +1,29 @@
+29171969 How can I suppress the default config location of Spring boot
+
+How can I have Spring Boot only look for config files under the the
+directories specified by spring.config.location property and _not_ look under
+the default location as specified in the ConfigFileApplicationListener
+javadoc.
+
+Setting spring.config.location, causes the ConfigFileApplicationListener to
+look in both spring.config.location directories and the default locations.
+
+you can use profiles.
+
+in your application.properties you will only have :
+
+    
+    
+    spring.profiles.active=other
+    
+
+and have a file in the same folder named application-other.properties where
+you define your properties.
+
+the default properties can be in a file named application-default.properties
+and when you want to use it, juste change the value in application.properties
+to 'default'.
+
+[Spring-boot documentation of Profiles](http://docs.spring.io/spring-
+boot/docs/current/reference/html/boot-features-profiles.html)
+

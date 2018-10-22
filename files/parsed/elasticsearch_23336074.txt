@@ -1,0 +1,86 @@
+23336074 elasticsearch: match query can get result, but more like query can
+not
+
+I have a question about an elasticsearch query:
+
+I have two docs, the content field used standard analyzer, the values are :
+
+  1. "content": "But Buffett's stake in Wells Fargo, and **johnson hot** stakes in a number of other major banks"
+
+  2. "content": "Taco Bell's chief information **johnson hot** Fancher told Nation's Restaurant News that mobile is their prime focus at the moment"
+
+I can get these two docs when I used match query:
+
+    
+    
+    localhost:9200/content/en-us/_search?pretty=true -d '
+    {    
+    "query" : {
+        "match" : {
+            "content" : "johnson hot"
+        }
+      } 
+    }'
+    
+
+But I can't get them using more like query:
+
+    
+    
+    localhost:9200/content/en-us/_search?pretty=true -d '
+    {
+        "from": 0,
+        "size": 200,
+        "query": {
+            "more_like_this_field": {
+                "content": {
+                    "like_text": "johnson hot",
+                    "min_term_freq": 1,
+                    "max_query_terms": 12
+                 }
+            }
+        }
+    }'
+    
+
+result:
+
+    
+    
+    "hits" : {
+        "total" : 0,
+        "max_score" : null,
+        "hits" : [ ]
+    }
+    
+
+Does anybody know why? Is the more like query similar with the "like" in SQL?
+
+Thanks Johnson
+
+More like this field query will give you the similar docs by matching the
+content of the specified fields.
+
+You have to set **min_doc_freq** to 1. The default value for this is 5, so the
+it ignores the terms in **like_text if** they don't appear in more than 5
+docs. As you have only two docs both the terms **jhonson** and **hot** will be
+ignored. Below query will should work
+
+    
+    
+    curl 'http://localhost:9200/content/en-us/_search?pretty=true' -d '{
+      "from": 0,
+      "size": 200,
+      "query": {
+        "more_like_this_field": {
+          "content": {
+            "like_text": "johnson hot",
+            "min_term_freq": 1,
+            "max_query_terms": 12,
+            "min_doc_freq": 1
+          }
+        }
+      }
+    }'
+    
+

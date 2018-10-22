@@ -1,0 +1,17 @@
+25524383 Message not fully read (request) for [0] and action [], resetting
+Exeception in Elasticsearch
+
+I have configure Elasticsearch in 3 node on different sever. After restarting
+elasticsearch nodes, In one elasticsearch node getting Exception `Message not
+fully read (request) for [0] and action [], resetting`.
+
+Does anyone face similar issue?  
+My ES version is `1.3.0`  
+JVM version is `1.7.0_65`
+
+Most likely you're having a client somewhere that has a different version.
+When the client and the elasticsearch server have different versions, this
+happens. Try to use a little tcpdump and find out! :)
+
+Take a look here: <https://github.com/elasticsearch/elasticsearch/issues/5178>
+

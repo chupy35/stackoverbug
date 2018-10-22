@@ -1,0 +1,25 @@
+18091571 Is elasticsearch non-deterministic?
+
+Does elasticsearch does not return the same results in the same order every
+time a query is executed because of its algorithm in calculating the score? Or
+is it something else? Is there a way to make it such that the results return
+in the same order everytime a query is executed? Is this normal?
+
+This might to do with the way elastic search calculates relevancy scores
+locally by default.
+
+Try adding:
+
+    
+    
+    &search_type=dfs_query_then_fetch
+    
+
+to your query and see if that helps. This tells ES to calculate scores across
+the whole cluster.
+
+More info:
+
+<http://www.elasticsearch.org/blog/understanding-query-then-fetch-vs-dfs-
+query-then-fetch/>
+

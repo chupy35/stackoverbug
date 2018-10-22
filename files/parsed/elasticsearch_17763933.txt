@@ -1,0 +1,41 @@
+17763933 Searching within a string
+
+I would like to create a new query or modify this one:
+
+    
+    
+    curl -XGET 'http://localhost:9200/my_index/_search?/pretty=true' -d ' 
+    {
+      "fields" : ["city", "element_name", "organization"],
+      "query" : {
+        "bool" : {
+          "must" : [
+        {
+              "match" : { "organization" : "MyOrganizationName" }
+            },        
+        { 
+              "query_string" : {
+                "query" : "Input",
+                "fields" : [ "element_name", "city"]
+              }
+            }
+          ]
+        }
+      },
+      "filter" : {
+        "type" : {"value" : "Project"}
+      }
+    }'
+    
+
+To the point, where it can search mongodb with these criteria:
+
+  * Input: "tring" -> finds "String" or "Longer String"
+  * Input: "Longer" or "String" -> finds "Longer String"
+
+I haven't changed `query_string` to `match`, because I substitute desired
+functionality with `*`.
+
+I was also wondering, whether analyzer might come handy, however I have no
+idea how to set it up. How can I do this?
+

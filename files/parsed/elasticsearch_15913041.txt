@@ -1,0 +1,60 @@
+15913041 Elasticsearch - Get the top 10 with the number of occurences
+
+I'm trying to have the top 10 of my logs(req_url) with the **status_code 404**
+between two timestamp and I would have the number of occurrences of each of
+them. My mapping is:
+
+    
+    
+    {
+    "logstash-2013.04.09" : {
+    "mylogs" : {
+      "properties" : {
+        "@timestamp" : {
+          "type" : "date",
+          "format" : "dateOptionalTime"
+        },
+        "a_date" : {
+          "type" : "string"
+        "req_url" : {
+          "type" : "string"
+        },
+        "status_code" : {
+          "type" : "string"
+        }
+      }
+     }
+    }
+    
+
+I've try with this request:
+
+    
+    
+    {
+      "size": 10,
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "and": [
+              {
+                "range": {
+                  "@timestamp": {
+                    "from": pasttime,
+                    "to": actualtime
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+This result gives me the ES score and if I well understand, the score in ES is
+like a "top" but I haven't the number of occurrences.
+

@@ -1,0 +1,40 @@
+24079887 Production equivalent to Spring Boot
+EmbeddedServletContainerCustomizer
+
+My question relates to Spring Boot and how to configure error pages in a
+production web app running in cloudfoundry.
+
+In the Spring IO Sagan reference application, I noticed in the
+[MvcConfig](https://github.com/spring-io/sagan/blob/master/sagan-
+site/src/main/java/sagan/MvcConfig.java#L110), the following code:
+
+    
+    
+    @Configuration
+        public static class ErrorConfig implements EmbeddedServletContainerCustomizer {
+    
+            @Override
+            public void customize(ConfigurableEmbeddedServletContainer factory) {
+                factory.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404"));
+                factory.addErrorPages(new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500"));
+            }
+    
+        }
+    
+
+Is this configuration used in the cloud too? If so why is it named:
+**`EmbeddedServletContainerCustomizer`**? If not what is the equivalent for
+the cloud?
+
+Yes, you can use `EmbeddedServletContainerCustomizer` when deploying to the
+cloud. Sagan itself is doing exactly that on CloudFoundry for the
+[spring.io](http://spring.io) website.
+
+The "embedded" in the name of `EmbeddedServletContainerCustomizer` refers to
+the fact that the servlet container is embedded in your application's
+[executable jar file](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#getting-started-first-application-
+executable-jar). It's the recommended approach for [cloud
+deployment](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#cloud-deployment).
+

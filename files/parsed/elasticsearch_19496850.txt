@@ -1,0 +1,114 @@
+19496850 Indexing a field for both phrase searching and partial matches
+
+I am creating an index on an object, and wanting to be able to do both full
+phrase searches as well as partial matches. The type is called "deponent", and
+a simplified index creation is shown below:
+
+    
+    
+    {
+       "deponent": {
+          "properties": {         
+             "name": {
+                "type": "multi_field",
+                "fields": {
+                   "name": {
+                      "type": "string"
+                   },
+                   "full": {
+                      "type": "string",
+                      "index": "not_analyzed",
+                      "omit_norms": true,
+                      "index_options": "docs",
+                      "include_in_all": false
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+The intent of this is to index the values in the "name" field twice: once
+where the individual words within the field are not broken up (name.full) and
+once where the words are broken up (name.name).
+
+I have a document which has been indexed whose name field is set to "Dr. Danny
+Watson". I would expect the following behaviors to occur when executing a term
+query (whose query string is not analyzed according to the documentation):
+
+  1. When searching **name.full** using "Dr. Danny Watson", the record **should be** returned
+  2. When searching **name.full** using "Watson", the record **should not be** returned
+  3. When searching **name.name** using "Dr. Danny Watson", the record **should not be** returned
+  4. When searching **name.name** using "Watson", the record **should be** returned
+
+The queries for the four points above:
+
+1 - works as expected (returns the record)
+
+    
+    
+    {
+        "query" : {
+            "term": {
+               "name.full": {
+                  "value": "Dr. Danny Watson"
+               }
+            }
+        }   
+    }
+    
+
+2 - works as expected (does not return the record)
+
+    
+    
+    {
+        "query" : {
+            "term": {
+               "name.full": {
+                  "value": "Watson"
+               }
+            }
+        }   
+    }
+    
+
+3 - works as expected (does not return the record)
+
+    
+    
+    {
+        "query" : {
+            "term": {
+               "name.name": {
+                  "value": "Dr. Danny Watson"
+               }
+            }
+        }   
+    }
+    
+
+4 - does **NOT** work as expected - the record is not returned
+
+    
+    
+    {
+        "query" : {
+            "term": {
+               "name.name": {
+                  "value": "Watson"
+               }
+            }
+        }   
+    }
+    
+
+So it seems my understanding of something is flawed. What am I missing?
+
+You don't need to call the field "name.name". The multi-field with the
+original name is used as the default, so you should use just "name" for that.  
+Also it's always good to make sure the index and search analyzers are in order
+(so for instance both your indexed terms and the search term are changed to
+lower case).
+

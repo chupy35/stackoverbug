@@ -1,0 +1,60 @@
+25455088 ElasticSearch documentation says not to use scroll for user requests,
+only for data transformation
+
+I'm new to ES and confused by its documentation of scroll. From the docs "
+_Scrolling is not intended for real time user requests, but rather for
+processing large amounts of data, e.g. in order to reindex the contents of of
+one index into a new index with a different configuration_ ".
+
+And yet...further down on the same page it says not to use from() and size()
+to do pagination because it " _is very inefficient_ ". And on the Java API
+page describing Search it shows an example of paging via Scroll.
+
+So, assuming I want to present sorted search results, a page at a time, which
+approach is recommended: from/size or Scrolling?
+
+`from/size` is very inefficient when you want to do **deep pagination** or if
+you want to request lots of results by page.
+
+The reason is that results are sorted first on each shard, and all those
+results are then gathered, merged and sorted by the request coordinator node.
+This become more and more costly as the pages grow either in size or in rank.
+You will find a very good example [documented
+here](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/pagination.html#pagination).
+
+You could limit the size of your users' queries (e.g. to something like ~1000
+results), and you will be fine using `from/size`.
+
+If it's not an option, you can still use **scroll** , but you will lose some
+features like aggregations and [keeping the search context alive has a
+cost](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-scroll.html#scroll-search-context).
+
+Both scroll and from/size suffer from deep pagination. You could try a hybrid
+approach by doing pagination in larger steps (e.g. 100 entries at a time), but
+have the UI show in smaller batches (i.e. 10 only). As the user continues to
+go to the pages, at some point, you should trigger another background search
+task for the next batch while the user is occupied. If you track these
+sessions and get a rough idea on how deep users search, you could find your
+ideal resultset size and scroll in those number of steps.
+
+Between the two, I had better experience with scrolling than from/size in
+terms of response times, but YMMV. Comes down to your data, shard setup, etc.
+
+You can use `search_after`. The basic process flow will be like this:
+
+  1. Perform your regular search to return an array of sorted document results by date.
+  2. Perform the next query with the `search_after` field in the body to tell Elasticsearch to only return documents after the specified document (date).
+
+This way, your results remain robust against any updates or document deletions
+and stay accurate. You also avoid the [scrolling
+costs](https://www.elastic.co/guide/en/elasticsearch/reference/5.1/search-
+request-scroll.html#_clear_scroll_api) (as you've likely already read) and the
+[from/size](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-from-size.html) method's linear time operation cost for each query
+starting from your initial document result.
+
+See the
+[docs](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-search-after.html) for more info and implementation details.
+

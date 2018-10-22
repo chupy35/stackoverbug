@@ -1,0 +1,77 @@
+24633644 ElasticSearch order by _score
+
+How can I order the results by `_score`?
+
+I can't figure out how to calculate the score for each result, also :)
+
+I managed to write this:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {
+                                "term": {
+                                    "type_licitatie": "3"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "tip_sursa": "5"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "sort": [
+            {
+                "_score": {
+                    "order": "desc"
+                }
+            }
+        ]
+    } 
+    
+
+and this:
+
+    
+    
+    {
+      "query": {
+        "function_score": {
+          "query": {
+            "filtered": {
+              "filter": {
+                "bool": {
+                  "should": [
+                    {
+                      "term": {
+                        "country_id": "1"
+                      }
+                    },
+                    {
+                      "term": {
+                        "industry_id": "3"
+                      }
+                    }
+                  ]
+                }        
+              }
+            }
+          },
+          "script_score" : {
+            "script": "(doc['country_id'].values=1) + (doc['industry_id'].values=3)"
+          },
+          "boost_mode": "replace"
+        }
+      }
+    }
+    
+

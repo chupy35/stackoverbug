@@ -1,0 +1,26 @@
+10683484 nested queries in Elasticsearch
+
+I have json data as follows
+
+    
+    
+    {
+      "_index": "project",
+      "_type": "ts_order_snapshot",
+      "_id": "1",
+      "_version": 1,
+      "exists": true,
+      "_source": {
+        "order_id": "100000001",
+        "order_data": "Order Data:{\"entity_id\":\"1\",\"state\":\"canceled\"}"
+      }
+    }
+    
+
+Now I would like to get the list of all the order ids having state as
+canceled. Any suggestions?
+
+`order_data` is a serialized, json-encoded string, not a structured json map.
+If you promoted it to actual json, you could construct a query like
+`?q=order_data.state:canceled&fields=order_id`.
+

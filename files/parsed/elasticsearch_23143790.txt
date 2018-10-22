@@ -1,0 +1,95 @@
+23143790 Querying a field for empty value
+
+I'm trying to query for an empty field. In SQL parlance, I would do the
+following:
+
+    
+    
+     select * from cars where cartype="Auto" and make="Ferrari" and color="" and model="" and seats in ["", "bench"]
+    
+
+I'm doing the following, but I'm getting an error
+
+    
+    
+     {
+         "query": {
+             "bool": {
+                 "must": [
+                     {
+                         "match": {
+                             "CarType": "Auto"
+                         }
+                     },
+                     {
+                         "match": {
+                             "Make": "Ferrari"
+                         }
+                     }
+                 ],
+                 "must_not": [
+                     {
+                         "existence": true,
+                         "field": "Color",
+                         "null_value": true
+                     },
+                     {
+                         "existence": true,
+                         "field": "Model",
+                         "null_value": true
+                     }
+                 ]
+             }
+         }
+     }
+    
+
+But I get the following: "Parse Failure [Failed to parse source .... nexted:
+query malformed"
+
+I'm following the example
+[here](https://stackoverflow.com/questions/18152053/find-empty-strings-in-
+elasticsearch)
+
+try like this
+
+    
+    
+    {
+    "query": {
+        "bool": {
+            "must": [
+    
+                    {
+                     "match": {
+                         "CarType": "Auto"
+                     }
+                    }
+              ,
+              {
+                     "match": {
+                         "Make": "Ferrari"
+                     }
+    
+               }
+            ], "must_not": [
+               {
+                  "missing":{
+                            "field":"Model",
+                             "existence":true,
+                              "null_value":true
+                             }
+               },
+                {
+                  "missing":{
+                            "field":"Color",
+                             "existence":true,
+                              "null_value":true
+                             }
+               }
+            ]
+        }
+    }
+    }
+    
+

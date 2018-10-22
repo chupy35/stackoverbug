@@ -1,0 +1,125 @@
+28885392 Nested ReactComponent not showing (most of the time)
+
+a new React user here trying to learn the ropes. I'm working on a little
+isomorphic test app using node and react. I'm able to get the main parent
+component loaded by using React.renderToString() and passing it into the
+handlebars template.
+
+But the child ReactComponent doesn't load. Well, it does.. but only for a
+millisecond before disappearing. It's almost as if the app initializes with
+the state i'd like, but clears it right after loading.
+
+Below is the relavant code with brief explanations:
+
+* * *
+
+**StreamRApp.react.js**
+
+This is the main react component, which includes another ReactComponent in its
+render() function.
+
+    
+    
+    /** @jsx React.DOM */
+    
+    var React = require('react'),
+        Track = require('./Track.react');
+    
+    module.exports = StreamRApp = React.createClass({
+    
+      getInitialState: function() {
+        return {
+          initialTracks: [
+            {
+              id: 1,
+              artist: 'bob',
+              title: 'this is a great song'
+            },
+            {
+              id: 2,
+              artist: 'mary',
+              title: 'this song sucks'
+            }
+          ],
+          tracks: []
+        }
+      },
+    
+      componentWillMount: function() {
+        this.setState({ tracks: this.state.initialTracks })
+      },
+    
+      render: function() {
+    
+        return (
+          <div>
+            Hello
+            <div>
+              <Track tracks={this.state.tracks}/>
+            </div>
+          </div>
+        );
+    
+      }
+    
+    });
+    
+
+Pretty simple. I initialize this components state with some tracks, and pass
+it into my component in the render function:
+
+* * *
+
+**Track.react.js**
+
+    
+    
+    /** @jsx React.DOM */
+    
+    var React = require('react');
+    
+    module.exports = Track = React.createClass({
+    
+      render: function() {
+        return (
+          <ul>
+          {
+            this.props.tracks.map(function(track) {
+              return <li className="track" key={track.id}>{track.artist} - {track.title}</li>
+            })
+          }
+          </ul>
+        )
+      }
+    
+    });
+    
+
+* * *
+
+**Routes.js**
+
+In my code for the page's route, I render the main component to string, and
+pass it into my handlebars view:
+
+    
+    
+    module.exports = {
+    
+      index: function(req, res) {
+    
+      var markup = React.renderToString(StreamRApp({}));
+    
+      res.render('home', { markup: markup });
+    
+      }
+    
+    };
+    
+
+* * *
+
+Anyone have an idea why this is happening? Like I explained in the beginning,
+it seems like it's correctly rendering the tracks for a brief moment, but
+something clears it?
+

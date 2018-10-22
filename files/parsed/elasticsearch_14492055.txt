@@ -1,0 +1,90 @@
+14492055 Elastic Search _search vs. _count syntax
+
+It would appear that _search and _count take different formats for queries.
+For example, this is my `_search` query:
+
+    
+    
+    {
+      query: {
+        filtered: {
+          query: { match: { Name: "bob" } },
+          filter: { term: { GroupIds: 3 } }
+        }
+      }
+    }
+    
+
+But in order for `_count` to comprehend it I need to remove the outer `query`:
+
+    
+    
+    {
+      filtered: {
+        query: { match: { Name: "bob" } },
+        filter: { term: { GroupIds: 3 } }
+      }
+    }
+    
+
+That one will not work with `_search`. Just to further confuse me more,
+`_search` will accept it if both `query` **and** `filtered` are removed:
+
+    
+    
+    {
+      query: { match: { Name: "bob" } },
+      filter: { term: { GroupIds: 3 } }
+    }
+    
+
+So what is the actual rule for the Query DSL when using `_search` vs.
+`_count`?
+
+Search is one of the most complex operations in elasticsearch and as a result
+it accepts several different parameters on the top level including `query`,
+`filter`, `facets`, `size` and so on.
+
+The `query` parameter should contain a query as defined by Query DSL. It can
+be any query including `match_all` or `filtered`. For example, here is how
+search request would look like that accepts all records and returns top 20.
+
+    
+    
+    {
+        "query": {
+            "match_all": {}
+        },
+        "size": 20
+    }
+    
+
+The `filter` parameter in the search request can accept a filter (again as
+defined in Query DSL). This filter has special function in the search - it
+doesn't affect any facets in the request. So, typically it makes sense to use
+the `filter` parameter only with faceted search when you want to filter search
+results but you don't want to affect facets. In all other cases, the
+`filtered` query would typically produces faster results.
+
+Speaking of which, the `filtered` query is a query, so it can be used in the
+`query` parameter of the search request. It's also a compound query. It
+accepts another query in its `query` parameter and a filter in its `filter`
+parameter and produces a compound query that returns only documents that
+satisfy both the query and the filter that it consists of. In other words, the
+`filter` parameter in the `filtered` query affects both search results and
+facets, while the `filter` parameter in the `search` query affects only search
+result and doesn't affect facets.
+
+And finally the `count` request. The `count` requests is much simpler than the
+`search` request. It doesn't work with facets and size parameter wouldn't
+really make much sense since we always request complete count. So, all the
+`count` request expects is one query on the top level. For example, in order
+to count all documents the `count` request would contain something like this:
+
+    
+    
+    {
+        "match_all": {}
+    }
+    
+

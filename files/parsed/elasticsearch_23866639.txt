@@ -1,0 +1,18 @@
+23866639 "SHOW VARIABLES" query in elasticsearch
+
+Is there a way to query the list of effective configuration variables
+(defaults + configured values) just like a "SHOW VARIABLES" statement in
+MySQL?
+
+The
+[_settings](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+get-settings.html) endpoint provides a simple way to retrieve the customized
+configuration for a given index.
+
+Mapping defaults can only be printed for specific fields calling
+
+`GET /index/_mapping/type/field/content?include_defaults=true`
+
+where _index_ , _type_ and _content_ have to be replaced with the relevant
+names.
+

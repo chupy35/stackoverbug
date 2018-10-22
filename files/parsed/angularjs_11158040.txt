@@ -1,0 +1,34 @@
+11158040 How to use google Ajax crawling with Angular
+
+Google supports a scheme where you can indicate that a page has dynamic
+content, it requires the fragment url to start with a !, like
+dynamic.html#!part
+
+Angularjs has very nice routing support but it seems to require that the
+fragment always starts with a /. Does anybody know a way to let these
+fragments start with a !?
+
+[http://support.google.com/webmasters/bin/answer.py?hl=en&answer=174992](http://support.google.com/webmasters/bin/answer.py?hl=en&answer=174992)
+
+I am just starting with Angular myself, but I think you want to set the
+`hashPrefix` of the `$location` service.
+
+See the developer guide on the [$location
+service](http://docs.angularjs.org/guide/dev_guide.services.$location).
+
+From the example it looks like you would do something along the lines of:
+
+    
+    
+    // Not 100% sure this is right
+    $locationProvider.hashPrefix('!');
+    
+
+There also appears to be a more automated way of doing this, outlined in the
+section titled "Crawling your app" near the bottom of the same documentation
+page.
+
+If your running a ruby app - there's a gem that implements the crawling scheme
+for any rack app `gem install google_ajax_crawler` source code at
+<https://github.com/benkitzelman/google-ajax-crawler>
+

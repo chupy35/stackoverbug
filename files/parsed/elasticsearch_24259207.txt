@@ -1,0 +1,52 @@
+24259207 Unable to execute a simple query via elasticsearch-head
+
+I am trying to execute some query on elasticsearch using the plugin head and
+the web interface. But at the moment I have no result. It's just a simple
+query.
+
+![enter image description here](https://i.stack.imgur.com/xEVv0.png)
+
+So it is what I type in the form. In fact it returns me all the contents of
+the indexed dataset. "Origin" is one of my fields and "ROA" a correct value.
+
+Here is a part of the result :
+
+    
+    
+    {
+    
+        took: 531
+        timed_out: false
+        _shards: {
+            total: 5
+            successful: 5
+            failed: 0
+        }
+        hits: {
+            total: 47925065
+            max_score: 1
+            hits: [
+                { 
+    
+
+It should return me about 35 000 result.
+
+Thanks for helping.
+
+Ok my bad I found the solution.
+
+I had to set "Post" method isntead of "Get".
+
+And the correct Json was :
+
+    
+    
+    {
+      "query": {
+           "match": {
+               "Year": "1987"
+            }
+      }
+    }
+    
+

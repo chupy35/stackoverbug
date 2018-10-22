@@ -1,0 +1,4 @@
+30335148
+Get which Host/I.P ES TransportClient is connected to
+<p>Using E.S 1.5.2</p>&#xA;&#xA;<p>Is their a way to get the I.P address/hostname of the node the Transport client connected to?</p>&#xA;&#xA;<p>Classses used...</p>&#xA;&#xA;<pre><code>TransportClient&#xA;SearchSourceBuilder&#xA;SearchRequestBuilder&#xA;SearchResponse&#xA;</code></pre>&#xA;
+<p>SearchResponse has remoteAddress(). That did the trick for me.</p>&#xA;

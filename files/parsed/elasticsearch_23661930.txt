@@ -1,0 +1,93 @@
+23661930 Conditional query for geo location lookup
+
+I have a usecase where I have 2 types of locations (i.e. with geo_point type):
+
+  1. Location 1: Has a lat/lon with say radius=90 miles (it will vary) and type=outgoing
+  2. Location 2: Has a lat/lon with no radius and type=incoming
+
+Now, when a query comes in with: lat/lon and radius=20, I expect this to
+happen:
+
+  1. Simple geo lookup: If the input lat/lon is within 20miles of location 2, return location 2.
+  2. If input lat/lon is within 90 miles of Location 1, return location 1 too in the result. If you notice, I want input radius to be overwritten by the saved radius for a specific type of location.
+
+This is what I have come up with using script:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "filter": {
+        "script": {
+          "script": "!doc['geopoint'].empty && doc['coverage_type'].value == 'outgoing' ? doc['geopoint'].distanceInMiles(37,-121) <= doc['radius'].value : doc['geopoint'].distanceInMiles(37,-121) <= 20"
+        }
+      }
+    }
+    
+
+Where "37,-121" is input lat/lon and 20 is the input radius.
+
+What do you think about the query, is this the best way to do it?
+
+Originally posted [this on ES mailing
+list](https://groups.google.com/forum/#!topic/elasticsearch/mNZ9CWn88IY), no
+luck.
+
+That seems ok to me. An other way which is a bit more verbose would be to
+explode your script into various ES filters so that ES can optimize your
+request as much as possible (you would be able to use the specific
+geo_distance filter for one of your cases). For instance you could have
+something like this: (sorry if the json isn't exact, i do not have means to
+test it right now)
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "filter": {
+        "bool": {
+            "should": [
+                {
+                    "and": [
+                        {
+                            "term": {
+                                "coverage_type": "outgoing"
+                            }
+                        },
+                        {
+                            "script": {
+                              "script": "!doc['geopoint'].empty && doc['geopoint'].distanceInMiles(37,-121) <= doc['radius'].value"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "and": [
+                        {
+                            "term": {
+                                "coverage_type": "incoming"
+                            }
+                        },
+                        {
+                            "geo_distance" : {
+                                "geopoint" : [ 37, -121 ],
+                                "distance" : "20km"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+      }
+    }
+    
+
+You may have to add some specific filters to manage the fact a geopoint can be
+missing in your document and how you want to treat this. For instance, you may
+want to allow one to fetch all the documents without a geopoint in which case
+you could add a "missing" filter to the "should". I hope that helps.
+

@@ -1,0 +1,137 @@
+23276569 Elasticsearch /_cluster/health nodes reports higher number than
+/_nodes
+
+I have a small cluster of three machines. When we initially deployed the
+solution, we realized we did not have enough storage available for our
+anticipated need. So we brought down the ES service on the first node,
+attached and configured an EBS volume for the machine, moved the data to the
+new volume, updated the configuration file to point to the new data dir and
+brought the service back up. All was well. The cluster went green pretty
+quickly. Same for the next two machines. Then we realized that we had not
+updated the configuration file on the second node. So we stopped the service,
+updated the configuration file and started the service. Our cluster health has
+remained yellow since then. Interestingly, I'm seeing a discrepancy between
+the number of nodes reported in the /_cluster/health endpoint and the /_nodes
+endpoint. Also of interest is the fact that since we are in AWS, we are using
+unicast discovery and are explicitly pointing to the other nodes. I see that
+it's trying to initialize shards, but do not know where/how/why it's trying to
+do that. Any thoughts?
+
+`/_cluster/health`
+
+    
+    
+    {
+      "cluster_name" : "the_name_of_my_cluster",
+      "status" : "yellow",
+      "timed_out" : false,
+      "number_of_nodes" : 5,
+      "number_of_data_nodes" : 5,
+      "active_primary_shards" : 20,
+      "active_shards" : 33,
+      "relocating_shards" : 0,
+      "initializing_shards" : 4,
+      "unassigned_shards" : 3
+    }
+    
+
+`/_nodes`
+
+    
+    
+    {
+      "ok" : true,
+      "cluster_name" : "abc_cluster",
+      "nodes" : {
+        "identifier" : {
+          "name" : "node3",
+          "transport_address" : "inet[/ip3:9300]",
+          "version" : "0.90.5",
+          "http_address" : "inet[/ip3:9200]"
+        },
+        "identifier" : {
+          "name" : "node2",
+          "transport_address" : "inet[/ip2:9300]",
+          "version" : "0.90.5",
+          "http_address" : "inet[/ip2:9200]"
+        },
+        "identifier" : {
+          "name" : "node1",
+          "transport_address" : "inet[/ip1:9300]",
+          "version" : "0.90.5",
+          "http_address" : "inet[/ip1:9200]"
+        }
+      }
+    }
+    
+
+# Edit
+
+I started tailing the ES logs on the second node. It turns out it was trying
+to reach our third node on 9301 and 9302
+
+    
+    
+    [2014-04-24 20:08:37,005][WARN ][cluster.service          ] [node2] failed to reconnect to node [node3][identifying_info][inet[/ip3:9302]]
+    org.elasticsearch.transport.ConnectTransportException: [node3][inet[/ip3:9302]] connect_timeout[30s]
+        at org.elasticsearch.transport.netty.NettyTransport.connectToChannels(NettyTransport.java:675)
+        at org.elasticsearch.transport.netty.NettyTransport.connectToNode(NettyTransport.java:608)
+        at org.elasticsearch.transport.netty.NettyTransport.connectToNode(NettyTransport.java:576)
+        at org.elasticsearch.transport.TransportService.connectToNode(TransportService.java:129)
+        at org.elasticsearch.cluster.service.InternalClusterService$ReconnectToNodes.run(InternalClusterService.java:475)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:724)
+    Caused by: org.elasticsearch.common.netty.channel.ConnectTimeoutException: connection timed out: /ip3:9302
+        at org.elasticsearch.common.netty.channel.socket.nio.NioClientBoss.processConnectTimeout(NioClientBoss.java:137)
+        at org.elasticsearch.common.netty.channel.socket.nio.NioClientBoss.process(NioClientBoss.java:83)
+        at org.elasticsearch.common.netty.channel.socket.nio.AbstractNioSelector.run(AbstractNioSelector.java:312)
+        at org.elasticsearch.common.netty.channel.socket.nio.NioClientBoss.run(NioClientBoss.java:42)
+        at org.elasticsearch.common.netty.util.ThreadRenamingRunnable.run(ThreadRenamingRunnable.java:108)
+        at org.elasticsearch.common.netty.util.internal.DeadLockProofWorker$1.run(DeadLockProofWorker.java:42)
+        ... 3 more
+    [2014-04-24 20:09:17,042][WARN ][cluster.service          ] [node2] failed to reconnect to node [node3][identifying_info][inet[/ip3:9301]]
+    org.elasticsearch.transport.ConnectTransportException: [node3][inet[/ip3:9301]] connect_timeout[30s]
+        at org.elasticsearch.transport.netty.NettyTransport.connectToChannels(NettyTransport.java:675)
+        at org.elasticsearch.transport.netty.NettyTransport.connectToNode(NettyTransport.java:608)
+        at org.elasticsearch.transport.netty.NettyTransport.connectToNode(NettyTransport.java:576)
+        at org.elasticsearch.transport.TransportService.connectToNode(TransportService.java:129)
+        at org.elasticsearch.cluster.service.InternalClusterService$ReconnectToNodes.run(InternalClusterService.java:475)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:724)
+    Caused by: org.elasticsearch.common.netty.channel.ConnectTimeoutException: connection timed out: /ip3:9301
+        at org.elasticsearch.common.netty.channel.socket.nio.NioClientBoss.processConnectTimeout(NioClientBoss.java:137)
+        at org.elasticsearch.common.netty.channel.socket.nio.NioClientBoss.process(NioClientBoss.java:83)
+        at org.elasticsearch.common.netty.channel.socket.nio.AbstractNioSelector.run(AbstractNioSelector.java:312)
+        at org.elasticsearch.common.netty.channel.socket.nio.NioClientBoss.run(NioClientBoss.java:42)
+        at org.elasticsearch.common.netty.util.ThreadRenamingRunnable.run(ThreadRenamingRunnable.java:108)
+        at org.elasticsearch.common.netty.util.internal.DeadLockProofWorker$1.run(DeadLockProofWorker.java:42)
+        ... 3 more
+    
+
+So we opened a range from 9300-9303 for the ES security group.
+
+Voila. We have a green cluster.
+
+`/_cluster/health`
+
+    
+    
+    {
+      "cluster_name" : "the_name_of_my_cluster",
+      "status" : "green",
+      "timed_out" : false,
+      "number_of_nodes" : 6,
+      "number_of_data_nodes" : 6,
+      "active_primary_shards" : 20,
+      "active_shards" : 40,
+      "relocating_shards" : 0,
+      "initializing_shards" : 0,
+      "unassigned_shards" : 0
+    }
+    
+
+HOWEVER - we are showing 6 nodes now instead of the 3 that I expect. What
+gives?
+

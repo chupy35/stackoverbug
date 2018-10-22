@@ -1,0 +1,3 @@
+29352241
+How to get previous doc score and next document score in elasticsearch
+<p>I am using fucntion_score for calculating scores , how to get previous search document score and next document score.</p>&#xA;

@@ -1,0 +1,3 @@
+30915956
+Elastic Search randomly gets new indices
+<p>In our Elastic Search cluster.. We occasionally get random indices.  For example:&#xA;Using KOPF and click "Show Settings":</p>&#xA;&#xA;<pre><code>Index name: wwwwos1.html&#xA;{&#xA; {&#xA;   "index": { "A" : "quick brown fox jumps over the lazy dogA quick brown fox jumps over the laz"&#xA;   "creation_date" : "1434611555943",&#xA;   "number_of_shards" : "5",&#xA;   "number_of_replicas" : "1",&#xA;   "version" : { "created" : "1060099" },&#xA;   "uuid" : "Aa9NffIpTRu3011su0d5aA"&#xA;  } &#xA;}&#xA;</code></pre>&#xA;&#xA;<p>Any ideas, or how to track down who/what is creating this?</p>&#xA;

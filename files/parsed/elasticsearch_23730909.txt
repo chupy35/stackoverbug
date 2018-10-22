@@ -1,0 +1,25 @@
+23730909 can i backport "pattern_replace" char filter into elasticsearch
+0.19.9?
+
+our system is running elasticsearch 0.19.9.  recentyly i'm going to add a new
+mapping on it. what i need is merge multiple whitespaces into a single
+whitespace.
+
+i do some search ,and find pattern_replace is what i need, code are like
+
+    
+    
+                    "space_filter":{
+                        "type":"pattern_replace",
+                        "pattern":"\\s+",
+                        "replacement":"\\s"
+                    }
+    
+
+but the bad news is "pattern_replace" is not introduced until 0.90.*. so is
+there possibily to backport this function into the version i'm using?
+
+really i don't want to upgrade this system the newest version, guessing it's
+time consuming, as i'm also using es-head and bigdesk. the version match thing
+might kill me.
+

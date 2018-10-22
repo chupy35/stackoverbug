@@ -1,0 +1,32 @@
+27174961 How to combine multiple Spring Boot web applications?
+
+I came across this tutorial "[Building microservices with Spring
+Boot](http://plainoldobjects.com/2014/04/01/building-microservices-with-
+spring-boot-part1/)", which explains how to connect a user registration
+service with a webapp (=an UI for the registration). And I wondered if I could
+connect two webapps?
+
+Say I have several components:
+
+  1. a forum
+  2. a chat
+  3. a blog system
+  4. ...
+
+Each of them is a separately developed webapp with API endpoints, backend
+logic, enclosed Tomcat etc. I want to combine them within an app depending on
+what component is required. Maybe I even want to override certain aspects
+(e.g. configuration or a default template) within the enclosing project.
+
+Any buzzwords for how to do this?
+
+Basic idea of micro services is to avoid monolithic application architecture.
+In your scenario you are trying make it large single application. That means
+when chat goes down, forum goes down and so on. Thats the basic issue micro
+services trying to solve, try to avoid such situation.
+
+Regardless, if you want to combine many applications you may need to publish
+chat, forum etc as separate maven artifact modules and then include each one
+of them as dependency in one sprint boot projec. Now you will have one
+application server and many modules running in it.
+

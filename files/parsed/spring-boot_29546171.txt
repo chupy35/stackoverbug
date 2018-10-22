@@ -1,0 +1,35 @@
+29546171 Spring Boot and Microservices - Consolidation strategies for
+development?
+
+My company is looking at migrating some existing code into a more micro-
+service architecture. We currently have 2 Spring Boot-based services that we
+did as a trial, and are now looking to build out a few more (20 or so).
+
+While this seems to be a great thing that will help with many aspects of our
+development and live operations, I'm wondering how others might handle more
+than one micro-service in a development environment?
+
+Specifically, we currently have a 1-microservice to 1 spring boot container
+mapping, which is fine for a couple of services. As they grow, it will quickly
+become unmanageable for developers, especially when trying to run a full-stack
+(all the services) on a single laptop with limited resources. It makes sense
+(to me, at least) that you'd have to consolidate those micro-services into a
+single Spring Boot container.
+
+I'm wondering if other people have run into this, and what are their
+strategies are for dealing with this, while maintaining class separation? Do
+you even maintain separation of services in a single spring boot container?
+
+Do you load each services as new web context under the same servlet container?
+Do you use some sort of dynamic configuration at boot? (conditional beans,
+etc)
+
+How do you handle the name spaces and packaging? Do you just deploy all the
+code in a single Spring Boot container and enable what you need in production,
+or do you only package up the pieces parts you expect to run?
+
+Any advice, shared experience, or resource suggestion would be greatly
+appreciated.
+
+Thanks in advance.
+

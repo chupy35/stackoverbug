@@ -1,0 +1,26 @@
+20703793 index field property setting through JAVA API for elastic search
+
+Can i have a sample code for assigning the properties to index fields (as in
+config.xml in case of solr), for elasticsearch. Java API code sample for
+loading the property file, as well.
+
+    
+    
+    Settings settings = ImmutableSettings.settingsBuilder().put("client.transport.sniff", true).build();
+            Client client = new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
+            List<XYZ> list = xyz.getObj("5");
+            ObjectMapper mapper = new ObjectMapper();
+            for(Object obj : list){
+                try {
+    
+                    String json = mapper.writeValueAsString(obj);
+                    System.out.println(json);
+    
+     //I want a code here to load the mapping file and syntax for mapping file,
+       through which i can say that only few attributes of this object should be indexed   and rest all to be stored..//                
+    
+                    IndexRequestBuilder indexRequestBuilder = client.prepareIndex("searchindex", "searchtype", obj.getId());
+                    indexRequestBuilder.setSource(json);
+                    indexRequestBuilder.execute().actionGet();
+    
+

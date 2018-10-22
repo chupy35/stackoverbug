@@ -1,0 +1,56 @@
+23512456 Spring-boot application configuration
+
+I understand how to configure spring-boot and it provides a mature and
+sensible overriding mechanism that is documented well but I'm converting an
+application that gets its configuration from other source that is not in line
+with the spring-boot mechanism.
+
+Ultimately the application makes properties available to the code that can be
+bound in using @Value("$the.prop.key:default") or used in spring xml config.
+The way that these properties are retrieved and bound cannot be changed.
+
+I am trying to configure the embedded tomcat server port but the only way I
+can do this is using application.properties. I can change this to a different
+file and even change the location but I cannot change the mechanism (it has to
+be a file).
+
+Looking into the spring-boot code I see it uses the notion of
+EmbeddedServletContainerCustomizer implementations to set these properties.
+Fine, I will create an implementation and set the server properties using
+this. But unfortunately you get 2 implementations trying to do the same thing
+ServerProperties and my implementation. The code orders these but because
+ServerProperties has not ordering it is set to the lowest priority and a low
+priority gets executed last and so my implementation gets overwritten.
+
+Instead I have implemented a BeanPostProcessor:
+
+    
+    
+    @Named
+    public class SpringBootCustomConfigurator implements BeanPostProcessor {
+    
+    @Value("$the.prop.key:8080")
+    private int port;
+    
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName)
+            throws BeansException {
+        if (bean instanceof ServerProperties) {
+            ServerProperties serverProperties = (ServerProperties) bean;
+            serverProperties.setPort(port);
+        }
+        return bean;
+    }
+    }
+    
+
+This does what I need to do but it isn't a satisfactory implementation. Any
+thoughts?
+
+Given that it's about a new source of external properties, I think it would be
+more natural to write an `ApplicationContextInitializer` (or
+`ApplicationListener` to listen for one of the Spring Boot events on startup)
+that adds a new `PropertySource` to your `Environment` in the right place. You
+can register initalizers with the `SpringApplication` or using `META-
+INF/spring.factories`.
+

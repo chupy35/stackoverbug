@@ -1,0 +1,83 @@
+11171778 What is the difference between service, directive and module?
+
+I have been reading a lot of docs, and I'm getting more and more confused. I
+basically can't figure out the difference between a
+
+  * service
+  * directive 
+  * module
+
+I see a lot of custom components. Sometimes they're using directives,
+sometimes services. It always starts with a module. Can someone explain with
+an example what the difference is between these three types?
+
+Think of a module as being a place to wire up a number of other things, such
+as directives, services, constants etc. Modules can be injected into other
+modules giving you a high level of reuse.
+
+When writing an angular app, you would have a top-level module which is your
+application code (without templates).
+
+Services are mainly a way to communicate between controllers, but you can
+inject one service into another. Services are often used as a way to get to
+your data stores and people will wrap the angular APIs, such as ngResource.
+This technique is useful since it makes testing (particularly mocking) quite
+easy. You can have services for doing other things like authentication,
+logging etc.
+
+Directives are used for creating widgets or wrapping existing things like
+jquery plugins. Wrapping existing plugins can be a challenge and the reason
+you would do this is to establish a two-way data binding between the plugins
+and angular. If you don't need two-way data binding then you don't need to
+wrap them.
+
+A directive is also a place for doing DOM manipulation, catching DOM-events
+etc. You should not be doing DOM-related stuff in controllers or services.
+Creating directives can get pretty complex. IMHO, I recommend first looking at
+API for something that can do what you are looking for OR ask Angular's Google
+Group for advice.
+
+From my own [personal notes](https://docs.google.com/document/d/12w4NKsix-
+kaZFu5Chha4HnIHzs5jhNiP2AcRoaVThyU/edit) (mostly snippets from the docs,
+google group posts, and SO posts):
+
+**Modules**
+
+  * provide a way to namespace/group services, directives, filters, configuration information and initialization code
+  * help avoid global variables
+  * are used to configure the $injector, allowing the things defined by the module (or the whole module itself) to be injected elsewhere (Dependency Injection stuff)
+  * Angular modules are not related to CommonJS or Require.js. As opposed to AMD or Require.js modules, Angular modules don't try to solve the problem of script load ordering or lazy script fetching. These goals are orthogonal and both module systems can live side by side and fulfill their goals (so the docs claim).
+
+**Services**
+
+  * are singletons, so there is only one instance of each service you define. As singletons, they are not affected by scopes, and hence can be accessed by (shared with) multiple views/controllers/directives/other services
+  * You can (and probably should) create custom services when
+    * two or more things need access to the same data (don't use root scope) or you just want to neatly encapsulate your data
+    * you want to encapsulate interactions with, say, a web server (extend $resource or $http in your service)
+  * Built-in services start with '$'.
+  * To use a service, dependency injection is required on the dependent (e.g., on the controller, or another service, or a directive). 
+
+**Directives** (some of the items below say essentially the same thing, but
+I've found that sometimes a slightly different wording helps a lot)
+
+  * are responsible for updating the DOM when the state of the model changes
+  * extend HTML vocabulary = teach HTML new tricks.   
+Angular comes with a built in set of directives (e.g., ng-* stuff) which are
+useful for building web applications but you can add your own such that HTML
+can be turned into a declarative Domain Specific Language (DSL). E.g., the
+<tabs> and <pane> elements on the Angular home page demo "Creating
+Components".
+
+    * Non-obvious built-in directives (because they don't start with "ng"): a, form, input, script, select, textarea. Under Angular, these all do more than normal!
+  * Directives allow you to "componentize HTML". Directives are often better than ng-include. E.g., when you start writing lots of HTML with mainly data-binding, refactor that HTML into (reusable) directives.
+  * The Angular compiler allows you to attach behavior to any HTML element or attribute and even create new HTML elements or attributes with custom behavior. Angular calls these behavior extensions _directives_.
+    * When you boil it all down, a directive is just a function which executes when the Angular compiler encounters it in the DOM.
+  * A directive is a behavior or DOM transformation which is triggered by a presence of an attribute, an element name, a class name, or a name in a comment. Directive is a behavior which should be triggered when specific HTML constructs are encountered in the (HTML) compilation process. The directives can be placed in element names, attributes, class names, as well as comments. 
+    * Most directives are restricted to attribute only. E.g., DoubleClick only uses custom attribute directives.
+  * see also [What is an angularjs directive?](https://stackoverflow.com/questions/13875466/what-is-an-angularjs-directive/13898058#13898058)
+
+Define and group Angular things (dependency injection stuff) in modules.  
+Share data and wrap web server interaction in services.  
+Extend HTML and do DOM manipulation in directives.  
+And make Controllers as "thin" as possible.
+

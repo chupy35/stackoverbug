@@ -1,0 +1,140 @@
+25523393 Using multi-match query in a multi-field does not work
+
+Our system stores account in the following format: `acct:username@domain` But
+for many searches we only need to username, so for the user created memos I've
+decided to make the user field a `multi_field` like this:
+
+    
+    
+    {
+      'text': {
+        'type': 'string'
+      }
+      'user': {
+        'type': 'multi_field',
+        'path': 'just_name',
+        'fields': {
+          'user': {
+            'type': 'string',
+            'index': 'analyzed',
+            'analyzer': 'lower_keyword'
+          },
+          'username': {
+            'type': 'string',
+            'index': 'analyzed',
+            'analyzer': 'username'
+          }
+        }
+      }
+    }
+    
+
+and other settings:
+
+    
+    
+    __settings__ = {
+        'analysis': {
+            'tokenizer': {
+                'username': {
+                    'type': 'pattern',
+                    'group': 1,
+                    'pattern': '^acct:(.+)@.*$'
+                }
+            },
+            'analyzer': {
+                'lower_keyword': {
+                    'type': 'custom',
+                    'tokenizer': 'keyword',
+                    'filter': 'lowercase'
+                },
+                'username': {
+                    'tokenizer': 'username',
+                    'filter': 'lowercase'
+                }
+            }
+        }
+    }
+    
+
+Now, if I make a query for the username it works. I.e if I have the following
+user: `acct:testuser@testdomain`
+
+and I make a query like this:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "terms": {
+                "username": [
+                  "testuser"
+                ]
+              }
+            }
+          ],
+          "minimum_number_should_match": 1
+        }
+      },
+      "size": 50
+    }
+    
+
+It works (I know it can be done much easier but this is a system generated
+query).
+
+But, I need to make searches which looks for a string in both the text and the
+username fields. I've decided to use a `multi-match` query for this.
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "multi_match": {
+                "operator": "and",
+                "query": "testuser",
+                "type": "cross_fields",
+                "fields": [
+                  "text",
+                  "username"
+                ]
+              }
+            }
+          ],
+          "minimum_number_should_match": 1
+        }
+      },
+      "size": 50
+    }
+    
+
+Now the problem is, that this query does not work for the username field. It
+does for the text field, and for other fields if I include them, but does not
+bring back any result for the username field.
+
+Can you help me what am I doing wrong?
+
+I've forgotten that the username analyzer would also tokenize my searches for
+match/multi match queries. That way the string 'testuser' was analyzed and it
+generated zero token.
+
+So the solution is to change the username's field mapping to:
+
+    
+    
+    'username': {
+        'type': 'string',
+        'index': 'analyzed',
+        'index_analyzer': 'username',
+        'search_analyzer': 'lower_keyword'
+    }
+    
+
+and now both queries are working.
+

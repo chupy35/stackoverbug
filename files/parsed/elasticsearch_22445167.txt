@@ -1,0 +1,60 @@
+22445167 ElasticSearch query referencing document
+
+I read some time ago that there was a way to build a query that references
+another document in your index. At the time, this wasn't helpful to me, but I
+now have very large GIS areas that I need to query against and sending this
+data to ElasticSearch in the query body every time seems wasteful.
+
+While my specific use-case relates to GIS, `geo_shape`, etc, it's a general
+issue that can be applied to other types of queries.
+
+I have a document type `areas` that holds all of the predefined search areas
+(these are things like suburbs, states, etc) and `entities` that hold all of
+my search data, including a [`geo_point`
+type](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+geo-point-type.html) field with lat/lon.
+
+I need to be able to construct a [`geo_shape`
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-geo-shape-query.html) for `entities` documents that references the `mpoly`
+attribute (which is a [`GeoShape`
+type](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+geo-shape-type.html)) on an `areas` document for it's shape coordinates.
+
+Unfortunately, neither Google nor reading the ElasticSearch docs have proved
+useful in this case, because generally nested documents (related, but not what
+I'm looking for) is what people seem to be more interested in.
+
+Finally found the answer myself while looking for something different.
+Unfortunately, the information about the `GeoShape` filter is not in the
+`GeoShape` query manual pages:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-geo-shape-filter.html#_pre_indexed_shape>
+
+    
+    
+    {
+        "filtered": {
+            "query": {
+                "match_all": {}
+            },
+            "filter": {
+                "geo_shape": {
+                    "location": {
+                        "indexed_shape": {
+                            "id": "DEU",
+                            "type": "countries",
+                            "index": "shapes",
+                            "path": "location"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+If anyone has better information about how to do this generically, I will
+happily accept their answer instead.
+

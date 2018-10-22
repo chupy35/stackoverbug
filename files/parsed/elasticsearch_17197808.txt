@@ -1,0 +1,74 @@
+17197808 Discrepancies in ElasticSearch Results
+
+I have a relatively simple search index built up for simple, plain text
+queries. No routing, custom analyzers or anything like that. One search
+instance/node, one index.
+
+There are docs within the index that I have deleted, and the RESTfull API
+confirms that:
+
+GET /INDEX_NAME/person/464
+
+    
+    
+    {
+      "_index": "INDEX_NAME",
+      "_type": "person",
+      "_id": "464",
+      "exists": false
+    }
+    
+
+However the doc is being returned from a simple search
+
+POST /INDEX_NAME/person
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "query_string": {
+                "default_field": "person.offices",
+                "query": "Chicago"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+One of the rows that is returned:
+
+    
+    
+    {
+      "_index": "INDEX_NAME",
+      "_type": "person",
+      "_id": 464,
+      "_score": null,
+      "fields": [
+        ...
+      ]
+    }
+    
+
+I'm new to ElasticSearch and thought I finally had a grasp of the basic
+concepts before digging deeper. But I'm not sure why a document isn't
+accessible via REST but it is still appearing in the results?
+
+I'm also running into the reverse issue where docs are returned from the API
+but they are not being returned in the search. For the sake of clarity I am
+considering that a separate issue for the time being, but I have a feeling
+that these two issues might be related.
+
+Part of me wants to delete my index and rebuild it, but I don't want to get
+into the same situation in a few days (and I'm not sure if that would even
+help).
+
+Any ideas or pointers on why this discrepancy might be happening? Maybe a
+process is in some zombie state and elasticsearch just needs to be restarted?
+

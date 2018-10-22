@@ -1,0 +1,39 @@
+26007743 What's the best way to remember instance variables in reactjs
+
+I have a basic class in `react` that draws a rectangle when I click
+
+    
+    
+    Conq.R.Canvas = React.createClass
+    
+      displayName: 'Canvas'
+    
+      componentDidMount: ->
+        @setState $(@getDOMNode()).offset()
+    
+      onMouseDown: (e) ->
+    
+        canvas = @getDOMNode()
+        context = canvas.getContext('2d')
+        context.fillRect e.clientX - @state.left, e.clientY - @state.top, 10, 10
+    
+      render: ->
+    
+        <canvas onMouseDown={@onMouseDown}></canvas>
+    
+
+It works fine. Is it typical to store things like `offset` in state, or should
+I just set it to `this` or put it in `props`? What's the convention and why?
+
+Don't knock me for storing it, if it wasn't offset, it could be some other
+value that I store. My basic question is where do I put local variables that
+are only used within an instance, and why?
+
+It should be state/props if changing it causes either:
+
+  * render to output a different result
+  * componentWillUpdate to behave differently
+  * componentDidUpdate to behave differently
+
+In this case `this.top` would be fine.
+

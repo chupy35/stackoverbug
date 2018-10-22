@@ -1,0 +1,17 @@
+24625157 what is the difference between using elasticsearch shutdown api and
+killing the elasticsearch process?
+
+I would like to know the difference between using elasticsearch shutdown api
+and killing the elasticsearch process (ctrl+c). I actually don't take graceful
+shut down as the answer coz I want to know what actually ES does when a shut
+down API call is issued.
+
+There are differences that I'm aware of (fair warning there may be more):
+
+  1. Provides a single endpoint for shutting one, some or all of the nodes in a cluster. A nice convenience when dealing with larger clusters.
+
+  2. Avoids the re-balance problem that can occur when shutting down nodes individually. An import scenario to avoid when using larger clusters. You start shutting down nodes one by one and you either get distracted or it takes too long. Now the surviving nodes think that there have been node failures and start re-balancing the cluster, which may then get interrupted by the remaining nodes shutdown. Can leave a real mess. Using the shutdown api specifically avoids this problem: <http://elasticsearch-users.115913.n3.nabble.com/Stopping-the-entire-cluster-without-any-rebalancing-td3431242.html>
+
+Other than that, after a cursory look thru the source code I don't see much
+difference.
+

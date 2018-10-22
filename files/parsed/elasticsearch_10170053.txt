@@ -1,0 +1,54 @@
+10170053 How to index an array of Nested Type in Elasticsearch?
+
+I am working on ElasticSearch. Here I wanted to index an array of nested type
+fields through an JAVA api. Could any one give an example on this. I tried few
+yet they failed.
+
+    
+    
+    XContentBuilder xb1 =  XContentFactory.jsonBuilder().startObject(); 
+    XContentBuilder xb2 =  XContentFactory.jsonBuilder().startObject(); 
+    
+    xb1.startArray("eventnested"); 
+    for(int j=0;j<2;j++) { 
+        xb2.field("event_type",eventType); 
+        xb2.field("event_attribute_instance",eventInstance); 
+        xb2.startArray("attributes"); 
+        for(int i=0;i<2;i++) { 
+            XContentBuilder xb3 = XContentFactory.jsonBuilder().startObject(); 
+            xb3.field("event_attribute_name", attrName); 
+            xb3.field("event_attribute_value", attrValue); 
+            xb2.value(xb3.copiedBytes()); 
+        } 
+        xb1.value(xb2.copiedBytes()); 
+    }
+    
+
+After indexing the data, when I read the response the data of the  particular
+field looked like
+
+"eventnested.event_type":
+["eyJldmVudF90eXBlIjoiUXVvdGF0aW9uIiwiZXZlbnRfYXR0cmlidXRlX2luc3RhbmNlIjoiMSIsImF0dHJpYnV0ZXMiOlsiZXlKbGRtVnVkRjloZEhSeWFXSjFkR1ZmYm1GdFpTSTZJbkJsY25OdmJpQWlMQ0psZG1WdWRGOWhkSFJ5YVdKMWRHVmZkbUZzZFdVaU9pSkxZWGtnVFdGcmFIVmlaV3hoSW4wPSJdLCJhdHRyaWJ1dGVzIjpbImV5SmxkbVZ1ZEY5aGRIUnlhV0oxZEdWZmJtRnRaU0k2SW5GMWIzUmxJQ0lzSW1WMlpXNTBYMkYwZEhKcFluVjBaVjkyWVd4MVpTSTZJblJvWlNCaWIza2djbUZ3WldRZ2RHaGxJSEJoYVhJZ2IyNGdiblZ0WlhKdmRYTWdiMk5qWVhOcGIyNXpMQ0IzYVhSb0lIUm9aU0JzWVhSbGMzUWdhVzVqYVdSbGJuUWdZbVZwYm1jZ2IyNGdSbkpwWkdGNUluMD0iXX0=","eyJldmVudF90eXBlIjoiUXVvdGF0aW9uIiwiZXZlbnRfYXR0cmlidXRlX2luc3RhbmNlIjoiMSIsImF0dHJpYnV0ZXMiOlsiZXlKbGRtVnVkRjloZEhSeWFXSjFkR1ZmYm1GdFpTSTZJbkJsY25OdmJpQWlMQ0psZG1WdWRGOWhkSFJ5YVdKMWRHVmZkbUZzZFdVaU9pSkxZWGtnVFdGcmFIVmlaV3hoSW4wPSJdLCJhdHRyaWJ1dGVzIjpbImV5SmxkbVZ1ZEY5aGRIUnlhV0oxZEdWZmJtRnRaU0k2SW5GMWIzUmxJQ0lzSW1WMlpXNTBYMkYwZEhKcFluVjBaVjkyWVd4MVpTSTZJblJvWlNCMFpXVnVZV2RsY2lCb1lYTWdZbVZsYmlCd2JHRmpaV1FnYVc0Z1lTQnpZV1psZEhrZ2FHOXRaU0JoYm1RZ2QybHNiQ0JpWlNCamFHRnlaMlZrSUhkcGRHZ2djbUZ3WlNKOSJdfQ=="
+
+    
+    
+    XContentBuilder xb =  XContentFactory.jsonBuilder().startObject();
+    
+    xb.startArray("eventnested");
+    for(int j=0;j<2;j++) {
+        xb.startObject();
+        xb.field("event_type", eventType);
+        xb.field("event_attribute_instance", eventInstance);
+        xb.startArray("attributes");
+        for(int i=0;i<2;i++) {
+            xb.startObject();
+            xb.field("event_attribute_name", attrName);
+            xb.field("event_attribute_value", attrValue);
+            xb.endObject();
+        }
+        xb.endArray();
+        xb.endObject();
+    }
+    xb.endArray();
+    
+

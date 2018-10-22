@@ -1,0 +1,25 @@
+22061539 Creating 2 elasticsearch instances on single machine on same port
+
+I have tried to install two elasticsearch instances in single server and
+failed to do so ( on same port). Is there any way i can create 2 elasticsearch
+instances in same server and on same port. Will reverse proxy help here. If so
+how.
+
+Creating 2 Elasticsearch instances on the same server and the same port is
+impossible, and pointless.
+
+Just set 2 instances running on the same box, put have them pointed at
+different ports, one at the default port of 9200 and one at port 9300. Give
+them the same cluster name and they will automatically network together.
+
+One important point, make sure you set the data and plugin directories to
+different locations otherwise you'll get data from one node writing over the
+data from the other node.
+
+EDIT:
+
+By the way, if you're looking to create 2 completely separate clusters on the
+same machine you still need to do what I said above, but just make sure the
+cluster name is different in each configuration file so that they don't
+network together.
+

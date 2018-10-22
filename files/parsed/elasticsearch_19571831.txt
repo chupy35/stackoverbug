@@ -1,0 +1,79 @@
+19571831 ElasticSearch query failing due to state codes "in" and "or" being
+reserved words
+
+I'm querying for states using the state code as the query string, and "in" and
+"or" (Indiana and Oregon) are failing, presumably because they're reserved
+words.
+
+I can confirm that the data exists in the index correctly, because when I run:
+
+    
+    
+    curl -XGET 'localhost:9200/state/_search?size=200&pretty=true' -d '{"query" : {"match_all" : {}}}' > out.txt
+    
+
+I can see the data there for both the working states and the non-working
+states. Plus, if I change the state code of a non-working state in CouchDB to
+something like XYZ, I can verify that the change makes it to ES by running the
+above command and searching for XYZ. So I know I'm looking at the right data
+and it's indexing fine.
+
+The problem is the query. Right now, here's what my entire query object looks
+like:
+
+    
+    
+    var q = {
+         size: 0,
+         query: {
+             filtered: {
+                 query: { term: { postcode: 'tn' } },
+                 filter: { term: { version: 2 } }
+             }
+         },
+         facets: {
+             version: {  terms: { field: "version" }  },
+             count : { statistical : { field : "latestValues.enroll"  } }
+         }
+    };
+    
+
+If I run that query, I get no results. If I change the "or" out with "tn" or
+"tx" or "sc" etc., then it works fine.
+
+I looked for a way to escape reserved words and found [this
+link](http://elasticsearch-users.115913.n3.nabble.com/Searching-for-a-
+reserved-word-OR-td2238889.html) but it doesn't seem to work for me, when
+running the following query:
+
+    
+    
+    var q = {
+        size: 0,
+        query: {
+            filtered: {
+                query: { match_all: { } },
+                filter: { term: { version: 2, postcode: 'or' } }
+            }
+        },
+        facets: {
+            version: {  terms: { field: "version" }  },
+            count : { statistical : { field : "latestValues.enroll"  } }
+        }
+    };
+    
+
+(Note that that query also works when changing out "or" with a non-reserved-
+word-state so I know it's not a problem with the query itself).
+
+Any ideas?
+
+This is not about "reserved" words, its about stop words. You are using an
+analyzer which removes stop words (the default analyzer up to a more recent
+version of Elasticsearch).
+
+You'll need to change the analyzer for the field, see here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis.html>
+
+This will change require reindexing, though
+

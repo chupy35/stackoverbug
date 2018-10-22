@@ -1,0 +1,87 @@
+28388374 Creating an HTML editor component with ReactJS
+
+New to React, please point out if I've headed down the wrong track: I'm trying
+to build an HTML editor component, which so far looks like this:
+
+    
+    
+    var CopyEditor = React.createClass({
+      render: function(){
+        var pageBody = "<p>My HTML string ...";
+        return (
+          <form id="editForm" method="POST">
+            <textarea id="editor" name="body" value=pageBody />
+            <input type="submit" id="saveBt" value="save" class="button-primary" />
+          </form>
+        );
+      }
+    });
+    
+
+But I'm getting the following error in the console:
+
+> Uncaught Error: Parse Error: Line 6: Unexpected token ILLEGAL at
+<http://localhost:8000/index.html>
+
+>
+
+> var pageBody = '  
+>                             ^
+
+My HTML string is being generated on the Server, and there's a newline where
+the carot is pointing in the error message. What SHOULD I be doing?
+
+You dont really need `dangerouslySetInnerHTML` with `textarea`. You can just
+use `value` prop:
+
+<http://jsfiddle.net/egkc7dbd/>
+
+    
+    
+    var CopyEditor = React.createClass({
+      onChange : function(){
+      },
+      render: function(){
+        var pageBody = "<p>My HTML string ...";
+        return (
+          <form id="editForm" method="POST">
+            <textarea id="editor" name="body" value="<p>My HTML string ..." onChange={this.onChange}/>
+            <input type="submit" id="saveBt" value="save" className="button-primary" />
+          </form>
+        );
+      }
+    });
+    
+    React.render(<CopyEditor/>, document.body);
+    
+
+* * *
+
+**UPDATE**
+
+According to the
+[documentation](http://facebook.github.io/react/docs/forms.html#why-textarea-
+value) you can have line breaks using `\n`. The first solution is missing `{}`
+around `value` prop.
+
+new jsfiddle: <http://jsfiddle.net/jwb50xu9/>
+
+    
+    
+    var CopyEditor = React.createClass({
+      onChange : function(){
+      },
+      render: function(){
+        var pageBody = "<p> \n My HTML string ...";
+        return (
+          <form id="editForm" method="POST">
+            <textarea id="editor" name="body" value={pageBody} onChange={this.onChange}/>
+            <input type="submit" id="saveBt" value="save" className="button-primary" />
+          </form>
+        );
+      }
+    });
+    
+    React.render(<CopyEditor/>, document.body);
+    
+

@@ -1,0 +1,26 @@
+18321219 get elasticsearch schema via commandline tool
+
+I am trying to get up to speed on an elasticsearch implementation on a
+project. How can I see the data that is on the cluster? Is there a commandline
+tool that gives me information on the schema?
+
+To get schema:
+
+    
+    
+    curl -XGET 'http://loadtest-appserver1:9200/myIndex/_mapping'
+    
+
+See [Elasticsearch Api Doc](http://www.elasticsearch.org/guide/reference/api/)
+
+Try using ElasticSearch Head
+
+<http://mobz.github.io/elasticsearch-head/>
+
+It's a great tool when peeking in your index and it's meta data (such as the
+schema) to find out what's going on.
+
+Also it's HTML5/REST based, so you can take a look in your browser at the
+commands it sends to your cluster and use those with command line CURL if
+needed.
+

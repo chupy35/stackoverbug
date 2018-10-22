@@ -1,0 +1,53 @@
+6275727 Define custom ElasticSearch Analyzer using Java API
+
+Is there a way to create an index and specify a custom analyzer using the Java
+API? It supports adding mappings at index creation, but I can't find a way to
+do something like this without sending the JSON via HTTP PUT:
+
+    
+    
+    curl -XPUT localhost:9200/twitter?pretty=true -d '{
+    "analysis": {
+           "analyzer": {
+                "steak" : {
+                    "type" : "custom", 
+                    "tokenizer" : "standard",
+                    "filter" : ["snowball", "standard", "lowercase"]
+                }
+            }
+        }
+    }'
+    
+
+I can build such a query using JSONBuilder, but I can't find no place in the
+API where to run it, `CreateIndexRequest` doesn't have anything I can use and
+neither does `client.admin().indices()`, as far as I can see. What's the right
+way to do this?
+
+You can set analyzer using
+`client.admin().indices().prepareCreate("twitter").setSettings(...)`. There
+are several ways to build settings. You can load them from text, map or even
+use jsonBuilder if that's what you want:
+
+    
+    
+    client.admin().indices().prepareCreate("twitter")
+                .setSettings(Settings.settingsBuilder().loadFromSource(jsonBuilder()
+                    .startObject()
+                        .startObject("analysis")
+                            .startObject("analyzer")
+                                .startObject("steak")
+                                    .field("type", "custom")
+                                    .field("tokenizer", "standard")
+                                    .field("filter", new String[]{"snowball", "standard", "lowercase"})
+                                .endObject()
+                            .endObject()
+                        .endObject()
+                    .endObject().string()))
+                .execute().actionGet();
+    
+
+If you are on a test environnent you can also uses this project which will
+create your indexes based on Java annotations.
+<https://github.com/tlrx/elasticsearch-test>
+

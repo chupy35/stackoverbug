@@ -1,0 +1,80 @@
+20186441 Performing nested boolean queries within another boolean query in
+elasticsearch
+
+I want do nest a boolean query with multiple must/should inside another
+boolean query to get a nested AND/OR query string like in the following query.
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "should": [
+            **// SHOULD BLOCK 1**
+            {
+              <should_query_1>
+            },
+            **// SHOULD BLOCK 2**
+            {
+              <should_query_2>
+            },
+            **// SHOULD BLOCK 3**
+            {
+              "bool": {
+                "must": [
+                  <should_level_2_MUST_query_1>,
+                  <should_level_2_MUST_query_2>,
+              {
+            "bool": {
+              "must": [
+                <should_level_3_MUST_query_1>,
+                <should_level_3_MUST_query_2>,
+              ]         
+            }
+              }
+                ]
+              }
+            },
+            **// SHOULD BLOCK 4**
+            {
+              "bool": {
+                "must": [
+                  <should_MUST_query_1>,
+                  <should_MUST_query_2>
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "size": 25,
+      "from": 0,
+      "fields": []
+    }
+    
+
+The expected behavior is, I want the should blocks 1,2,3,4 'OR'ed and within
+the "should block 3" i want the "Should_level_2_MUST_queries" to be 'AND'ed.
+
+But in reality When i am using this syntax the should blocks 3 & 4 are 'AND'ed
+in the first level itself and ORed with blocks 1 & 2\. Please help me
+rearrange/ rewrite this query for me the achieve the expected behaviour.
+
+Thanks in advance
+
+AFAIK, elasticsearch dont have and/or levels like the one in boolean algebra.
+At the end there is always one level.
+
+So, in your query, you basically say that "I need 3 must query", so those 3
+must queries' combined result will be in the final response.
+
+If I understood it correctly, to reach expected behavior, you should do
+following:
+
+  * Convert all musts to should
+  * If you need AND put those shoulds `"minumum_should_match:N"` rule where N is an integer
+
+Guides:
+
+  * [How to use minumum should match?](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-minimum-should-match.html)
+

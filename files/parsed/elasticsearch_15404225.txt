@@ -1,0 +1,80 @@
+15404225 Can we do a bulk index without specifying a document ID for
+Elasticsearch?
+
+Is it possible to do a bulk index without specifying a document ID? I want
+Elasticsearch to generate a random ID for me while indexing, but can it be
+done?
+
+Yes you can!
+
+Tested on 0.90.0.Beta1:
+
+    
+    
+    $ cat requests 
+    { "index" : { "_index" : "test", "_type" : "type1" } }
+    { "field1" : "value1" }
+    
+    $ curl -s -XPOST localhost:9200/_bulk --data-binary @requests; echo
+    {"took":6,"items":[{"create":{"_index":"test","_type":"type1","_id":"IWqsRqyhRVq-F69OLIngTA","_version":1,"ok":true}}]}
+    
+
+Here is another example of bulk upload without specifying the _id.
+
+`
+
+    
+    
+    curl -XPOST "http://localhost:9200/_bulk" -d'
+        { "index" : { "_index" : "test", "_type" : "demo" } }
+        { "title" : "Quick brown rabbits", "content" : "Brown rabbits are commonly seen" }
+        { "index" : { "_index" : "test", "_type" : "demo" } }
+        { "title" : "Keeping pets healthy", "content" : "My quick brown fox eats rabbits
+    
+
+`
+
+Response is below
+
+`
+
+    
+    
+    {
+      "took": 451,
+      "errors": false,
+      "items": [
+        {
+          "create": {
+            "_index": "test",
+            "_type": "demo",
+            "_id": "AVYDtp_fxosF2Bdj7ghV",
+            "_version": 1,
+            "_shards": {
+              "total": 2,
+              "successful": 1,
+              "failed": 0
+            },
+            "status": 201
+          }
+        },
+        {
+          "create": {
+            "_index": "test",
+            "_type": "demo",
+            "_id": "AVYDtp_fxosF2Bdj7ghW",
+            "_version": 1,
+            "_shards": {
+              "total": 2,
+              "successful": 1,
+              "failed": 0
+            },
+            "status": 201
+          }
+        }
+      ]
+    }
+    
+
+`
+

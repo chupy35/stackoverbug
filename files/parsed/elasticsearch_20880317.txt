@@ -1,0 +1,127 @@
+20880317 How to build a list of filterable options from a query result?
+
+I have a collection of products, each product will have:
+
+  1. price
+  2. attributes (for example: Size: xl, s, xxl; Color: yellow, red, blue; ....)
+  3. manufacturer
+  4. categories (a product can be in multiple categories)
+
+This collection is indexed in ElasticSearch. Now when I query the list of all
+products in category A for example, I would also like to get:
+
+  1. the price range of all products (min - max)
+  2. the list of all possible options and values (Size, Color and the corresponding values xl, s, xxl, yellow, red, blue)
+  3. manufacturer (Nike, Addidas, ....)
+  4. categories
+
+I will then use these info to build a filter which users can use to narrow
+down the result list (similar to filters seen on many other ecommerce sites
+such as Amazon, Overstock, Ebay,...)
+
+I looked into facet search but not sure if that's what I want, I would love to
+find a way to retrieve all the information I need with the smallest amount of
+queries possible.
+
+[Facets](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets.html) are definitely the way to go when it comes to the style of Amazon
+category search. For retrieving all the facets in the smallest amount of
+queries as possible you can very easily do this, just include more. I used
+Sense chrome extension because it's really pretty and easy to use for search
+examples. For this example I'm placing a few product documents with name,
+price, manufacturer, category, color. As you can see we've searched on all
+these facets in a match all. You can do the query you like and even do global
+facets, or any number of facets( range, histograms ect..). It really all
+depends on what documents you want, and how the data is formed. A very
+exciting portion of this is the next big thing
+[Aggregations](http://www.elasticsearch.org/guide/en/elasticsearch/reference/master/search-
+aggregations.html)! You can do awesome searches with aggregations. Say you
+have a timestamp and a location, you could have a aggregation on a color
+between a time in a specific location. qbox.io will have a blog post about
+some interesting things you can do with aggs in the coming days.
+
+    
+    
+    DELETE /test_index
+    
+    PUT /test_index
+    
+    PUT /test_index/product/1
+    {
+       "name":"prod1",
+       "price":19.95,
+       "manufacturer":"manu1",
+       "category":["cat1","cat2"],
+       "color":"red"
+    }
+    
+    PUT /test_index/product/2
+    {
+       "name":"prod2",
+       "price":25,
+       "manufacturer":"manu2",
+       "category":["cat2","cat3"],
+       "color":"yellow"
+    }
+    
+    PUT /test_index/product/3
+    {
+       "name":"prod3",
+       "price":4.99,
+       "manufacturer":"manu2",
+       "category":["cat1","cat2","cat3"],
+       "color":"yellow"
+    }
+    
+    PUT /test_index/product/4
+    {
+       "name":"prod4",
+       "price":19.95,
+       "manufacturer":"manu3",
+       "category":["cat1","cat3"],
+       "color":"blue"
+    }
+    
+    POST /test_index/_search
+    {
+       "query": {
+           "match_all": {}
+       },
+       "facets" : {
+           "price_stats" : {
+               "statistical" : {
+                   "field" : "price"
+               }
+           },
+           "color_terms" : {
+               "terms": {
+                  "field": "color",
+                  "size": 10
+               }
+           },
+           "manufacturer_terms" : {
+               "terms": {
+                  "field": "manufacturer",
+                  "size": 10
+               }
+           },
+           "category_terms" : {
+               "terms": {
+                  "field": "category",
+                  "size": 10
+               }
+           }
+       }
+    }`
+    
+
+If you're wanting to get ahead of the ElasticSearch game, why not check out
+the latest beta of ElasticSearch, found
+[here](http://www.elasticsearch.org/downloads/1-0-0-beta2/) which includes
+**aggregations**. [Here](https://www.found.no/foundation/elasticsearch-
+aggregations/) is a nice blog article explaining aggregations and the
+differences it has with facets, and its endless possibilities.
+
+ElasticSearch 1.0.0 can't be far away so don't worry too much about being part
+of a beta program.
+

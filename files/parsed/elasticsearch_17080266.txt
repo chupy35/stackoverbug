@@ -1,0 +1,32 @@
+17080266 Is there a need for a boolean field index in elasticsearch
+
+I am trying to optimize my elasticsearch. I have several boolean fields, which
+I use queries with. I could dispense with them, but that would give my client
+side a hard time.
+
+My question is whether or not setting those fields to `"index":"yes"` will
+actually have a significant negative effect on my index's performance, such as
+indexing time and size (other than the obvious "store" space it would take)?
+
+Does a boolean indexed field really take up more space? It seems it shouldn't.
+Moreover, I don't see any benefit in creating such an index for any DB, not
+only elasticsearch.
+
+But, I have to specify `"index":"yes"` to be able to filter by it, right?
+
+If you want to search against a field you have to index it. By default a
+`boolean` field is indexed, and will take a small amount of space to do so.
+There will be a list of docs where `"myfield": true` and `"myfield": false`.
+
+If you didn't want to maintain this index, then when you wanted to find docs
+where `"myfield": true` you would have to through every doc to check the
+field.
+
+If you don't want to search/filter with that field, by all means set `"index":
+"no"`, just be warned you will need to re-index everything if you change your
+mind about this field in the future!
+
+[Have a look at the elaticsearch docs on mappings; the core types
+section](http://www.elasticsearch.org/guide/reference/mapping/core-types/),
+scroll down to the boolean type.
+

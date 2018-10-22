@@ -1,0 +1,85 @@
+29750130 Spring Boot: Web.xml and embedded server jar
+
+I'm trying to convert a legacy spring-mvc app to Spring boot (in order to have
+a self contained JAR enabling easier upgrade to Java-8).
+
+I see no reason to use replace my existing web.xml file with code as the code
+looks like configuration and web.xml is more established.
+
+Is it possible to use my existing web.xml in a Spring Boot application (in
+embedded JAR mode)?
+
+Edit: I also want to avoid using @EnableAutoConfiguration
+
+Thanks
+
+You don't need Spring-Boot to have a self-contained JAR, all you really need
+is Embedded Tomcat, or Jetty.
+
+Create a class with `public static void main(String[] a)`, and this Class will
+be used when the Jar is "executed" by `java -jar myWebapp.jar` command.
+
+In the `main` method, you can fire up the Embedded Tomcat or Jetty, and make
+it load your webapp by referring to existing web.xml.
+
+ok, thanks to Mecon, I'm slightly closer. I had to remove the
+ContextLoaderListener in the web.xml; also had to import the xml Spring config
+even though it was referenced in the contextConfigLocation.
+
+    
+    
+    @Configuration
+    @ComponentScan
+    @EnableAutoConfiguration
+    @ImportResource(value = {"classpath:/webapp-base.xml"})
+    public class WebApp {
+    
+        @Autowired
+        private ServerProperties serverProperties;
+    
+        @Autowired
+        private MediaConfiguration mediaConfig;
+    
+            @Bean
+            public EmbeddedServletContainerFactory servletContainer() {
+                JettyEmbeddedServletContainerFactory factory = new JettyEmbeddedServletContainerFactory();
+                factory.setContextPath(serverProperties.getContextPath());
+                factory.addConfigurations(new WebXmlConfiguration());
+                factory.addServerCustomizers(server -> {
+                        List<Handler> resourceHandlers = getResourceHandlers();
+                        Handler original = server.getHandler();
+    
+                        HandlerList handlerList = new HandlerList();
+                        Handler[] array = getHandlers(original, resourceHandlers);
+                        handlerList.setHandlers(array);
+    
+                        server.setHandler(handlerList);
+                    }
+                );
+                return factory;
+            }
+    
+        private List<Handler> getResourceHandlers() {
+            return mediaConfig.getMappings().stream().map(m -> {
+                ContextHandler contextHandler = new ContextHandler(m.getUrlpath());
+                ResourceHandler resourceHandler = new ResourceHandler();
+                resourceHandler.setResourceBase(m.getFilepath());
+                contextHandler.setHandler(resourceHandler);
+                return contextHandler;
+            }).collect(Collectors.toList());
+        }
+    
+        private Handler[] getHandlers(Handler original, List<Handler> resourceHandlers) {
+            ArrayList<Handler> handlers = new ArrayList<>();
+            handlers.add(original);
+            handlers.addAll(resourceHandlers);
+            return handlers.toArray(new Handler[resourceHandlers.size()+1]);
+        }
+    
+        public static void main(String[] args) {
+            SpringApplication.run(WebApp.class, args);
+        }
+    
+    }
+    
+

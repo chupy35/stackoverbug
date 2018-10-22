@@ -1,0 +1,32 @@
+25568622 What's the downside to using daily indexes in Elasticsearch?
+
+I have 10 indexes that I rotate on a weekly basis that can reach up to 100GB a
+piece with 10-20 million documents depending on the index. After I rotate I
+typically optimize, but this can take quite a while and I even bumped into an
+OOM issue with a particularly heavy index.
+
+I thought about moving to daily indexes instead. This would speed up
+optimization and would allow me to archive/close indexes on a more granular
+level.
+
+Is there any downside to using a daily over weekly rotation scheme? I know
+there are a lot of variables that might influence this, so if there isn't a
+straight answer, what are best practice with regards to index rotation?
+
+Thanks!
+
+You'll utilize more RAM for daily indexes, if you keep the shard/replication
+count the same for a daily index as you currently have for weekly. The more
+segements/shards/indexes, the more RAM your nodes will use.
+
+Your optimize will likely be faster, true, and you can close on a daily level
+like you said.
+
+Your queries should also be faster.
+
+I'm in the other boat, I found this while researching what's been done re-
+indexing into weekly/monthly indexes after a set number of days. I was keeping
+45+ daily indexes open, each 300-700GB, and JVM was running ~80%. I hope to
+take oldest days, 7 at a time, to convert to weekly, and lower ram usage, but
+still keep indexes open (then maybe to monthly, etc).
+

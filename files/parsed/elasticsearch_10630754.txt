@@ -1,0 +1,119 @@
+10630754 'must' function not working in elasticsearch
+
+I am new to Elasticsearch and working with a database. I would like to do a
+query like this:
+
+`curl -X GET http://localhost:9200/project/flat_order/_search?pretty=true -d'
+{ query:{ bool:{ must:{range:{created_at:{gte:"2012-01-01
+00:00:00",lte:"2012-02-01 00:00:00"}}}},
+{should:[{term:{status:"canceled"}}],minimum_number_should_match:1} } } }'`
+
+and I am getting an error.  `"error" : "SearchPhaseExecutionException[Failed
+to execute phase [query], total failure; shardFailures
+{[YfeNrRnOTOqLOtQt65uPVw][project][1]: SearchParseException[[project][1]:
+from[-1],size[-1]: Parse Failure [Failed to parse source [ { query:{ bool:{
+must:{range:{created_at:{gte:\"2012-01-01 00:00:00\",lte:\"2012-02-01
+00:00:00\"}}}},
+{should:[{term:{status:\"canceled\"}}],minimum_number_should_match:1} } }
+}]]]; nested: QueryParsingException[[project] Failed to parse]; nested:
+JsonParseException[Unexpected character ('{' (code 123)): was expecting either
+valid name character (for unquoted name) or double-quote (for quoted) to start
+field name\n at [Source: [B@3742925a; line: 1, column: 102]];
+}{[YfeNrRnOTOqLOtQt65uPVw][project][2]: SearchParseException[[project][2]:
+from[-1],size[-1]: Parse Failure [Failed to parse source [ { query:{ bool:{
+must:{range:{created_at:{gte:\"2012-01-01 00:00:00\",lte:\"2012-02-01
+00:00:00\"}}}},
+{should:[{term:{status:\"canceled\"}}],minimum_number_should_match:1} } }
+}]]]; nested: QueryParsingException[[project] Failed to parse]; nested:
+JsonParseException[Unexpected character ('{' (code 123)): was expecting either
+valid name character (for unquoted name) or double-quote (for quoted) to start
+field name\n at [Source: [B@3742925a; line: 1, column: 102]]; }]", "status" :
+500 }`
+
+What to do?  Thanks in advance.
+
+This is the error I am getting without those braces(enclosing should) `"error"
+: "SearchPhaseExecutionException[Failed to execute phase [query], total
+failure; shardFailures {[YfeNrRnOTOqLOtQt65uPVw][project][0]:
+SearchParseException[[project][0]: query[created_at:[1325376000000 TO
+1328054400999]],from[-1],size[-1]: Parse Failure [Failed to parse source [ {
+query:{ bool:{ must:{range:{created_at:{gte:\"2012-01-01
+00:00:00\",lte:\"2012-02-01 00:00:00\"}}}},
+should:[{term:{status:\"canceled\"}}],minimum_number_should_match:1 } } }]]];
+nested: SearchParseException[[project][0]: query[created_at:[1325376000000 TO
+1328054400999]],from[-1],size[-1]: Parse Failure [No parser for element
+[term]]]; }{[YfeNrRnOTOqLOtQt65uPVw][project][4]:
+SearchParseException[[project][4]: query[created_at:[1325376000000 TO
+1328054400999]],from[-1],size[-1]: Parse Failure [Failed to parse source [ {
+query:{ bool:{ must:{range:{created_at:{gte:\"2012-01-01
+00:00:00\",lte:\"2012-02-01 00:00:00\"}}}},
+should:[{term:{status:\"canceled\"}}],minimum_number_should_match:1 } } }]]];
+nested: SearchParseException[[project][4]: query[created_at:[1325376000000 TO
+1328054400999]],from[-1],size[-1]: Parse Failure [No parser for element
+[term]]]; }]", "status" : 500 } `
+
+Looking at the error detail, I believe the problem is that you've got an extra
+level of nesting for your `should` clause which you shouldn't have. Instead
+of:
+
+    
+    
+    must: { ... },
+    { should: { ... },
+      minimum_number_should_match:1}
+    }
+    
+
+Try:
+
+    
+    
+    must: { ... },
+    should: { ... },
+    minimum_number_should_match:1}
+    
+
+EDIT: Your edited code looks like this is your query:
+
+    
+    
+    query:{ bool:{ must:{range:{created_at:{gte:\"2012-01-01 00:00:00\",
+    lte:\"2012-02-01 00:00:00\"}}}}, should:[{term:status:\"canceled\"}}],
+    minimum_number_should_match:1 }
+    
+
+which, formatted, would be:
+
+    
+    
+    query:{ 
+     bool:{ 
+      must:{
+       range:{created_at:{gte:\"2012-01-01 00:00:00\",lte:\"2012-02-01 00:00:00\"}}
+      }
+     },
+     should: [
+      {term:{status:\"canceled\"}}
+     ],
+     minimum_number_should_match:1
+    }
+    
+
+... which has the `should` _outside_ the `bool` part. In other words, you've
+got too many closing braces after your `must` clause. I believe it should be:
+
+    
+    
+    query:{ 
+     bool:{ 
+      must:{
+       range:{created_at:{gte:\"2012-01-01 00:00:00\",lte:\"2012-02-01 00:00:00\"}}
+      },
+      should: [
+       {term:{status:\"canceled\"}}
+      ],
+      minimum_number_should_match:1
+     } 
+    }
+    
+

@@ -1,0 +1,71 @@
+13069295 AngularJS route not working
+
+I tried to make the 'getting started' tutorial from Angular JS, but I have a
+problem when setting the route of a link: the controller of that route does
+not get called when the user clicks on the link.
+
+Here is my code:
+
+    
+    
+    angular.module('phonecat', []).
+    config(['$routeProvider',
+        function ($routeProvider) {
+            $routeProvider.
+            when('/phones', {
+                templateUrl: 'partials/phone-list.html',
+                controller: PhoneListCtrl
+            }).
+            when('/phones/:phoneId', {
+                templateUrl: 'partials/phone-detail.html',
+                controller: PhoneDetailCtrl
+            }).
+            otherwise({
+                redirectTo: '/phones'
+            });
+        }
+    ]);
+    
+    function PhoneDetailCtrl($scope, $routeParams, $http) {
+        $scope.phoneId = $routeParams.phoneId;
+    
+        $scope.total = 4;
+        $http.get('phones/' + $routeParams.phoneId + '.json').success(function (data) {
+            $scope.phone = data;
+        });
+    }
+    
+    function PhoneListCtrl($scope, $http) {
+        $http.get('phones/phones.json').success(function (data) {
+            $scope.phones = data;
+        });
+    
+        $scope.orderProp = 'age';
+    }
+    
+
+This should work but you need to be sure the link is inside the DOM element
+which is the root of your app; ie `(ng-app='my-app')`. It's hard to tell
+without seeing the page markup.
+
+What angularjs version did you use? I follow the tutorial too, and it use
+angular-1.0.0rc7.js and if I look up in the app.js file, it use `template`
+rather than `templateUrl`:
+
+    
+    
+    $routeProvider.when('/phones', {
+        template: 'partials/phone-list.html',
+        controller: PhoneListCtrl
+    });
+    
+
+so by looking your code, you might want to use `angular-1.0.3.js` or prior
+version above the RC
+
+The problem was solved by the asker:
+
+> I fixed the problem - actually I had the HTML of the next step of this
+tutorial and it was messing up with the app, mainly because it had binding
+with attribute that did not exist in the model yet.
+

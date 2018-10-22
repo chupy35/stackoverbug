@@ -1,0 +1,184 @@
+17191539 How to stop/shut down an elasticsearch node?
+
+I want to restart an elasticsearch node with a new configuration. What is the
+best way to gracefully shut down an node?
+
+Is killing the process the best way of shutting the server down, or is there
+some magic URL I can use to shut the node down?
+
+**Updated answer.**
+
+`_shutdown` API has been removed in elasticsearch 2.x.
+
+Some options:
+
+  * In your terminal (dev mode basically), just type "Ctrl-C"
+
+  * If you started it as a daemon (`-d`) find the PID and kill the process: `SIGTERM` will shut Elasticsearch down cleanly (`kill -15 PID`)
+
+  * If running as a service, run something like `service elasticsearch stop`:
+
+    * [Linux](https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-service.html)
+    * [Windows](https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-service-win.html)
+
+**Previous answer. It's now deprecated from 1.6.**
+
+Yeah. See [admin cluster nodes shutdown
+documentation](http://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-
+nodes-shutdown.html)
+
+Basically:
+
+    
+    
+    # Shutdown local node
+    $ curl -XPOST 'http://localhost:9200/_cluster/nodes/_local/_shutdown'
+    
+    # Shutdown all nodes in the cluster
+    $ curl -XPOST 'http://localhost:9200/_shutdown'
+    
+
+The Head plugin for Elasticsearch provides a great web based front end for
+Elasticsearch administration, including shutting down nodes. It can run any
+Elasticsearch commands as well.
+
+Just in case you want to find PID of the instance and kill the process,
+assuming that the node is listening to port 9300 (the default port) you can
+run the following command :
+
+    
+    
+    kill -9  $(netstat -nlpt | grep 9300 | cut -d ' ' -f 58 | cut -d '/' -f 1)
+    
+
+You may have to play with the numbers in the above-mentioned code such as 58
+and 1
+
+If you just want to apply new config you dont need to shutdown it.
+
+`$ sudo service elasticsearch restart`
+
+But if you want to shutdown it anyway:
+
+`$ sudo service elasticsearch stop`
+
+OR
+
+`$ sudo systemctl stop elasticsearch.service`
+
+`$ sudo systemctl restart elasticsearch.service`
+
+Docker:
+
+`docker restart <elasticsearch-container-name or id>`
+
+If you can't find what process is running elasticsearch on windows machine you
+can try running in console:
+
+    
+    
+    netstat -a -n -o
+    
+
+Look for port elasticsearch is running, default is `9200`. Last column is PID
+for process that is using that port. You can shutdown it with simple command
+in console
+
+    
+    
+    taskkill /PID here_goes_PID /F
+    
+
+use the following command to know the pid of the node already running.
+
+> curl -XGET '<http://localhost:9200/_nodes/process>'
+
+It took me an hour to find out the way to kill the node and could finally do
+it after using this command in the terminal window.
+
+This works for me on OSX.
+
+    
+    
+    pkill -f elasticsearch
+    
+
+Answer for Elasticsearch inside Docker:
+
+Just stop the docker container. It seems to stop gracefully because it logs:
+
+    
+    
+    [INFO ][o.e.n.Node               ] [elastic] stopping ...
+    
+
+Stopping the service and killing the daemon are indeed the correct ways to
+shutdown a node. However, it's not recommended to do so directly if you want
+to take down a node for maintenance. In fact, if you don't have replicas you
+will loose data.
+
+When you directly shutdown a node, Elasticsearch will wait for 1m (default
+time) for it to come back online. If it doesn't, then it will start to
+allocate the shards from that node to other nodes wasting lots of IO.
+
+A typical approach would be to disable shard allocation temporarily by
+issuing:
+
+    
+    
+    PUT _cluster/settings
+    {
+      "persistent": {
+        "cluster.routing.allocation.enable": "none"
+      }
+    }
+    
+
+Now, when you take down a node, ES won't try to allocate shard from that node
+to other nodes and you can perform you maintenance activity and then once the
+node is up, you can enable shard allocation again:
+
+    
+    
+    PUT _cluster/settings
+    {
+      "persistent": {
+        "cluster.routing.allocation.enable": "all"
+      }
+    }
+    
+
+Source: <https://www.elastic.co/guide/en/elasticsearch/reference/5.5/restart-
+upgrade.html>
+
+If you don't have replicas for all your indexes, then performing this type of
+activity will have downtime on some of the indexes. A cleaner way in this case
+would be to migrate all the shards to other nodes before taking the node down:
+
+    
+    
+    PUT _cluster/settings
+    {
+      "transient" : {
+        "cluster.routing.allocation.exclude._ip" : "10.0.0.1"
+      }
+    }
+    
+
+This will move all shards from `10.0.0.1` to other nodes (will take time
+depending on the data). Once everything is done, you can kill the node,
+perform maintenance and get it back online. This is a slower operation and is
+not required if you have replicas.
+
+(Instead of _ip, _id, _name with wildcards will work just fine.)
+
+More information:
+<https://www.elastic.co/guide/en/elasticsearch/reference/5.5/allocation-
+filtering.html>
+
+Other answers have explained how to kill a process.
+
+If you're running a node on local host, use "brew service stop elasticsearch"
+
+I run elasticsearch on iOS localhost.
+

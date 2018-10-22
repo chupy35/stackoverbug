@@ -1,0 +1,37 @@
+21004467 spring-boot auto-configuration ignores application.yml
+
+placed in the classpath root (src/main/resources).
+
+a application.properties file in the same place is properly used.
+
+this is the code:
+
+    
+    
+    @Controller
+    @EnableAutoConfiguration
+    public class TestResource {
+    
+        @RequestMapping("/")
+        public @ResponseBody Map<String, String> test() {
+            return Collections.singletonMap("text", "test text");
+        }
+    
+        public static void main(String[] args) {
+            SpringApplication.run(TestResource.class, args);
+        }
+    
+    }
+    
+
+you need to add dependency on snakeyaml. example maven dependency:
+
+    
+    
+    <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>1.13</version>
+    </dependency>
+    
+

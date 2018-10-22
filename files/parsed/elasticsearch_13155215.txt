@@ -1,0 +1,75 @@
+13155215 Elastic Search: Multiple queries and boosting
+
+I want to make a search containing many searches with different boosts, and
+having the results returned by score. I tried making a search as follows, and
+I thought it worked very well, until I realized that only the first query was
+being run.
+
+How should I rephrase this to have a result with all the queries run, and the
+results ordered by score, where the scores will be added together if a result
+shows up for multiple queries?
+
+    
+    
+    [{
+        "query": {
+            "fuzzy": {
+                "title": {
+                    "value": "lord",
+                    "boost": 20,
+                    "min_similarity": 0.8
+                }
+            }
+        }
+    }, {
+        "query": {
+            "fuzzy": {
+                "location": {
+                    "value": "london",
+                    "boost": 1000,
+                    "min_similarity": 0.8
+                }
+            }
+        }
+    }, {
+        "query": {
+            "fuzzy": {
+                "haircolour": {
+                    "value": "dark",
+                    "boost": 500,
+                    "min_similarity": 0.8
+                }
+            }
+        }
+    }, {
+        "query": {
+            "fuzzy": {
+                "description": {
+                    "value": "senior",
+                    "boost": 100,
+                    "min_similarity": 0.7
+                }
+            }
+        }
+    }, {
+        "query": {
+            "fuzzy": {
+                "description": {
+                    "value": "manager",
+                    "boost": 100,
+                    "min_similarity": 0.7
+                }
+            }
+        }
+    }]
+    
+
+Cheers
+
+Nik
+
+Why not creating a bool query for each query with your main query as a must
+clause and other queries as should clauses?
+
+Does it help?
+

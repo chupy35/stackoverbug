@@ -1,0 +1,72 @@
+21461269 How to create unique constraint in Elasticsearch database?
+
+I am using elasticsearch as a document database and each record I create has a
+guid id that the system uses for the record id. Business people want to offer
+a feature to let the user have their own auto file name convention based on
+date and how many records were created so far this day/month.
+
+What I need is to prevent duplicate user file names. Is there a way to setup
+an indexed field to be unique? Like a sql unique constraint?
+
+You'd need to use the field that is supposed to be unique as id for your
+documents. By default a new document with existing id would override the
+existing document with same id, but you can switch to `op_type=create` in
+order to get back an error if a document with same id already exists.
+
+There's no way to have the same behaviour with arbitrary fields though, only
+the
+[`_id`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+id-field.html) field works that way. I would probably consider handling this
+logic in the application layer instead of within elasticsearch.
+
+One solution will be to use `uniqueId` field value for specifying document ID
+and use `op_type=create` while storing the documents in ES. With this you can
+make sure your `uniqueId` field will have unique value and will not be
+overridden by another same valued document.
+
+For this, the elasticsearch document says:
+
+> The index operation also accepts an op_type that can be used to force a
+create operation, allowing for "put-if-absent" behavior. When create is used,
+the index operation will fail if a document by that id already exists in the
+index.
+
+Here is an example of using the op_type parameter:
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/es_index/es_type/unique_a?op_type=create' -d  '{
+        "user" : "kimchy",
+        "uniqueId" : "unique_a"
+    }'
+    
+
+If you run the above request it is ok, but running it the next time will give
+you an error.
+
+Another approach might be to generate the string you store in a field that
+should be unique by integrating an auto-incrementing integer. This way you
+ensure from the start that your field values are unique.
+
+You would put your file name together like this:
+
+    
+    
+    <current day/month>_<auto-incremented integer>
+    
+
+Auto-incrementing integers are not supported by Elasticsearch per se but you
+could mimic them using this
+[approach](http://blogs.perl.org/users/clinton_gormley/2011/10/elasticsearchsequence
+---a-blazing-fast-ticket-server.html). If you happen to use node.js you can
+use the [es-sequence](https://github.com/analog-nico/es-sequence) module.
+
+You can use the _id in the column you want to have unique contraint on. Here
+is the sample river that uses postgresql. Yo can change the Database
+Driver/DB-URL according to your usage.
+
+    
+    
+    curl -XPUT localhost:9200/_river/simple_jdbc_river/_meta -d "{\"type\":\"jdbc\",\"jdbc\":{\"strategy\":\"simple\",\"poll\":\"1s\",\"driver\":\"org.postgresql.Driver\",\"url\":\"jdbc:postgresql://DB-URL/DB-INSTANCE\",\"user\":\"USERNAME\",\"password\":\"PASSWORD\",\"sql\":\"select t.id as _id,t.name from topic as t \",\"digesting\" : true},\"index\":{\"index\":\"jdbc\",\"type\":\"topic_jdbc_river1\"}}"
+    
+

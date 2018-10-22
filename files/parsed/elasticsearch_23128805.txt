@@ -1,0 +1,24 @@
+23128805 Elasticsearch totalHits remains thesame
+
+I am using elasticsearch to search for document from my index. But when ever I
+use, .must and .should in the same query, my totalHits stay unchanged. I need
+help. the query is below.
+
+    
+    
+    SearchResponse searchResponse = client.prepareSearch("myindex")
+    .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+    .setQuery(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("work_duration")
+    .gte(tMin).lte(tMax)).must(QueryBuilders.rangeQuery("DOB").gte(minYear)
+    .lte(maxYear)).should(QueryBuilders.termQuery("town",town.toLowerCase().trim()))
+    .must(QueryBuilders.termQuery("country",country.toLowerCase().trim()))
+    .must(QueryBuilders.matchQuery("content", keyword.toLowerCase().trim())))
+    .setFrom(0).setSize(167).execute().actionGet();
+    
+
+When mixing must and should, should has no meaning for the total result.
+Either you match, what is required (must), or you don't. Documents, that only
+match the should clause, cannot be include since they do not match the must
+clause. In this case, should is only used to score documents, that also match
+these clauses, better.
+

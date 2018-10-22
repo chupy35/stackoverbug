@@ -1,0 +1,25 @@
+18571634 How to Add Different Custom Boost Factor Query Scores in Elastic
+Search?
+
+I'm Using 3 Custom Boost Factor Queries. And I want to Find The Sum Of All
+Those Scores and Sorted in Desc Orders...
+
+I'm Trail Include Something Like This... How to find Sum of These Three Boost
+Factor Queries?
+
+    
+    
+    QueryBuilders.customBoostFactorQuery(QueryBuilders.matchAllQuery()) // Your query
+                    .boostFactor(5);
+    
+    QueryBuilders.customBoostFactorQuery(QueryBuilders.matchAllQuery()) // Your query
+                    .boostFactor(3);
+    
+    QueryBuilders.customBoostFactorQuery(QueryBuilders.matchAllQuery()) // Your query
+                    .boostFactor(1);
+    
+
+You should take a look at function_score:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html>
+

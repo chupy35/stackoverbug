@@ -1,0 +1,38 @@
+16635976 ElasticSearch: How to specify specific fields to search at?
+
+Right now in my mapping, I am setting "include_in_all" to true, which means
+all the fields are included in _all field.
+
+However, when I am searching, instead of wasting space, and putting everything
+in the _all field, I want to specify the specific fields to certain for (and
+taking into account the boost scores in the mapping).
+
+How do I create a query that tells Elastic Search to only look at specific
+fields(not just 1) and take into account the boosting I gave it during my
+mapping?
+
+You don't need to keep data in `_all` field to query for a field.
+
+You can use [query_string](http://www.elasticsearch.org/guide/reference/query-
+dsl/query-string-query/) or
+[bool](http://www.elasticsearch.org/guide/reference/query-dsl/bool-query/)
+queries to search over multiple fields.
+
+Start with a [multi_match](http://www.elasticsearch.org/guide/reference/query-
+dsl/multi-match-query/) query. It allows you to query multiple fields, giving
+them different weights, and it's usually the way to go when you have a search
+box.
+
+    
+    
+    {
+      "multi_match" : {
+        "query" : "this is a test",
+        "fields" : [ "subject^2", "message" ]
+      }
+    }
+    
+
+The query_string is more powerful but more dangerous too since it's parsed and
+can break. Use it only if you need it.
+

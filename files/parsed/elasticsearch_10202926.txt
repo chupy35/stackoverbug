@@ -1,0 +1,25 @@
+10202926 How to I make a field sortable in ElasticSearch?
+
+I have tried, for example:
+
+    
+    
+    {
+      "sort": [
+        {
+          "retail_price": {
+            "reverse": true
+          }
+        }
+      ]
+    }
+    
+
+... to no avail. Do I need to map the field a special way in order to enable
+sorting on it?
+
+The field should satisfy two conditions: 1) it has to be indexed and 2) it
+shouldn't have more than one value per document or more than one token per
+field. If retail_price is indexed in your case and it still doesn't work for
+you, could you post a script that demonstrates the problem?
+

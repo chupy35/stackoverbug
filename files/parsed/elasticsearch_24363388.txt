@@ -1,0 +1,124 @@
+24363388 How to fetch 2 or more docs if a query matches at least once in the
+doc?
+
+I am new to elasticsearch. Is there a way to write queries which will match
+and list out all the documnents which matches certain available fields
+including the common ones?
+
+I'll try to put this with an example.
+
+I have a system where based on some criteria we give out recommendations. Like
+a graph. E.g. starting from product, osname, architecture (machine), release,
+version & so on. I would 1st like to match `product` and `osname` as common
+for all the search. Later search if architecture is `x86` if true, then add
+this doc to result & then if release is of `Service Pack 1` then add this
+again to the result. At the end, result should contain both `3` & `4` docs as
+both has common fields product and osname and one of the query matches phrase
+"Service Pack 1" and other matches "x86"
+
+Below are 2 of my recommendations if the query satisfies criteria give back
+that doc. Below doc has product & osname as common fields.
+
+    
+    
+    PUT /support/recommendation/3
+    {
+        "recommendation":"Suggested architecture 64 Bit",
+        "type":"warning",
+        "criteria": {
+            "product": ["tar","zip"],
+            "osname": "windows",
+            "machine": "x86"    
+        }   
+    }
+    PUT /support/recommendation/4
+    {
+        "recommendation":"Service Pack 2 or more is needed",
+        "type":"error",
+        "criteria": {
+            "product": ["tar","zip"],
+            "osname": "windows",
+            "release": "Service Pack 1"
+        }   
+    }
+    
+
+My query
+
+    
+    
+    GET /support/recommendation/_search
+    {   /*search tar, windows, 32bit(x86) & SP1*/
+        "query": {
+            "filtered" : {
+                "query": {
+                    "bool"   : {
+                        "must": [
+                           {"match": {
+                              "product": "tar"
+                           }
+                           },
+                           {"match": {
+                              "osname": "Windows"
+                           }               
+                           }
+                        ],
+                        "must": [
+                           {"match_phrase": {
+                              "release": "Service Pack 1"
+                           }}
+                        ], 
+                        "should": [
+                           {"match": {  
+                              "machine": "x86"
+                           }               
+                           }
+                        ]
+                    }
+                }            
+            }
+        }
+    }      
+    
+
+Is there a way to achieve this?
+
+If you want your docs in result if they match EITHER machine: x86 OR release:
+Service Pack 1, then just use should clause including both.
+
+    
+    
+    GET /support/recommendation/_search {   /*search tar, windows, 32bit(x86) & SP1*/
+        "query": {
+            "filtered" : {
+                "query": {
+                    "bool"   : {
+                        "must": [
+                           {"match": {
+                              "product": "tar"
+                           }
+                           },
+                           {"match": {
+                              "osname": "Windows"
+                           }               
+                           }
+                        ],
+                        "should": [
+                           {"match": {  
+                              "machine": "x86"
+                              }               
+                           },
+                           {"match_phrase": {
+                              "release": "Service Pack 1"
+                           }
+                          }
+                        ],
+                       "minimum_should_match" : 1
+                    }
+                }            
+            }
+        } }
+    
+
+UPDATE: added `minimum_should_match` clause
+

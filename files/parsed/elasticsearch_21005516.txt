@@ -1,0 +1,303 @@
+21005516 Uncertain how to properly filter when certain fields do not always
+exist
+
+I am trying to filter based on a field that, on some objects, does not exist.
+I was under the impression that ES would match objects that don't have that
+field.
+
+Ultimately, I am trying to filter as such:
+
+  * Field A will always exist, and should match on any of tags 1,2,3
+  * When it exists, either Field B or C must match any of tags 5,6,7
+  * When it exists, Field B must match any of tags 10, 11, 12
+  * When it exists, Field B or C must NOT have any of tags 15, 16, 18.
+
+In this case, all my tags are strings. In addition, fields B and C are inside
+of another. I am uncertain if that matters.
+
+Essentially, my object is:
+
+    
+    
+    { a: ["some", "tags", "here"],
+        X : { 
+            B: ["more", "tags", "here"],
+            C: ["even", "more", "here"]
+        }
+    } 
+    
+
+I am trying to essentially build a whitelist and blacklist filtering system.
+
+However, when filtering this way, I do not get any results that do not contain
+the field.
+
+How do I properly format this filter?
+
+Elasticsearch treats a null or non-existing field as not matching a
+query/filter on that field, so those results will not be returned by a
+standard query/filter. However, it is possible to set up a query that
+accomplishes what you are wanting, if I'm understanding you correctly. You can
+use a combination of `"or"`, `"not"`, and `"exist"` filters. I'll show you the
+basic idea with a few examples.
+
+First, create an index and add some docs, with various fields missing from
+various docs:
+
+    
+    
+    curl -XPUT "http://localhost:9200/test_index"
+    
+    curl -XPUT "http://localhost:9200/test_index/docs/1" -d'
+    { 
+        "a": ["some", "tags", "here"],
+        "X" : { 
+            "B": ["more", "tags", "here"],
+            "C": ["even", "more", "here"]
+        }
+    }'
+    
+    curl -XPUT "http://localhost:9200/test_index/docs/2" -d'
+    { 
+        "a": ["some", "tags", "here"]
+    }'
+    
+    curl -XPUT "http://localhost:9200/test_index/docs/3" -d'
+    { 
+        "a": ["some", "tags", "here"],
+        "X" : { 
+            "B": ["more", "tags", "here"]
+        }
+    }'
+    
+    curl -XPUT "http://localhost:9200/test_index/docs/4" -d'
+    { 
+        "a": ["some", "tags", "here"],
+        "X" : { 
+            "C": ["even", "more", "here"]
+        }
+    }'
+    
+
+If I want to retrieve the docs that contain the field `"X.B"` (with any
+value), I can use the following query:
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_index/docs/_search" -d'
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                 "exists": {
+                    "field": "X.B"
+                 }
+             }
+          }
+       }
+    }'
+    
+
+This will return docs `"1"` and `"3"`.
+
+On the other hand, if I want to return only the docs that do NOT have the
+field `"X.B"`, then I can use this query:
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_index/docs/_search" -d'
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "not": {
+                   "filter": {
+                      "exists": {
+                         "field": "X.B"
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }'
+    
+
+This returns docs `"2"` and `"4"`.
+
+Now, if I want to return docs that either do not have the field `"X.B"`, or
+that field matches the term `"here"`, you can use an `"or"` filter as follows:
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_index/docs/_search" -d'
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "or": [
+                   {
+                      "term": { "X.B" : "here" }
+                   },
+                   {
+                      "not": {
+                         "filter": {
+                            "exists": {
+                               "field": "X.B"
+                            }
+                         }
+                      }
+                   }
+                ]
+             }
+          }
+       }
+    }'
+    
+
+In this case all four docs are returned, because they all match one of the two
+possible conditions.
+
+This doesn't completely satisfy your use-case, but it should be enough to get
+you started.
+
+Here is a runnable example you can play with (you will need ES installed and
+running at localhost:9200, or supply another endpoint):
+<http://sense.qbox.io/gist/f1a644db97c89996f2b44f49793a2c76bae3155c>
+
+The problem is not what you think it is. Or at least, there is another problem
+too. The difference you are seeing is due to how `"relatedProfiles"` is being
+analyzed.
+
+Look at this gist:
+<http://sense.qbox.io/gist/eec5dc038167ddd5d845a8ea8413a065f6e63f8f>. I've
+defined the index in two different ways, the first (`testfeed1`) implicitly,
+and the second (`testfeed2`) with your explicit mapping. It's instructive to
+remove all but the first part of your query and run it against each index:
+
+When I build the index the first way (no explicit mapping), and then search
+with only the filter on `"relatedProfiles" : ["LinkedIn/4505"]`, I don't get a
+result:
+
+    
+    
+    curl -XPOST "http://localhost:9200/testfeed1/feedItem/_search" -d'
+    {
+       "query": {
+          "match_all": {}
+       },
+       "filter": {
+          "terms": {
+             "relatedProfiles": [
+                "LinkedIn/4505"
+             ]
+          }
+       }
+    }'
+    
+
+...
+
+    
+    
+    {
+       "took": 2,
+       "timed_out": false,
+       "_shards": {
+          "total": 2,
+          "successful": 2,
+          "failed": 0
+       },
+       "hits": {
+          "total": 0,
+          "max_score": null,
+          "hits": []
+       }
+    }
+    
+
+When I build the index the second way, with an explicit mapping (in which
+`"relatedProfiles"` is set to `"index": "not_analyzed"`), and then do the same
+search, I _do_ get a result:
+
+    
+    
+    POST /testfeed2/feedItem/_search
+    {
+       "query": {
+          "match_all": {}
+       },
+       "filter": {
+          "terms": {
+             "relatedProfiles": [
+                "LinkedIn/4505"
+             ]
+          }
+       }
+    }
+    
+
+...
+
+    
+    
+    {
+       "took": 1,
+       "timed_out": false,
+       "_shards": {
+          "total": 2,
+          "successful": 2,
+          "failed": 0
+       },
+       "hits": {
+          "total": 1,
+          "max_score": 1,
+          "hits": [
+             {
+                "_index": "testfeed2",
+                "_type": "feedItem",
+                "_id": "Metabase/16411941826",
+                "_score": 1,
+                "_source": {
+                   "source": "Metabase/16411941826",
+                   "relatedProfiles": [
+                      "LinkedIn/4505",
+                      "Facebook/113470526913",
+                      "CrunchBase/company/scholastic"
+                   ],
+                   "timestamp": "2014-01-08T00:49:35-05:00",
+                   "type": "News",
+                   "content": {
+                      "title": "Opening doors for children, teachers",
+                      "description": "class became published authors, chosen to put together the Florida section of “Fifty Great States Scrapbook,” published by Scholastic Books. Their book signing was at Barnes & Noble. “I saw an advertisement in the instructor magazine and decided to",
+                      "url": "http://ct.moreover.com/ct?haid=8437fcfcdbaa900a138916017501692f42b5c333349b4&co=f000000011632s-1177024037&u1=SET&u2=56637",
+                      "source": "St Augustine Herald"
+                   },
+                   "language": "en"
+                }
+             }
+          ]
+       }
+    }
+    
+
+The difference is in how the `"relatedProfiles"` field is analyzed. In the
+second case, it isn't analyzed at all, so `"LinkedIn/4505"` matches exactly,
+and the result is returned. In the first case, though, since no analyzer is
+specified the standard analyzer is used. And so the tokens end up being
+`"linkedin"` and `"4505"` (as you can see if you search for those tokens, like
+line 34 of the gist). Since we are using a terms filter in the above query, no
+analysis is done on the filter terms text, and "LinkedIn/4505" doesn't match
+any tokens, so no results are returned.
+
+Make sense?
+

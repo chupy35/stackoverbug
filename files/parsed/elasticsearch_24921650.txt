@@ -1,0 +1,337 @@
+24921650 Elasticsearch multiple search conditions
+
+I am trying to do an elasticsearch query in the following way:
+
+  * search for query
+  * function score queries - one of which is on location that is nested, and another one to boost the scores of documents matching a particular type
+  * document must match `{ verified: true }`
+
+I have an index called `users`, and within that index there are two types -
+`type1` and `type2`, each with exactly the same mappings. An example document
+in the `users` index would be this:
+
+    
+    
+    {
+      name: 'Brian Fantana',
+      location: {
+        coordinates: {
+          lat: 22.266858, 
+          lon: 114.152069
+        },
+        country: 'United States',
+        city: 'New York'
+      },
+      verified: true
+    }
+    
+
+and the mapping:
+
+    
+    
+    {
+      name: { type: 'string' },
+      location: {
+        properties: {
+          coordinates: {
+            type: 'geo_point',
+            lat_lon: true
+          }
+        }
+      },
+      verified: { type: 'boolean' }
+    }
+    
+
+I have tried the following:
+
+    
+    
+    {
+      query: {
+        bool: {
+          must: { match: { verified: true } }
+        },
+        query_string: {
+          query: <query_string>
+        },
+        function_score: {
+          functions: [{
+            script_score: "doc['_type'].value == 'type1' ? _score * 100 : _score"
+          }]
+        },
+        nested: {
+          path: 'location',
+          query: {
+            function_score: {
+              functions: [{
+                gauss: {
+                  'location.coordinates': <location>,
+                  scale: '50km'
+                }
+              }]
+            }
+          }
+        }
+        }]
+      }
+    }
+    
+
+Clearly, I have no idea how you would combine queries like this. Sorry for
+being an idiot.
+
+Ok, after reading more into the query DSL, here is my solution:
+
+    
+    
+    query: {
+        function_score: {
+            query: {
+                query_string: {
+                    query: query + '*'
+                },
+            },
+            filter: {
+                term: {
+                    verified: true
+                }
+            },
+            functions: [{
+                script_score: {
+                    script: "doc['_type'].value == 'type1' ? _score * 1000 : _score"
+                },
+                gauss: {
+                    'location.coordinates': {
+                        origin: [location.latitude, location.longitude],
+                        scale: '20km'
+                    } 
+                }
+            }]
+        }
+    }
+    
+
+Here's what I came up with. This is run against ES v1.2.2 - which is
+important, because earlier versions don't have the _type field exposed for the
+script like this. In 1.3.0, dynamic scripting is deprecated.
+
+You can see I'm indexing several documents to demonstrate the successful
+application of the scoring functions.
+
+    
+    
+        #!/bin/sh
+    echo "--- delete index"
+    curl -X DELETE 'http://localhost:9200/so_multi_search/'
+    echo "--- create index and put mapping into place"
+    curl -XPUT "http://localhost:9200/so_multi_search/?pretty=true" -d '{
+        "mappings": {
+            "type1": {
+                "properties": {
+                    "group":  { "type": "integer" },
+                    "verified": { "type": "boolean" },
+                    "name": { "type": "string" },
+                    "location": {
+                        "properties": {
+                            "coordinates": {
+                                "type": "geo_point",
+                                "lat_lon": true
+                            }
+                        }
+                    }
+                }
+            },
+            "type2": {
+                "properties": {
+                    "group":  { "type": "integer" },
+                    "verified": { "type": "boolean" },
+                    "name": { "type": "string" },
+                    "location": {
+                        "properties": {
+                            "coordinates": {
+                                "type": "geo_point",
+                                "lat_lon": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "settings" : {
+            "number_of_shards" : 1,
+            "number_of_replicas" : 0
+        }
+    }'
+    echo "--- index users by POSTing"
+    curl -XPOST "http://localhost:9200/so_multi_search/type1" -d '{
+        "name": "Brian Fantana",
+        "location": {
+            "coordinates": {
+                  "lat": 40.712784,
+                  "lon": -74.005941
+            },
+            "country": "United States",
+            "city": "New York"
+        },
+        "group": 1,
+        "verified": true
+    }'
+    curl -XPOST "http://localhost:9200/so_multi_search/type2" -d '{
+        "name": "Brian Fantana",
+        "location": {
+            "coordinates": {
+                  "lat": 40.712784,
+                  "lon": -74.005941
+            },
+            "country": "United States",
+            "city": "New York"
+        },
+        "group": 2,
+        "verified": true
+    }'
+    curl -XPOST "http://localhost:9200/so_multi_search/type2" -d '{
+        "name": "Anna Fantana",
+        "location": {
+            "coordinates": {
+                  "lat": 40.82,
+                  "lon": -73.5
+            },
+            "country": "United States",
+            "city": "New York"
+        },
+        "group": 2,
+        "verified": true
+    }'
+    echo "--- flush index"
+    curl -XPOST 'http://localhost:9200/_flush'
+    echo "--- search the users"
+    curl -XGET "http://localhost:9200/so_multi_search/_search?pretty=true" -d '{
+        "query": {
+            "filtered": {
+                "query": {
+                    "function_score": {
+                        "functions": [
+                            {
+                                "filter": {
+                                    "query": {
+                                        "query_string": {
+                                            "default_field": "name",
+                                            "query": "Fantana"
+                                        }
+                                    }
+                                },
+                                "script_score": {
+                                    "script": "doc[\"_type\"].value == \"type1\" ? _score * 100 : _score"
+                                }
+                            },
+                            {
+                                "gauss": {
+                                    "location.coordinates": {
+                                        "origin": "40.712784, -74.005941",
+                                        "scale": "50km"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "filter": {
+                    "query": {
+                        "bool": {
+                            "must": {
+                                "match": {
+                                    "verified": true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+
+Output:
+
+    
+    
+    --- delete index
+    {"acknowledged":true}--- create index and put mapping into place
+    {
+      "acknowledged" : true
+    }
+    --- index users by POSTing
+    {"_index":"so_multi_search","_type":"type1","_id":"bAPnG5KfQXu_QIgGvY1mmA","_version":1,"created":true}{"_index":"so_multi_search","_type":"type2","_id":"XtCC8L6QRKueCdPsncAOpg","_version":1,"created":true}{"_index":"so_multi_search","_type":"type2","_id":"qlXiyXpQTySCLdMcL-DILw","_version":1,"created":true}--- flush index
+    {"_shards":{"total":8,"successful":8,"failed":0}}--- search the users
+    {
+      "took" : 4,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 3,
+        "max_score" : 100.0,
+        "hits" : [ {
+          "_index" : "so_multi_search",
+          "_type" : "type1",
+          "_id" : "bAPnG5KfQXu_QIgGvY1mmA",
+          "_score" : 100.0,
+          "_source":{
+        "name": "Brian Fantana",
+        "location": {
+            "coordinates": {
+                  "lat": 40.712784,
+                  "lon": -74.005941
+            },
+            "country": "United States",
+            "city": "New York"
+        },
+        "group": 1,
+        "verified": true
+    }
+        }, {
+          "_index" : "so_multi_search",
+          "_type" : "type2",
+          "_id" : "XtCC8L6QRKueCdPsncAOpg",
+          "_score" : 1.0,
+          "_source":{
+        "name": "Brian Fantana",
+        "location": {
+            "coordinates": {
+                  "lat": 40.712784,
+                  "lon": -74.005941
+            },
+            "country": "United States",
+            "city": "New York"
+        },
+        "group": 2,
+        "verified": true
+    }
+        }, {
+          "_index" : "so_multi_search",
+          "_type" : "type2",
+          "_id" : "qlXiyXpQTySCLdMcL-DILw",
+          "_score" : 0.5813293,
+          "_source":{
+        "name": "Anna Fantana",
+        "location": {
+            "coordinates": {
+                  "lat": 40.82,
+                  "lon": -73.5
+            },
+            "country": "United States",
+            "city": "New York"
+        },
+        "group": 2,
+        "verified": true
+    }
+        } ]
+      }
+    }
+    
+

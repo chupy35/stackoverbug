@@ -1,0 +1,20 @@
+26125233 Spring boot workflow submodule activiti permissions issue
+
+I am trying to download the sample and play with it. This is exactly what I
+was trying to do for one of my clients.
+
+However I am not able to run the sample app. I get error when I try to update
+the submodule
+
+git submodule update Cloning into 'activiti'... Warning: Permanently added the
+RSA host key for IP address '*' to the list of known hosts. Permission denied
+(publickey). fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights and the repository exists.
+Clone of 'git@github.com:jbarrez/Activiti.git' into submodule path 'activiti'
+failed
+
+Nevermind its a git permissions issues
+
+config change from git@ to https worked.
+

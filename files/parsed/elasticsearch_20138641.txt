@@ -1,0 +1,73 @@
+20138641 Dynamic Type with Mappings
+
+My data is structure is very generic. and almost any type of data fits in my
+datastructure.
+
+    
+    
+    Document{
+        "id" : 12345678,
+        "fields" : 
+            [{
+                "name" : "Book title",
+                "value" : "Harry Potter",
+                "type" : "string"
+            },
+            {
+                "name" : "price",
+                "value" : 34.50,
+                "type" : "float"
+            }]
+    }
+    
+
+Another Document could be like this:
+
+    
+    
+    Document{
+        "id" : 123456790,
+        "fields" : 
+            [{
+                "name" : "Blog title",
+                "value" : "My awesome blog",
+                "type" : "string"
+            }]
+    }
+    
+
+This data can change and fields could have any type and names. How can I
+dynamically create a template mapping so that the "type" for mapping is set by
+the value of the "type" in my data? e.g. value: 34.50, type: float at the same
+time the same data "value" : "Harry Potter", type : string
+
+I have seen that is has been done in ES but I can't get my head around making
+a mapping that actually uses the value of "type" specified in the document to
+actually set the correct type for the value.
+
+Specifying types is particularly useful for me in a sense I can have for
+example, location type, date type, integer or ... on the same data structure.
+
+I have been trying to find any content either online or in books but so far
+nothing. Is this even possible?
+
+First, you'll want to use
+[nested](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+nested-type.html) types to make sure a query/filter on name is not mingled
+with values of another field of the same document.
+
+Secondly, you cannot have different types with the same field name, in this
+case "value". Thus, you will need to change the structure of the doucments you
+send to Elasticsearch a bit.
+
+When you say "any type", will you have control on the number of types? If you
+do, you can do things like having fields called "date_value",
+"location_value", "float_value" (or something similar) and so on.
+"string_value" is not really a good one. What analyzer will it have? It might
+be better to have a type named for its purpose, e.g. "keyword_value" (for
+things you might want to facet on, for example), "name_value" (which can have
+fuzzy support), "text_value" (analyzed for proper search), and so on.
+
+I made a runnable example you can play with here:
+<https://www.found.no/play/gist/7596633>
+

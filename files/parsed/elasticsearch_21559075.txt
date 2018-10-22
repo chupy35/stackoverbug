@@ -1,0 +1,26 @@
+21559075 Mongodb river performance
+
+In _Fetching data from other systems: river_ section of **Elasticsearch
+server** book, the author wrote:
+
+> Please consider that when using a river, you are bound to the performance of
+a single node. So for heavy processing of documents, a standalone indexing
+application is preferred.
+
+I'm not sure what _standalone indexing application_ means in this context?
+Does it mean we need to implement our own application that pull out data from
+our database and save it to ES? Or an other way is for each time we save a
+record in a table that will be using for searching, we also need to save it to
+ES?
+
+P/S: I could not find any information regarding this performance issue in
+Elastic server official documentation for rivers. Where can I find the
+document related the above issue?
+
+I would definitely do the later. It will help you to have near real time
+search for a minimal cost.
+
+You can also add in the middle a message Queue System like RabbitMQ.
+
+My 2 cents.
+

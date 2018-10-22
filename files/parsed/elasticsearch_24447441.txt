@@ -1,0 +1,23 @@
+24447441 ElasticSearch: Indexing times out if number_of_replicas is greater
+than 1
+
+I'm experimenting with scaling ElasticSearch and want to increase the amount
+of replicas, but I am unable to index anything if the number_of_replicas is
+set higher than 1.
+
+I've been able to replicate the issue with a fresh install of ES:
+
+  * Download and unzip ES
+  * Modify the `config/elasticsearch.yml` file and set the `index.number_of_replicas` setting to 2
+  * Run `bin/elasticsearch`
+  * Index a test document: `curl -XPUT 'localhost:9200/test/example/1' -d '{body:"Hello"}'`
+  * Timeout
+
+I'm running the latest version of ES (1.2.1) on a Mac OSX 10.9.2. I've also
+been running ES on an Ubuntu Wheezy VM, but I encountered the same problem
+there. Setting the number of replicas on an index-basis (using a `PUT`
+request) has the same effect. It makes me feel like I'm missing something
+fundamental.
+
+Power up more ES nodes (see my second comment)
+

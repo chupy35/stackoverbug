@@ -1,0 +1,48 @@
+23109474 Statistics with elasticsearch suggest api
+
+Im trying to use the suggest-api in elasticsearch. And i would like to get
+total hits, as you get when you are doing a regular query.
+
+As it is now, if i ask this of elasticsearch
+
+    
+    
+    /_suggest
+    {
+     "name_suggest": {
+      "text": "derp",
+      "completion": {
+       "size": 10,
+       "field": "name.sugest"
+      }
+     }
+    }
+    
+
+I get 10 answers, but no information on how many other matches there is.
+
+So the question is, is there a way yo get hold of this information, using the
+suggest feature? for example using facets? (i have tried but not got anything
+working)
+
+You can get your 10 answers and build aggregation query like this:
+
+    
+    
+    {
+      "query" : {
+        "query_string" : {
+          "query" : "answer1 OR answer2 OR ...",
+          "fields" : [ "name.sugest" ]
+        }
+      },
+      "aggregations" : {
+        "name_sugest" : {
+          "terms" : {
+            "field" : "name.sugest"
+          }
+        }
+      }
+    }
+    
+

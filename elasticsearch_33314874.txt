@@ -1,0 +1,3 @@
+33314874
+how to restore elasticsearch.yml config file to original?
+<p>I hosed my elasticsearch.yml with the configuration from a YouTube video, and now Elasticsearch does not start.  What is the procedure to either restore <code>elasticsearch.yml</code> to factory settings or find and edit the specific items I changed?</p>&#xA;

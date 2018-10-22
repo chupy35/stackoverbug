@@ -1,0 +1,95 @@
+12310782 Sorting dropdown alphabetically in AngularJS
+
+I'm populating a dropdown through the use of ng-options which is hooked to a
+controller that in turn is calling a service. Unfortunately the data coming in
+is a mess and I need to be able to sort it alphabetically.
+
+You figure that something like `$.sortBy` would do it but unfortunately it
+didn't do jack. I know I can sort it via javascript with a helper method
+`function asc(a,b)` or something like that but I refuse to believe that there
+is not cleaner way of doing this plus I don't want to bloat the controller
+with helper methods. It is something so basic in principle so I don't
+understand why AngularJS doesn't have this.
+
+Is there a way of doing something like `$orderBy('asc')`?
+
+Example:
+
+    
+    
+    <select ng-option="items in item.$orderBy('asc')"></select>
+    
+
+It would be extremely useful to have options in `orderBy` so you can do
+whatever you want, whenever you usually try to sort data.
+
+Angular has an [orderBy](http://docs.angularjs.org/api/ng.filter:orderBy)
+filter that can be used like this:
+
+    
+    
+    <select ng-model="selected" ng-options="f.name for f in friends | orderBy:'name'"></select>
+    
+
+See [this fiddle](http://jsfiddle.net/aBccw/) for an example.
+
+It's worth noting that if `track by` is being used it needs to appear after
+the `orderBy` filter, like this:
+
+    
+    
+    <select ng-model="selected" ng-options="f.name for f in friends | orderBy:'name' track by f.id"></select>
+    
+
+You should be able to use filter: `orderBy`
+
+`orderBy` can accept a third option for the `reverse` flag.
+
+    
+    
+    <select ng-option="item.name for item in items | orderBy:'name':true"></select>
+    
+
+Here item is sorted by 'name' property in a reversed order. The 2nd argument
+can be any order function, so you can sort in any rule.
+
+@see <http://docs.angularjs.org/api/ng.filter:orderBy>
+
+    
+    
+    var module = angular.module("example", []);
+    
+    module.controller("orderByController", function ($scope) {
+        $scope.orderByValue = function (value) {
+            return value;
+        };
+    
+        $scope.items = ["c", "b", "a"];
+        $scope.objList = [
+            {
+                "name": "c"
+            }, {
+                "name": "b"
+            }, {
+                "name": "a"
+            }];
+            $scope.item = "b";
+        });
+    
+
+<http://jsfiddle.net/Nfv42/65/>
+
+For anyone who wants to sort the variable in third layer:
+
+    
+    
+    <select ng-option="friend.pet.name for friend in friends"></select>
+    
+
+you can do it like this
+
+    
+    
+    <select ng-option="friend.pet.name for friend in friends | orderBy: 'pet.name'"></select>
+    
+

@@ -1,0 +1,25 @@
+24360457 Search by ignore value case checking
+
+In my index I have inserted fields without changing the case of values(Upper
+case or Lower case), like in my elasticsearch document a field `name` contains
+value `Hello World`. And i have made `name` field as `not_analyzed` for exact
+match. But in that case, when i search by `hello world` this document don’t
+returned by elasticsearch, might be due to case sensitivity. I have tried by
+using `term query` and `match query` but haven't found a luck.
+
+Please suggest, if there is a way.  
+Thanks
+
+The only way you can do this in Elasticsearch is by analyzing the field and
+using token filters. There is a lowercase token filter available that you
+should use but this can't really be done on-the-fly like SQL where you wrap
+the field to be queried against in something like LOWER().
+
+To get the effect you desire I would use something like the [Keyword
+tokenizer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current//analysis-
+keyword-tokenizer.html) with the [Lowercase token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+lowercase-tokenfilter.html). If you set this analyzer to be the default
+analyzer for indexing and searching then your searches will also be case
+insensitive too.
+

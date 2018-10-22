@@ -1,0 +1,104 @@
+25465215 ElasticSearch - Return Unique Values
+
+How would I get the values of all the `languages` from the records and make
+them unique.
+
+**Records**
+
+    
+    
+    PUT items/1
+    { "language" : 10 }
+    
+    PUT items/2
+    { "language" : 11 }
+    
+    PUT items/3
+    { "language" : 10 }
+    
+
+**Query**
+
+    
+    
+    GET items/_search
+    { ... }
+    
+    # => Expected Response
+    [10, 11]
+    
+
+Any help would be great.
+
+You can use the [terms
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html).
+
+    
+    
+    {
+    "size": 0,
+    "aggs" : {
+        "langs" : {
+            "terms" : { "field" : "language",  "size" : 500 }
+        }
+    }}
+    
+
+A search will return something like:
+
+    
+    
+    {
+    "took" : 16,
+    "timed_out" : false,
+    "_shards" : {
+      "total" : 2,
+      "successful" : 2,
+      "failed" : 0
+    },
+    "hits" : {
+    "total" : 1000000,
+    "max_score" : 0.0,
+    "hits" : [ ]
+    },
+    "aggregations" : {
+      "langs" : {
+        "buckets" : [ {
+          "key" : "10",
+          "doc_count" : 244812
+        }, {
+          "key" : "11",
+          "doc_count" : 136794
+    
+        }, {
+          "key" : "12",
+          "doc_count" : 32312
+           } ]
+        }
+      }
+    }
+    
+
+The `size` parameter within the aggregation specifies the maximum number of
+terms to include in the aggregation result. If you need all results, set this
+to a value that is larger than the number of unique terms in your data.
+
+Elasticsearch 1.1+ has the **[Cardinality
+Aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-cardinality-aggregation.html)** which will give you a
+unique count
+
+Note that it is actually an approximation and accuracy may diminish with high-
+cardinality datasets, but it's generally pretty accurate in my testing.
+
+You can also tune the accuracy with the `precision_threshold` parameter. The
+trade-off, or course, is memory usage.
+
+This graph from the docs shows how a higher `precision_threshold` leads to
+much more accurate results.
+
+* * *
+
+![Relative error vs threshold](https://i.stack.imgur.com/WLyip.png)
+

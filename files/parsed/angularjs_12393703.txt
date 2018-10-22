@@ -1,0 +1,100 @@
+12393703 How to include one partial into other without creating a new scope?
+
+I've this routes.
+
+    
+    
+    // index.html
+    <div ng-controller="mainCtrl">
+        <a href='#/one'>One</a>
+        <a href='#/two'>Two</a>
+    </div>​​​​​​​​​
+    <div ng-view></div>
+    
+
+And this is how I'm loading the partials into my `ng-view`.
+
+    
+    
+    // app.js
+    ​var App = angular.module('app', []);​​​​​​​
+    App.config(['$routeProvider', function($routeProvider) {
+        $routeProvider.when('/one', {template: 'partials/one.html', controller: App.oneCtrl});
+        $routeProvider.when('/two', {template: 'partials/two.html', controller: App.twoCtrl});
+      }]);
+    
+
+When I click the links, it shows me the appropriate markup inside the ng-view.
+But when I try to include `partials/two.html` inside `partials/one.html` using
+`ng-include`, it shows it properly but creates a different scope so I'm not
+able to interact with it.
+
+    
+    
+    // partials/two.html - markup
+    <div ng-controller="twoCtrl">I'm a heading of Two</div>
+    
+    // partials/one.html - markup
+    <div ng-controller="oneCtrl">I'm a heading of One</div>
+    <div ng-include src="'partials/two.html'"></div>
+    
+
+​ How do I resolve this problem? Or Is there any other way to achieve the same
+result?
+
+The documentation for
+[ngInclude](http://docs.angularjs.org/api/ng.directive:ngInclude) states
+**"This directive creates new scope."** so this is by design.
+
+Depending on the type of interaction you are looking for you may want to take
+a look at [this post](https://stackoverflow.com/questions/12008908/pass-
+variables-between-controllers) for one way to share data/functionality between
+the two controllers via a [custom
+service](http://docs.angularjs.org/guide/dev_guide.services.creating_services).
+
+You can actually do this without using a shared service. $scope.$emit(...) can
+dispatch events to the $rootScope, which can listen for them and rebroadcast
+to the child scopes.
+
+Demo: <http://jsfiddle.net/VxafF/>
+
+**Reference:** <http://www.youtube.com/watch?v=1OALSkJGsRw> (see the first
+comment)
+
+You can write your own include directive that does not create a new scope. For
+example:
+
+    
+    
+    MyDirectives.directive('staticInclude', function($http, $templateCache, $compile) {
+        return function(scope, element, attrs) {
+            var templatePath = attrs.staticInclude;
+            $http.get(templatePath, { cache: $templateCache }).success(function(response) {
+                var contents = element.html(response).contents();
+                $compile(contents)(scope);
+            });
+        };
+    });
+    
+
+You can use this like:
+
+    
+    
+    <div static-include="my/file.html"></div>
+    
+
+So this isn't an answer to this question but i made it here looking for
+something similar and hopefully this will help others.
+
+This directive will include a partial without creating a new scope. For an
+example you can create a form in the partial and control that form from the
+parent controller.
+
+Here is a [link to the Repo](https://github.com/jamesharrington/angular-
+static-include) that i created for it.
+
+good luck :-)
+
+-James Harrington
+

@@ -1,0 +1,113 @@
+24457266 Elastic Search Document Boosting (like Solr elevateIds)
+
+Looking to move from Solr to Elastic Search due to its amazon REST API and
+suitability for clustering. However I am struggling to figure out a way to
+boost at query time specific documents like in Solrs elevate method. Is there
+a way to do this and if so any examples would be really helpful :)
+
+I assume you're referencing the Solr QueryElevationComponent.
+<https://wiki.apache.org/solr/QueryElevationComponent>
+
+There has been previous discussion on github as to how to emulate this
+functionality in Elasticsearch.
+<https://github.com/elasticsearch/elasticsearch/issues/1066>
+
+The idea is to use the Elasticsearch Constant Score Query to apply a constant
+boost for matching documents. Apply a big enough boost and you in effect get
+the "sponsored search" result of Solr's Elevate.
+
+From the documentation:
+
+> **Constant Score Query**
+
+>
+
+> A query that wraps a filter or another query and simply returns a constant
+score equal to the query boost for every document in the filter. Maps to
+Lucene ConstantScoreQuery.
+
+>  
+>  
+>     {
+
+>         "constant_score" : {
+
+>             "filter" : {
+
+>                 "term" : { "user" : "kimchy"}
+
+>             },
+
+>             "boost" : 1.2
+
+>         }
+
+>     }
+
+>  
+>
+
+> The filter object can hold only filter elements, not queries. Filters can be
+much faster compared to queries since they don’t perform any scoring,
+especially when they are cached.
+
+>
+
+> A query can also be wrapped in a constant_score query:
+
+>  
+>  
+>     {
+
+>         "constant_score" : {
+
+>             "query" : {
+
+>                 "term" : { "user" : "kimchy"}
+
+>             },
+
+>             "boost" : 1.2
+
+>         }
+
+>     }
+
+>  
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-constant-score-query.html>
+
+**EDIT**
+
+Example using multiple boosts:
+
+    
+    
+    {
+        "query": {
+            "bool": {
+                "should": [{
+                    "constant_score": {
+                        "filter": {
+                            "terms": {
+                                "user": ["kimchy", "john"]
+                            }
+                        },
+                        boost: 3
+                    }
+                }, {
+                    "constant_score": {
+                        "filter": {
+                            "terms": {
+                                "user": ["paul", "ringo"]
+                            }
+                        },
+                        boost: 2
+                    }
+                }]
+            }
+        }
+    }
+    
+

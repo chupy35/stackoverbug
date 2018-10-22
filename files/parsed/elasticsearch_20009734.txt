@@ -1,0 +1,62 @@
+20009734 ElasticSearch Index API SLOW
+
+    
+    
+    public static void main(String[] args) {
+    
+            Node node = nodeBuilder().clusterName("somethingstupid").client(true).node();
+            Client client = node.client();
+    
+                String json = 
+                        "{\"user\":\"kimchy\"," +
+                        "\"postDate\":\"2013-01-30\"," +
+                        "\"message\":\"trying out Elastic Search\"}";              
+    
+                IndexResponse response = client.prepareIndex("testindex", "article")
+                        .setSource(json)
+                        .execute()
+                        .actionGet();
+    
+        }
+    
+
+Why does it take 9 -12 seconds to index this in eclipse?
+
+Centosx64 6.4, ES 0.90.7, 2GB ram, nothing else running, Sysmon shows using 3%
+cpu and 800MB RAM AT PEAK (DURING INDEX).
+
+EXAMPLE THREAD:
+
+    
+    
+    public class TestPostMethod2 implements Runnable{
+        public static Node node = nodeBuilder().clusterName("somethingstupid").client(true).node();
+        public static Client client = node.client();
+    
+        public void run() {
+            String json = 
+                    "{\"user\":\"kimchY\"," +
+                    "\"postDate\":\"2016-01-30\"," +
+                    "\"message\":\"trying out Elastic Search\"}";              
+    
+            IndexResponse response = client.prepareIndex("testindex", "article")
+                    .setSource(json)
+                    .execute()
+                    .actionGet();
+        }
+    
+        public static void main(String[] args) throws IOException {
+    
+            (new Thread(new TestPostMethod2())).start();
+        }
+    
+    }
+    
+
+Creating a full elasticsearch node takes time. In a real project, once you get
+a Client, you just have to share it within all threads.
+
+The index part should be fast.
+
+If you want to index more docs, consider using the Bulk API.
+

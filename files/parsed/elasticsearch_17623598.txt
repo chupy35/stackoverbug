@@ -1,0 +1,21 @@
+17623598 Is a geo_distance query with linestring or multipolygon geo type
+possible?
+
+I have not been able to find any examples of this, but I have multipolygon
+shapes (and will be operating on linestrings once I figure this out) stored in
+ES and need to find the closest point of the multipolygon (or linestring) from
+a given point.
+
+Is this even possible ES?
+
+TIA.
+
+at the moment ES just supports the basic operations on shapes. This means if
+shapes are _disjoint_ , _intersect_ or if one lies _within_ another. Distances
+between geo_shapes could not be calculated so far. To be able to solve you
+problem, you need to index the shapes control points separately as geo_points
+and filter these by distance. I think in the near future ES will at least
+support calculation of distances between shapes.
+
+Cheers, Florian
+

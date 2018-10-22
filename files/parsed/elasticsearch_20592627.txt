@@ -1,0 +1,62 @@
+20592627 Elasticsearch querying alias with routing giving partial results
+
+In an effort to create multi-tenant architecture for my project. I've created
+an elasticsearch cluster with an index 'tenant'
+
+> "tenant" : { "some_type" : { "_routing" : { "required" : true, "path" :
+"tenantId" },
+
+Now,
+
+I've also created some aliases -
+
+    
+    
+    "tenant" : {
+    "aliases" : {
+      "tenant_1" : {
+        "index_routing" : "1",
+        "search_routing" : "1"
+      },
+      "tenant_2" : {
+        "index_routing" : "2",
+        "search_routing" : "2"
+      },
+      "tenant_3" : {
+        "index_routing" : "3",
+        "search_routing" : "3"
+      },
+      "tenant_4" : {
+        "index_routing" : "4",
+        "search_routing" : "4"
+      }
+    
+
+I've added some data with tenantId = 2
+
+After all that, I tried to query 'tenant_2' but I only got partial results,
+while querying 'tenant' index directly returns with the full results.
+
+Why's that?
+
+I was sure that routing is supposed to query all the shards that documents
+with tenantId = 2 resides on.
+
+When you have created aliases in elasticsearch, you have to do all operations
+using aliases only. Be it indexing, update or search.
+
+Try reindexing the data again and check if possible (If it is a test index, I
+hope so).
+
+Remove all the indices.
+
+    
+    
+    curl -XDELETE 'localhost:9200/' # Warning:!! Dont use this in production.
+                                      Use this command only if it is test index.
+    
+
+Create the index again. Create alias again. Do all the indexing, search and
+delete operations on alias name. Even the import of data should also be done
+via alias name.
+

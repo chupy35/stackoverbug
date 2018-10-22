@@ -1,0 +1,63 @@
+22418025 ElasticSearch filtering request
+
+I have got the example of the request to ES:
+
+    
+    
+    POST /fnh_main/main/_search?size=0
+    {
+        "query": {
+                    "filtered": {
+                        "query" : {
+                            "match_all": {}
+                },
+                        "filter": {
+                            "geo_bounding_box": {
+                                "location": {
+                            "top_left" : "73.343091,-108.596992",
+                            "bottom_right" : "-14.212892,139.957700"
+                                            }
+                                                }
+                                 }
+                                } 
+                  },
+        "facets" : {
+            "places" : { 
+                "geohash" : {
+                    "field" : "location",
+                    "factor" : 0.1
+                }
+            }
+        }
+    }
+    
+
+I have a few fields I want to filter this request:
+
+  * type (can be H, HO, А)
+  * pricetype (can be S, LT, ST)
+  * beds (can be 1,2,3,4,5, >6)
+  * price (can be a range)
+
+I want to be able to filter the request with any of this parameters. The
+request can be for example:
+
+  * type - any 
+  * pricetype - S
+  * beds - >6
+  * price - 100-200
+
+I want to get the result that matches All this parameters.
+
+Two days of brainstorming didn't give any result...
+
+What is the best way to write this request? Maybe somebody can help me with
+it, will appreciate any help!!!
+
+You can use bool filter. In the bool filter you put all the filtered values in
+separate must condition.
+
+For more information refer
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-filter.html>
+

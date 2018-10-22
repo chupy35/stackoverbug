@@ -1,0 +1,70 @@
+13818892 elastic search limit results for types
+
+i have the following query
+
+    
+    
+    $queryDefinition = [
+            'query' => [
+                'bool' => [
+                    'must' => [
+                        [
+                            'query_string' => [
+                                'default_field' => '_all',
+                                'query' => $term
+                            ]
+                        ]
+                    ],
+                    'must_not' => [],
+                    'should' => []
+                ],
+            ],
+            //'filter' => [
+            //    'limit' => ['value' => 3],
+            //],
+            'from' => 0,
+            'size' => 50,
+            'sort' => [],
+            'facets' => [
+                'types' => [
+                        'terms' => ['field' => '_type']
+                    ]
+                ]
+        ];
+    
+
+in the index we have 5 types, and i would like to show only 3 results from
+each type, for autocomplete. when i set the filter limit only the results from
+the first type are filtered, for other types i get all the results.
+
+how can i do this?
+
+thanks
+
+    
+    
+    {
+      "aggregations": {
+        "types": {
+          "terms": {
+            "field": "_type"
+          },
+          "hits": {
+            "top_hits": {
+              "size": 3
+            }
+          }
+        }
+      }
+    }
+    
+
+If you're using ElasticSearch 1.4.0, you can use [terms
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html) on "_type" field and use [top hits
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-top-hits-aggregation.html) as sub aggregation and set its
+size to 3 (in your case).
+
+Hope that helps.
+

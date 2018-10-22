@@ -1,0 +1,103 @@
+20498561 Get Elasticsearch to AND on all parent and child fields
+
+One can search all Parent/Child over a set of terms as an OR where any of the
+parent or child documents contain any of the search terms like so:
+
+    
+    
+    query:
+      bool:
+        should:
+          match:
+            _all: "term1 term2"
+          has_child:
+            type: childtype1
+            query:
+              match:
+                _all: "term1 term2"
+    
+
+But how can I search such that I return parent documents where the union of
+the parent doc fields and all of its child docs' fields contain the union of
+the search terms? That is, _all_ of the terms are included either in the
+parent doc or in one of its child documents?
+
+You can't.
+
+You can only enforce set restrictions on one document at a time. Parents and
+children are evaluated independently of each other (they are independent
+documents), which means there is no way to ask for documents that have all the
+terms spread amongst parents + children. All the terms either need to be on
+the parent or the child, or you have to tolerate some terms missing.
+
+You can get this behavior if you denormalize. Put all the children terms in
+the parent document for example. Then you can search just the parent doc for
+the union of terms, and do any additional filtering/search with the
+parent/child relations.
+
+This is expensive but it looks like it can be done using filtering if you can
+build your query programmatically.
+
+    
+    
+    {
+      query: {
+        filtered: {
+          filter: {
+            and: [
+              {
+                or: [
+                  {
+                    term: {
+                      _all: term1
+                    }
+                  }, {
+                    has_child: {
+                      type: childtype1,
+                      query: {
+                        term: {
+                          _all: term1
+                        }
+                      }
+                    }
+                  }
+                ],
+                or: [
+                  {
+                    term: {
+                      _all: term2
+                    }
+                  }, {
+                    has_child: {
+                      type: childtype1,
+                      query: {
+                        term: {
+                          _all: term2
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        bool: {
+          should: {
+            match: {
+              _all: "term1 term2"
+            },
+            has_child: {
+              type: childtype1,
+              query: {
+                match: {
+                  _all: "term1 term2"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+

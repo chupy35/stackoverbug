@@ -1,0 +1,48 @@
+24148798 How to update a nested type in Elastic Search?
+
+Imagine I have a document that contains a question and as a nested type all
+answers are added. See example below.
+
+I have the following questions:
+
+How would I update one of the answers ? I know there is the update api, but I
+cannot find a way to find for example the answer with id 88 and then change
+the text of this answer.
+
+    
+    
+    {
+       "_index": "customer",
+       "_type": "question",
+       "_id": "8",
+       "_score": 1,
+       "_source": {
+          "id": 8,
+          "title": "Question title",  
+          "content": "The question text itself",              
+          "answers": [
+             {
+                "answer_id": 42,                     
+                "text": "Answer text 1"
+             },
+             {
+                "answer_id": 88,                    
+                "text": "Answer text 2"
+             },
+             {
+                "answer_id": 79,                     
+                "text": "Answer text 3"
+             },
+             {
+                "answer_id": 80,                    
+                "text": "Answer text 4"
+             },
+             {
+                "answer_id": 8,                      
+                "text": "Answer text 5"
+             }
+          ]
+       }
+    }
+    
+

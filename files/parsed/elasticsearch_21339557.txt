@@ -1,0 +1,127 @@
+21339557 How to add subdocument to an ElasticSearch index
+
+In ElasticSearch, given the following document, Is it possible to add items to
+the "Lists" sub-document without passing the parent attributes (i.e. Message
+and tags)? I have several attributes in the parent document which I dont want
+to pass every time I want to add one item to the sub-document.
+
+    
+    
+    {
+    "tweet" : {
+        "message" : "some arrays in this tweet...",
+        "tags" : ["elasticsearch", "wow"],
+        "lists" : [
+            {
+                "name" : "prog_list",
+                "description" : "programming list"
+            },
+            {
+                "name" : "cool_list",
+                "description" : "cool stuff list"
+            }
+        ]
+    }
+    
+
+}
+
+What you are looking for is, how to insert a nested documents.
+
+In your case, you can use the [Update
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+update.html) to append a nested document to your list.
+
+    
+    
+    curl -XPOST localhost:9200/index/tweets/1/_update -d '{
+        "script" : "ctx._source.tweet.lists += new_list",
+        "params" : {
+            "new_list" : {"name": "fun_list", "description": "funny list" }
+        }
+    }'
+    
+
+To support nested documents, you have to define your mapping, which is
+described
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+nested-type.html).
+
+Assuming your type is `tweets`, the follwoing mapping should work:
+
+    
+    
+    curl -XDELETE http://localhost:9200/index
+    
+    curl -XPUT http://localhost:9200/index -d'
+    {
+       "settings": {
+          "index.number_of_shards": 1,
+          "index.number_of_replicas": 0
+       },
+       "mappings": {
+          "tweets": {
+             "properties": {
+                "tweet": {
+                   "properties": {
+                      "lists": {
+                         "type": "nested",
+                         "properties": {
+                            "name": {
+                               "type": "string"
+                            },
+                            "description": {
+                               "type": "string"
+                            }
+                         }
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }'
+    
+
+Then add a first entry:
+
+    
+    
+    curl -XPOST http://localhost:9200/index/tweets/1 -d '
+    {
+       "tweet": {
+          "message": "some arrays in this tweet...",
+          "tags": [
+             "elasticsearch",
+             "wow"
+          ],
+          "lists": [
+             {
+                "name": "prog_list",
+                "description": "programming list"
+             },
+             {
+                "name": "cool_list",
+                "description": "cool stuff list"
+             }
+          ]
+       }
+    }'
+    
+
+And then add your element with:
+
+    
+    
+    curl -XPOST http://localhost:9200/index/tweets/1/_update -d '
+    {
+       "script": "ctx._source.tweet.lists += new_list",
+       "params": {
+          "new_list": {
+             "name": "fun_list",
+             "description": "funny list"
+          }
+       }
+    }'
+    
+

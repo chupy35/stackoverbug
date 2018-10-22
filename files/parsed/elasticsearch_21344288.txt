@@ -1,0 +1,25 @@
+21344288 How to provide elasticsearch TTL per index document operation?
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+ttl-field.html> seems to indicate that a TTL can be set per query (I'm
+assuming this means it can be set on a per index operation basis). How is that
+done?
+
+Is it just a matter of doing something like:
+
+    
+    
+    client.prepareIndex('index-name', 'type-name')
+            .setSource(jsonBuilder()
+                        .startObject()
+                            .field('_ttl', '1d')
+                            .field('other-field', 'other-value')
+                        .endObject()
+                      )
+            .execute()
+            .actionGet();
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html#index-ttl> indicates that what you have should work.
+

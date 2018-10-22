@@ -1,0 +1,18 @@
+24841519 Elasticsearch: Operation AND then OR for Query String Function
+
+In Elasticsaerch, I am trying to implement operator AND and OR at the same
+time whereby results with AND is/are **ranked higher** than those of OR.
+
+For example, if I search for "buy fruit". I want the result with:
+
+  1. "buy fruit" or "buy...fruit" (order of "buy" and "fruit" doesn't matter) to come up  
+first, then follow by
+
+  2. "buy" or "fruit" (order of "buy" or "fruit" doesn't matter)
+
+Sorry in advance if someone has already answered this type of issue before. I
+have been trying to find an answer for this issue but I can't find a solution.
+
+What you are asking is the default behaviour of elasticsearch. If more terms
+match, you get a higher _score.
+

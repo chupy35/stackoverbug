@@ -1,0 +1,78 @@
+21253906 How to distinguish hits of several should clauses
+
+I have a query with several "should" clauses:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "bool": {
+                        "should": [
+                            {
+                                "query_string": {
+                                    "query": "<condition1>"
+                                }
+                            },
+                            {
+                                "query_string": {
+                                    "query": "<condition1>"
+                                }
+                            }
+                        ]
+                    }
+                },
+            }
+        },
+        "size": 1000,
+        "sort": [
+            {
+                "@timestamp": {
+                    "order": "asc"
+                }
+            }
+        ]
+    }
+    
+
+How can I find out which query results were produced by condition1, and which
+by condition2? Is it possible to inject a field with different values for
+different conditions, or distinguish hits in any other way?
+
+You can use [named
+queries](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-named-queries-and-filters.html#search-request-named-queries-and-
+filters) to achieve this.
+
+    
+    
+    { 
+        "query": {
+            "bool": {
+                "should": [
+                    {
+                        "query_string": {
+                            "query": "<condition1>",
+                            "_name": "sub_query_1"
+                        }
+                    },
+                    {
+                        "query_string": {
+                            "query": "<condition1>",
+                            "_name": "sub_query_2"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+You result will then contain a `matched_filters` array with either
+`sub_query_1`, `sub_query_2`, or both in it.
+
+**Update**
+
+Play link: <https://www.found.no/play/gist/af1a1fa2b5cf3aa279b1>
+

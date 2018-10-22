@@ -1,0 +1,9 @@
+10783994 search stops after the first match
+
+I have `attribute_set_id` indexed at two different places in each id. I want
+to search and get results from both the places(actually I want from the second
+one). What is happening now, is that the following query searches only for the
+first instance of "attribute_set_id" and when does not find the match, returns
+zero.  
+`{"query":{terms:{attribute_set_id:["Bags"]}}}'`
+

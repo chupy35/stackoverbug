@@ -1,0 +1,26 @@
+23568699 Odd behavior with AND condition in elasticsearch
+
+When I run the query `(tags:("a"))` in elasticsearch, I get 0 results. My
+query URL looks like:
+
+    
+    
+    http://127.0.0.1:9200/haystack/_search?q=(tags%3A(%22a%22))
+    
+
+That is to be expected, since no objects have a tag set to "a".
+
+Now when I change the condition, and add an AND, `(org:("1") AND tags:("a"))`,
+**I get 3 results back**! The query URL looks like:
+
+    
+    
+    http://127.0.0.1:9200/haystack/_search?q=(org%3A(%221%22)%20AND%20tags%3A(%22a%22))
+    
+
+Getting _more_ results back does not make any sense to me. I would expect that
+kind of behavior with the OR operator, but AND? What is going on?
+
+**Edit** : This is caused by the snowball analyzer. [See
+here](https://groups.google.com/forum/#!topic/elasticsearch/t117s_pfHYw)
+

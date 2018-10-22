@@ -1,0 +1,3 @@
+30965654
+Elasticsearch searching by ID
+<p>I got problem with searching by ID. One of my index is getting crazy.</p>&#xA;&#xA;<p>Request:&#xA;<code>http://mydomain/myindex/mytype/pkfCkYP4Tam19HWjJAzekw</code></p>&#xA;&#xA;<p>Response:&#xA;<code>"found:true"</code></p>&#xA;&#xA;<p>Request:&#xA;<code>http://mydomain/myindex/mytype/pkfCkYP4Tam19HWjJAzekw</code></p>&#xA;&#xA;<p>Response:&#xA;<code>"found:false"</code></p>&#xA;&#xA;<p>Request:&#xA;<code>..../myindex/mytype/pkfCkYP4Tam19HWjJAzekw</code></p>&#xA;&#xA;<p>Response:&#xA;<code>"found:true"</code></p>&#xA;&#xA;<p>Clearly I see is existing, but sometimes is getting not found.&#xA;What can I do?</p>&#xA;

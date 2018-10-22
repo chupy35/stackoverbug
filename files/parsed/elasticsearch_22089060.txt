@@ -1,0 +1,32 @@
+22089060 ElasticSearch fields prefixed with "@"
+
+I see a lot of fields in example mappings that look like `@timestamp`,
+`@name`, etc.
+
+What does it mean? Does it make any change or is it some convention? It is
+tricky to google and I didn't find any reference reading the doc.
+
+Here's an example: <https://gist.github.com/deverton/2970285>
+
+    
+    
+            ...
+            "properties" : {
+                "@fields": { "type": "object", "dynamic": true, "path": "full" }, 
+                "@message" : { "type" : "string", "index" : "analyzed" },
+                "@source" : { "type" : "string", "index" : "not_analyzed" },
+                "@source_host" : { "type" : "string", "index" : "not_analyzed" },
+                "@source_path" : { "type" : "string", "index" : "not_analyzed" },
+                "@tags": { "type": "string", "index" : "not_analyzed" }, 
+                "@timestamp" : { "type" : "date", "index" : "not_analyzed" },
+                "@type" : { "type" : "string", "index" : "not_analyzed" }
+            }
+            ...
+    
+
+Those settings do not affect anything. They are standardised logstash fields
+which are used so you can easily report on logs originating from multiple
+sources.
+
+They are just a logstash convention and not an elasticsearch convention.
+

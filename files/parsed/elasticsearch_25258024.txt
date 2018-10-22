@@ -1,0 +1,144 @@
+25258024 Using elasticsearch aggregations on script_field values?
+
+I have created groovy script to calculate new field values. I then can use
+that script in my queries to calculate the new field value using a
+`script_fields` parameter. Here is an example:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "bool": {
+                        "must": {"match_all": {}}
+                    }
+                }
+            }
+        },
+        "script_fields":{
+            "my_field":{
+                "script_id":"my_field_calculator",
+                "lang" : "groovy",
+                "params": {}
+            }
+        }
+    }
+    
+
+This works just fine and I see results that each have a `fields` object
+containing `my_field` in it. Perfect.
+
+Now I want to use a [terms
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html) to get the counts of each
+occurrence of this new field value, something like this:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "bool": {
+                        "must": {"match_all": {}}
+                    }
+                }
+            }
+        },
+        "script_fields":{
+            "my_field":{
+                "script_id":"my_field_calculator",
+                "lang" : "groovy",
+                "params": {}
+            }
+        }
+        "aggs": {
+            "counts_by_my_field": {
+                "terms": {
+                    "field": "my_field"
+                }
+            }
+        }
+    }
+    
+
+The query runs just fine and I still see my calculated results in every field,
+however the `aggregations` object contains one key, `counts_by_my_field`, with
+an empty `buckets` array inside.
+
+What am I missing? Is it possible to use script_fields in aggregations?
+
+That is not possible, not yet. **script_fields** dont work when placed as
+`field` in aggregation or in facet.
+
+And there is no any method to access script fields by aggregations. See
+explanation.
+
+I digged into Elasticsearch implementation code,
+
+Here is Javadoc for,
+[ValuesSourceAggregationBuilder#script()](https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/search/aggregations/ValuesSourceAggregationBuilder.java)
+used by Terms aggregation for scripting .
+
+> Sets the script which generates the values. If the script is configured
+along with the field (as in {@link #field(String)}), then * this script will
+be treated as a {@code value script}. A _value script_ will be applied on the
+values that are extracted from * the field data (you can refer to that value
+in the script using the {@code _value} reserved variable). If only the script
+is configured * (and the no field is configured next to it), then the script
+will be responsible to generate the values that will be aggregated. *
+
+This means, you cannot send "script_id" either to the aggregations. You can
+only do this,
+
+    
+    
+    POST index/type/_search
+    {
+       "aggs": {
+          "name": {
+             "terms": {
+                "script": "_source.data[0]",
+                "lang": "groovy",
+                "params": {}
+             }
+          }
+       }
+    }
+    
+
+Hope this helps!! Thanks
+
+While I have not been able to make an aggregation use a `script_field` value
+for the aggregation, I have discovered another way of accomplishing what I had
+hoped to do. It turns out that the aggregation will accept a `script_id`
+configuration that can calculate the script field value during aggregation.
+
+Here is my example working with the `script_id` as part of the aggregation
+instead:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "bool": {
+                        "must": { "match_all": {}}
+                    }
+                }
+            }
+        },
+        "aggs": {
+            "counts_by_my_field": {
+                "terms": {
+                    "script_id": "my_field_calculator",
+                    "lang" : "groovy",
+                    "params": {}
+                }
+            }
+        }
+    }
+    
+

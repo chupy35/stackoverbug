@@ -1,0 +1,90 @@
+20729704 Cannot seem to restart Elastic Search without red status
+
+whenever I restart my one and only Elastic Search node I keep just getting the
+red status and having to delete my data directory and lose all my data...
+
+Here is the log from a restart of the node:
+
+    
+    
+    [2013-12-22 12:44:24,257][INFO ][node                     ] [Dominic Fortune] version[0.90.8], pid[1494], build[909b037/2013-12-18T16:08:16Z]
+    [2013-12-22 12:44:24,257][INFO ][node                     ] [Dominic Fortune] initializing ...
+    [2013-12-22 12:44:24,265][INFO ][plugins                  ] [Dominic Fortune] loaded [], sites [HQ, head]
+    [2013-12-22 12:44:26,818][INFO ][node                     ] [Dominic Fortune] initialized
+    [2013-12-22 12:44:26,818][INFO ][node                     ] [Dominic Fortune] starting ...
+    [2013-12-22 12:44:26,891][INFO ][transport                ] [Dominic Fortune] bound_address {inet[/0:0:0:0:0:0:0:0:9300]}, publish_address {inet[/192.168.183.128:9300]}
+    [2013-12-22 12:44:29,919][INFO ][cluster.service          ] [Dominic Fortune] new_master [Dominic Fortune][5ddMpkRQTZa3TqQ-ljUabg][inet[/192.168.183.128:9300]], reason: zen-disco-join (elected_as_master)
+    [2013-12-22 12:44:29,951][INFO ][discovery                ] [Dominic Fortune] elasticsearch/5ddMpkRQTZa3TqQ-ljUabg
+    [2013-12-22 12:44:29,979][INFO ][http                     ] [Dominic Fortune] bound_address {inet[/0:0:0:0:0:0:0:0:9200]}, publish_address {inet[/192.168.183.128:9200]}
+    [2013-12-22 12:44:29,980][INFO ][node                     ] [Dominic Fortune] started
+    [2013-12-22 12:44:29,987][INFO ][gateway                  ] [Dominic Fortune] recovered [0] indices into cluster_state
+    [2013-12-22 12:45:07,323][INFO ][cluster.metadata         ] [Dominic Fortune] [main] creating index, cause [api], shards [5]/[2], mappings []
+    [2013-12-22 12:45:17,669][INFO ][cluster.metadata         ] [Dominic Fortune] [main] create_mapping [_default_]
+    [2013-12-22 12:45:17,680][INFO ][cluster.metadata         ] [Dominic Fortune] [main] create_mapping [help]
+    [2013-12-22 12:47:19,818][INFO ][node                     ] [Dominic Fortune] stopping ...
+    [2013-12-22 12:47:19,845][INFO ][node                     ] [Dominic Fortune] stopped
+    [2013-12-22 12:47:19,845][INFO ][node                     ] [Dominic Fortune] closing ...
+    [2013-12-22 12:47:19,856][INFO ][node                     ] [Dominic Fortune] closed
+    [2013-12-22 12:47:45,495][INFO ][node                     ] [Stryker, William] version[0.90.8], pid[1695], build[909b037/2013-12-18T16:08:16Z]
+    [2013-12-22 12:47:45,496][INFO ][node                     ] [Stryker, William] initializing ...
+    [2013-12-22 12:47:45,502][INFO ][plugins                  ] [Stryker, William] loaded [], sites [HQ, head]
+    [2013-12-22 12:47:48,068][INFO ][node                     ] [Stryker, William] initialized
+    [2013-12-22 12:47:48,068][INFO ][node                     ] [Stryker, William] starting ...
+    [2013-12-22 12:47:48,140][INFO ][transport                ] [Stryker, William] bound_address {inet[/0:0:0:0:0:0:0:0:9300]}, publish_address {inet[/192.168.183.128:9300]}
+    [2013-12-22 12:47:51,170][INFO ][cluster.service          ] [Stryker, William] new_master [Stryker, William][rMklMXasRDS4lURA0wQ7lQ][inet[/192.168.183.128:9300]], reason: zen-disco-join (elected_as_master)
+    [2013-12-22 12:47:51,198][INFO ][discovery                ] [Stryker, William] elasticsearch/rMklMXasRDS4lURA0wQ7lQ
+    [2013-12-22 12:47:51,222][INFO ][http                     ] [Stryker, William] bound_address {inet[/0:0:0:0:0:0:0:0:9200]}, publish_address {inet[/192.168.183.128:9200]}
+    [2013-12-22 12:47:51,223][INFO ][node                     ] [Stryker, William] started
+    [2013-12-22 12:47:51,242][INFO ][gateway                  ] [Stryker, William] recovered [1] indices into cluster_state
+    
+
+As you can see `Dominic Fortune` downs and then `Stryker, William` comes
+online after the node restart. There are no other nodes, the status on my
+cluster from the HQ plugin says 1 node.
+
+Despite this I cannot stop my cluster from going into red status whenever I do
+this.
+
+How can I fix a problem I cannot see?
+
+Ok I actually have been able to trial and error a fix.
+
+The problem is that there was no data in the indexes when I restarted the
+node.
+
+For some odd reason this makes Elastic Search explode as though it cannot find
+all the documents when in fact there are no documents to be found.
+
+### Edit
+
+After posting on the Google Group I found this to be my stupidity, since I
+used a replica setting of 2 the quorum was expecting more than one node
+online.
+
+When there wasn't due to lack of data etc it would fail and not recover the
+index to be used on the restart of Elastic Search.
+
+Dumbo me.
+
+Generally **RED/Yellow** statuses(after a restart) occur if the shutdown is
+not done properly, do not `cntrl + c` to stop elastic search, use a rest call
+mentioned
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+nodes-shutdown.html)
+
+In dev mode I generally use
+
+    
+    
+    curl -XPOST 'http://localhost:9200/_cluster/nodes/_master/_shutdown'
+    
+
+Mainly yellow status is due to some shards that are not allocated. If your
+cluster is in recovery status, just wait if there is enough space in nodes for
+your shards. If your cluster, even after recovery is still in yellow state, it
+means you don't have enough nodes to contain your replicas so you can either
+reduce the number of your replicas or add the required number of nodes.
+
+The total number of nodes must not be lower than the maximum number of
+replicas.
+

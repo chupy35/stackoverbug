@@ -1,0 +1,159 @@
+23165076 Elasticsearch exclude one field while search
+
+I am using ElasticSearch Java API for search. I have four fields:
+
+  1. key
+  2. name
+  3. DOB
+  4. address
+
+While searching I am using following query:
+
+QueryBuilder qb =QueryBuilders.queryString(" _Pritish_ ");
+
+This is including key while searching. Also, I do not want to select fileds
+as:
+
+.fields("DOB", "name", "address")
+
+Is there any way to exclude field? I was looking for ParitalFields. Is it
+useful for my case? Can some one help to provide java example for this?
+
+Now, I have added mapping as follows:
+
+/ ********************************* Create Index
+********************************** /
+
+    
+    
+    XContentBuilder mapping = jsonBuilder()
+    
+        .startObject()
+            .startObject(indexName)
+                .startObject("properties")
+                    .startObject("key")
+                        .field("type", "string") 
+                        .field("index","not_analyzed")
+                        .field("store", "false")
+                    .endObject()
+                    .startObject("addr1")
+                        .field("type","string")
+                    .endObject()
+                    .startObject("DOB")
+                        .field("type","string")
+                    .endObject()
+                    .startObject("name")
+                        .field("type","string")
+                    .endObject()
+                .endObject()
+            .endObject()
+        .endObject();
+    
+    client.admin()
+            .indices()
+            .preparePutMapping(indexName)
+            .setType(indexName)
+            .setSource(mapping)
+            .execute()
+            .actionGet();
+    
+
+/ ************************** Insert Data ********************************* /
+
+    
+    
+        XContentBuilder x = jsonBuilder()
+    
+            .startObject()
+                .field("key", key)
+                .field("addr1", "abc road")
+                .field("DOB", "09092009")
+                .field("name","test")
+    
+        .endObject();
+    bulk.add(client.prepareIndex(indexName, indexName).setSource(x));
+    
+
+/ ***************** Search Query ************************** /
+
+    
+    
+    QueryBuilder qb =QueryBuilders.queryString("*e434*");
+    
+    SearchResponse response = client.prepareSearch(indexName)
+    
+        .setQuery(qb)
+        .setFrom(0)
+        .setSize(100)
+        .execute()
+        .actionGet();
+    
+    SearchHit[] results = response.getHits().hits();
+    
+
+When, I see the index meta data, it is showing me proper mapping as follows:
+
+    
+    
+    mappings: {
+       indexName: {
+         properties: {
+         addr1: {
+             type: string
+         }
+         name: {
+             type: string
+         }
+         key: {
+             index: not_analyzed
+             type: string
+         }
+         acct_type: {
+             type: string
+         }
+      }
+    }
+    }
+    
+
+Now, when I perform search query, it is still showing me the result which
+search against the key.
+
+I am not sure what's going wrong. Can anybody please help to resolve this?
+
+From what I understand you don't want to search on this one specific field. In
+this case partial fields (replaced in Elastic Search 1.0.0beta1 by source
+filtering) are not useful for you as they are separate thing apart from query
+and are meant only for getting partial information from result document. It
+doesn't affect if search will be performed on some field.
+
+You can only select specific fields for search using some of classes extending
+[QueryBuilder](http://javadoc.kyubu.de/elasticsearch/v1.1.0/org/elasticsearch/index/query/QueryBuilder.html)
+interface and what is a bad news for you, only possibility of selecting fields
+is by adding them.
+
+On the other hand, if it is not the case where you don't want to search on
+this specific field in one specific case, but it's just a field that is going
+to contain relevant information as result and will never be searched on, you
+can specify this field as not indexed. You can set field's `index` attribute
+to `no` while
+[mapping](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#string). This should result in having field that will be
+stored and returned with whole JSON as document's source, but not being
+searchable.
+
+After reading the mapping document thoroughly, I finally found my mistake
+while creating mapping. I was creating mapping for key as follows (refer code
+in Question):
+
+**field("index","not_analyzed")**
+
+After reading the document, i changed the above line as below:
+
+**field("index","no")**
+
+I am really thankful to CodeSculptor for his idea. Now, it is working as per
+my requirements.
+
+Thank you so much.
+

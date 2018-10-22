@@ -1,0 +1,27 @@
+17363109 Using matching document original score in filter script for custom
+filters score query
+
+I want to use "custom filters score" query and use filters to control the
+score of resulting documents.
+
+I want a way to use the document's original score as computed by
+ElasticSearch, and then use that score to calculate the final score of the
+document, which matches the given filters.
+
+Something like "_docScore * 50/100" as a script for a filter, where
+"_docScore" is the original score of a document that matches the filter.
+
+How to achieve this in ElasticSearch?
+
+Any help is greatly appreciated.
+
+Regards & Thanks, Aditya.
+
+Documents in a filtered query would be unranked and have the same score.
+
+<http://www.elasticsearch.org/guide/reference/query-dsl/custom-score-query/>
+
+But you can use a custom score query together with a filtered query and use a
+script to calculate a score based on the document values. This was added in
+0.90, I believe.
+

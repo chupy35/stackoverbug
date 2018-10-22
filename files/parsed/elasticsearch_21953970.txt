@@ -1,0 +1,17 @@
+21953970 Special keyword lists for Elasticsearch analyzer
+
+Using the standard analyzer some special words would be divided like "Häagen-
+Dazs" to "Häagen" and "Daz".  Is it possible to add a special keyword list so
+as to instruct Elasticsearch to treat the words as is?
+
+check out link from elasticsearch offcial site
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+keep-words-tokenfilter.html#_settings_example>
+
+**Keep token filter**
+
+A token filter of type keep that only keeps tokens with text contained in a
+predefined set of words. The set of words can be defined in the settings or
+loaded from a text file containing one word per line
+

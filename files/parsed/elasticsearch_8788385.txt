@@ -1,0 +1,72 @@
+8788385 how to write setting in form of JSON?
+
+How to write following settings in form od JSON:
+
+    
+    
+    index : 
+        analysis : 
+            analyzer : 
+                myAnalyzer2 : 
+                    type : custom 
+                    tokenizer : myTokenizer1 
+                    filter : [myTokenFilter1, myTokenFilter2] 
+                    char_filter : [my_html] 
+            tokenizer : 
+                myTokenizer1 : 
+                    type : standard 
+                    max_token_length : 900 
+            filter : 
+                myTokenFilter1 : 
+                    type : stop 
+                    stopwords : [stop1, stop2, stop3, stop4] 
+                myTokenFilter2 : 
+                    type : length 
+                    min : 0 
+                    max : 2000 
+            char_filter : 
+                  my_html : 
+                    type : html_strip 
+                    escaped_tags : [xxx, yyy] 
+                    read_ahead : 1024 
+    
+
+please help me.
+
+Thanks
+
+Here you go, it was pretty much in JSON format all it needed was commas and
+curly braces
+
+    
+    
+    { index : 
+        { analysis : 
+           { analyzer : 
+               { myAnalyzer2 : 
+                   { type : custom, 
+                    tokenizer : myTokenizer1,
+                    filter : [myTokenFilter1, myTokenFilter2],
+                    char_filter : [my_html]}},
+            tokenizer : 
+               { myTokenizer1 : 
+                  {  type : standard,
+                    max_token_length : 900 }},
+            filter : 
+               { myTokenFilter1 : 
+                   { type : stop, 
+                    stopwords : [stop1, stop2, stop3, stop4]}, 
+                 myTokenFilter2 : 
+                   { type : length,  
+                    min : 0, 
+                    max : 2000 }},
+            char_filter : 
+                 { my_html : 
+                   { type : html_strip, 
+                    escaped_tags : [xxx, yyy], 
+                    read_ahead : 1024}}
+            }
+        }
+    };
+    
+

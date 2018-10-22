@@ -1,0 +1,86 @@
+24807276 How to turnoff 'hits' in elasticsearch response
+
+Following is the sample response for
+
+`curl -X POST "http://localhost:9200/articles/_search?pretty=true" -d ' {
+"facets": { "speaker" : { "terms" : {"field" : "speaker"} } } }'`
+
+Sample response
+
+    
+    
+    {
+    "took": 16,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+    },
+    "hits": {
+        "total": 111396,
+        "max_score": 1,
+        "hits": [
+            {
+                "_index": "shakespeare",
+                "_type": "line",
+                "_id": "63098",
+                "_score": 1,
+                "_source": {
+                    "line_id": 63099,
+                    "play_name": "Merchant of Venice",
+                    "speech_number": 5,
+                    "line_number": "3.3.14",
+                    "speaker": "SHYLOCK",
+                    "text_entry": "Ill have my bond; and therefore speak no more."
+                }
+            },
+            {
+                "_index": "shakespeare",
+                "_type": "line",
+                "_id": "63101",
+                "_score": 1,
+                "_source": {
+                    "line_id": 63102,
+                    "play_name": "Merchant of Venice",
+                    "speech_number": 5,
+                    "line_number": "3.3.17",
+                    "speaker": "SHYLOCK",
+                    "text_entry": "To Christian intercessors. Follow not;"
+                }
+            }
+    
+        ]
+    },
+    "facets": {
+        "speaker": {
+            "_type": "terms",
+            "missing": 0,
+            "total": 111396,
+            "other": 100157,
+            "terms": [
+                {
+                    "term": "GLOUCESTER",
+                    "count": 1920
+                },
+                {
+                    "term": "HAMLET",
+                    "count": 1582
+                }
+            ]
+        }
+    }
+    
+
+}
+
+Can somebody explain this hits part of the response.
+
+  * Why `hits.hits` is an array? 
+  * What does each of the hits object mean ? 
+  * Is there a way to suppress hits from the elastic search response ? 
+
+  * `hits.hits` is array of found documents that meet your search query
+  * Each object represent single found document - you can see here its id, type and attributes inside `_source` object
+  * You can specify `"size" : 0` clause in your search query and then `hits.hits` array will be empty
+

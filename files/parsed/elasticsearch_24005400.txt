@@ -1,0 +1,37 @@
+24005400 If a property in elasticsearch is neither indexed nor stored and the
+_source is also disabled, does the property affect storage space?
+
+    
+    
+    POST /twitter/tweet/_mapping
+    {
+      "tweet" : {
+        "_source" : {"enabled" : false},
+        "properties" : {
+          "user" : {"type" : "string", "index" : "no", "store" : false}
+        }
+      }
+    }
+    
+    POST /twitter/tweet/1
+    {
+      "user": "John Doe"
+    }
+    
+
+Using the above _mapping and document, will the property value "John Doe" be
+stored anywhere by elasticsearch?
+
+Also, apart from being displayed in the _mapping, is there any other role of
+the 'user' property?
+
+I was investigating the same doubt. As per ES documentation (1) in your case
+the original json you 'index' should be stored but the ES index will not
+contain any reference to that field.
+
+store: Set to true to actually store the field in the index, false to not
+store it. Defaults to false (note, the JSON document itself is stored, and it
+can be retrieved from it).
+
+  1. <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-core-types.html>
+

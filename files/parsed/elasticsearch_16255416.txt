@@ -1,0 +1,57 @@
+16255416 Query with multiple values on a property with one value in
+Elasticsearch
+
+I am trying to build on this query a little bit. The index I am searching also
+has a field "entity" with an id. So a few records will have "entity" : 16,
+"entity" 156 etc, depending on the id of the entity. I need to expand this
+query in such a way that I can pass an array or some list of values in, such
+as {:term => {:entity => [1, 16, 100]}} and get back records that have one of
+these integers as their entity value. I haven't had any luck so far, can
+someone help me?
+
+    
+    
+    { 
+      "query" : {
+    
+        "bool" : {
+          "must" : [
+            {
+              "term" : {"user_type" : "alpha"}
+            }, 
+            { 
+              "term" :{"area" : "16"}
+            }
+          ], 
+          "must_not" : [], 
+          "should" :   []
+        }
+      }, 
+      "filter": {
+        "or" : [{
+           "and" : [
+              { "term" : { "area" : "16" } },
+              { "term" : { "date" : "05072013" } }
+           ]
+        }, {
+           "and" : [
+              { "term" : { "area" : "16" } },
+              { "term" : { "date" : "blank" } }
+           ]
+        }
+    
+    
+        ]
+      },
+    "from" : 0,
+    "size" : 100 
+    }
+    
+
+Use `"terms"` instead of `"term"`.
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-
+terms-filter.html>
+
+`{ "terms" : { "entity" : [ 123, 1234, ... ] }}`
+

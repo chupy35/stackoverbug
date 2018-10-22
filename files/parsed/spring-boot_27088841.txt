@@ -1,0 +1,28 @@
+27088841 Disable SSLv3 using Spring-Boot and embedded Tomcat
+
+I'm using Spring-Boot-1.1.8, and I configured ssl with the following
+properties
+
+    
+    
+    server.ssl.key-alias=XXX
+    server.ssl.key-password=XXX
+    server.ssl.key-store=classpath:XXX
+    server.ssl.key-store-provider=XXX
+    server.ssl.key-store-type=XXX.jks
+    server.ssl.protocol=TLS
+    
+
+even though the SSL protocol is TLS, SSLv3 appears to be enabled . Is it a
+bug, or I'm missing something?
+
+Just a reminder, using SSLv3, the server may be impacted by the Poodle
+vulnerability.
+
+If your goal is to disable SSLv3, the easiest option is to use Tomcat 7.0.57
+which disables it by default. Assuming you're using Maven, all you need to do
+is set the `tomcat.version` property to 7.0.57 in your pom.
+
+The forthcoming Spring Boot 1.1.10 release uses 7.0.57 by default so, once
+it's been released, you'll no longer need to set the Tomcat version.
+

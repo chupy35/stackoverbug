@@ -1,0 +1,35 @@
+16803630 Multiple core type mappings for the same field in elasticsearch (e.g.
+string and object)
+
+Is it possible to create multiple core type mappings for a single field e.g. a
+field Qty which allows both long/string values or a field which allows both
+object/string values?
+
+I'm using the mongodb river and once the field is indexed as an object, it
+throws a MapperParsingException for all other data that contain this field as
+a string?
+
+I read here <https://github.com/elasticsearch/elasticsearch/issues/1166> that
+this is not possible, does it still hold true?  I'm using v 0.19.8.
+
+I've also tried setting ignore_conflicts : true in my mapping as per the
+example shown <http://grokbase.com/t/gg/elasticsearch/128ath8kh1/some-mapping-
+confusions-to-resolve>, but the data I was looking for was not pulled into
+elasticsearch from mongodb.
+
+I also took a look at <http://elasticsearch-
+users.115913.n3.nabble.com/Getting-MapperParsingException-while-parsing-a-
+string-and-a-number-td3897986.html>, but I dont have control over the schema
+(can't rename the field differently if different types are encountered)
+
+I'd like to make sure that elasticsearch has all the documents that I have
+stored in mongodb. Thanks!
+
+> Is it possible to create multiple core type mappings for a single field e.g.
+a field Qty which allows both long/string values or a field which allows both
+object/string values?
+
+No, but you might want to see if you can leverage the [multifield
+type](http://www.elasticsearch.org/guide/reference/mapping/multi-field-type/)
+to get where you're trying to go
+

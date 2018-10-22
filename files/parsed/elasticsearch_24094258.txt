@@ -1,0 +1,61 @@
+24094258 Elastic search not_analyzed fields
+
+I have a loginid field in my elastic search Database which contain user email
+ids. I want to write a search query to list all occurrence of a particular
+mail client (eg gmail.com, yahoo.com etc).
+
+I have managed to write a search query with exact match of an email id
+
+    
+    
+    {
+       "query": {
+          "match": {
+             "loginid": "dibeesh@amt.in"
+          }
+       }
+    }
+    
+
+By executing above query i will get an exact match. My requirement is to match
+all email ids ends with '@amt.in'.  loginid is a non_analyzed field in my
+elastic search db ie
+
+    
+    
+    "loginid": {
+      "type": "string",
+       "index": "not_analyzed"
+    }
+    
+
+**I have also tried parse_prefix query**
+
+    
+    
+    {
+       "query": {
+          "match": {
+             "loginid": {
+                "query": "dibeesh@amt.in",
+                "type": "phrase_prefix"
+             }
+          }
+       }
+    }
+    
+
+But no luck to get my desired result. Please help me to find a solution. Thank
+you
+
+    
+    
+    {
+        "regexp":{
+            "loginid": "*@amt.in"
+        }
+    }
+    
+
+use the elastic search regular expression query to achieve this.
+

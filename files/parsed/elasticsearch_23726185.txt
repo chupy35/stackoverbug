@@ -1,0 +1,25 @@
+23726185 Can elasticsearch handle structured data whats its limits?
+
+I have got 5 million objects.Each object has 100 properties. 50 properties
+text, 40 properties numeric values and ten properties datetime. I am sending
+random ad hoc queries with sorts and all kinds of queries. What ES limits? How
+big can the cluster go ?
+
+I would look at the limitations of Apache Lucene rather than Elasticsearch
+seeing as ES is essentially Lucene in a big wrapper. You can start by having a
+look
+[here](http://lucene.apache.org/core/4_0_0/core/org/apache/lucene/codecs/lucene40/package-
+summary.html#Limitations). Hope this helps.
+
+I don't think you'll get a precise answer as to how big ES can go - as always
+it's a question of what kind of documents you are indexing, the complexity of
+the queries, the frequency with which you update and query, what acceptable
+response times are, etc.
+
+That said, from my own experience of several live clusters with hundreds of
+millions of documents each I'd say you are well below any known limits to ES.
+I'd also check their list of cases studies, should give you more insight into
+how others are using ES.
+
+<http://www.elasticsearch.org/case-studies/>
+

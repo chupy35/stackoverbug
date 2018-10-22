@@ -1,0 +1,44 @@
+21368352 ElasticSearch Assign Index to Server
+
+I have 4 servers running ES where each server has 1 index with 1 shard and 0
+replicas:
+
+    
+    
+    Server1: Name Server
+    Server2: Address Server
+    Server3: Health Chart Server
+    Server4: HealthID/SSN Server
+    
+
+I am clustering these servers in the cloud using this [SO
+answer](https://stackoverflow.com/questions/21195116/elastic-search-
+clustering-in-the-cloud) disabling multicast and placing all 4 server IP's in
+the unicast hosts array with port 9300 works for me (on each servers config
+yml).
+
+**My question is how do I set up each index to reside on its respected server
+(and ONLY on that Server)?** I index on each server via localhost and cannot
+have fault tolerance, nor do I need it. I want to cluster these servers to use
+an alias where I can search across all of them (that are running). If a server
+goes down, then so does its index. So be it -- I cannot search across it,
+that's fine, but I don't want the index routing to another server in the
+cluster, I just want it to be down. Then if I reboot the server, it rejoins
+the cluster and is searchable again.
+
+I couldn't make out a solution based on the [ES
+Guide](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+cluster.html) which is likely oversight by me, but cannot find much on how to
+implement this design.
+
+I'm curious on why you want to control where a whole index is allocated. That
+means you don't want to have any replica (as replicas are never allocated on
+the same machine where the primaries are) ? Usually shards are distributed in
+an even manner, thus you shouldn't need to control allocation. Anyways, for
+advanced use cases you can assign labels to your nodes and control where the
+indices are allocated via [index
+settings](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+update-settings.html), have a look at [shard allocation
+filtering](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-allocation.html#shard-allocation-filtering).
+

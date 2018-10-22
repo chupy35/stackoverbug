@@ -1,0 +1,8 @@
+12256826 Filtering search result with Mpdreamz/NEST
+
+I have an Elasticsearch index which contains news from various Sources like
+economictimes,cnn etc.I am using Mpdreamz/NEST for integrating elasticsearch
+in C#. Is there any way to display a field named 'Content' from index which
+contains the word 'Accounts' respective of the souces provided.looking for
+something like getContent(keyword="Accounts",source={List}){ }
+

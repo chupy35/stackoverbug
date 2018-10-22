@@ -1,0 +1,99 @@
+23446865 elasticsearch - how to filter query on property of an object
+
+In my doc, I have an **object with user-id's as properties** :
+
+    
+    
+    {
+        name:"bill"
+        connections:{
+            352077: {
+                id          :352077
+                username    :john
+                genre       :"M"
+            }
+            3472236: {
+                id          :3472236
+                username    :cris
+                genre       :"F"
+            }
+            4967367: {
+                id          :4967367
+                username    :mary
+                genre       :"F"
+            }
+        }
+    }
+    
+
+How can I perform a **query to get** only connections with **genre = "F"**?
+
+To run an update query, this works well:
+
+    
+    
+    {script:"for(i:ctx._source['connections'].entrySet()){ i.value.genre = 'F'; }"}
+    
+
+But I don't know how to run as GET query.
+
+I think you should restructure your documents like that
+
+    
+    
+    curl -XPUT 'http://localhost:9200/myindex/connection/bill_352077' -d '{
+        "name":"bill",
+        "id":352077,
+        "username":"john",
+        "genre":"M"      
+    }'
+    
+    curl -XPUT 'http://localhost:9200/myindex/connection/bill_3472236' -d '{
+        "name":"bill",
+        "id":3472236,
+        "username":"cris",
+        "genre":"F"    
+    }'
+    
+    curl -XPUT 'http://localhost:9200/myindex/connection/bill_4967367' -d '{
+        "name":"bill",
+        "id":4967367,
+        "username":"mary",
+        "genre":"F"     
+    }'
+    
+    curl -XPUT 'http://localhost:9200/myindex/connection/bob_12345' -d '{
+        "name":"bob",
+        "id":12345,
+        "username":"rosie",
+        "genre":"F"     
+      }'
+    
+    curl -XGET 'http://localhost:9200/myindex/connection/_search?q=genre:F%20AND%20name:bill'
+    
+
+If this is not an option maybe you can try a multi_search query
+
+    
+    
+    {
+       "query":{
+          "multi_match":{
+             "query":"F",
+             "fields":[
+                "connections.*.genre"
+             ]
+          }
+       }
+    }
+    
+
+but thats not really working for your document structure because its not
+indented to search within documents and return only the parts the search
+match. <https://github.com/elasticsearch/elasticsearch/issues/3022>
+
+Maybe you solve it via nested mapping,
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+nested-type.html> but then you can access such documents only via nested
+queries and normally that is not that what you want.
+

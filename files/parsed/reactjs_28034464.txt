@@ -1,0 +1,39 @@
+28034464 React-router: Uncaught ReferenceError: ReactRoute is not defined
+
+I'm following [React Router Guide](https://github.com/rackt/react-
+router/blob/master/docs/guides/overview.md) but I'm not even getting to make
+the simplest example to work. It says `Uncaught ReferenceError: Route is not
+defined`.
+
+I'm including these 3 JavaScript files through `cdnjs` and my own script:
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/JSXTransformer.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-router/0.11.6/react-router.js"></script>
+    
+    <script type="text/jsx" src="react/routing/routes.jsx"></script>
+    
+
+And the script the triggers the exception is `routes.jsx`:
+
+    
+    
+    var routes = (
+       <Route name="app" path="/" handler={App}>
+           <DefaultRoute handler={MainPage}/>
+        </Route>
+    );
+    
+
+Am I missing anything? Have `Route` been renamed?
+
+It's `ReactRouter.Route`.
+
+You can open the console and see the various properties of objects.
+
+Also, take a look at [the exports](https://github.com/rackt/react-
+router/blob/master/index.js). In the browser exports becomes ReactRouter, in
+commonjs it's the return value of `require('react-router')`.
+

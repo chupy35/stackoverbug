@@ -1,0 +1,86 @@
+23733728 Single query to find document with largest value for some field
+
+I've got a collection of documents that have unique numeric run ids, and I
+want to find the document with the highest run id.
+
+I can do that two queries.
+
+Firstly, I can find the highest run id:
+
+    
+    
+    {
+        "size": 0,
+        "aggregations": {
+          "latest_run_id": {
+            "aggregations": {
+              "latest_run_id": {
+                "max": {"field": "run_id"}
+              }
+            }
+          }
+        }
+    }
+    
+
+Secondly, I can find the document with that run id:
+
+    
+    
+    {
+        "filter": {
+            {"term": {"run_id": latest_run_id}}
+        }
+    }
+    
+
+Is there a way I can do this with a single query?
+
+You can accomplish this by combining "sort" and "size":
+
+    
+    
+    `{
+      "filter" : {
+        "match_all" : { }
+      },
+      "sort": [
+        {
+          "run_id": {
+            "order": "desc"
+          }
+        }
+      ],
+      "size": 1
+    }`
+    
+
+This will return the record with the highest `run_id`
+
+It is possible to retrieve entire document holding max value using **top
+hits** aggregation
+
+    
+    
+    {
+        "size": 0,
+        "aggs":{
+            "doc_with_max_run_id": {
+                "top_hits": {
+                    "sort": [
+                        {
+                            "latest_run_id": {
+                                "order": "desc"
+                            }
+                        }
+                    ],
+                    "size": 1
+                }
+            }
+        }
+    }
+    
+
+Also by modifying 'size' aggregation parameter it is possible to retrieve
+n-top documents.
+

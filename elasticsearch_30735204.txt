@@ -1,0 +1,4 @@
+30735204
+How to implement custom sort in elasticsearch?
+<p>The ids in my documents are alphanumeric (like A-1,A-2,A-10,A-21). When I sort the documents based on these ids then the results are like :</p>&#xA;&#xA;<pre><code>A-1 A-10 A-2 A-20 &#xA;</code></pre>&#xA;&#xA;<p>but I want them like</p>&#xA;&#xA;<pre><code>A-1 A-2 A-10 A-20&#xA;</code></pre>&#xA;&#xA;<p>To achieve this, how can I write custom scripts for sorting in Elasticsearch?</p>&#xA;
+<p>Check this library:</p>&#xA;&#xA;<p><a href="https://github.com/jprante/elasticsearch-analysis-naturalsort" rel="nofollow">https://github.com/jprante/elasticsearch-analysis-naturalsort</a></p>&#xA;&#xA;<p>In the example, there is this order:&#xA;[Bob: 2 points, Bob: 3 points, Bob: 10 points]</p>&#xA;

@@ -1,0 +1,35 @@
+10507276 Multiple Analyzers for query_string by Field
+
+for particular query, how can i define separate query analyzers by field
+(phonetic_name, name). Just define search_analyzers for phonetic_name & name
+in Put Mapping of Index/Type?
+
+    
+    
+    {
+        "query_string" : {
+            "fields" : ["phonetic_name", "name^5"],
+            "query" : "italian food",
+            "use_dis_max" : true
+        }
+    } 
+    
+
+You can specify the analyzer for a field when the index is created, for
+example:
+
+    
+    
+    curl -s -XPOST localhost:9200/myindex -d '{
+      "mappings":{
+        "mytype":{
+          "properties":{
+            "field1":{"store":"yes","index":"not_analyzed","type":"string"},
+            "field2":{"store":"yes","analyzer":"whitespace","type":"string"},
+            "field3":{"store":"yes","analyzer":"simple","type":"string"},
+          }
+        }
+      }
+    }'
+    
+

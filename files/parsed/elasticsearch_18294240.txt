@@ -1,0 +1,44 @@
+18294240 Limiting results by multiple attributes
+
+I've got data with record, version, title and expires fields. Record is a non-
+unique field, and each record can have a number of versions.
+
+In search results, I need to only show one of each version.
+
+So is it possible to search by title for articles that on/before a certain
+date, but only return one result for each version.
+
+For example, given this data:
+
+    
+    
+    {"record": 1, "version": 1, "title": "Hello", "expires": "2011-08-17 00:00:00"},
+    {"record": 1, "version": 2, "title": "Hello", "expires": "2012-08-17 00:00:00"},
+    {"record": 2, "version": 1, "title": "Hello world", "expires": "2010-08-17 00:00:00"},
+    {"record": 2, "version": 2, "title": "Hello world", "expires": "2011-08-17 00:00:00"},
+    {"record": 2, "version": 3, "title": "Hello world", "expires": "2012-08-17 00:00:00"},
+    
+
+searching for documents containing "Hello" in the title, that expired
+on/before 2012-08-18, should return:
+
+    
+    
+    {"record": 1, "version": 2, "title": "Hello", "expires": "2012-08-17 00:00:00"},
+    {"record": 2, "version": 3, "title": "Hello world", "expires": "2012-08-17 00:00:00"}
+    
+
+(the most recent 'version' of each record).
+
+Any ideas?
+
+Will I have to iterate over the results outside of ES?  Thanks for reading!
+
+What you want is called field collapsing and it's one of the few features
+Apache Solr has and ElasticSearch doesn't.
+
+<http://wiki.apache.org/solr/FieldCollapsing>
+
+There's a lot of requests for this feature in ElasticSearch but it's not
+implemented yet.
+

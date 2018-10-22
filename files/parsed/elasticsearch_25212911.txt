@@ -1,0 +1,39 @@
+25212911 How to turn off caching when testing Elastic Search
+
+I'm stress testing Elastic Search by sending queries but am afraid the
+responses are being cached. How do I turn off caching when testing Elastic
+Search?
+
+Before I answer, a disclaimer that I agree with the comments on the question,
+disabling cache is not the best way to stress test Elasticsearch. Hitting it
+with simultaneous queries that are representative of your production query set
+along with active indexing at the same time is going to be a far better way to
+see how ES responds under load.
+
+However, to answer your question and point out some caveats:
+
+  1. You can clear your cache in between runs: 
+
+> The clear cache API allows to clear either all caches or specific cached
+associated with one ore more indices.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+clearcache.html>
+
+  2. You can turn off your filter cache by setting index.cache.filter.type to none - this will prevent filter results from being cached:
+
+<http://elasticsearch-users.115913.n3.nabble.com/Disable-cache-td3825105.html>
+
+<http://elasticsearch-users.115913.n3.nabble.com/Disabling-cache-
+td3201850.html>
+
+  3. You can change the settings for the field data cache - however I don't know what will happen if you set this to zero:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-fielddata.html>
+
+  4. Overall, though, keep in mind that Elasticsearch makes significant use of the native OS filesystem cache, so much of "caching" is happening outside the control of ES: 
+
+<https://blog.codecentric.de/en/2014/05/elasticsearch-indexing-performance-
+cheatsheet/>
+

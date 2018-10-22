@@ -1,0 +1,4 @@
+28721610
+ElasticSearch getting the last version of document
+<p>I store some documents in index "blog".</p>&#xA;&#xA;<p>When I open URL <a href="http://localhost:9200/blog/post/90?pretty=true" rel="nofollow">http://localhost:9200/blog/post/90?pretty=true</a> by browser &#xA;I have the different value in "_version" field. ElasticSearch store 2 version of my document and return it randomly. </p>&#xA;&#xA;<p>How to get the last document?</p>&#xA;
+<p>The _version property is used to implement optimistic locking. There cannot be two documents with a different version in the index. At least not in the same shard. Their might be a very short time frame in which the replicate shard can have an older version. Each update to the documents increases the version number. You can find more information about this in this blog post:</p>&#xA;&#xA;<p><a href="http://www.elasticsearch.org/blog/versioning/" rel="nofollow">http://www.elasticsearch.org/blog/versioning/</a></p>&#xA;

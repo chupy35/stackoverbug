@@ -1,0 +1,89 @@
+16869356 Elasticsearch - sort multi-index query
+
+I'm building an autocomplete search with elasticsearch so I need to query 3
+indexes `posts`, `comments`, `authors`. I have the following query:
+
+    
+    
+    {
+       "query":{
+          "query_string":{
+             "query":"something"
+          }
+       }
+    }
+    
+
+the call:
+
+    
+    
+    curl -X GET 'http://localhost:9200/posts,comments,authors/_search?pretty' -d '{
+      "query": {
+        "query_string": {
+          "query": "something"
+        }
+      }
+    }'
+    
+
+I need to sort the results by specific index fields, for example:
+
+posts index has a field called `comments_count`, comments `votes_count` and
+authors `posts_count`. When comparing posts, then it should sort by
+`comments_count`, when comments then `votes_count`, when authors then
+`posts_count`.
+
+It's possible to do something like that? I wouldn't like to merge the indexes
+into one because they indexes completely different documents.
+
+Well, my problem was that if i sort by a field that is not present in all
+indexes, documents wont be returned.
+
+Managed to solve with:
+
+    
+    
+    {
+       "_script":{
+          "script":"type=doc['_type'].value;if(type=='posts'){return doc['comments_count'].value} else {return 0};",
+          "type":"number",
+          "order":"desc"
+       }
+    }
+    
+
+at least now the documents are shown, even if at the bottom.
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-sort.html>
+
+Use ignore unmapped_type to ignore the field when querying against multiple
+indexes and the field does not exist in other indexes.
+
+Instead of using `comments_count`, `votes_count` and `posts_count` you could
+put into index the same name (e.g. `items_count`) and perform usual sort:
+
+    
+    
+    {
+      "sort": [
+        { "items_count": "desc" }
+      ]
+    }
+    
+
+If there are other entities which lack `items_count` there is an option to
+[ignore unmapped
+fields](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-sort.html#_ignoring_unmapped_fields):
+
+    
+    
+    {
+      "sort": [
+        { "items_count": { "order": "desc", "unmapped_type": "long" } }
+      ]
+    }
+    
+

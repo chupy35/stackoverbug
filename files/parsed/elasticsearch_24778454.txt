@@ -1,0 +1,85 @@
+24778454 how to insert multiple records in one query?
+
+for example :
+
+    
+    
+    curl -XPUT 'http://localhost:9200/test/users/2' -d '{ "firstname"   : "test" }'
+    
+
+insert only one record.
+
+How to insert multiple records in one query?
+
+You need to use elasticsearch [Bulk
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html). It allows you to insert multiple items with one request. Requests
+are POSTed to special endpoint `/_bulk` and look like this:
+
+    
+    
+    { "index" : { "_index" : "test", "_type" : "type1", "_id" : "1" } }
+    { "field1" : "value1" }
+    { "index" : { "_index" : "test", "_type" : "type1", "_id" : "2" } }
+    { "field1" : "value2" }
+    { "index" : { "_index" : "test", "_type" : "type1", "_id" : "3" } }
+    { "field1" : "value3" }
+    
+
+I don't have enough karma to comment in response to @Tadzys, but yes, bulk
+inserting documents to one or more indices without an id seems doable. See
+"Inserting documents belonging to different types and indices in the same
+request" in [Elasticsearch: Bulk Inserting
+Examples](http://queirozf.com/entries/elasticsearch-bulk-inserting-examples).
+
+From the referenced page:
+
+    
+    
+    POST http://path.to.your.cluster/_bulk
+    { "index":{ "_index": "myIndex", "_type": "person" } }
+    { "name":"john doe","age":25 }
+    { "index":{ "_index": "myOtherIndex", "_type": "dog" } }
+    { "name":"fido","breed":"chihuahua" }
+    
+
+_"Examples work for Elasticsearch versions 1.x, 2.x and probably later ones
+too."_
+
+Better late than never. This is how i made a curl request to the elastic
+server to dump multiple records using the Bulk API
+
+    
+    
+    curl -XPOST 'http://<my_host_name>:9201/_bulk?pretty' -H 'Content-Type: application/json' -d '{ "create" : { "_index" : "my_index", "_type" : "my_document_type", "_id" : "1"} }{"id" : "AAA" , "name" : "AAAAAAAAAAAAAA"}{ "create" : { "_index" : "my_index", "_type" : "my_document_type", "_id" : "2"} }{"id" : "BBB" , "name" : "BBBBBBBBBBBBBBB"}{ "create" : { "_index" : "my_index", "_type" : "my_document_type", "_id" : "3"} }{"id" : "CCC" , "name" : "CCCCCCCCCCCCCCCC"}{ "create" : { "_index" : "my_index", "_type" : "my_document_type", "_id" : "4"} }{"id" : "DDD" , "name" : "DDDDDDDDDDDDDDDDDD"}{ "create" : { "_index" : "my_index", "_type" : "my_document_type", "_id" : "5"} }{"id" : "EEE" , "name" : "EEEEEEEEEEEEEEEEEE"}'
+    
+
+P.S: Elastic 5.x(atleast) doesn't seem to allow bulk create without an id
+attribute. Had to painfully come up with one for 100's of such records
+
+All answers above are right. I have a more specific one for you.
+
+the port is **9200** , not 9201 as @Hari K Murthy's answer. Or maybe there're
+some other configurations.
+
+The post url address is: `http://127.0.0.1:9200/_bulk?pretty`. You may want to
+change to your own ip address.
+
+Posted json is:
+
+    
+    
+    { "create" : { "_index" : "my_index", "_type" : "my_document_type", "_id" : "1"} }
+    {"id" : "AAA" , "name" : "AAAAAAAAAAAAAA"}
+    { "create" : { "_index" : "my_index", "_type" : "my_document_type", "_id" : "2"} }
+    {"id" : "BBB" , "name" : "BBBBBBBBBBBBBBB"}
+    
+
+eg: [![use bulk api in
+postman](https://i.stack.imgur.com/fE4bA.jpg)](https://i.stack.imgur.com/fE4bA.jpg)
+
+NOTE: you have to format your json like one line metadata, another line data
+as the [bulk api
+doc](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-
+bulk.html) says.
+

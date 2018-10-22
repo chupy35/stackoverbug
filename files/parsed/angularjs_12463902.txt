@@ -1,0 +1,45 @@
+12463902 how does the binding and digesting work in AngularJS?
+
+One thing that sets apart AngularJS from other JavaScript-MVC frameworks is
+it's ability to echo bound values from JavaScript into HTML using bindings.
+Angular does this "automatically" when you assign any value to the $scope
+variable.
+
+But how automatic is this? Sometimes, Angular won't pick up on the change so I
+need to call $scope.$apply() or $scope.$digest() to inform angular to pickup
+the change. Sometimes when I run either of those methods then it throws an
+error and says that a digest is already in progress.
+
+Since the bindings (anything inside {{ }} braces or ng-attributes) are echoed
+with eval then does this mean that Angular is constantly polling the $scope
+object to look for changes and then performing an eval to push those changes
+to the DOM/HTML? Or has AngularJS somehow figured out the use magic variables
+which fire events which are triggered when a variable value changes or is
+assigned? I've never heard of it being fully supported by all browsers, so I
+doubt it.
+
+How does AngularJS keep track of it's bindings and scope variables?
+
+As you found out it's not polling, but using it's internal execution loop so
+that's why you need to use $apply() or $digest() to kick things into motion.
+
+[Miško's explanation](https://stackoverflow.com/questions/9682092/databinding-
+in-angularjs/9693933#9693933) is quite thorough, but the bit missing is that
+Angular is just trying to make $scope get back to a clear internal state
+whenever anything happens within its own context. This might take quite some
+bouncing around between model states, so that's also why you can't rely on
+$watch() firing only once and also why you should be careful with manually
+setting up relations between models or you'll end up in endless circular
+refreshes.
+
+In addition to the [documentation
+section](http://docs.angularjs.org/guide/concepts#runtime) found by Mark I
+think we can try to enumerate all possible sources of change.
+
+  1. User interaction with HTML inputs (['text'](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L378), ['number'](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L498), ['url'](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L560), ['email'](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L577), ['radio'](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L594), ['checkbox'](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L616)). AngularJS has [inputDirective](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L762). 'text', 'number', 'url' and 'email' inputs bind [listener handler](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L380) for 'input' or 'keydown' events. Listener handler [calls scope.$apply](https://github.com/angular/angular.js/blob/ca30fce28ca13284bfa1c926e810ed75cdcde499/src/ng/directive/input.js#L391). 'radio' and 'checkbox' bind similar handler for click event.
+  2. User interaction with select element. AngularJS has [selectDirective](https://github.com/angular/angular.js/blob/master/src/ng/directive/select.js#L121) with similar behavior on 'change' event.
+  3. Periodical changes using [$timeout service](https://github.com/angular/angular.js/blob/f16150d5f1b20b3d633b4402095ea89baa4be042/src/ng/timeout.js#L4) that also do [$rootScope.$apply()](https://github.com/angular/angular.js/blob/f16150d5f1b20b3d633b4402095ea89baa4be042/src/ng/timeout.js#L49).
+  4. [eventDirectives](https://github.com/angular/angular.js/blob/f16150d5f1b20b3d633b4402095ea89baa4be042/src/ng/directive/ngEventDirs.js#L39) (ngClick, etc) also use [scope.$apply](https://github.com/angular/angular.js/blob/f16150d5f1b20b3d633b4402095ea89baa4be042/src/ng/directive/ngEventDirs.js#L47).
+  5. $http also uses [$rootScope.$apply()](https://github.com/angular/angular.js/blob/209b67df6a49fe1646ce63c5e7d11ed26e8abbc1/src/ng/http.js#L729).
+  6. Changes outside AngularJS world should use scope.$apply as you know.
+

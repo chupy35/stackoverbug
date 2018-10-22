@@ -1,0 +1,36 @@
+12868824 Catching $resource.ready event
+
+I am using the $resource service in angularjs to asynchronously load json
+content from the server. When the content is loading I show a gif loader on
+the page. I need to know when the ansyncronous request is complete so I can
+remove the loader. How can I catch the ready event so I can remove the loader?
+
+    
+    
+    function PlaylistController($scope, $route, $http, Song,Artists,Albums,Drive,Children){
+        function render(){
+            $scope.songs = Song.list()
+    
+            //Obviously this removes the loading class immediately
+            //I want to remove it when Song.list() is complete
+            $('body').removeClass('loading');
+        }
+    
+        $scope.$on("$routeChangeSuccess", function($currentRoute, $previousRoute){
+        //When the route changes,update the $scope variables
+        render();
+    });
+    
+
+You shouldn't do DOM manipulation inside of controller.
+
+What about `$scope.loading = true` and `<body ng-class="loading &&
+'loading'">`?
+
+When you set `$scope.loading` to true the `loading` class will be added to
+body, when set to false it will be removed.
+
+If you need to change it from child controllers put it inside of an
+object(like `$scope.data.loading = true`) or create functions to change it
+like `$scope.startLoading = function(){ $scope.loading = true; }`
+

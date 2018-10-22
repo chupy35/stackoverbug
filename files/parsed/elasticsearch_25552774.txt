@@ -1,0 +1,49 @@
+25552774 ElasticSearch return 4 primary shards instead of 3
+
+I created an index with 3 primarys shards but ElasticSearch return and
+indicate that there are 4 primary shards.
+
+    
+    
+    # Deleting the data in the cluster
+    DELETE /_all
+    
+    # Create an index with 3 primary shards with 1 replica each
+    PUT /blogs
+    {
+       "settings" : {
+          "number_of_shards" : 3,
+          "number_of_replicas" : 1
+       }
+    }
+    
+    # Retrieve the cluster health
+    GET /_cluster/health
+    
+
+And here is the response :
+
+    
+    
+    {
+       "cluster_name": "clus",
+       "status": "yellow",
+       "timed_out": false,
+       "number_of_nodes": 1,
+       "number_of_data_nodes": 1,
+       "active_primary_shards": 4,
+       "active_shards": 4,
+       "relocating_shards": 0,
+       "initializing_shards": 0,
+       "unassigned_shards": 4
+    }
+    
+
+I thought that there was only the number of replica shards that could change
+and that the number of primary shards was fixed at the time that the index was
+created, where does come from the fourth primary shard ?
+
+Since your example shows thing in marvel syntax, I assume you are using
+marvel. It will create an index for it's own data (so that's the 4th shard you
+are seeing). Try `GET /_cat/shards` to see this.
+

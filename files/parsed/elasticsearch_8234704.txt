@@ -1,0 +1,40 @@
+8234704 MasterNotDiscoveredException in Elastic Search when creating an index
+
+I've followed the simple tutorial to install elastic-search on a clean debian
+lenny machine:
+
+<http://www.elasticsearch.org/tutorials/2010/07/02/setting-up-elasticsearch-
+on-debian.html>
+
+However, when trying to create index with mapping:
+
+    
+    
+    curl -XPUT "localhost:9200/searchdata" -d @index.json
+    
+
+I get this error:
+
+    
+    
+    {"error":"MasterNotDiscoveredException[]","status":500}
+    
+
+I've used the `index.json` on another instance of ES, so I know that it works.
+I'm assuming I'm missing something the the ES config file. currently I have
+this:
+
+    
+    
+    cluster:
+      name:   MyCluster
+    
+    network:
+      host:   _eth0_
+    
+
+As docs are pretty scarce for ES, I thought I'd see if anyone can lead me to a
+solution. Thanks in advance.
+
+Not sure the issue, but a clean install of the OS fixed it.
+

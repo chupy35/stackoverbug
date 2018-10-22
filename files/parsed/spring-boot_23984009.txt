@@ -1,0 +1,349 @@
+23984009 Disable Logback in SpringBoot
+
+It appears Springboot autoconfigures itself to use Logback with Tomcat. I
+would like to disable this and use the one I provide in my classpath.
+
+The error message below.
+
+> LoggerFactory is not a Logback LoggerContext but Logback is on the
+classpath. Either remove Logback or the competing implementation (class
+org.slf4j.impl.SimpleLoggerFactory) Object of class
+[org.slf4j.impl.SimpleLoggerFactory] must be an instance of class
+ch.qos.logback.classic.LoggerContext
+
+    
+    
+    <?xml version="1.0" encoding="UTF-8"?>
+    <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        <modelVersion>4.0.0</modelVersion>
+        <parent>
+            <artifactId>spring-boot-starter-parent</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <version>1.0.1.RELEASE</version>
+        </parent>
+    
+        <groupId>com.fe</groupId>
+        <artifactId>cloudapp</artifactId>
+        <version>1.0.0</version>
+        <name>Withinet-PaaS</name>
+        <description>Develop your web applications in on our infrastructure and we will worry about administration and scalability of your app.</description>
+    
+        <properties>
+            <java.version>1.7</java.version>
+            <guava.version>16.0.1</guava.version>
+            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        </properties>
+    
+        <dependencies>
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>1.8</version>
+        </dependency>
+            <dependency>
+            <groupId>com.withinet.cloudapp</groupId>
+        <artifactId>slave</artifactId>
+        <version>1.0.0</version>    
+            </dependency>
+            <dependency>
+                <groupId>org.apache.wicket</groupId>
+                <artifactId>wicket-core</artifactId>
+                <version>6.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>4.3.0.Final</version>
+            </dependency>
+    
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.2.4</version>
+            </dependency>
+    
+            <!-- Spring Boot -->
+    
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+            </dependency>
+    
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <scope>test</scope>
+            </dependency>
+    
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+            </dependency>
+    
+            <!-- Hibernate validator -->
+    
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>1.1.0.Final</version>
+    
+    
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-validator-annotation-processor</artifactId>
+                <version>4.1.0.Final</version>
+            </dependency>
+    
+            <!-- Guava -->
+    
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+    
+            <!-- Java EE -->
+    
+            <dependency>
+                <groupId>javax.inject</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>1</version>
+            </dependency>
+    
+            <!--  Search -->
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-queryparser</artifactId>
+                <version>4.8.0</version>
+            </dependency>
+    
+            <!--  Security 
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-security</artifactId>
+            </dependency>-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-tomcat</artifactId>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    
+        <build>
+    
+            <plugins>
+    
+                <!-- Spring Boot Maven -->
+    
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <mainClass>com.withinet.cloud.Application</mainClass>
+                        <layout>JAR</layout>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+    
+            </plugins>
+        </build>
+    </project>
+    
+
+It might help if you say what your preferred logger is exactly, and what you
+did to try and install it. Anyway, Spring Boot tries to work with whatever is
+in the classpath, so if you don't want logback, take it off the classpath.
+There are instructions for log4j [in the docs](http://docs.spring.io/spring-
+boot/docs/current-SNAPSHOT/reference/htmlsingle/#howto-configure-log4j-for-
+logging), but the same thing would apply to other supported logging systems
+(anything slf4j, log4j or java util).
+
+Add exclusion to both the spring-boot-starter and spring-boot-starter-web to
+resolve the conflict.
+
+    
+    
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    
+
+To add a solution in gradle.
+
+    
+    
+    dependencies {
+        compile ('org.springframework.boot:spring-boot-starter') {
+            exclude module : 'spring-boot-starter-logging'
+        }
+        compile ('org.springframework.boot:spring-boot-starter-web') {
+            exclude module : 'spring-boot-starter-logging'
+        }
+    }
+    
+
+To add a better, more generic solution in Gradle (all instances will be
+excluded):
+
+    
+    
+    configurations {
+        all*.exclude module : 'spring-boot-starter-logging'
+    }
+    
+
+From <https://docs.gradle.org/current/userguide/dependency_management.html>
+
+I found that excluding the full `spring-boot-starter-logging` module is not
+necessary. All that is needed is to exclude the `org.slf4j:slf4j-log4j12`
+module.
+
+Adding this to a Gradle build file will resolve the issue:
+
+    
+    
+    configurations {
+        runtime.exclude group: "org.slf4j", module: "slf4j-log4j12"
+        compile.exclude group: "org.slf4j", module: "slf4j-log4j12"
+    }
+    
+
+See this other StackOverflow
+[answer](https://stackoverflow.com/questions/21764128/how-do-i-exclude-all-
+instances-of-a-transitive-dependency-when-using-gradle) for more details.
+
+Add this in your build.gradle
+
+    
+    
+    configurations.all {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'org.springframework.boot', module: 'logback-classic'
+    }
+    
+
+I do like this to solve my problem
+
+    
+    
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-log4j</artifactId>
+        <exclusions>
+            <exclusion>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+    
+
+Just add logback.xml configuration in your classpath and add all your
+configuration with root appender added. Once the Spring boot completes the
+bean loading, it will start logging based on your configuration.
+
+I resolved my problem through this below:
+
+    
+    
+    compile('org.mybatis.spring.boot:mybatis-spring-boot-starter:1.3.0'){
+        exclude module: 'log4j-slf4j-impl'
+        exclude module: 'logback-classic'
+    }
+    compile('org.springframework.boot:spring-boot-starter-web'){
+        exclude module: 'log4j-slf4j-impl'
+        exclude module: 'logback-classic'
+    }
+    
+
+For gradle,
+
+You can see this solution at: <http://www.idanfridman.com/how-to-exclude-
+libraries-from-dependcies-using-gradle/>
+
+Just need add `exclude` in `configurations`:
+
+    
+    
+    configurations {
+        providedRuntime
+        compile.exclude(group: 'ch.qos.logback')
+    }
+    
+
+Find spring-boot-starter-test in your pom.xml and modify it as follows:
+
+    
+    
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-logging</artifactId>
+                    <groupId>commons-logging</groupId>
+                </exclusion>
+            </exclusions>
+            <scope>test</scope>
+        </dependency>
+    
+
+It fixed error like:
+
+_Caused by: java.lang.IllegalArgumentException:_ **LoggerFactory** is not a
+**Logback LoggerContext** but _Logback_ is on the classpath.
+
+Either remove **Logback** or the competing implementation
+
+( _class org.apache.logging.slf4j.Log4jLoggerFactory_ loaded from file:
+**${M2_HOME}/repository/org/apache/logging/log4j/log4j-slf4j-impl/2.6.2/log4j-slf4j-impl-2.6.2.jar**
+).
+
+If you are using WebLogic you will need to add **'org.slf4j'** to prefer-
+application-packages in WEB-INF/weblogic.xml:
+**org.apache.logging.slf4j.Log4jLoggerFactory**
+
+Following works for me
+
+    
+    
+    <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    
+

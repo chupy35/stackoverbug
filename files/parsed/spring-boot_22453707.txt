@@ -1,0 +1,110 @@
+22453707 How to define Servlet filter order of execution in Spring Boot
+application
+
+I am trying to set the order of execution of 2 filters in my spring boot
+application which have same url mapping. I have tried using 2 filter
+registration beans in my main Application class as below but that did not
+work. I want the `authorizationFilter` to be hit first then the
+`validationFilter`. But it is always hitting ONLY `validationFilter` when both
+are configured. If I comment out the `validationFilter`, it hits
+`authorizationFilter`.
+
+    
+    
+    @Bean
+    public FilterRegistrationBean authorizationFilter(){
+        FilterRegistrationBean filterRegBean = new FilterRegistrationBean();
+        filterRegBean.setFilter(authorizationFilter);
+        List<String> urlPatterns = new ArrayList<String>();
+        urlPatterns.add("/v1/*");
+        filterRegBean.setUrlPatterns(urlPatterns);
+        return filterRegBean;
+    }
+    
+    @Bean
+    public FilterRegistrationBean validationFilter(){
+        FilterRegistrationBean filterRegBean = new FilterRegistrationBean();
+        filterRegBean.setFilter(validationFilter);
+        List<String> urlPatterns = new ArrayList<String>();
+        urlPatterns.add("/v1/*");
+        filterRegBean.setUrlPatterns(urlPatterns);
+        return filterRegBean;
+    }
+    
+
+I have also tried introducing `web.xml` and converting the executable jar to
+war file.
+
+    
+    
+    <web-app>   
+    <filter>
+        <filter-name>authorizationFilter</filter-name>
+        <filter-class>com.security.filter.AuthorizationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>authorizationFilter</filter-name>
+        <url-pattern>/v1/*</url-pattern>
+    </filter-mapping>
+    
+    <filter>
+        <filter-name>validationFilter</filter-name>
+        <filter-class>com.security.validation.ValidationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>validationFilter</filter-name>
+        <url-pattern>/v1/*</url-pattern>
+    </filter-mapping>
+    </web-app>
+    
+
+But the application doesn't seem to recognize the web.xml, as it hits only the
+validation filter with the configuration above. I appreciate any inputs in
+resolving this. Thanks
+
+Spring Boot sorts your `FilterRegistrationBean` using
+`AnnotationAwareOrderComparator` before applying them to the servlet context.
+The `RegistrationBean` is not currently `Ordered` so there is no way to set
+the order by calling a method, but you can work around that by creating
+subclasses and adding `@Order` to them. I think making the base class
+`Ordered` and providing a setter is probably a useful thing to do in the
+framework (open an issue on github if you agree).
+
+Update: `Ordered` was added in 1.0.x.
+
+[`setOrder(int)`](http://docs.spring.io/autorepo/docs/spring-
+boot/1.2.7.RELEASE/api/org/springframework/boot/context/embedded/RegistrationBean.html#setOrder\(int\))
+method does the job.
+
+below is an example
+
+    
+    
+    @Configuration
+    @EnableAutoConfiguration
+    @EnableWebMvc
+    @ComponentScan
+    public class Application {
+    
+        @Bean
+        public FilterRegistrationBean filterRegistrationBean() {
+            FilterRegistrationBean registrationBean = new FilterRegistrationBean();
+            SecurityFilter securityFilter = new SecurityFilter();
+            registrationBean.setFilter(securityFilter);
+            registrationBean.setOrder(2);
+            return registrationBean;
+        }
+    
+        @Bean
+        public FilterRegistrationBean contextFilterRegistrationBean() {
+            FilterRegistrationBean registrationBean = new FilterRegistrationBean();
+            RequestContextFilter contextFilter = new RequestContextFilter();
+            registrationBean.setFilter(contextFilter);
+            registrationBean.setOrder(1);
+            return registrationBean;
+        }
+    }
+    
+
+Bean name will solve your problem: @Bean("aFilter").
+

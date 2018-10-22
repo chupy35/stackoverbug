@@ -1,0 +1,29 @@
+11079296 How does elasticsearch facet feature work with async search query?
+
+I am aware of how using the facet feature of elasticsearch, we can get the
+aggregated value of values for a specified field/s based on search query
+result data.
+
+I have an application where I am monitoring logs and using elasticsearch to
+search through the log entries. On UI front I have a paging mechanism in place
+and hence using async feature of the search to fetch 'n' entries at a time.
+
+So my question is, if I modify my async search query to fetch the facet
+information for certain fields, will it give the aggregated value for the sub-
+set of result that is fetched as a result of an async query. or will it get
+the aggregated value for the entire search result (and not the sub-set which
+is returned to user).
+
+Many thanks and regards, Komal
+
+Facets are returned for the entire search result. You can even set size to 0
+in your request, which will result in not fetching any results and you will
+still get all facets.
+
+Please refer
+[here](http://www.elasticsearch.org/guide/reference/api/search/facets/terms-
+facet.html) for detail documentation. You can give match all query to fetch
+facet on all documents `{ "query" : { "match_all" : { } }, "facets" : { "tag"
+: { "terms" : { "field" : "tag", "size" : 10 } } } }` Please post your code
+gist for more information.
+

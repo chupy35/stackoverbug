@@ -1,0 +1,31 @@
+22706493 Do we have any option to perform bulk update in elastic search
+without specifying the document id
+
+I need to do bulk update via script in elastic search without specifying the
+document id. In 'Books' document type, I have author name. If I rename author
+name, I need to bulk update for all 'Books' which are having the updated
+author name by using script.
+
+Do I need to get all the book ids having the author name and update all the
+books?
+
+    
+    
+    BulkResponse bulkResponse = client.prepareBulk().add(client.prepareUpdate().setIndex("test").setType("books").setScript(script)).execute().actionGet();
+    
+
+By using the above code I am getting the below exception
+
+    
+    
+    org.elasticsearch.action.ActionRequestValidationException: Validation Failed: 1: id is missing;
+    
+
+What you mention is the update by query functionality. It's not available yet,
+but since there's a lot of demand for it I guess it will be available one day,
+you can have a loot at the related issue on github:
+<https://github.com/elasticsearch/elasticsearch/issues/1607> . The reason why
+it wasn't implemented yet is that it is potentially dangerous as it might lead
+to a lot of updates and potentially long running queries which cannot be
+stopped at this time.
+

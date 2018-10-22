@@ -1,0 +1,77 @@
+24923004 react.js component: can't get keyDown events if component inside
+another one
+
+JS Bin [Available here](http://jsbin.com/wozut/1/watch?html,js,console,output)
+
+I have a component called ComponentB for which I want to get key down events:
+
+    
+    
+    var ComponentB = React.createClass({
+    
+      render: function() {
+        return (
+           <div 
+               contentEditable 
+               onKeyDown={this.handleKeyDown}>{this.props.data}</div>
+        );
+      },
+      handleKeyDown: function(e) {
+         console.log("B: " + e.type +"-" + e.which);
+      }
+    });
+    
+
+I can get those events if this ComponentB is directly under the main/App
+component.
+
+If I try to embed this component inside another component (componentA) I don't
+receive those events anymore (`this.props.lines` is an array of 3 strings) :
+
+    
+    
+    var ComponentA = React.createClass({
+        render: function(){
+            return (
+              <div
+                contentEditable>
+                { 
+                  this.props.lines.map(function(line,i) {
+                    return <ComponentB key={i} data={line} />  
+                  })
+                }             
+              </div>
+              );
+        }
+    });
+    
+
+The associated [JS BIN](http://jsbin.com/wozut/1/watch?html,js,console,output)
+shows this behavior : if you try to edit the lines in the component A section.
+no event will be emitted but they will if you edit the sinbgle instance of
+componentB below...
+
+Looks to me like a bug in react.js but wanted to check here first.
+
+As **@ssorallen** said in a comment, you can't have nested contentEditable
+elements, with or without react.
+
+> > It seems to be a problem with nested contentEditable elements. Remove
+contentEditable from ComponentA, and it works as you expect.
+
+One of the reasons this doesn't work, is because React doesn't _really_
+support contentEditable. Basically it sets the attribute, but it can't
+sensibly render into the contentEditable because when it tries to update it...
+the DOM has changed without its knowledge (which throws an error).
+
+Rather you should treat contentEditable elements like an input element, which
+doesn't have children. Instead you update the innerHTML (see
+renderComponentToString and dangerouslySetInnerHTML) and listen to onInput
+events to get changes. See [Stack Overflow: onChange event for
+contentEditable](https://stackoverflow.com/a/22678516/1074592) for details on
+how this works.
+
+A proper handling of contentEditable has been [discussed
+briefly](https://github.com/facebook/react/issues/1466), but no solution was
+arrived at. Feel free to suggest good ways to handle it.
+

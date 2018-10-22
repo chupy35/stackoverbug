@@ -1,0 +1,86 @@
+17187056 How to update multiple fields using java api elasticsearch script
+
+I am trying to update multiple value in index using Java Api through Elastic
+Search Script. But not able to update fields.
+
+Sample code :-
+
+# 1:
+
+    
+    
+    UpdateResponse response = request.setScript("ctx._source").setScriptParams(scriptParams).execute().actionGet();
+    
+
+# 2:
+
+    
+    
+    UpdateResponse response = request.setScript("ctx._source.").setScriptParams(scriptParams).execute().actionGet();
+    
+
+if I mentioned .(dot) in ("ctx._source.") getting illegalArgument Exception
+and if i do not use dot, not getting any exception but values not getting
+updated in Index. Can any one tell me the solutions to resolve this.
+
+First of all, your script (`ctx._source`) doesn't do anything, as one of the
+commenters already pointed out. If you want to update, say, field "a", then
+you would need a script like:
+
+    
+    
+    ctx._source.a = "foobar"
+    
+
+This would assign the string "foobar" to field "a". You can do more than
+simple assignment, though. Check out the docs for more details and examples:
+
+<http://www.elasticsearch.org/guide/reference/api/update/>
+
+Updating multiple fields with one script is also possible. You can use
+semicolons to separate different MVEL instructions. E.g.:
+
+    
+    
+    ctx._source.a = "foo"; ctx._source.b = "bar"
+    
+
+In Elastic search have an Update Java API. Look at the following code
+
+    
+    
+    client.prepareUpdate("index","typw","1153")
+                .addScriptParam("assignee", assign)
+                 .addScriptParam("newobject", responsearray)
+                .setScript("ctx._source.assignee=assignee;ctx._source.responsearray=newobject ").execute().actionGet();
+    
+
+Here, assign variable contains object value and response array variable
+contains list of data.
+
+You can do the same using spring java client using the following code. I am
+also listing the dependencies used in the code.
+
+    
+    
+    import org.elasticsearch.action.update.UpdateRequest;
+    
+    import org.elasticsearch.index.query.QueryBuilder;
+    
+    import org.springframework.data.elasticsearch.core.query.UpdateQuery;
+    
+    import org.springframework.data.elasticsearch.core.query.UpdateQueryBuilder;
+    
+    private UpdateQuery updateExistingDocument(String Id) {
+        // Add updatedDateTime, CreatedDateTime, CreateBy, UpdatedBy field in existing documents in Elastic Search Engine
+        UpdateRequest updateRequest = new UpdateRequest().doc("UpdatedDateTime", new Date(), "CreatedDateTime", new Date(), "CreatedBy", "admin", "UpdatedBy", "admin");
+    
+        // Create updateQuery
+        UpdateQuery updateQuery = new UpdateQueryBuilder().withId(Id).withClass(ElasticSearchDocument.class).build();
+        updateQuery.setUpdateRequest(updateRequest);
+    
+        // Execute update
+         elasticsearchTemplate.update(updateQuery);
+    }
+    
+

@@ -1,0 +1,4 @@
+31433032
+Wildcard queries in field name
+<p>I can use simple wildcard query like this:</p>&#xA;&#xA;<pre><code>"wildcard" : { "user" : "ki*y" }&#xA;</code></pre>&#xA;&#xA;<p>but if i want to use wildcard in field, then what?&#xA;How shoud look valid query for this:</p>&#xA;&#xA;<pre><code>"wildcard" : { "base/*" : "value" }&#xA;</code></pre>&#xA;
+<p>You can use <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html">query_string</a> which allows both field names wildcards and query text wildcards.</p>&#xA;&#xA;<p>Something around these lines:</p>&#xA;&#xA;<pre><code>{&#xA;  "query": {&#xA;    "query_string": {&#xA;      "fields": [&#xA;        "base*"&#xA;      ],&#xA;      "query": "ki*y"&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;

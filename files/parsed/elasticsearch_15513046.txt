@@ -1,0 +1,85 @@
+15513046 Indexing and range querying _timestamp data
+
+I'm struggling to understand _timestamp and how to use it correctly. I'm
+storing log data so the timestamp is very important. I'd like to be able to
+store the timestamp and query it by range. Whenever I a field with the name
+_timestamp I can never seem to get any results when I query by it. This
+happens whether I store and query using ISO 8601 text format or with millis as
+longs. Does anybody have a complete example of this working?
+
+Test code when using text format (FWIW, this is unit test code running as a
+local node).
+
+    
+    
+    client.admin().indices().create(new CreateIndexRequest(indexName).mapping("log",
+                "{\"_timestamp\": {\"enabled\": true, \"store\": \"yes\"}}"));
+    client.prepareIndex(indexName, "log", auditEvent.getId().toString())
+            .setSource(jsonBuilder()
+                    .startObject().
+                    field("eventType", auditEvent.getEventType().toString()).
+                    field("_timestamp", auditEvent.getEventTime().toString(ISODateTimeFormat.dateTime())).
+                    field("userId", auditEvent.getUserId()).
+                    endObject())
+                    .execute()
+                    .actionGet();
+    
+    SearchResponse response = client.prepareSearch(indexNames.toArray(new String[] {})).setTypes("log")
+                .setQuery(
+                        QueryBuilders.
+                        boolQuery()
+                        .must(QueryBuilders.fieldQuery("eventType", eventType))
+                        .must(QueryBuilders.rangeQuery("_timestamp")
+                                .from(interval.getStart().toString())
+                                .to(interval.getEnd().toString())
+                                )
+                        )
+                        .addField("_timestamp")
+                        .execute().actionGet();
+    
+
+When I do the same query with a match all I can see the timestamp fields.
+
+    
+    
+    "hits" : {
+      "total" : 2,
+      "max_score" : 1.0,
+      "hits" : [ {
+        "_index" : "audit-events-2013-03-04",
+        "_type" : "log", 
+        "_id" : "3d584830-8506-11e2-8365-24be05270b5c",
+        "_score" : 1.0,
+        "fields" : {
+          "_timestamp" : "2013-03-04T20:01:02.003Z"
+        }
+      }, {
+        "_index" : "audit-events-2013-03-04",
+        "_type" : "log",
+        "_id" : "e6e382e0-84f5-11e2-8365-24be05270b5c",
+        "_score" : 1.0,
+        "fields" : {
+          "_timestamp" : "2013-03-04T18:04:05.006Z"
+        }
+      } ]
+    
+
+What am I not understanding?
+
+The answer is that the timestamp needs to be explicitly set using the
+timestamp method of the IndexRequest. Merely setting it on a field called
+_timestamp does not work.
+
+    
+    
+    IndexRequestBuilder indexRequestBuilder = client.prepareIndex(indexName, "type1", auditEvent.getId().toString())
+                    .setSource(jsonBuilder()
+                            .startObject().
+                            field("eventType", auditEvent.getEventType().toString()).
+                            auditEvent.getEventTime().toString(ISODateTimeFormat.dateTime())).
+                            field("userId", auditEvent.getUserId()).                          endObject()).setTimestamp(Long.toString(auditEvent.getEventTime().getMillis()));
+    indexRequestBuilder
+            .execute()
+            .actionGet();
+    
+

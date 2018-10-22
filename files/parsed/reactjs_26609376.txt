@@ -1,0 +1,54 @@
+26609376 How can I disable animation in a reactjs component first time
+
+I have a component with a list of items. I want each time I add or remove an
+item from the list to have animation. Everything it's OK with that.
+
+My only problem is that I want to disable the animation first time when the
+component initialize.
+
+<http://jsfiddle.net/kb3gN/6887/>
+
+    
+    
+    var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
+    
+    var Hello = React.createClass({
+        getInitialState: function () {
+            return {items: []};
+        },
+        addColor:function(){
+        this.setState({items:this.state.items.concat('new color')});
+        },
+        componentDidMount: function () {
+            var items = ['blue', 'red', 'green'];
+            this.setState({items: items});
+        },
+        render: function () {
+            var contentList = this.state.items.map(function (i,k) {
+                return (<li>{i}</li>);
+            });
+            return (
+                    <div>
+                    Hello <button onClick={this.addColor}>add</button>
+    <ReactCSSTransitionGroup transitionName="example">
+                    {contentList}
+                    </ReactCSSTransitionGroup>
+    
+                    </div>
+            )
+        }
+    });
+    
+    React.render(<Hello name="World" />, document.body);
+    
+
+So, how can I make the animation appear only when changing the list and not
+ont the very first setState from didMount method?
+
+Using `componentWillMount` instead of `componentDidMount` it will work
+perfectly as shown in this fiddle :
+<http://jsfiddle.net/ghislaindj/jpuyd3gb/1/>
+
+However, if your real code must fetch the data in DidMount, you should use
+ssorallen comment.
+

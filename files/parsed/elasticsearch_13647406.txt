@@ -1,0 +1,179 @@
+13647406 How to index dump of html files to elasticsearch?
+
+I am totaly new in elastic so my knowledge is only from
+[elasticsearch](http://www.elasticsearch.org/guide/reference/api/index_.html)
+site and I need to help. My task is to index large row data in html format
+into elastic search. I already crawled my data and stored it onto disk (200
+000 html files). My question is what is the simplest way to index all html
+files into elasticsearch? Should I do it manualy by for each document to make
+put request to elastic? For example like:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/registers/tomas/1' -d '{
+        "user" : "tomasko",
+        "post_date" : "2009-11-15T14:12:12",
+        "field 1" : "field data"
+        "field 2" : "field 2 data"
+    }'
+    
+
+And second question is if I have to parse HTML document to retrieve data for
+JSON field 1 like in example code over?
+
+And finaly after indexing may I delete all HTML documents? Thanks for all.
+
+I'd look at the [bulk
+api](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html) that allows you to send more than document in a single request, in
+order to speed up your indexing process. You can send batch of 10, 20 or more
+documents, depending on how big they are.
+
+Depending on what you want to index you might need to parse the html, unless
+you want to index the whole html as a single field (you might want to use the
+[html strip char
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+htmlstrip-charfilter.html) in that case to strip out the html tags from the
+indexed text).
+
+After indexing I'd suggest to make sure the mapping is correct and you can
+find what you're looking for. You can always reindex using the
+[_source](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+source-field.html) special field that elasticsearch stores under the hood, but
+if you already wrote your indexer code you might want to use it again to
+reindex when needed (of course with the same html documents). In practice, you
+never index your data once... so be careful :) even though elasticsearch
+always helps you out with the _source field), it's just a matter of querying
+the existing index and reindex all its documents on another index.
+
+@javanna's suggestion to look at the Bulk API will definitely lead you in the
+right direction. If you are using NEST, you can store all your objects in a
+list which you can then serialize JSON objects for indexing the content.
+
+Specifically, if you want to strip the html tags out prior to indexing and
+storing the content as is, you can use the mapper attachment plugin - in which
+when you define the mapping, you can categorize the content_type to be "html."
+
+The mapper attachment is useful for many things especially if you are handling
+multiple document types, but most notably - I believe just using this for the
+purpose of stripping out the html tags is sufficient enough (which you cannot
+do with the html_strip char filter).
+
+Just a forewarning though - NONE of the html tags will be stored. So if you do
+need those tags somehow, I would suggest defining another field to store the
+original content. Another note: You cannot specify multifields for mapper
+attachment documents, so you would need to store that outside of the mapper
+attachment document. See my working example below.
+
+You'll need to result in this mapping:
+
+    
+    
+    {
+      "html5-es" : {
+        "aliases" : { },
+        "mappings" : {
+          "document" : {
+            "properties" : {
+              "delete" : {
+                "type" : "boolean"
+              },
+              "file" : {
+                "type" : "attachment",
+                "fields" : {
+                  "content" : {
+                    "type" : "string",
+                    "store" : true,
+                    "term_vector" : "with_positions_offsets",
+                    "analyzer" : "autocomplete"
+                  },
+                  "author" : {
+                    "type" : "string",
+                    "store" : true,
+                    "term_vector" : "with_positions_offsets"
+                  },
+                  "title" : {
+                    "type" : "string",
+                    "store" : true,
+                    "term_vector" : "with_positions_offsets",
+                    "analyzer" : "autocomplete"
+                  },
+                  "name" : {
+                    "type" : "string"
+                  },
+                  "date" : {
+                    "type" : "date",
+                   "format" : "strict_date_optional_time||epoch_millis"
+                  },
+                  "keywords" : {
+                    "type" : "string"
+                  },
+                  "content_type" : {
+                    "type" : "string"
+                  },
+              "content_length" : {
+                    "type" : "integer"
+                  },
+                  "language" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "hash_id" : {
+                "type" : "string"
+              },
+              "path" : {
+                "type" : "string"
+              },
+              "raw_content" : {
+                "type" : "string",
+                "store" : true,
+                "term_vector" : "with_positions_offsets",
+                "analyzer" : "raw"
+              },
+              "title" : {
+                "type" : "string"
+              }
+            }
+          }
+        },
+        "settings" : { //insert your own settings here },
+        "warmers" : { }
+      }
+    }
+    
+
+Such that in NEST, I will assemble the content as such:
+
+    
+    
+    Attachment attachment = new Attachment();
+    attachment.Content =   Convert.ToBase64String(File.ReadAllBytes("path/to/document"));
+    attachment.ContentType = "html";
+    
+    Document document = new Document();
+    document.File = attachment;
+    document.RawContent = InsertRawContentFromString(originalText);
+    
+
+I have tested this in Sense - results are as follows:
+
+    
+    
+    "file": {
+        "_content": "PGh0bWwgeG1sbnM6TWFkQ2FwPSJodHRwOi8vd3d3Lm1hZGNhcHNvZnR3YXJlLmNvbS9TY2hlbWFzL01hZENhcC54c2QiPg0KICA8aGVhZCAvPg0KICA8Ym9keT4NCiAgICA8aDE+VG9waWMxMDwvaDE+DQogICAgPHA+RGVsZXRlIHRoaXMgdGV4dCBhbmQgcmVwbGFjZSBpdCB3aXRoIHlvdXIgb3duIGNvbnRlbnQuIENoZWNrIHlvdXIgbWFpbGJveC48L3A+DQogICAgPHA+wqA8L3A+DQogICAgPHA+YXNkZjwvcD4NCiAgICA8cD7CoDwvcD4NCiAgICA8cD4xMDwvcD4NCiAgICA8cD7CoDwvcD4NCiAgICA8cD5MYXZlbmRlci48L3A+DQogICAgPHA+wqA8L3A+DQogICAgPHA+MTAvNiAxMjowMzwvcD4NCiAgICA8cD7CoDwvcD4NCiAgICA8cD41IDA5PC9wPg0KICAgIDxwPsKgPC9wPg0KICAgIDxwPjExIDQ3PC9wPg0KICAgIDxwPsKgPC9wPg0KICAgIDxwPkhhbGxvd2VlbiBpcyBpbiBPY3RvYmVyLjwvcD4NCiAgICA8cD7CoDwvcD4NCiAgICA8cD5qb2c8L3A+DQogIDwvYm9keT4NCjwvaHRtbD4=",
+        "_content_length": 0,
+        "_content_type": "html",
+        "_date": "0001-01-01T00:00:00",
+        "_title": "Topic10"
+    },
+    "delete": false,
+    "raw_content": "<h1>Topic10</h1><p>Delete this text and replace it with your own content. Check your mailbox.</p><p> </p><p>asdf</p><p> </p><p>10</p><p> </p><p>Lavender.</p><p> </p><p>10/6 12:03</p><p> </p><p>5 09</p><p> </p><p>11 47</p><p> </p><p>Halloween is in October.</p><p> </p><p>jog</p>"
+    },
+    "highlight": {
+    "file.content": [
+        "\n    <em>Topic10</em>\n\n    Delete this text and replace it with your own content. Check your mailbox.\n\n     \n\n    asdf\n\n     \n\n    10\n\n     \n\n    Lavender.\n\n     \n\n    10/6 12:03\n\n     \n\n    5 09\n\n     \n\n    11 47\n\n     \n\n    Halloween is in October.\n\n     \n\n    jog\n\n  "
+        ]
+    }
+    
+

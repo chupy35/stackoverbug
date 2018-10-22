@@ -1,0 +1,87 @@
+24713227 Elasticsearch: how to disable scoring on a field?
+
+I am new to Elasticsearch and please forgive me if the answer is obvious.
+
+Here is what I have for the mapping of the field in question:
+
+    
+    
+    "condition" : { "type" : "string", "store" : "no", "index": "not_analyzed", "omit_norms" : "true" }
+    
+
+I need search on this field, but I need 100% string match (no stemming, etc.)
+on a sub-string (blank separated). An example of this field in a document is
+as follows:
+
+    
+    
+    {
+        "condition": "abc xyz"
+    }
+    
+
+An example query is:
+
+    
+    
+    /_search?q=condition:xyz
+    
+
+Is the above mapping correct? I also used omit_norms (true). Is this a correct
+thing to do in my case?
+
+How can I disable scoring on this field? Can I do it in mapping? What is the
+best way of doing it? (Actually I need to disable scoring on more than one. I
+do have fields that need scoring)
+
+Thanks and regards!
+
+Using `omit_norms:true` will not take the length of the field into
+consideration for the scoring, Elasticsearch won't index the norms
+information. So if you don't want to use scoring that is a good thing to do as
+it will save you some disk space.
+
+If you're not interested in scoring in your queries use a filtered query:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "bool": {
+              "must": {
+                "term": {
+                  "condition": "abc xyz"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+The new syntax for a filtered query is now:
+
+    
+    
+    {
+    "query": {
+      "bool": {
+        "must": {
+          "match_all": {}
+        },
+        "filter": {
+          "term": {
+            "condition": "abc"
+          }
+        }
+       }
+      }
+    }
+    
+

@@ -1,0 +1,3 @@
+28984105
+Dataloss and Recovery Techniques in Elasticsearch
+<p>Suppose we are using five boxes for elasticsearch.Every box containing 10-12 hard disks for storing data.If in a single box, one disk is going dead , how to recover data from that box.Is there any technique available in elasticsearch for this problem.Please suggest me.Thanks in advance.</p>&#xA;

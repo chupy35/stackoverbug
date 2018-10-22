@@ -1,0 +1,126 @@
+15476943 A simple AND query with Elasticsearch
+
+I am trying to do a simple query for two specified fields, and the manual and
+google is proving to be of little help. Example below should make it pretty
+clear what I want to do.
+
+    
+    
+    {
+      "query": {
+          "and": {
+            "term": {
+              "name.family_name": "daniel",
+              "name.given_name": "tyrone"
+            }
+          }
+       }
+    }
+    
+
+As a bonus question, why does it find "Daniel Tyrone" with "daniel", but NOT
+if I search for "Daniel". It behaves like a realy weird anti case sensitive
+search.
+
+Edit: Updated, sorry. You need a separate `Term` object for each field, inside
+of a Bool query:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+            "must" : [
+              {
+               "term": {
+                 "name.family_name": "daniel"
+               }
+             },
+             {
+               "term": {
+                 "name.given_name": "tyrone"
+               }
+             }
+           ]
+         }
+       }
+    }
+    
+
+Term queries are not analyzed by ElasticSearch, which makes them case
+sensitive. A Term query says to ES " _look for this exact token inside your
+index, including case and punctuation_ ".
+
+If you want case insensitivity, you could add a keyword + lowercase filter to
+your analyzer. Alternatively, you could use a query that analyzes your text at
+query time (like a `Match` query)
+
+Edit2: You could also use And or Bool filters too.
+
+I found a solution for at least multiple text comparisons on the same field:
+
+    
+    
+    {
+      "query": {
+        "match": {
+          "name.given_name": {
+            "query": "daniel tyrone",
+            "operator": "and"
+          }
+        }
+      }
+    
+
+And I found this for multiple fields, is this the correct way?
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [        
+            {
+              "match": {
+                "name.formatted": {
+                  "query": "daniel tyrone",
+                  "operator": "and"
+                }
+              }
+            },
+            {
+              "match": {
+                "display_name": "tyrone"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+If composing the json with PHP, these 2 examples worked for me.
+
+$activeFilters is just a comma separated string like: 'attractions, limpopo'
+
+    
+    
+    $articles = Article::searchByQuery(array(
+            'match' => array(
+                'cf_categories' => array(
+                    'query' => $activeFilters,
+                    'operator' =>'and'
+                )
+            )
+        ));
+    
+        // The below code is also working 100%
+        // Using Query String https://www.elastic.co/guide/en/elasticsearch/reference/1.4/query-dsl-query-filter.html
+        // https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
+        /* $articles = Article::searchByQuery(array(
+            'query_string' => array(
+                'query' => 'cf_categories:attractions AND cf_categories:limpopo'
+            )
+        )); */
+    
+

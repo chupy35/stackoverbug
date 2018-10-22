@@ -1,0 +1,26 @@
+17440314 Query and allocate data to shards based on tags
+
+I'm running a typical logstash-redis-elasticsearch system to capture all my
+logs(around 500 GB/day). To my knowledge elasticsearch queries every shard in
+an index and aggregates the results, but due to the volume of logs per day and
+the response times needed, I want to query only few shards which of course
+should be decided on some "tag" in the message. So I'm looking at a way to
+allocate data to shards based on some tags and query only relevant shards
+based on the tags. Any leads, references or solutions on how to achieve this ?
+
+I've already looked at [shard allocation
+filtering](http://www.elasticsearch.org/guide/reference/index-
+modules/allocation/) but that doesn't cater this specific requirement.
+
+Routing is the way to go here.
+
+Specify a route option while indexing will cause the document to be routed on
+a specific shard. See [routing in index
+API](http://www.elasticsearch.org/guide/reference/api/index_/).
+
+You can also extract the routing value from a field. See [routing
+field](http://www.elasticsearch.org/guide/reference/mapping/routing-field/).
+
+Don't forget to search with the same routing value. See [routing option in
+search](http://www.elasticsearch.org/guide/reference/api/search/).
+

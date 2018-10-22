@@ -1,0 +1,28 @@
+13343292 How to do search on free text in Elastic search?
+
+In Elastic search, how can we search on free text. for example, we have free
+text data in one of the attribute like " **test!£!£"!£"test** ".
+
+when, i do search using QueryBuilders, it gives exception due to special
+characters.
+
+On searching web, come to know that we need to use escapeUtils from Lucene.
+`QueryParser.escape(searchText)`
+
+Now, when i do exact match search in this case it ignores those characters and
+brings up the result for "test" as well.
+
+Please suggest something on this.
+
+You're probably using the default mapping, thus the
+[`StandardAnalyzer`](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/standard-analyzer.html). I guess it's stripping out those
+characters, that are not even indexed. You'd need to decide how you want to
+index your text. Do you want to tokenize or do you want to have a single
+token? Do you want to keep those characters in the index? Based on that you
+need to pick the right analyzer and update your mapping through the [Put
+mapping API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+put-mapping.html). If you for example want to index the text as it is, you
+just configure the field as `"index":"not_analyzed"`, which means that its
+context will be indexed but no text analysis will be applied to it.
+

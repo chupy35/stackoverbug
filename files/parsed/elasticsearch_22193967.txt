@@ -1,0 +1,28 @@
+22193967 Can I index nested documents on ElasticSearch without mapping?
+
+I have a document whose structure changes often, how can I index nested
+documents inside it without changing the mapping on ElasticSearch?
+
+You can index documents in Elasticsearch without providing a mapping yes.
+
+However, Elasticsearch makes a decision about the type of a field when the
+first document contains a value for that field. If you add document 1 and it
+has a field called item_code, and in document 1 item_code is a string,
+Elasticsearch will set the type of field "item_code" to be string. If document
+2 has an integer value in item_code Elasticsearch will have already set the
+type as string.
+
+Basically, field type is index dependant, not document dependant.
+
+This is mainly because of Apache Lucene and the way it handles this
+information.
+
+If you're having a case where some data structure changes, while other
+doesn't, you could use an object type,
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+object-type.html>.
+
+You can even go as far as to use "enabled": false on it, which makes
+elasticsearch just store the data. You couldn't search it anymore, but maybe
+you actually don't even want that?
+

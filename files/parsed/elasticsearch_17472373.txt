@@ -1,0 +1,49 @@
+17472373 Unexplainable count results in ElasticSearch
+
+We have an index running with 241.047 items in it. These items can have any
+number of subitems, which are indexed as nested documents. The total number of
+subitems is 381.705.
+
+Both `include_in_parent` and `include_in_root` are not set in the mapping,
+which means that each nested document is indexed as additional documents. This
+should mean that there will be a total number of 241.047 + 381.705 = 622.752
+documents in the index.
+
+When I run the following Curl command to look up the number of documents in
+the index I get a different number, it's not far off but I'm wondering why
+it's giving me a different number and it's not returning the number I'm
+expecting.
+
+  * `curl -XGET 'http://localhost:9200/catawiki_development/_status?pretty'` returns 622.861
+
+Next to that, when I'm running a Curl command to get the number of root
+documents I get a different number than if I run a `match_all` query and ask
+for the number of documents returned
+
+  * `curl -XGET 'http://localhost:9200/elasticsearch_development/_count?pretty'` returns 241.156
+  * The `match_all` query returns the correct number of documents, 241.047
+
+How can these difference be explained?
+
+The path of a count api request is quite different from the path of a normal
+search request. In fact it is a shortcut that allows to only get the count of
+the documents matching a query, thats' it. It differs from a search with
+[`search_type=count`](http://www.elasticsearch.org/guide/reference/api/search/search-
+type/) too, which is effectively only the first part of a search: broadcast
+the search request to all shards, but no reduce/fetch since we only want to
+return the total number of matching documents. You can also add facets etc. to
+a search request (when using `search_type=count` too), which is something that
+you cannot do with the count api.
+
+That said, I'm not that surprised you see a difference for the above reason,
+it would be nice to understand exactly what the problem is though. The best
+would be to be able to reproduce the problem with a small number of documents
+and [open an issue](https://github.com/elasticsearch/elasticsearch/issues)
+including a [curl recreation](http://www.elasticsearch.org/help/) so that we
+can have a look at it.
+
+In the meantime, I would suggest to use a search request with
+`search_type=count` if you have problems with the count api. That one is
+guaranteed to return the same number of documents as a normal search, just
+because it is exactly the same logic.
+

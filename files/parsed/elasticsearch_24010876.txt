@@ -1,0 +1,165 @@
+24010876 Elasticsearch filtering by part of date
+
+**QUESTION** Maybe anyone has solution how to filter/query ElasticSearch data
+by month or day ? Let's say I need to get all users who celebrating birthdays
+today.
+
+mapping
+
+    
+    
+    mappings:
+        dob: { type: date, format: "dd-MM-yyyy HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss'Z'||yyyy-MM-dd'T'HH:mm:ss+SSSS"}
+    
+
+and stored in this way:
+
+    
+    
+     dob: 1950-06-03T00:00:00Z 
+
+main problem is how to search users by month and day only. Ignore the year,
+because birthday is annually as we know.
+
+* * *
+
+**SOLUTION** I found solution to query birthdays with wildcards. As we know if
+we want use wildcards, the mapping of field must be a string, so I used _multi
+field_ mapping.
+
+    
+    
+    mappings:
+        dob:
+            type: multi_field
+            fields:
+                dob: { type: date, format: "yyyy-MM-dd'T'HH:mm:ss'Z'}
+                string: { type: string, index: not_analyzed }
+    
+
+and query to get users by **only month and day** is:
+
+    
+    
+    {
+        "query": {
+            "wildcard": {
+                "dob.string": "*-06-03*"
+            }
+        }
+    }
+    
+
+**NOTE** This query can be slow, as it needs to iterate over many terms.
+
+**CONCLUSION** _It's not pretty nice way, but it's the only one I've found and
+it works!._
+
+Based on your question I am assuming that you want a query, and not a filter
+(they are different), you can use the date math/format combined with a range
+query.
+
+See: [range
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-range-query.html) for usage
+
+For explanation of date math see the following
+[link](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+date-format.html#date-math)
+
+`curl -XPOST http://localhost:9200/twitter/tweet/_search -d`
+
+    
+    
+    {
+      "query": {
+        "range": {
+            "birthday": {
+                "gte" : "2014-01-01",
+                "lte" : "2014-01-01"
+            }
+        }
+      }
+    }
+    
+
+I have tested this with the latest elastic search.
+
+If you don't want to parse strings, you can use a simple script. This filter
+will match when dateField has a specific month in any year:
+
+    
+    
+    "filter": {
+        "script": {
+            "lang":   "expression",
+            "script": "doc['dateField'].getMonth() == month",
+            "params": {
+                "month": 05,
+            }
+        }
+    }
+    
+
+Note: the month parameter is 0-indexed.
+
+The same method will work for day of month or any other date component.
+
+You should store the value-to-be-searched in Elasticsearch. The
+string/wildcard solution is half the way, but storing the numbers would be
+even better (and faster):
+
+    
+    
+    mappings:
+        dob:
+            type: date, format: "yyyy-MM-dd'T'HH:mm:ss'Z'
+        dob_day:
+            type: byte
+        dob_month:
+            type: byte
+    
+
+Example:
+
+    
+    
+    dob: 1950-03-06
+    dob_day: 06
+    dob_month: 03
+    
+
+Filtering (or querying) for plain numbers is easy: Match on both fields.
+
+    
+    
+      "query": {
+        "filtered": {
+          "filter": {
+            "bool": {
+              "must": [
+                {
+                  "term": {
+                    "dob_day": 06,
+                  }
+                },
+                {
+                  "term": {
+                    "dob_month": 03,
+                  }
+                },
+              ]
+            }
+          }
+        }
+      }
+    
+
+PS: While thinking about the solution: Storing the date as self-merged number
+like "06-03" -> "603" or "6.03" would be less obvious, but allow range queries
+to be used. But remember that 531 (05-31) plus one day would be 601 (06-01).
+
+A manually-computed julian date might also be handy, but the calculation must
+always assume 29 days for February and the range query would have a chance of
+being off-by-1 if the range includes the 29st of Feb.
+

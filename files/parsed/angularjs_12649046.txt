@@ -1,0 +1,17 @@
+12649046 AngularJS Directive to check if an image URL exist
+
+i'm trying to write an AngularJS Directive that checks if a URL exist, if it
+does then it will display the image. Otherwise it will return nothing or a
+blank tag. Any advice would be appreciated, here's the fiddle I have so far,
+can't seem to get it to even read the url being passed in.
+<http://jsfiddle.net/stevenng/dXeap/8/>
+
+You will only be able to this with images on the same domain as it would
+violate cross-domain policy otherwise. If that is still ok then it should be
+possible by using AJAX to do a HEAD request and checking the HTTP status (e.g.
+404) of the response.
+
+I fixed up your code a bit so that it works. <http://jsfiddle.net/LwpEP/1/>
+See how you get on from that starting point and come back here if you run into
+more issues.
+

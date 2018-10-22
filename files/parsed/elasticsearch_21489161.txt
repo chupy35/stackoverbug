@@ -1,0 +1,28 @@
+21489161 "last seen time" for a term in elasticsearch
+
+I have a mapping that has a host and a timestamp (among other fields), and
+would like to get a "last seen time" for some number of recently seen hosts.
+Is there a better way to do this than to first do a term facet on the host
+field, then a range query (limit=1) on each of the term values sorted in
+descending order?
+
+A term stats facet would bring back the min/max for the timestamp for each
+host wouldn't it?
+
+    
+    
+    {
+        "query" : {
+            "match_all" : {  }
+        },
+        "facets" : {
+            "host_time_stats" : {
+                "terms_stats" : {
+                    "key_field" : "host",
+                    "value_field" : "timestamp"
+                }
+            }
+        }
+    }
+    
+

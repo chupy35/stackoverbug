@@ -1,0 +1,43 @@
+18321261 Elastic Search dynamic field stored as both analyzed and not_analyzed
+
+I am trying to index json documents in elasticsearch. I don't have schema of
+the document, its dynamic.
+
+I need to store the fields as both analyzed and not analyzed. Also I need it
+to be dynamic.
+
+  1. Can we use dynamic templates to achieve this ?
+  2. Also is it possible to keep the field names same for both analyzed and not analyzed ?
+  3. Do I need to do any special handling while searching those fields ?
+
+You will accomplish this by using dynamic templates yes, by creating a dynamic
+mapping for the fields (or the pattern of fields, e.g all strings) like this:
+
+    
+    
+    "dynamic_templates":[
+            {
+                "template_myStringFields":{
+                    "match":"somepattern",
+                    "mapping":{
+                        "type":"multi_field",
+                        "fields":{
+                            "{name}":{
+                                "type":"string",
+                                "index":"not_analyzed",
+                            },
+                            "_tokenized":{
+                                "type":"string",
+                                "index":"analyzed",
+                            }
+                        }
+                    }
+                }
+            }...
+    
+
+Then, to search in both analyzed and not-analyzed, you could use "pattern
+match" if you dont like to search in both fields at once, or search the "_all"
+field if ok with match in any field. The field name is the same, but with a
+postfix, like myField._tokenized in the above example.
+

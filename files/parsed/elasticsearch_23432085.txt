@@ -1,0 +1,101 @@
+23432085 Returnable but not queryable fields in ElasticSearch
+
+I want to store an array in an elasticsearch document that is of variable
+length. Ideally, this array could then be merged when queried with an
+aggregation. Any queried array will be of equal length because of business
+logic but there will be different length arrays in the index. Here are two
+example documents:
+
+    
+    
+    {
+      "array": [1, 2, 3, 4],
+      "test1": "testing123",
+      "test2": "testing_another"
+    }
+    {
+      "array": [4, 3, 2, 1],
+      "test1": "testing123",
+      "test2": "testing_another"
+    }
+    
+
+And with an aggregation I'd like to get a result that contained
+
+    
+    
+    {
+      "array": [5, 5, 5, 5]
+    }
+    
+
+The only way I've thought to do this would be to store the arrays as a hash
+whose values could then be summed in the aggregation:
+
+    
+    
+    {
+      "array": {"0": 4, "1": 3, "2": 2, "3": 1}
+    }
+    {
+      "array": {"0": 1, "1": 2, "2": 3, "3": 4}
+    }
+    
+
+So that the aggregated result looks like (using sum on "0", "1", "2", "3"
+fields)
+
+    
+    
+    {
+      "array": {"0": 5, "1": 5, "2": 5, "3": 5}
+    }
+    
+
+But it seems that as the hash size increases elasticsearch slows down on
+writes, probably due to that fact that is indexing these fields thinking that
+I might query on them. This is not necessary, I only need to be able to get
+the merged (summed) result on the way out.
+
+Is this a reasonable assessment of the situation? If so, is there a way in
+elasticsearch to specify that a given field will not need to be queried on?
+
+@cmwright it sounds a bit weird to ask for something that was built mainly for
+search to do not allow a field to be searchable :) nevertheless, what you can
+certainly do is to define a field in your index to do not be analyzed through
+a mapping. More info here [Elastic Search Mapping Core
+Types](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html). I dont give you a direct answer to your question but I hope
+that at least you can get some clues to figure out a possible solution.
+
+You can specify your array to be not analyzed for search with the help of
+mapping
+
+    
+    
+    {
+        "array": { 
+            "type":     "string",
+            "index":    "not_analyzed"
+        }
+    }
+    
+
+where `array` being your field name. You can read more on elasticsearch
+refrence for mappings at
+[Mappings](https://www.elastic.co/guide/en/elasticsearch/guide/current/mapping-
+intro.html)
+
+I’m not sure if the size of the hash is what caused the issue, but I found two
+field mapping parameters in the elasticsearch 6.2 docs that allow you to
+specify that a field should not be queried on.
+
+  * Use index=False to disable indexing for that specific field. Fields that are not indexed are not queryable.
+
+  * Use enabled=False to disable indexing (and ALL processing) for that field and all of its children (Only applicable to object fields)
+
+Sources: <https://www.elastic.co/guide/en/elasticsearch/reference/6.2/mapping-
+index.html>
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/6.2/enabled.html>
+

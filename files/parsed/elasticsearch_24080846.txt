@@ -1,0 +1,32 @@
+24080846 Removing duplicates from search results
+
+We have a list of products that look like this:
+
+    
+    
+    {"name": "", "image_url":"", tags:0}
+    
+
+The problem is, there are a fair amount of duplicate products. There is no
+real way to control adding duplicates to elasticsearch because of the sheer
+size of the data, so I'm looking for a way to filter out duplicates at query
+time.
+
+Duplicate products are defined as "products with the same name and image_url
+field". Also, if a product has more than zero "tags", then we never want to
+remove it from search results!
+
+Any ideas how I can get this done?
+
+I had a similar problem. There are several possible ways.
+
+1 - You can handle the issue at the time of indexing. In my code I created a
+Java derby DB storing the index content. DB's table had a primary key on index
+content. When new index arrives, I try to insert it into the DB. If the
+content is unique, it is inserted into the DB and I insert the index into the
+ES. If the primary key is violated (the content already existed), I will not
+ingest it into ES.
+
+2 - Ingest everything into the ES. Runs a script on daily/hourly basis that
+download the content and queries the ES. If it finds a duplicity, removes it.
+

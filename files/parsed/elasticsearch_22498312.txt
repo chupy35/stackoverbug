@@ -1,0 +1,53 @@
+22498312 In elasticSearch, not able to search name with special character '-'
+
+I am trying to search names in elastic search,
+
+Consider name as kanal-kannan
+
+normally we search name with `* na`, I tried to search like this -
+
+    
+    
+    "/index/party_details/_search?size=200&from=0&q=(first_name_v:kanal-*)"
+    
+
+this results in zero records.
+
+`-` is a special character that needs to be escaped to be searched literally:
+`\-`
+
+If you use the `q` parameter (that is, the `query_string` query), the rules of
+the [Lucene Queryparser
+Syntax](http://lucene.apache.org/core/4_7_0/queryparser/org/apache/lucene/queryparser/classic/package-
+summary.html#Escaping_Special_Characters) apply.
+
+Depending on your analyzer chain, you might not have any `-` characters in
+your index, replacing them with a space in your query would work in that cases
+too.
+
+Unless the hyphen character has been dealt with specifically by the analyzer
+then the two words in your example, `kanal` and `kannan` will be indexed
+separately because any non-alpha character is treated by default as a word
+delimiter.
+
+Have a look at the documentation for [Word Delimiter Token
+Filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+word-delimiter-tokenfilter.html) and specifically at the `type_table`
+parameter.
+
+Here's an example I used to ensure that an email field was correctly indexed
+
+    
+    
+    ft.custom_delimiter = {
+        "type": "word_delimiter",
+        "split_on_numerics": false,
+        "type_table": ["@ => ALPHANUM", ". => ALPHANUM", "- => ALPHA", "_ => ALPHANUM"]
+    };
+    
+
+@l4rd's answer should work properly (I have the same setup). Another option
+you have is to mark field with keyword analyzer to prevent tokenizing at all.
+Note that keyword tokenizer wouldn't lowercase anything, so use custom
+analyzer with keyword tokenizer in this case.
+

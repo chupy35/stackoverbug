@@ -1,0 +1,47 @@
+18125182 Finding time intersections with elasticsearch
+
+Considering the following data structure:
+
+    
+    
+    {
+        name: 'track1',
+        durationSec: 300,
+        tags: [
+            {
+                name: "mike", startSec: 15, endSec: 88
+            },
+            {
+                name: "kate", startSec: 54, endSec: 140
+            }
+        ]
+    },
+    {
+        name: 'track2',
+        durationSec: 240,
+        tags: [
+            {
+                name: "mike", startSec: 0, endSec: 150
+            },
+            {
+                name: "kate", startSec: 200, endSec: 220
+            }
+        ]
+    
+
+Is it possible to find only tracks where for example the tags "mike" and
+"kate" have intersections (like above only track1 with intersection from
+second 54 to 88) with elasticsearch?
+
+It might be possible to do with a [script
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/script-
+filter/).
+
+You might need to access the _source and not the doc since array values are
+flattened. See more about scripting
+[here](http://www.elasticsearch.org/guide/reference/modules/scripting/).
+
+Performance won't be a hoot though, since it requires both running a script
+and accessing the source. If you're not doing it over huge data it might be
+reasonable.
+

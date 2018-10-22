@@ -1,0 +1,65 @@
+20196093 ElasticSearch + Twitter river class not found
+
+I am trying to install twitter river plugin on elastic search. I have done it
+before on my mac without any issues, but this time I am trying to install on a
+Linux server and I keep getting this class not found exception. The exception
+comes when I use curl -XPUT command as shown in
+<https://github.com/elasticsearch/elasticsearch-river-
+twitter/blob/master/README.md>
+
+Here's the exception I get :-
+
+    
+    
+    [2013-11-25 15:12:00,116][WARN ][river                    ] [Fasaud] failed to create                 river [twitter][my_twitter_river2]
+    org.elasticsearch.common.settings.NoClassSettingsException: Failed to load class with value [twitter]
+        at org.elasticsearch.river.RiverModule.loadTypeModule(RiverModule.java:87)
+        at org.elasticsearch.river.RiverModule.spawnModules(RiverModule.java:58)
+    at org.elasticsearch.common.inject.ModulesBuilder.add(ModulesBuilder.java:44)
+    at org.elasticsearch.river.RiversService.createRiver(RiversService.java:135)
+    at org.elasticsearch.river.RiversService$ApplyRivers$2.onResponse(RiversService.java:271)
+    at org.elasticsearch.river.RiversService$ApplyRivers$2.onResponse(RiversService.java:265)
+    at org.elasticsearch.action.support.TransportAction$ThreadedActionListener$1.run(TransportAction.java:93)
+    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+    at java.lang.Thread.run(Thread.java:724)
+    Caused by: java.lang.ClassNotFoundException: twitter
+    at java.net.URLClassLoader$1.run(URLClassLoader.java:366)
+    at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+    at java.security.AccessController.doPrivileged(Native Method)
+    at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+    at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+    at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:308)
+    at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+    at org.elasticsearch.river.RiverModule.loadTypeModule(RiverModule.java:73)
+    ... 9 more
+    
+
+I have tried restarting, installing many many times and can't get it to work
+anyhow. I can also see that the jar files present in the plugin directories
+contain the class twitter but for some reason they're not available to
+elasticsearch execution.
+
+This is a configuration and install issue.
+
+Steps:
+
+  1. Check to see where elasticsearch is installed by running `ps aux|grep elasticsearch` (on linux) and that will tell which executable is running on that machine (look for a line that looks like this: (-Des.default.path.home=/usr/share/elasticsearch) or something similar.
+
+  2. If several elasticsearch instances running, kill them all and start the one you care about.
+
+  3. Ensure that only one instance of elasticsearch is running (if that is the intent) and, from step one above, go to the home path directory.
+
+  4. Ensure that the plugin is installed in this directory in elasticsearch/plugins dir.
+
+Restart elasticsearch.
+
+confirm your classpath contain a text file es-plugin.properties with content
+
+plugin=your.package.YourRiverPlugin
+
+missing of such a property file shows almost the same error.
+
+for more info, please refer <http://blog.trifork.com/2013/01/10/how-to-write-
+an-elasticsearch-river-plugin/>
+

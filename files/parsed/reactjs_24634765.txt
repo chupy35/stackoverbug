@@ -1,0 +1,73 @@
+24634765 React js equivalent for ng-include
+
+i am using Reactjs. i want to include partial html in my view. something like
+ng-include. what is the best way doing it?
+
+    
+    
+    <div>
+        <ng-include src="myPageUrl"></ng-include>
+    </div>
+    
+
+i tried the following with no luck -- got
+
+    
+    
+    'Uncaught Error: Invariant Violation: traverseAllChildren(...): 
+    Encountered an invalid child; 
+    DOM elements are not valid children of React components'
+    
+
+my code looks like this (based on <http://benalpert.com/react/tips/initial-
+ajax.html>)
+
+    
+    
+    var PageContainer = React.createClass({
+      getInitialState: function() {
+       return {
+        page: "loading page ..." 
+       };
+      },
+      componentDidMount : function(){
+       $.get(url, function(result) {
+       var data = result;
+       this.setState({
+        page: data
+       });
+      }.bind(this));
+     },
+     render: function () {
+      return (
+        <div id="page" className="PageContainer">
+            {this.state.page}
+        </div>
+     );
+    }
+    
+
+});
+
+According to [React documentation](http://facebook.github.io/react/docs/jsx-
+gotchas.html):
+
+> As a last resort, you always have the ability to insert raw HTML.
+
+>
+
+> `<div dangerouslySetInnerHTML={{__html: 'First &middot; Second'}} />`
+
+So for you that could be:
+
+    
+    
+    render: function () {
+      return (
+        <div id="page" className="PageContainer"
+          dangerouslySetInnerHTML={{__html: this.state.page}}
+         >
+        </div>
+     );
+    
+

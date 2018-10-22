@@ -1,0 +1,16 @@
+21620325 Elasticsearch multinode environment
+
+In elastic search i created multi-node setup.I use Java Api transport Client
+to communicate to Elasticsearch server.
+
+Now i created transport client with only one IP[assume:192.129.129.12.9300].
+If i request any query in single ip it communicates all nodes and returns
+results. What happen if it my node[192.129.129.12.9300] that i mentioned in
+transport Client fails. Can i communicate with other nodes. What is the
+optimum way configuration to use transport Client for multi node set up.
+
+You need to activate `sniff` option.
+
+See <http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/client.html#transport-client>
+

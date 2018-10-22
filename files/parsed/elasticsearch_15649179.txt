@@ -1,0 +1,140 @@
+15649179 How to exclude a filter from a facet?
+
+I have come from a Solr background and am trying to find the equivalent of
+["tagging" and
+"excluding"](http://wiki.apache.org/solr/SimpleFacetParameters#Tagging_and_excluding_Filters)
+in Elasticsearch.
+
+In the following example, how can I exclude the `price` filter from the
+calculation of the `prices` facet? In other words, the `prices` facet should
+take into account all of the filters except for `price`.
+
+    
+    
+    {
+      query : {
+        "filtered" : {
+          "query" : {
+            "match_all" : {}
+          },
+          "filter" : {
+            "and" : [
+              {
+                "term" : {
+                  "colour" : "Red"
+                }
+              },
+              {
+                "term" : {
+                  "feature" : "Square"
+                }
+              },
+              {
+                "term" : {
+                  "feature" : "Shiny"
+                }
+              },
+              {
+                "range" : {
+                  "price" : { 
+                    "from" : "10",
+                    "to" : "20"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "facets" : {
+        "colours" : {
+          "terms" : {
+            "field" : "colour"
+          }
+        },
+        "features" : {
+          "terms" : {
+            "field" : "feature"
+          }
+        },
+        "prices" : {
+          "statistical" : {
+            "field" : "price"
+          }
+        }
+      }
+    }
+    
+
+You can apply price filter as a top level filter to your query and add it to
+all facets expect prices as a facet_filter:
+
+    
+    
+    {
+      query : {
+        "filtered" : {
+          "query" : {
+            "match_all" : {}
+          },
+          "filter" : {
+            "and" : [
+              {
+                "term" : {
+                  "colour" : "Red"
+                }
+              },
+              {
+                "term" : {
+                  "feature" : "Square"
+                }
+              },
+              {
+                "term" : {
+                  "feature" : "Shiny"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "facets" : {
+        "colours" : {
+          "terms" : {
+            "field" : "colour"
+          },
+          "facet_filter" : {
+            "range" : { "price" : {  "from" : "10", "to" : "20" } }
+          }
+        },
+        "features" : {
+          "terms" : {
+            "field" : "feature"
+          },
+          "facet_filter" : {
+            "range" : { "price" : {  "from" : "10", "to" : "20" } }
+          }
+        },
+        "prices" : {
+          "statistical" : {
+            "field" : "price"
+          }
+        }
+      },
+      "filter": {
+        "range" : { "price" : {  "from" : "10", "to" : "20" } }
+      }
+    }
+    
+
+Btw, important change since ES 1.0.0. Top-level filter was renamed to
+post_filter
+(<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/_search_requests.html#_search_requests>).
+And filtered queries using is still preferred as described here:
+<http://elasticsearch-users.115913.n3.nabble.com/Filters-vs-Queries-
+td3219558.html>
+
+And there is `global` option for facets to avoid filtering by query filter
+(elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets.html#_scope).
+

@@ -1,0 +1,73 @@
+28111599 Multiple conversionServices in spring-boot
+
+I have a boot application and in one of my facades I try to Autowire the
+`conversionService` like this:
+
+    
+    
+    @Autowired
+    private ConversionService conversionService;
+    
+
+as a result I get this:
+
+    
+    
+    Caused by: org.springframework.beans.factory.NoUniqueBeanDefinitionException: No qualifying bean of type [org.springframework.core.convert.ConversionService] is defined: expected single matching bean but found 3: mvcConversionService,defaultConversionService,integrationConversionService
+    at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1061)
+    at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:949)
+    at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:533)
+    ... 16 more
+    
+
+To overcome this I have added a Qualifier lilke this:
+
+    
+    
+    @Autowired
+    @Qualifier("mvcConversionService")
+    private ConversionService c;
+    
+
+and this all works. However all my custom converters are automatically added
+the to the `mvcConversionService`. And now I want to extend the
+`ConversionService` and add another method to it, however my converters are
+again added the to the `mvcConversionService`. Is there a way to tell spring-
+boot which `conversionService` to use to automatically register my converters
+there? I don't want to manually list all the converters to the new
+`conversionService`.
+
+I was experiencing a similar issue. The problem seems to be that you need to
+define which conversion service you want to use. You can do it by XML or using
+a Spring Boot configuration.
+
+I'm copying here part of answer to a very [similar
+question](https://stackoverflow.com/questions/30039619/how-to-autowired-in-
+conversionservice-in-springboot) (the one that worked for me) and marking this
+question as possible duplicate.
+
+> A look into the [Spring
+documentation](http://docs.spring.io/spring/docs/current/spring-framework-
+reference/html/validation.html#core-convert-Spring-config) reveals, that you
+should declare a `ConversionService` bean. In the XML configuration it would
+look like this:
+
+>  
+>  
+>     <bean id="conversionService"
+class="org.springframework.context.support.ConversionServiceFactoryBean">
+
+>         <property name="converters">
+
+>             <set>
+
+>                 <bean class="example.MyCustomConverter"/>
+
+>             </set>
+
+>         </property>
+
+>     </bean>
+
+>  
+

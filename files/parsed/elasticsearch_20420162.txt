@@ -1,0 +1,44 @@
+20420162 ES hostname in response
+
+I have few ES servers in load balancing mode. When I perform query to
+host1:9200 then one of host1,host2,host3 can process this query. Is it
+possible to get somehow this hostname in ES response?
+
+In other words I'm looking for equivalent of "select myfield, @@servername
+FROM table" in MS SQL Server.
+
+Thanks
+
+If you are using the http api you can get the hostname from the `Host` header
+in the response.
+
+For example if you make your query with curl and you use the `-v` flag, it
+prints the response header where you can find the hostname that sends the
+response, in this case localhost:
+
+    
+    
+    curl -XGET "http://localhost:9200/test/_search" -v -d '
+    {
+      "query": {"match_all":{}}
+    }'
+    
+    * About to connect() to localhost port 9200 (#0)
+    *   Trying ::1... connected
+    * Connected to localhost (::1) port 9200 (#0)
+    > GET /test/_search HTTP/1.1
+    > User-Agent: curl/7.21.4 (universal-apple-darwin11.0) libcurl/7.21.4 OpenSSL/0.9.8r zlib/1.2.5
+    > Host: localhost:9200
+    > Accept: */*
+    > Content-Length: 32
+    > Content-Type: application/x-www-form-urlencoded
+    >
+    < HTTP/1.1 200 OK
+    < Content-Type: application/json; charset=UTF-8
+    < Content-Length: 875
+    <
+    
+
+In any case remember that if you have your data split in several shards, more
+than one host can be part of the process of the query.
+

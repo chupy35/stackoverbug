@@ -1,0 +1,16 @@
+28671244 how to validate dynamically added controls in react js
+
+I'm new to react framework and I'm creating the components dynamically
+(textbox,checkbox & select) and I would like to validate it before submitting
+the  Form. Can anyone suggest ideas?
+
+[React Forms](http://prometheusresearch.github.io/react-forms/) might help you
+with front end form validation.
+
+There's also Formsy-React:
+
+<https://github.com/christianalfoni/formsy-react>
+
+It lets you specify your form validation logic without using JSX, which is a
+plus if you want framework-neutral validation.
+

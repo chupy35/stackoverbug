@@ -1,0 +1,30 @@
+18400099 How to limit query time in elasticsearch?
+
+If you use [query_string](http://www.elasticsearch.org/guide/reference/query-
+dsl/query-string-query/) in [elasticsearch](http://www.elasticsearch.org/)
+with an unlucky query over a large dataset, you can almost bring the cluster
+down, and it can take quite a long time until the query is finished. This can
+be a serious problem if you allow the users to specify arbitrary query
+strings.
+
+So, is there a way to limit the time and/or resources the query takes? If you
+could tell elasticsearch to abort the querying automatically after, say, 10
+seconds, that'd help quite a lot.
+
+You can pass a search "timeout" in the [request
+body](http://www.elasticsearch.org/guide/reference/api/search/request-body/)
+or in the [uri
+request](http://www.elasticsearch.org/guide/reference/api/search/uri-
+request/). If the search request times out before collecting all results, the
+partial results will be returned.
+
+Here's a uri request example for 10 seconds (units are in milliseconds):
+
+    
+    
+    http://localhost:9200/_search?timeout=10000
+    
+
+If you set the timeout low enough, the returned json will show
+"timed_out":true.
+

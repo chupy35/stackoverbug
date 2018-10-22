@@ -1,0 +1,211 @@
+17587749 Why script in custom_filters_score behaves as boost?
+
+    
+    
+    {
+      "query": {
+        "custom_filters_score": {
+          "query": {
+            "term": {
+              "name": "user1234"
+            }
+          },
+          "filters": [
+            {
+              "filter": {
+                "term": {
+                  "subject": "math"
+                }
+              },
+              "script": "_score + doc['subject_score'].value"
+            }
+          ]
+        }
+      }
+    }
+    
+
+If script is having like above it gives `Error: unresolvable property or
+identifier: _score` If script is like `"script": "doc['subject_score'].value"`
+It multiplies the _score in similar way boost does. I want to replace the
+elasticsearch _score with custom score.
+
+Firstly I'd like to say that there are many ways of customising the scoring in
+elasticsearch and it seems like you may have accidentally picked the wrong
+one. I will just summarize two and you will see what the problem is:
+
+## Custom Filters Score
+
+If you [read the docs](http://www.elasticsearch.org/guide/reference/query-
+dsl/custom-filters-score-query/) (carefully) on `custom_filters_score` then
+you will see that it there for performance reasons, to be able to use for
+scoring the the faster filter machinery of elasticsearch. (Filters are faster
+as scoring is not calculated when computing the hit set, and they are cached
+between requests.)
+
+At the end of the docs; it mentions `custom_filters_score` can take a
+`"script"` parameter to use instead of a `"boost"` parameter per `filter`.
+Best way to think of this is to calculate a number, which will be passed up to
+the parent query to be combined with the other sibling queries to calculate
+the total score for the document.
+
+## Custom Score Query
+
+[Reading the docs](http://www.elasticsearch.org/guide/reference/query-
+dsl/custom-score-query/) this is used when you want to customise the score
+from the query and change it how you wish. There is a `_score` variable
+available to you to use in your `"script"` which is the score of the query
+inside the `custom_score` query.
+
+Try this:
+
+    
+    
+    "query": {
+        "filtered": {
+            "query": {
+                "custom_score": {
+                    "query": { 
+                        "match_all": {}
+                    },
+                    "script": "doc['subject_score'].value" //*see note below
+                }
+            },
+            "filter": {
+                "and": [
+                    {
+                        "term": {
+                            "subject": "math"
+                        }
+                    },
+                    {
+                        "term": {
+                            "name": "user1234"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+*NOTE: If you wanted to you could use `_score` here. Also, I moved both your `"term"` parts to filters as any match of a term would get the same score and filters are faster.
+
+Good luck!
+
+If I understood you correctly you would like to use elasticsearch scoring if
+subject is not math and you would like to use custom scoring with subject is
+math. If you are using Elasticsearch v0.90.4 or higher, it can be achieved
+using new `function_score` query:
+
+    
+    
+    {
+        "query": {
+            "function_score": {
+                "query": {
+                    "term": {
+                        "name": "user1234"
+                    }
+                },
+                "functions": [{
+                    "filter": {
+                        "term": {
+                            "subject": "math"
+                        }
+                    },
+                    "script_score": {
+                        "script": "doc[\"subject_score\"].value"
+                    }
+                }, {
+                    "boost_factor": 0
+    
+                }],
+                "score_mode": "first",
+                "boost_mode": "sum"
+            }
+        }
+    }
+    
+
+Prior to v0.90.4 you would have to resort to using combination of
+`custom_score` and `custom_filters_score`:
+
+    
+    
+    {
+        "query": {
+            "custom_score": {
+                "query": {
+                    "custom_filters_score": {
+                        "query": {
+                            "term": {
+                                "name": "user1234"
+                            }
+                        },
+                        "filters": [{
+                            "filter": {
+                                "term": {
+                                    "subject": "math"
+                                }
+                            },
+                            "script": "-1.0"
+                        }]
+                    }
+                },
+                "script": "_score < 0.0 ? _score * -1.0 + doc[\"subject_score\"].value : _score"
+            }
+        }
+    }
+    
+
+or as @javanna suggested, use multiple custom_score queries combined together
+by bool query:
+
+    
+    
+    {
+        "query": {
+            "bool": {
+                "disable_coord": true,
+                "should": [{
+                    "filtered": {
+                        "query": {
+                            "term": {
+                                "name": "user1234"
+                            }
+                        },
+                        "filter": {
+                            "bool": {
+                                "must_not": [{
+                                    "term": {
+                                        "subject": "math"
+                                    }
+                                }]
+                            }
+                        }
+                    }
+                }, {
+                    "filtered": {
+                        "query": {
+                            "custom_score": {
+                                "query": {
+                                    "term": {
+                                        "name": "user1234"
+                                    }
+                                },
+                                "script": "doc['subject_score'].value"
+                            }
+                        },
+                        "filter": {
+                            "term": {
+                                "subject": "math"
+                            }
+                        }
+                    }
+                }]
+            }
+        }
+    }
+    
+

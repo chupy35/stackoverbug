@@ -1,0 +1,74 @@
+20865110 RangeFacet based on a timestamp field
+
+Can someone enlighten me on how to properly construct a range facet in
+ElasticSearch`enter code here`? I have tried several variations of date
+formats, but always get an exception back. Here is the simple version:
+
+    
+    
+    {
+      "facets": {
+        "hdwm": {
+          "range": {
+            "field": "@timestamp",
+            "ranges": [
+              "{'to' : '2013-12-20' }",
+              "{'from': '2013-12-20', 'to' : '2013-12-25' }",
+              "{'from': '203-12-25' }"
+            ]
+          }
+        }
+      },
+      "query": {
+        "match_all": {}
+      }
+    }
+    
+
+The @timestamp field is defined as:
+
+    
+    
+    @timestamp: {
+        format: dateOptionalTime
+        type: date
+    }
+    
+
+and has values like:
+
+    
+    
+    @timestamp: 2013-11-20T01:20:37.527Z
+    
+
+Following worked for me. I guess problem is about syntax and usage of '/"
+
+    
+    
+    {
+     "facets": {
+        "hdwm": {
+          "range": {
+            "field": "@timestamp",
+            "ranges": [
+              {
+                "to": "2013-12-30"
+              },
+              {
+                "from": "2013-12-30",
+                "to": "2013-12-31"
+              },
+              {
+                "from": "2013-12-31"
+              }
+            ]
+          }
+        }
+      },
+      "query": {
+        "match_all": {}
+      }
+    }
+    
+

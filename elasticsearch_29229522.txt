@@ -1,0 +1,4 @@
+29229522
+Which fields are in my ElasticSearch index?
+<p>I ran a conversion program, <a href="https://github.com/LibreCat/Catmandu" rel="nofollow">catmandu</a>, and sent the results to elasticsearch. I'm new to elasticsearch. Do you know how I could find something similar to '.schema' for sqlite3 in elasticsearch? I'd like to know what fields are in there.</p>&#xA;&#xA;<p>After searching around this morning I was unable to find something that would tell me the fields if I did not know them ahead of time.</p>&#xA;&#xA;<p>Thank you for your help.</p>&#xA;
+<p>You use the mapping API to get current mapping for an index. This will show you all of the fields that have been indexed:</p>&#xA;&#xA;<pre><code>curl -XGET "http://localhost:9200/{yourIndex}/_mapping"&#xA;</code></pre>&#xA;

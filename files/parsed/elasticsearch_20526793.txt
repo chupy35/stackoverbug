@@ -1,0 +1,44 @@
+20526793 ElasticSearch: Performance Implications of Multiple Types in the same
+Index
+
+We are storing a handful of polymorphic document subtypes in a single index
+(e.x. let's say we store vehicles with subtypes of car, van, motorcycle, and
+Batmobile).
+
+At the moment, there is >80% commonality in fields across these subtypes (e.x
+manufacturer, number of wheels, ranking of awesomeness as a mode of
+transport).
+
+The standard case is to search across all types, but sometimes users will want
+to filter the results to a subset of the subtypes: find only cars with...).
+
+How much overhead (if any) is incurred at search/index time from modelling
+these subtypes as distinct ElasticSearch types vs. modelling them as a single
+type using some application-specific field to distinguish between subtypes?
+
+I've looked through several related answers already, but can't find the answer
+to my exact question.
+
+Thanks very much!
+
+There shouldn't be any noticeable overhead.
+
+If you keep everything under the same type, you can filter results by a
+subtype by adding a "class" field on your objects and adding a condition on
+this field in your search.
+
+A good reason to model your different classes into different ES types is if
+there can be a conflict between type of fields with the same name.
+
+That is, assume your "car" class has a "color" field that holds integer
+number, while your "van" class also has a "color" field but this one is a
+string. (Stupid example, I know, didn't have any better idea).
+
+Elasticsearch holds the mapping (the data "schema") for a type. So if you
+index both "car" and "van" under the same type, you will have a field type
+conflict. A field in a type can have one specific type. If you set the field
+as integer and then try to index a string into it, it will fail.
+
+This is one of the main guidelines on how to use Elasticsearch types - treat
+the type as a specific data schema that can't have conflicts.
+

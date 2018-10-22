@@ -1,0 +1,17 @@
+28686229 When customizing the management server port, how is this implemented?
+
+When reading through the spring boot documentation
+(<http://docs.spring.io/spring-
+boot/docs/1.2.1.RELEASE/reference/htmlsingle/#production-ready-customizing-
+management-server-port>), I see that you can customize the port on which
+actuator is running. If I am using embedded tomcat, how is this implemented?
+Is this creating another Connector or is it starting up a different instance
+of tomcat all together? If it is tomcat, do we have any idea how much more
+memory this takes?
+
+-Joshua 
+
+It starts a separate embedded instance of Tomcat. The `/metrics` endpoint of
+Spring Boot's Actuator or a tool like JConsole will give you some insight into
+the heap usage.
+

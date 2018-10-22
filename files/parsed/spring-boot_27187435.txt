@@ -1,0 +1,30 @@
+27187435 How to change bitronix jms pool parameters?
+
+I'm using Spring Boot 1.2.0.RC1 + bitronix + hornetq (embedded) + JPA, and I'd
+like to increase bitronix jmsConnectionFactory pool size, currently it's
+limited at 10. Is there a simple way to do it, inside application.properties
+for example or inside a @Configuration class?
+
+You can't configure it via `application.properties` at the moment (I've opened
+[an issue](https://github.com/spring-projects/spring-boot/issues/2027)), but
+you can do it from a `@Configuration` class by declaring your own
+`XAConnectionFactoryWrapper` bean:
+
+    
+    
+    @Bean
+    public XAConnectionFactoryWrapper xaConnectionFactoryWrapper() {
+        return new XAConnectionFactoryWrapper() {
+            @Override
+            public ConnectionFactory wrapConnectionFactory(
+                    XAConnectionFactory connectionFactory) {
+                PoolingConnectionFactoryBean pool = new PoolingConnectionFactoryBean();
+                pool.setConnectionFactory(connectionFactory);
+                pool.setMaxPoolSize(50);
+                return pool;
+            }
+    
+        };
+    }
+    
+

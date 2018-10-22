@@ -1,0 +1,107 @@
+28785106 ReactJS: Why is passing the component initial state a prop an anti-
+pattern?
+
+I've created a small ReactJS dashboard with the help of SocketIO for live
+updates. Even though I have the dashboard updating, it bugs me that I'm not
+quite sure if I did it correctly.
+
+What bugs me the most is the [Props in getInitialState as anti-
+pattern](http://facebook.github.io/react/tips/props-in-getInitialState-as-
+anti-pattern.html) post. I've created a dashboard that gets live updates from
+a server, requiring no user interaction beyond loading the page. From what
+I've read, `this.state` should contain things that will determine whether the
+component should be re-rendered, and `this.props`.... I don't know yet.
+
+However, when you initially call `React.render(<MyComponent />, ...)`, you can
+only pass props. In my case, I get all data from the server, so the initial
+props just end up in `this.state` anyway. So all of my components have
+something like this:
+
+    
+    
+    getInitialState: function() {
+        return {
+            progress: this.props.progress,
+            latest_update: this.props.latest_update,
+            nearest_center: this.props.nearest_center
+        }
+    }
+    
+
+Which, unless I've misinterpreted the aforementioned blog post, is an anti-
+pattern. But I see no other way of injecting the state into the Component, and
+I don't understand why it's an anti-pattern unless I relabel all of my props
+to prepend `initial` on them. If anything, I feel like _that's_ an anti-
+pattern because now I have to keep track of more variables than I did before
+(those prepended with `initial` and those without).
+
+> **Disclaimer** : When I answered this question I was learning / trying to
+implement vanilla Flux and I was a bit skeptic about it. Later on I migrated
+everything to Redux. So, an advice: Just go with Redux or MobX. Chances are
+you won't even need the answer to this question anymore (except for the
+science).
+
+Passing the intial state to a component as a `prop` is an anti-pattern because
+the `getInitialState` method is only called the first time the component
+renders. Never more. Meaning that, if you re-render that component passing a
+**different** value as a `prop`, the component will not react accordingly,
+because the component will keep the state from the first time it was rendered.
+It's very error prone.
+
+And here is what you should do:
+
+Try to make your components as stateless as possible. Stateless components are
+easier to test because they render an **output** based on an **input**. Simple
+like that.
+
+**But hey.. my components data change.. I can't make them stateless**
+
+Yes you can, for most of them. In order to do that, select an outer component
+to be the state holder. Using your example, you could create a `Dashboard`
+component that contains the data, and a `Widget` component that is completely
+stateless. The `Dashboard` is responsible for getting all the data and then
+rendering multiple `Widgets` that receive everything they need through
+`props`.
+
+**But my widgets have some state.. the user can configure them. How do I make
+them stateless?**
+
+Your `Widget` can expose events that, when handled, cause the state contained
+in `Dashboard` to change, causing every `Widget` to be rerendered. You create
+"events" in your `Widget` by having `props` that receive a function.
+
+**Ok, so now, Dashboard keeps the state, but how do I pass the initial state
+to it?**
+
+You have two options. The most recomended one, is that you make an Ajax call
+in the `Dashboard` `getInitialState` method to get the initial state from the
+server. You can also use [Flux](https://facebook.github.io/flux/), which is a
+more sophisticated way for managing data. Flux is more of a pattern, rather
+than an implementation. You can use pure Flux with the Facebook's
+implementation of the `Dispatcher`, but you can use third-party
+implementations like [Redux](https://github.com/gaearon/redux),
+[Alt](https://github.com/goatslacker/alt) or
+[Fluxxor](https://github.com/BinaryMuse/fluxxor).
+
+Alternatively, you can pass this initial state as a `prop` to the `Dashboard`,
+explicitly declaring that this is just the initial state.. like `initialData`,
+for instance. If you choose this path, though, you can't pass a different
+initial state to it aftwards, because it will "remember" the state after the
+first render.
+
+**OBS**
+
+You are not quite right in your definitions.
+
+**State** is used to store mutable data, that is, data that is going to change
+during the component life-cycle. Changes in the state should be made through
+the `setState` method and will cause the component to re-render.
+
+**Props** are used to pass in imutable data to the components. They should not
+change during the component life-cycle. Components that only use props are
+stateless.
+
+[This](https://stackoverflow.com/questions/27928296/reactjs-how-to-pass-the-
+initial-state-while-rendering-a-component) is a relevant source on the "how to
+pass the initial state to components".
+

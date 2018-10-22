@@ -1,0 +1,123 @@
+21876857 Elasticsearch index creation with mapping
+
+I'm struggling with the simple task of index creation, the goal is to create
+an index with an analyzer and a field mapping. When I create a index with an
+analyzer i can talk to the analyzer via the analyze api calls, but when I add
+the mapping information the create index calls fails with "Analyzer
+[analyzer1] not found for field [$field]]", I created a script to show the
+problem:
+
+    
+    
+        #!/bin/bash
+    
+        INDEX_NAME="test1"
+    
+        echo "delete index just to be sure"
+        curl -XDELETE "http://localhost:9200/$INDEX_NAME/"; echo
+    
+        echo "create new index"
+        curl -X PUT "http://localhost:9200/$INDEX_NAME/" -d '{
+            "index":{
+                "analysis":{
+                    "analyzer":{
+                        "analyzer1":{
+                            "type":"custom",
+                            "tokenizer":"standard",
+                            "filter":[ "standard", "lowercase", "stop", "kstem", "ngram" ]
+                        }
+                    },
+                    "filter":{
+                        "ngram":{
+                            "type":"ngram",
+                            "min_gram":2,
+                            "max_gram":15
+                        }
+                    }
+                }
+            }
+        }'; echo
+    
+        echo "analyze something with our shiny new analyzer"
+        curl -XGET "localhost:9200/$INDEX_NAME/_analyze?analyzer=analyzer1&pretty=true" -d 'abcd'
+    
+        echo "remove the created index"
+        curl -XDELETE "http://localhost:9200/$INDEX_NAME/"; echo
+    
+        echo "create new index again with mapping"
+        curl -X PUT "http://localhost:9200/$INDEX_NAME/" -d '{
+            "index":{
+                "analysis":{
+                    "analyzer":{
+                        "analyzer1":{
+                            "type":"custom",
+                            "tokenizer":"standard",
+                            "filter":[ "standard", "lowercase", "stop", "kstem", "ngram" ]
+                        }
+                    },
+                    "filter":{
+                        "ngram":{
+                            "type":"ngram",
+                            "min_gram":2,
+                            "max_gram":15
+                        }
+                    }
+                }
+            },
+            "mappings": {
+                "product": {
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "search_analyzer" : "analyzer1",
+                            "index_analyzer" : "analyzer1"
+                        }
+                    }
+                }
+            }
+        }'; echo
+    
+
+I believe your issue is that the `analysis` settings need to be nested within
+a `settings` node in your JSON, not within an `index` node as you have it.
+Please reference the [Elasticsearch Create Index
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+create-index.html) for details on constructing the JSON.
+
+Therefore, your create index call should look like the the following:
+
+    
+    
+    curl -X PUT "http://localhost:9200/$INDEX_NAME/" -d '{
+        "settings":{
+            "analysis":{
+                "analyzer":{
+                    "analyzer1":{
+                        "type":"custom",
+                        "tokenizer":"standard",
+                        "filter":[ "standard", "lowercase", "stop", "kstem", "ngram" ]
+                    }
+                },
+                "filter":{
+                    "ngram":{
+                        "type":"ngram",
+                        "min_gram":2,
+                        "max_gram":15
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "product": {
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "search_analyzer" : "analyzer1",
+                        "index_analyzer" : "analyzer1"
+                    }
+                }
+            }
+        }
+    }';
+    
+

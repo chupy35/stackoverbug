@@ -1,0 +1,4 @@
+33442851
+Array mapping on elasticsearch for range filter
+<p>I have a text column on MySQL which is a bunch of numbers separated by "|" and I need to apply some range filters on it.</p>&#xA;&#xA;<p>I have a memory stick item, with storage of 32|64|128 on this field, and another one with 16|32|64. When I filter with range between 32 and 128, both of them must be hits.</p>&#xA;
+<p>I understood that you want to copy all data from MySQL to Elasticsearch and have efficient queries like "all memory sticks which have a capacity between X and Y".</p>&#xA;&#xA;<p>I'd just split the string from <code>|</code>s and store the resulting array to a field which is mapped as <code>integer</code> type. These can be efficiently found by a <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.7/query-dsl-range-filter.html" rel="nofollow">range filter</a>.</p>&#xA;

@@ -1,0 +1,99 @@
+21757535 query specific fields by document type
+
+I am currently getting started with Elasticsearch and I am trying to build a
+search query that looks for a keyword in different fields, dependent on the
+document type.
+
+> Example:
+
+>
+
+> Index Name: index1
+
+>
+
+> Document types:
+
+>
+
+>   * doc1 (_id, name, size, color, weight)
+
+>   * doc2 (_id, name, duration, length, width, height)
+
+>
+
+Now I want to query `index1` for documents of types `doc1` and `doc2`, but
+in`doc1` I only want to search in columns `name`, `size` and `weight`, whilst
+in `doc2` I want to search in columns `name`, `length` and `height`.
+
+How can I achieve this in a single query?
+
+You can refer to the fields by type and name and use a bool query. A basic
+example is below.
+
+    
+    
+    {
+        "query": {
+            "bool": {
+                "should": [
+                   {
+                       "bool": {
+                           "must": [
+                              {
+                                  "term": {
+                                     "doc1.name": {
+                                        "value": "2"
+                                     }
+                                  }
+                              },
+                              {
+                                  "term": {
+                                     "doc1.size": {
+                                        "value": "23"
+                                     }
+                                  }
+                              },
+                              {
+                                  "term": {
+                                     "doc1.weight": {
+                                        "value": "52"
+                                     }
+                                  }
+                              }
+                           ]
+                       }
+                   },
+                   {
+                       "bool": {
+                           "must": [
+                              {
+                                   "term": {
+                                     "doc2.name": {
+                                        "value": "2"
+                                     }
+                                  }
+                              },
+                              {
+                                  "term": {
+                                     "doc2.length": {
+                                        "value": "23"
+                                     }
+                                  }
+                              },
+                              {
+                                  "term": {
+                                     "doc2.height": {
+                                        "value": "52"
+                                     }
+                                  }
+                              }
+                           ]
+                       }
+                   }
+                ]
+            }
+        }
+    }
+    
+

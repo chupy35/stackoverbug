@@ -1,0 +1,5 @@
+31755788
+Elasticsearch max field value with respect to another field
+<p>How can I perform a elasticsearch query if I have a field called</p>&#xA;&#xA;<p>"bytes_received" and another called "ip_addr"</p>&#xA;&#xA;<p>and I would like to query the ip_addr that has the most bytes_received</p>&#xA;
+<p>Use <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.6/search-request-sort.html" rel="nofollow">Sort</a>.</p>&#xA;&#xA;<pre><code>{&#xA;    "sort" : { "bytes_received" : {"order" : "desc"}}&#xA;}&#xA;</code></pre>&#xA;
+<p>It is done with ES's multi-bucket based aggregation</p>&#xA;&#xA;<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-terms-aggregation.html" rel="nofollow">https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-terms-aggregation.html</a></p>&#xA;

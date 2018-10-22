@@ -1,0 +1,162 @@
+22566079 ElasticSearch Scripting: check if array contains a value
+
+Let's say I have created a document like this:
+
+    
+    
+    PUT idx/type/1
+    {
+       "the_field": [1,2,3]
+    }
+    
+
+I can retrieve my document using GET /idx/type/1:
+
+    
+    
+    {
+       "_index": "idx",
+       "_type": "type",
+       "_id": "1",
+       "_version": 1,
+       "found": true,
+       "_source": {
+          "the_field": [
+             1,
+             2,
+             3
+          ]
+       }
+    }
+    
+
+Now, I want to check if the field "the_field" contains the value 2. I know I
+can use a term clause, but I need to check this using a filter script, so I
+tried:
+
+    
+    
+    POST /idx/typ/_search
+    {
+        "query": {
+            "match_all": {}
+        }, 
+        "filter": {
+            "script": {
+               "script": "doc['the_field'].values.contains(2)"
+            }
+        }
+    }
+    
+
+and get no results:
+
+    
+    
+    {
+       "took": 6,
+       "timed_out": false,
+       "_shards": {
+          "total": 5,
+          "successful": 5,
+          "failed": 0
+       },
+       "hits": {
+          "total": 0,
+          "max_score": null,
+          "hits": []
+       }
+    }
+    
+
+To test if my mevl script syntax is right, I tried doing this:
+
+    
+    
+    POST /idx/type/_search
+    {
+        "query": {
+            "match_all": {}
+        }, 
+        "filter": {
+            "script": {
+               "script": "[1,2,3].contains(3)"
+            }
+        }
+    }
+    
+
+and get the right results:
+
+    
+    
+    {
+       "took": 1,
+       "timed_out": false,
+       "_shards": {
+          "total": 5,
+          "successful": 5,
+          "failed": 0
+       },
+       "hits": {
+          "total": 1,
+          "max_score": 1,
+          "hits": [
+             {
+                "_index": "idx",
+                "_type": "type",
+                "_id": "1",
+                "_score": 1,
+                "_source": {
+                   "the_field": [
+                      1,
+                      2,
+                      3
+                   ]
+                }
+             }
+          ]
+       }
+    }
+    
+
+What am I doing wrong?
+
+I think doc['the_field'].values should return [1,2,3], is not it? If so, my
+code should work.
+
+Does anybody can help me? Thank you!
+
+**UPDATE**
+
+When I replace all the [1, 2, 3] in my code with ["a"," b", "c"], it works.
+Any idea?
+
+It is working with "a", "b", "c" because `the_field` is being stored in
+Elasticsearch by default as a string and not an integer. You can validate by
+checking the mapping with:
+
+    
+    
+     $ curl -XGET 'http://localhost:9200/idx/type/_mapping'
+    
+
+The following should set the appropriate field type:
+
+    
+    
+     $ curl -XPUT 'http://localhost:9200/idx/type/_mapping' -d '
+     {
+        "type" : {
+            "properties" : {
+                "the_field" : {"type" : "integer" }
+             }
+         }
+     }
+    
+
+Update the mapping, re-index your data and see if that works. Please see the
+[PUT Mapping
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+put-mapping.html) for additional guidance if needed.
+

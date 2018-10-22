@@ -1,0 +1,71 @@
+22468752 parent/child mapping for nested categories
+
+I am trying to create child/parent mapping with nested categories, but smohow
+result is confusing
+
+Firstly I created an index
+
+    
+    
+    PUT /categories/ {}
+    
+
+Then mappings
+
+    
+    
+    /categories/category/_mappings
+    {
+    
+      "_parent": {"type": "category"}
+     }
+    
+
+indexes
+
+    
+    
+    PUT /categories/category/1?parent=0
+    {
+       "name": "Grandparent"
+    
+    },
+    PUT /categories/category/2?parent=0
+    {
+       "name": "Grandmother"
+    
+    }
+    
+    PUT /categories/category/3?parent=1
+    {
+       "name": "father"
+    
+    },
+    PUT /categories/category/4?parent=1
+    {
+       "name": "mother"
+    
+    }
+    
+
+I would then expect that flowing search would return me "Grandparent"
+category, but it returns me zero hits
+
+    
+    
+    GET /categories/category/_search
+    {
+    "query": {
+       "has_child": {
+          "type": "category",
+          "query" : {
+            "filtered": {
+              "query": { "match_all": {}}
+    
+            }
+          }
+        }
+      }
+    }
+    
+

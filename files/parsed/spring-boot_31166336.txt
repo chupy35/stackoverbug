@@ -1,0 +1,30 @@
+31166336 How to set embedded tomcat jvmroute
+
+I need to set the jvmRoute used by Spring Boot's embedded tomcat, but it looks
+like the only easy way I can do this is by passing in a jvm argument, e.g:
+**-DjvmRoute=myroute**
+
+I'd rather set this property in application.properties. Is the jvm argument my
+only option, or am I missing something?
+
+Here's what I came up with to solve my problem. Since the
+org.apache.catalina.core.StandardEngine sets the jvmRoute based on a System
+property, I simply get my own tomcat.jvmroute property from
+application.properties, and set it as a System property in a @Configuration
+file:
+
+    
+    
+    @Configuration
+    public class TomcatConfig {
+        @Value("${tomcat.jvmroute}")
+        private String jvmRoute;
+    
+        @PostConstruct
+        public void setJvmRoute() {
+            // embedded tomcat uses this property to set the jvmRoute
+            System.setProperty("jvmRoute", jvmRoute);
+        }
+    }
+    
+

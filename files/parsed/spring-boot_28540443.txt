@@ -1,0 +1,33 @@
+28540443 Spring Boot method entry and exit logging not working
+
+I have the following entry in my application.yml for logging, but it's not
+logging the method entry and exit. It's only logging the Tomcat server log.
+
+**application.yml**
+
+    
+    
+    logging:
+        file: ../logs/Audit_Management_DS.log 
+    
+    level: DEBUG
+    
+
+I am deploying my application on Tomcat 8. I have tried this through
+application.properties, but it's not working. My entry in
+application.properties is as follows:
+
+    
+    
+    logging.file= ../logs/Audit_Management_DS.log 
+    logging.level.*=DEBUG
+    logging.level.org.springframework  = ON
+    
+
+Your `application.yml` looks like it has whitespace errors, the '*' (asterisk)
+in your properties file probably should be "ROOT", and "ON" is not a valid log
+level. Fix some or all of those and see if it helps.
+
+(But as the others said in comments, Spring Boot does not log method
+executions.)
+

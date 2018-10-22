@@ -1,0 +1,35 @@
+24798005 Returning the latest version of a document in elasticsearch
+
+I am in need of some help with returning only the latest version of the
+documents that I have indexed in elasticsearch.
+
+My documents have a field called `version`(for internal system versioning) and
+I index a new document every time there is an update made and increment the
+version field for the new document
+
+How would I query the index so that it only returns the the latest version out
+of n amount, where `"id": n"`
+
+**EDIT**
+
+The documents that are being versioned have an id with `.n` version number
+appended at the end and I want to return the latest version of each of these
+within an index using the `version` field
+
+So each time a new document is added the version field increments by 1 right.
+
+Then version with maximum value would be the latest version. You can use max
+aggregation to get that.
+
+    
+    
+    {
+        "aggs" : {
+            "latest" : { "max" : { "field" : "version" } }
+        }
+    }
+    
+
+I figured out a work around. I had to add a `bool isLatestVersion` Property
+onto my object and I do a query that filters on that.
+

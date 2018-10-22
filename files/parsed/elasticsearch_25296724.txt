@@ -1,0 +1,99 @@
+25296724 Aggregation over "LastUpdated" property or _timestamp
+
+My Elasticsearch mapping looks like roughly like this:
+
+    
+    
+    {
+      "myIndex": {
+        "mappings": {
+          "myType": {
+            "_timestamp": {
+              "enabled": true,
+              "store": true
+            },
+            "properties": {
+              "LastUpdated": {
+                "type": "date",
+                "format": "dateOptionalTime"
+              }
+             /*  lots of other properties */
+            }
+          }
+        }
+      }
+    }
+    
+
+So,
+[_timestamp](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+timestamp-field.html) is enabled, and there's also a _LastUpated_ property on
+every document. _LastUpdated_ can have a different value than __timestamp_ :
+sometimes, documents get updated physically (e.g. updates to denormalized
+data) which updates __timestamp_ , but _LastUpdated_ remains unchanged because
+the document hasn't actually been "updated" from a business perspective.
+
+Also, there are many of documents without a _LastUpdated_ value (mostly old
+data).
+
+What I'd like to do is run an aggregation which counts the number of documents
+per calendar day (kindly ignore the fact that the dates need to be midnight-
+aligned, please). For every document, use _LastUpdated_ if it's there,
+otherwise use _timestamp.
+
+Here's what I've tried:
+
+    
+    
+    {
+      "aggregations": {
+        "counts": {
+          "terms": {
+            "script": "doc.LastUpdated == empty ? doc._timestamp : doc.LastUpdated"
+          }
+        }
+      }
+    }
+    
+
+The bucketization appears to work to some extent, but the keys in the result
+looks weird:
+
+    
+    
+    buckets: [
+      {
+        key: org.elasticsearch.index.fielddata.ScriptDocValues$Longs@7ba1f463doc_count: 300544
+      }{
+        key: org.elasticsearch.index.fielddata.ScriptDocValues$Longs@5a298acbdoc_count: 257222
+      }{
+        key: org.elasticsearch.index.fielddata.ScriptDocValues$Longs@6e451b5edoc_count: 101117
+      },
+      ...
+    ]
+    
+
+What's the proper way to run this aggregation and get meaningful keys (i.e.
+timestamps) in the result?
+
+I've tested and made a groovy script for you,
+
+    
+    
+    POST index/type/_search
+    {
+       "aggs": {
+          "counts": {
+             "terms": {
+                "script": "ts=doc['_timestamp'].getValue();v=doc['LastUpdated'].getValue();rv=v?:ts;rv",
+                "lang": "groovy"
+             }
+          }
+       }
+    }
+    
+
+This returns the required result.
+
+Hope this helps!! Thanks!!
+

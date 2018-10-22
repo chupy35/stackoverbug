@@ -1,0 +1,37 @@
+16769626 Elasticsearch Query Between Two Servers
+
+I am new with elasticsearch. I have two elasticsearch servers:
+
+`http://1.20.30.43:9200/`
+
+and
+
+`http://10.30.65.98:9200/`.
+
+In first server i have 100k data and second server i have 100k+1 to 200k data.
+I want to search some keywords on both servers in one request. But I have no
+idea how I can setup two servers in one request. When cluster name is same
+
+I have no clue which config file I have to change.
+
+we have required these steps
+
+> 1-Put same name o f cluster on both server in elasticsearch.yml file
+
+and then
+
+> 2-Comment these two lines in elasticsearch.yml file
+
+    
+    
+    > # discovery.ec2.groups: your group
+    > # discovery.ec2.any_group: false
+    
+
+> 3-If you are using ec2 servers then make accessble on both server
+
+    
+    
+    4-Restart your both servers
+    
+

@@ -1,0 +1,70 @@
+21275465 Terms in elasticsearch are confusing
+
+As i am new to elastic search , i have confusion in terms of elastic search.
+
+    
+    
+     1) shard
+     2) cluster
+     3) difference between number_of_nodes and number_of_data_nodes
+     4) difference active_primary_shards  and active_shards
+     5) relocating_shards 
+     6) unassigned_shards 
+    
+
+while starting elasticsearch it showing as 5 shards.But after inserting data
+shards keep increasing.I don't know what is default setting for shards.
+
+thanks in advance!
+
+  * Are your shards increasing by 10 every time you attempt to insert a new document? 
+  * Are you sure you are inserting the document into the index that you have created prior to attempting to insert a document? T
+
+he reason I ask if the shards are increasing by 10 when you try to insert a
+document is as, then you would be instead of inserting into the index you
+created already you would be creating a whole new index based on
+ElasticSearch' out of the box defaults. Which is **5 Shards and 1 Replica** ,
+meaning 10 shards (1 set of replica to replicate the primary shards).
+
+For example, here is how you can create an index and be in total control over
+how many shards are created -
+
+    
+    
+    curl -XPUT <host>:<port>/<index> -d '{
+    "settings": {
+            "number_of_shards": 2,
+            "number_of_replicas": 0,
+            "analysis": {
+                "analyzer": {
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                 },
+                 "filter": {
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                  ..........
+                 }
+            }
+        }
+    }'
+    
+
+  1. [A shard in ElasticSearch](http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/glossary.html#glossary-shard) is essentially a Lucene instance.
+  2. [A cluster](http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/glossary.html#glossary-cluster) in ElasticSearch is essentially one or more nodes which contain the same cluster name, allowing them to join together to spread shards in a distributed nature.
+  3. Number of data nodes is essentially the number of nodes which aren't just coordinator nodes, i.e. nodes which will receive search requests, potentially be a master node and nodes which will hold and contain data (shards). Coordinator nodes will only distribute requests to the data nodes.
+  4. Active primary shards are those which are happily available on a node within a cluster and active shards will include replicas in that count.
+  5. Relocating shards are those which may be migrating to a different node within the same cluster, this is due to a new node joining the cluster and as ElasticSearch is distributed it will shift the shards to rebalance the cluster, ensuring availability.
+  6. Shards which are not assigned to a node.
+

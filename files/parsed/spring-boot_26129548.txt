@@ -1,0 +1,41 @@
+26129548 How to configure default application.properties via e.g. custom
+starter?
+
+To ease internal development I'm thinking of developing a thin layer /
+customer starter for Spring Boot. This custom starter just depends on some
+boot starters and some other dependencies we need (both external and
+internal).
+
+Anyway, next step I want to do is that this custom starter includes an
+application.properties configuration with default setting we want to apply in
+our projects. And I would like this configuration file to be picked up
+automatically without referring to it explicitly. Off course it should be
+possible to override the properties in the actual projects.
+
+Does Boot already offer something to this easily?
+
+Note: I already have 'Custom'Application extending Boot's SpringApplication;
+so if I can configure it this way would be no problem.
+
+Spring Boot looks for properties using a [specific
+order](http://docs.spring.io/spring-
+boot/docs/1.1.7.RELEASE/reference/htmlsingle/#boot-features-external-config):
+
+  1. Command line arguments
+  2. Java System properties (`System.getProperties()`)
+  3. OS environment variables
+  4. JNDI attributes from `java:comp/env`
+  5. A `RandomValuePropertySource` that only has properties in `random.*`
+  6. Application properties outside of your packaged jar (`application.properties` including YAML and profile variants)
+  7. Application properties packaged inside your jar (`application.properties` including YAML and profile variants)
+  8. `@PropertySource` annotations on your `@Configuration` classes
+  9. Default properties (specified using `SpringApplication.setDefaultProperties`)
+
+To give the projects using your custom starter the most flexibility in how to
+override the defaults, you should use a mechanism that's as near to the end of
+the above list as possible. Given that you already have your own subclass of
+`SpringApplication`, I would use
+[`SpringApplication.setDefaultProperties(Properties)`](http://docs.spring.io/spring-
+boot/docs/1.1.7.RELEASE/api/org/springframework/boot/SpringApplication.html#setDefaultProperties\(java.util.Properties\))
+from within that subclass.
+

@@ -1,0 +1,4 @@
+31155825
+Modulo operator in Elasticsearch
+<p>How can we write a basic condition to use modulo operator in Elasticsearch?</p>&#xA;&#xA;<p>like </p>&#xA;&#xA;<pre><code>user.created modulo 2 = 0&#xA;</code></pre>&#xA;
+<p>I'm assuming you'd want to do this in a script in Elasticsearch. If so, it would be the same as the Groovy modulo operator:</p>&#xA;&#xA;<pre><code>{&#xA;  "query": {&#xA;    "filtered": {&#xA;      "filter": {&#xA;        "script": {&#xA;          "script": "doc['user.created'].value % 2 == 0",&#xA;          "lang": "groovy"&#xA;        }&#xA;      }&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;

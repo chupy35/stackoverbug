@@ -1,0 +1,28 @@
+14934328 ElasticSearch: how to define custom analyzers with REST API?
+
+I want to define custom analyzers through the REST API (I'm using a hosted
+service - <http://searchbox.io> ), but I can't understand how to do it.
+
+I'm trying to create a PUT request to /myindex/_settings with the following:
+
+    
+    
+       index: {
+                analysis: {
+                        analyzer: {
+                                "my_analyzer": {
+                                        type: "snowball",
+                                        language: "English"
+                                }
+                        }
+                }
+        }
+    
+
+but it doesn't work, if I index a field with "my_analyzer" set as the analyzer
+I'm getting an error that it doesn't exist..
+
+I found the answer - those settings must be set when creating the index.
+
+so a POST request to /myindex did it.
+

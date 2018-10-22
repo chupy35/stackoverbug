@@ -1,0 +1,60 @@
+12990412 AngularJS Partial Reload
+
+I am trying to create an app (<http://plnkr.co/edit/EVasje>) which has two
+step linking & partials based on the example
+<http://jsfiddle.net/cfulnecky/NRUxs/>.
+
+Now if you click on **Cases** , i get a list of cases and if i click on any
+cases the right panel is updated BUT only once. Clicking on the other links
+doesn't seem to reload the partial.
+
+Any idea what am i doing wrong ? [part of code sample here]
+
+* * *
+    
+    
+    var app = angular.module('plunker', []);
+    
+    app.config(['$routeProvider', function($routeProvider) {    
+        $routeProvider.when('/',                {template: { left : 'dashboard.html', right: ''}});
+        $routeProvider.when('/cases',           {template: { left : 'cases.html', right: ''}});
+        $routeProvider.when('/cases/view/:id',  {template: { left : 'cases.html', right: 'caseDetail.html'}});
+        $routeProvider.when('/departments',        {template: { left : 'departments.html', right: ''}});
+        $routeProvider.otherwise({redirectTo: '/'});     }]);
+    
+    app.controller('AppController', ['$rootScope','$scope','$route', '$location','$controller', function ($rootScope,$scope,$route,$location,$controller) {            
+        $rootScope.$on('$routeChangeStart', function(scope, newRoute, Current){                              
+            if (!newRoute) return;                
+            $rootScope.template = newRoute.$route.template;        
+        });
+        $scope.isActive = function(route) {      
+            return route === $location.path();
+        };      }]);    function CasesCtrl($scope,CaseFactory) {        $scope.cases = CaseFactory.getCases;   }
+    
+    function CaseDetailCtrl($scope,$route) {    $scope.caseNum = $route.current.params.id; }
+    
+    app.factory('CaseFactory', function() {   return {
+        getCases:[{"project":{"id":3,"name":"Listings"},"updated_on":"2012-09-17T17:30:00Z","tracker":{"id":1,"name":"Bug"},"created_on":"2012-09-17T17:30:00Z","author":{"id":4,"name":"John Doe"},"id":22,"status":{"id":1,"name":"New"},"start_date":"2012-09-17","subject":"Check all the content with copy scape using APi","description":"","priority":{"id":4,"name":"Normal"}},{"project":{"id":3,"name":"Listings"},"updated_on":"2012-09-17T17:29:48Z","tracker":{"id":1,"name":"Bug"},"created_on":"2012-09-17T17:29:48Z","author":{"id":4,"name":"John Doe"},"id":21,"status":{"id":1,"name":"New"},"start_date":"2012-09-17","subject":"Scrap all the sites who have similar content","description":"","priority":{"id":4,"name":"Normal"}},{"project":{"id":6,"name":"Quran"},"updated_on":"2012-09-17T17:26:54Z","tracker":{"id":1,"name":"Bug"},"created_on":"2012-09-17T17:26:54Z","author":{"id":4,"name":"John Doe"},"id":20,"status":{"id":1,"name":"New"},"start_date":"2012-09-17","subject":"Add jQuery UI Layout to Admin Panel","description":"","priority":{"id":4,"name":"Normal"}}]     }; });
+    
+
+Help is greatly appreciated.
+
+Thanks
+
+There seems to be a problem not so much with reloading the partial, but with
+telling angular that it should assign the new route id param to the scope. You
+have to tell the controller to watch the route and update the scope
+accordingly. This will work:
+
+    
+    
+    function CaseDetailCtrl($scope,$route, $rootScope) {
+      $scope.caseNum = $route.current.params.id;  
+      $rootScope.$on('$routeChangeSuccess', function(scope, newRoute, Current){                              
+          $scope.caseNum = $route.current.params.id;     
+      });
+    }
+    
+
+<http://plnkr.co/edit/TaV3gT?p=preview>
+

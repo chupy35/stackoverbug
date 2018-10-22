@@ -1,0 +1,34 @@
+16078400 ES search query call and return only selected fields
+
+I'm trying to write a query for Elastic Search that would return the first 20
+closest matches.
+
+I want to return the first 20 matches for the title field.
+
+    
+    
+    curl -X POST "localhost:9200/xxx/_search?pretty=true" -d '
+    {
+    "from" : 0,
+    "size" : 20,
+    "query" : { "term" : {"title" : "art"} }}'
+    
+
+What am I missing here?
+
+Update:
+
+I'm trying to get only the 'title' field returned, not the whole object.
+
+I got this by doing a search with fields param:
+
+    
+    
+    curl -X POST "localhost:9200/xxx/_search?pretty=true" -d '
+    {
+    "from" : 0,
+    "size" : 20,
+    "fields" : ["title"],
+    "query" : { "term" : {"title" : "art"} }}'
+    
+

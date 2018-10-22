@@ -1,0 +1,23 @@
+23603254 ElasticSearch : Pagination using query-string-syntax
+
+I was going through [Elastic Search query-string-
+syntax](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html#query-string-syntax).
+
+How can I do pagination using these syntax. Like 10 record per page.
+
+Use like this
+
+    
+    
+    curl -XPOST "http://HOSTNAME:9200/Index/Type/_search?q=title:(quick brown)&size=10&from=0"
+    
+    curl -XPOST "http://HOSTNAME:9200/Index/Type/_search?q=title:(quick brown)&size=1&from=20"
+    
+    curl -XPOST "http://HOSTNAME:9200/Index/Type/_search?q=title:(quick brown)&size=10&from=30"
+    
+
+Increase from value to get next 10 documents..
+
+HOpe it helps..!
+

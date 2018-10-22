@@ -1,0 +1,19 @@
+18454726 Does Elastic Search support hot config reloads?
+
+Can elasticsearch reload its config without dropping requests?
+
+similar to how nginx supports the SIGHUP signal.
+
+As far as I know you cannot "reload" the config like you want. But I suppose
+you need some changes in your configuration and most of them can be done via
+API (that don't require restarting the service). I would take a look at these
+links:
+
+[Admin indices update
+settings](http://www.elastic.co/guide/en/elasticsearch/reference/current/indices-
+update-settings.html)
+
+[Admin cluster update
+settings](http://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-
+update-settings.html)
+

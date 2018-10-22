@@ -1,0 +1,4 @@
+32108556
+Spring batch uses relational database to store job metadata
+<p>I am aware of spring batch metadata tables are written to Relational database tables say MySQL,H2 etc. But my question is whether spring batch metadata tables can be written to elasticsearch . If so how to proceed further?</p>&#xA;
+<p>have you checked the <a href="https://spring.io/blog/2014/07/10/spring-batch-releases-and-a-new-repository" rel="nofollow">Spring Batch Extensions</a> module?  This module provides an ItemReader and an ItemWriter for interacting with Elasticsearch. Hope it helps.</p>&#xA;

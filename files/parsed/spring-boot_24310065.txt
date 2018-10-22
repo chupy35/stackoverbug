@@ -1,0 +1,38 @@
+24310065 Using Spring Boot on a Closed Network
+
+I'm very interested in being able to use Spring Boot, but I'm at a road block
+at work. I have to work in a closed network, with no internet access. Spring
+Boot is heavily dependent (or wholly dependent?) on Maven or Gradle from what
+I can tell. I can't find any references on how to use Boot without those build
+tools, and instead using ant.
+
+One thought I had was to create a local Nexus repository for Maven, but I'm
+still restricted by that closed network, so I would have to manually download
+each and every dependency, and then again if I wanted an updated jar or file.
+That kind of defeats the purpose of Maven.
+
+I was wondering how you might create a simple boot application in an
+offline/closed Network without the use of Maven or Gradle, and instead using a
+pure ant build process?
+
+> I can't find any references on how to use Boot without those build tools,
+and instead using ant.
+
+There's a section on using Ant in the Spring Boot [reference
+guide](http://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#howto-build-an-executable-archive-with-ant). In
+general, I would say you are severely hampered if you can't use a modern
+dependency management system, whatever languages and frameworks you are using
+for your application (Java, node, python, ruby, etc.). So there are zillions
+of people in the same situation, and I'd be surprised if you couldn't find a
+way to use Maven or Gradle. In any case Boot (and Spring) are not in any way
+tied to those things; it just happens that there are some plugins that make
+using them easier.
+
+One way you can do in a closed network is to setup your own Maven repository
+using Nexus. If you have an unused computer or a server that can run 24/7, you
+can install a Nexus repository there and point to it. Another way you can do
+is to manually download the required JAR files and keep it in local with the
+project folder and point to the local path with build.gradle. But in the
+second case, if you do that, the whole benefit of Gradle is kinda lost.
+

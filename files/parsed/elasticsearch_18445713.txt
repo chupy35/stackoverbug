@@ -1,0 +1,11 @@
+18445713 Can you index fields in elasticsearch that cant be searched?
+
+Are you able to index text fields that cannot be searched on when the user
+trys to perform any kind of search/match query?
+
+Yes you can, just exclude them from `_all` if you do general purpose query by
+setting `include_in_all` to false:
+<http://www.elasticsearch.org/guide/reference/mapping/core-types/>
+
+As all query run on the `_all` field by default; this should do the trick.
+

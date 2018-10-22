@@ -1,0 +1,157 @@
+26088810 How to avoid 'children with same key' when replacing state in ReactJs
+component
+
+I have created a React Component that renders a set of sub-elements given an
+array of ids. The array of ids is kept in the state of the parent component,
+and then I run some ajax calls based on the ids to fetch data to render. The
+fetched data is stored in a separate data array in the state. The rendered
+components _use the id as key_.
+
+The ids can change based on actions outside of the component, so I use
+setState on the component to replace the array. _The updated id-state will
+probably contain some of the same ids as the in the original array._ At the
+same time I empty the 'data array' so that everything will be rendered again.
+
+When I do this I sometimes get the key-warning:
+
+> Warning: flattenChildren(...): Encountered two children with the same key.
+Child keys must be unique; when two children share a key, only the first child
+will be used.
+
+The new array does not contain any duplicates. So why does it happen, and what
+can I do to avoid this?
+
+Edit: Added some code by request. Note: I am using the [Infinite Scroll
+module](https://www.npmjs.org/package/react-infinite-scroll). Could this be
+causing it?
+
+## Initial state:
+
+    
+    
+    getInitialState: function() {
+      return {
+        hasMore: true,
+        num: 0,
+        movieIds: this.props.movieIds,
+        movies: []
+      };
+    },
+    
+
+## Render function:
+
+    
+    
+    render: function() {
+      var InfiniteScroll = React.addons.InfiniteScroll;
+    
+      return (
+        <InfiniteScroll
+            pageStart={0}
+            loadMore={this.loadMore}
+            threshold='20'
+            hasMore={this.state.hasMore}>
+            <ul className="movieList">
+              {this.state.movies}
+            </ul>
+        </InfiniteScroll>       
+    );
+    }
+    
+
+## Simplified load more:
+
+    
+    
+    comp = this;
+    $.ajax( {
+      url: url,
+      contentType: "json",
+      success: function (data) {
+        var m = createMovieLi(data);
+        var updatedMovies = comp.state.movies;
+        updatedMovies[num] = m;
+        comp.setState({movies: updatedMovies});
+      }
+    });
+    
+
+And finally when updating outside the component:
+
+    
+    
+    movieBox.setState({
+      hasMore: true,
+      num: 0,
+      movieIds: filteredIds,
+      movies: []
+    });
+    
+
+I wouldn't use the ID from a back-end as key property in React. If you do,
+you're relying on some logic that's a bit far away from your component to make
+sure that your keys are unique. If they keys are not unique, you can break
+react's rendering so this is quite important.
+
+This is why you should, in my opinion, just stick to using the index within a
+for loop or similar to set key properties. That way you know they can never be
+non-unique, and it's the simplest way of doing exactly that.
+
+Without knowing exactly how your IDs work it's impossible to say what's
+causing the non-unique clash here. However since `key` is just to allow React
+to correctly identify elements, and nothing else, it doesn't really make sense
+for it to be anything other than a simple count or index.
+
+    
+    
+    var children = [];
+    for (var i=0; i<yourArray.length; i++) {
+        children.push(
+            <div key={i}>{yourArray[i].someProp}</div>
+        );
+    }
+    
+
+I figured out my mistake, and it had nothing to do with React per se. It was a
+classic case of [missing javascript closure inside a
+loop](https://stackoverflow.com/questions/750486/javascript-closure-inside-
+loops-simple-practical-example).
+
+Because of the possibility of duplicates I stored each ajax response in
+window.localStorage, on the movieId. Or so I thought.
+
+In React Inifinite Scroll each item in your list is drawn sequentially with a
+call to the loadMore-function. Inside this function I did my ajax call, and
+stored the result in the browser cache. The code looked something like this:
+
+    
+    
+      var cachedValue = window.localStorage.getItem(String(movieId));
+      var cachedData = cachedValue ? JSON.parse(cachedValue) : cachedValue;
+    
+      if (cachedData != null) {
+        comp.drawNextMovie(cachedData);
+      } else { 
+        $.ajax( {
+          type: "GET",
+          url: this.state.movieUrl + movieId,
+          contentType: "json",
+          success: function (movieData) {
+            window.localStorage.setItem(String(movieId), JSON.stringify(movieData));
+            comp.drawNextMovie(movieData);
+          }
+        });  
+      }    
+    
+
+Can you spot the mistake? When the ajax-call returns, movieId is no longer
+what is was. So I end up storing the data by the wrong id, and get some
+strange React warnings in return. Because this was done inside the loadMore
+function called by the InfiniteScroll-module, I was not aware that this
+function was not properly scoped.
+
+I fixed it by adding a [Immediately-invoked function
+expression](http://en.wikipedia.org/wiki/Immediately-
+invoked_function_expression).
+

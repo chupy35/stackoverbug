@@ -1,0 +1,48 @@
+11956667 AngularJS Intercept and extend controller $scope
+
+There is a lot of reusable functionality that I have defined in my application
+that EVERY controller uses with the $scope variable. Instead of me having to
+create a shared service each time, is there a way to extend the $scope
+variable so that I can have my extended code available everywhere?
+
+Something like:
+
+    
+    
+    //I've tested this out and it doesn't work, but this is what I want to do.
+    angular.module('App',[]).config(['$scopeProvider',function($scope) {
+      $scope.method1 = function() { ... };
+      $scope.method2 = function() { ... };
+    }]);
+    
+
+Then later on:
+
+    
+    
+    var HomeCtrl = function($scope) {
+      $scope.method1();
+    };
+    
+
+Is this possible? Or do I need to create a shared service and then have the
+$scope extend from that for the first line of each controller?
+
+Instead of `.config` try `.run`, this will do exactly what you want.
+
+    
+    
+    angular.module('App', []).run(['$rootScope', function($rootScope) {
+      $rootScope.foo = function() {
+         alert("WIN!");
+      };
+    }]);
+    
+    angular.module('App').controller('HomeCtr', ['$scope', function($scope) {
+      $scope.foo(); #will call the alert
+    }]);
+    
+
+**NOTE** I have only used `module.controller` because I like it, `var HomeCtrl
+= function($scope) {` will have the same effect.
+

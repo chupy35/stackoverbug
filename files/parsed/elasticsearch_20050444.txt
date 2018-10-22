@@ -1,0 +1,23 @@
+20050444 How does elasticsearch multi search work?
+
+How does it work in the background? Lets say it has two queries. Would the
+total time taken be
+
+**1) network latency + time for query1 + time for query2**
+
+or
+
+**2) network latency + max(time for query1, time for query2)**
+
+I am assuming its the later but couldn't find any documentation to confirm
+that.
+
+The total time is the network latency and the slowest of the searches, as can
+be seen in the implementation of
+[TransportMultiSearchAction](https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/action/search/TransportMultiSearchAction.java#L55).
+
+Note that searches can be routed to other nodes in the cluster, and network
+latency is of course a factor then as well. See the
+[preference](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-preference.html) search parameter to control that.
+

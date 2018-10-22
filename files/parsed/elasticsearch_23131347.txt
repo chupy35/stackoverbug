@@ -1,0 +1,60 @@
+23131347 ElasticSearch aggregations per index
+
+I would like to be able to be able to get back from ElasticSearch just the
+number of hits per index (not the actual hits). I thought I might be able to
+do this through aggregation but can't figure out how. For example I would like
+something like
+
+    
+    
+    {
+    .....
+      "aggregations" : {
+        "indexes" : {
+          "buckets" : [ {
+            "key" : "index1",
+            "doc_count" : 20
+          }, {
+            "key" : "index2",
+            "doc_count" : 5
+          }]
+        }
+      }
+    }
+    
+
+I have been able to get hits per type across all indexes with
+
+    
+    
+    {
+      "size": 0,
+      "aggs": {
+        "types" : {
+          "terms": { "field":"_type" }
+        }
+      }
+    }
+    
+
+but when I try the same with the _index field I get nothing. Is there any way
+to achieve this through aggregation or some other means?
+
+By default the `_index` field is not stored with your indexed documents.
+However, you can enable it by updating your mapping similar to the example
+shown below from the [_index Elasticsearch
+Reference](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+index-field.html):
+
+    
+    
+     {
+         "tweet" : {
+             "_index" : { "enabled" : true }
+          }
+     }
+    
+
+Once you have done this for all indexes/types, your aggregation on the
+`_index` field will return your expected results.
+

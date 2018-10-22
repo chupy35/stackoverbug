@@ -1,0 +1,139 @@
+15673324 ElasticSearch - Ordering exact before partial matches?
+
+I'm having with ordering the exact string matches before it renders the
+partial matches in ElasticSearch
+
+Let's say I have three documents:
+
+  * Michael A
+  * Michael B
+  * Micha
+
+If I do a search for **micha** , it only returns the third document. If
+however I search for **micha*** , I get all three of the documents, in the
+order I've listed above.
+
+My question is, how do I get the third document, the exact match, to show up
+in prior to the other results?
+
+    
+    
+      :analysis => {
+          :filter => {
+            "my_edge_ngram_filter" => {
+              "type"     => "edgeNGram",
+              "min_gram" => 1,
+              "max_gram" => 128,
+              "side" => "front",
+            },
+            "my_phone_filter" => {
+              "type"    => "pattern_replace",
+              "pattern" => "\\D",
+              "replacement" => ""
+            }
+          },
+          :analyzer => {
+            "default_index" => {
+              "tokenizer" => "uax_url_email",
+              "filter" => [
+                "standard",
+                "lowercase",
+                "stop",
+                "my_edge_ngram_filter"
+              ],
+              "type"   => "custom"
+            },
+            "my_phone_analyzer" => {
+              "tokenizer" => "keyword",
+              "filter" => [
+                "my_phone_filter",
+              ],
+              "type"   => "custom"
+            },
+            "default_search" => {
+              "type"   => "standard"
+            }
+          }
+        }
+      }
+    
+
+You can use multi_field + boosting:
+
+  * one is mapping with search by words and boost it with score higher than the second field
+  * second is mapping with your ngram analyzer.
+
+>
+
+>     "name" : {
+
+>           "type" : "multi_field",
+
+>           "fields" : {
+
+>               "name" : {
+
+>                   "type" : "string",
+
+>                   "index" : "analyzed",
+
+>                   "index_analyzer" : "standard",
+
+>                   "search_analyzer" : "standard",
+
+>                   "boost" : 10.0
+
+>               },
+
+>               "partial": {
+
+>                   "type" : "string",
+
+>                   "index" : "analyzed",
+
+>                   "index_analyzer" : "your_ngram_analyzer",
+
+>                   "search_analyzer" : "standard",
+
+>                   "boost" : 1.0
+
+>               }
+
+>       }
+
+>        }
+
+>  
+
+Then do a search on both field, ex:
+
+    
+    
+    "query": {
+        "query_string": {
+          "query": "micha",
+          "fields": [
+            "name.partial",
+            "name"
+          ],
+          "default_operator": "and"
+        }
+      }
+    
+
+PS: You can also specify field boosting inside query dynamically, e.g.:
+
+    
+    
+    "query": {
+        "query_string": {
+          "query": "micha",
+          "fields": [
+            "name.partial^1",
+            "name^10"
+          ],
+          "default_operator": "and"
+        }
+      }
+    
+

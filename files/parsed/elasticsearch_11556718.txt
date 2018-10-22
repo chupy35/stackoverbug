@@ -1,0 +1,241 @@
+11556718 Multi-field operations in elasticsearch
+
+I started looking at elasticsearch and I am wondering if this operation could
+be done with it: (I did some searches but I admit I don't know what to look
+for).
+
+I have contacts data like these two:
+
+    
+    
+    {
+      "id"     : "id1",
+      "name"   : "Roger",
+      "phone1" : "123",
+      "phone2" : "",
+      "phone3" : "980"
+    }
+    
+    {
+      "id"     : "id2",
+      "name"   : "Lucas",
+      "phone1" : "789",
+      "phone2" : "123",
+      "phone3" : ""
+    }
+    
+
+I am interested to know if elasticsearch can help me find phone number
+duplicates even if they are in different phone fields ("123" here is present
+in both records). I already saw that I can do a search for a string in
+multiple fields so if I search for 123 I can get these two records as a
+result. However, I would like the ability to issue a request which could
+return me something like this:
+
+    
+    
+    {
+      "phones" : {
+        "123" : ["id1", "id2"],
+        "980" : ["id1"],
+        "789" : ["id2"]
+      }
+    }
+    
+
+Or even this would be useful (number of contacts with the number):
+
+    
+    
+    {
+      "phones" : {
+        "123" : 2,
+        "980" : 1,
+        "789" : 1
+      }
+    }
+    
+
+Any idea if this is possible? That would be awesome if it could do it.
+
+You could get there using a [terms
+facet](http://www.elasticsearch.org/guide/reference/api/search/facets/terms-
+facet.html), but you'd have to change your data structure to include all the
+phone numbers in a single field:
+
+Create your index:
+
+    
+    
+    curl -XPUT 'http://127.0.0.1:9200/test/?pretty=1' 
+    
+
+Index your data:
+
+    
+    
+    curl -XPOST 'http://127.0.0.1:9200/test/test?pretty=1'  -d '
+    {
+       "name" : "Roger",
+       "id" : "id1",
+       "phone" : [
+          "123",
+          "980"
+       ]
+    }
+    '
+    
+    curl -XPOST 'http://127.0.0.1:9200/test/test?pretty=1'  -d '
+    {
+       "name" : "Lucas",
+       "id" : "id2",
+       "phone" : [
+          "789",
+          "123"
+       ]
+    }
+    '
+    
+
+Search on all fields, returning the count of terms in `phone`:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/test/_search?pretty=1'  -d '
+    {
+       "facets" : {
+          "phone" : {
+             "terms" : {
+                "field" : "phone"
+             }
+          }
+       }
+    }
+    '
+    
+    # {
+    #    "hits" : {
+    #       "hits" : [
+    #          {
+    #             "_source" : {
+    #                "name" : "Roger",
+    #                "id" : "id1",
+    #                "phone" : [
+    #                   "123",
+    #                   "980"
+    #                ]
+    #             },
+    #             "_score" : 1,
+    #             "_index" : "test",
+    #             "_id" : "StaJK9A5Tc6AR7zXsEKmGA",
+    #             "_type" : "test"
+    #          },
+    #          {
+    #             "_source" : {
+    #                "name" : "Lucas",
+    #                "id" : "id2",
+    #                "phone" : [
+    #                   "789",
+    #                   "123"
+    #                ]
+    #             },
+    #             "_score" : 1,
+    #             "_index" : "test",
+    #             "_id" : "x8w39F-DR9SZOQoHpJw2FQ",
+    #             "_type" : "test"
+    #          }
+    #       ],
+    #       "max_score" : 1,
+    #       "total" : 2
+    #    },
+    #    "timed_out" : false,
+    #    "_shards" : {
+    #       "failed" : 0,
+    #       "successful" : 5,
+    #       "total" : 5
+    #    },
+    #    "facets" : {
+    #       "phone" : {
+    #          "other" : 0,
+    #          "terms" : [
+    #             {
+    #                "count" : 2,
+    #                "term" : "123"
+    #             },
+    #             {
+    #                "count" : 1,
+    #                "term" : "980"
+    #             },
+    #             {
+    #                "count" : 1,
+    #                "term" : "789"
+    #             }
+    #          ],
+    #          "missing" : 0,
+    #          "_type" : "terms",
+    #          "total" : 4
+    #       }
+    #    },
+    #    "took" : 5
+    # }
+    
+
+I agree with DrTech's advice to change your data structure. But if you, for
+some reason, prefer to leave it as is, you could achieve the same result using
+multi fields terms facet:
+
+    
+    
+    curl "localhost:9200/phonefacet/_search?pretty=true&search_type=count" -d '{
+        "query" : {
+            "match_all" : {  }
+        },
+        "facets" : {
+            "tag" : {
+                "terms" : {
+                    "fields" : ["phone1", "phone2", "phone3"],
+                    "size" : 10
+                }
+            }
+        }
+    }'
+    
+
+The result would look like this:
+
+    
+    
+    {
+      "took" : 1,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 2,
+        "max_score" : 0.0,
+        "hits" : [ ]
+      },
+      "facets" : {
+        "tag" : {
+          "_type" : "terms",
+          "missing" : 2,
+          "total" : 4,
+          "other" : 0,
+          "terms" : [ {
+            "term" : "123",
+            "count" : 2
+          }, {
+            "term" : "980",
+            "count" : 1
+          }, {
+            "term" : "789",
+            "count" : 1
+          } ]
+        }
+      }
+    }
+    
+

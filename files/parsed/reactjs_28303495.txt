@@ -1,0 +1,25 @@
+28303495 React: Integrate external libraries that have lots of DOM building in
+js
+
+Some of the non-react libraries I'm using perform some DOM generation with
+javascript. Ideally, I'd like this to occur in react's render cycle but react
+doesn't implement some DOM functions.
+
+ie. one library wants to create a fragment for showing a title (using jQuery)
+which in turn ends up calling document.createDocumentFragment.
+
+A simple work around is to have the library do it's rendering on component
+mount or update. But I'm trying to render using the virtual DOM. Is there a
+better approach to re-creating or porting the library?
+
+You need a "Portal". Take a look at <https://github.com/ryanflorence/react-
+training/blob/gh-pages/lessons/05-wrapping-dom-libs.md> This explains the
+solution very well, like so:
+
+Methodology:
+
+  1. DOM libs usually manipulate the DOM
+  2. React tries to re-render and finds a different DOM than it had last time and freaks out
+  3. We hide the DOM manipulation from React by breaking the rendering tree and then reconnecting around the DOM the lib manipulates.
+  4. Consumers of our component can stay in React-land.
+

@@ -1,0 +1,36 @@
+24236948 Query elasticsearch to find docs that don't have a key
+
+i have logs like:
+
+    
+    
+    {
+      "a":"XXX",
+      "b":"YYY",
+      "token":"acquired"
+    }
+    
+
+Also, i have logs that do not have this `token` key set. Kibana's terms panel
+tells that they are around by showing them as `Missing fields(3047)`. How can
+i query all docs that do not have the `token` key set?
+
+You can query in ES for missing fields:
+
+From:
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/_dealing_with_null_values.html>
+
+    
+    
+    GET /my_index/posts/_search
+    {
+        "query" : {
+            "filtered" : {
+                "filter": {
+                    "missing" : { "field" : "token" }
+                }
+            }
+        }
+    }
+    
+

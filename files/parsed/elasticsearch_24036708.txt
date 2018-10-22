@@ -1,0 +1,386 @@
+24036708 Elasticsearch Map case insensitive to not_analyzed documents
+
+I have a type with following mapping
+
+    
+    
+    PUT /testindex
+    {
+        "mappings" : {
+            "products" : {
+                "properties" : {
+                    "category_name" : {
+                        "type" : "string",
+                        "index" : "not_analyzed" 
+                    }
+                }
+            }
+        }
+    
+    }
+    
+
+I wanted to search for an exact word.Thats why i set this as not_analyzed. But
+the problem is i want to search that with lower case or upper case[case
+insensitive].
+
+I searched for it and found a way to set case insensitive.
+
+    
+    
+    curl -XPOST localhost:9200/testindex -d '{
+      "mappings" : {
+        "products" : {
+          "properties" : {        
+            "category_name":{"type": "string", "index": "analyzed", "analyzer":"lowercase_keyword"}
+          }
+        }
+      }
+    }'
+    
+
+Is there any way to do these two mappings to same field.?
+
+Thanks..
+
+just create your custom analyzer with `keyword` tokenizer and `lowercase`
+token filter.
+
+I think this example meets your needs:
+
+    
+    
+    $ curl -XPUT localhost:9200/testindex/ -d '
+    {
+      "settings":{
+         "index":{
+            "analysis":{
+               "analyzer":{
+                  "analyzer_keyword":{
+                     "tokenizer":"keyword",
+                     "filter":"lowercase"
+                  }
+               }
+            }
+         }
+      },
+      "mappings":{
+         "test":{
+            "properties":{
+               "title":{
+                  "analyzer":"analyzer_keyword",
+                  "type":"string"
+               }
+            }
+         }
+      }
+    }'
+    
+
+taken from here: [How to setup a tokenizer in
+elasticsearch](https://stackoverflow.com/questions/15079064/how-to-setup-a-
+tokenizer-in-elasticsearch)
+
+it uses both the keyword tokenizer and the lowercase filter on a string field
+which I believe does what you want.
+
+I wish I could add a comment, but I can't. So the answer to this question is "
+**this is not possible** ".
+
+> Analyzers are composed of a single Tokenizer and zero or more TokenFilters.
+
+I wish I could tell you something else, but spending 4 hours researching,
+that's the answer. I'm in the same situation. You can't skip tokenization.
+It's either all on or all off.
+
+If you want case insensitive queries ONLY, consider changing both your data
+AND your query to either of lower/upper case before you go about doing your
+business.
+
+That would mean you keep your field `not_analyzed` and enter data/query in
+only one of the cases.
+
+I believe this Gist answers your question best: *
+<https://gist.github.com/mtyaka/2006966>
+
+You can index a field several times during mapping and we do this all the time
+where one is not_analyzed and another is. We typically set the not_analyzed
+version to `.raw`
+
+Like John P. wrote, you can set up analyzer during runtime, or you can set one
+up in the config at server start like in link above:
+
+    
+    
+    # Register the custom 'lowercase_keyword' analyzer. It doesn't do anything else
+    # other than changing everything to lower case.
+    index.analysis.analyzer.lowercase_keyword.type: custom
+    index.analysis.analyzer.lowercase_keyword.tokenizer: keyword
+    index.analysis.analyzer.lowercase_keyword.filter: [lowercase]
+    
+
+Then you define your mapping for your field(s) with both the not_analyzed
+version and the analyzed one:
+
+    
+    
+    # Map the 'tags' property to two fields: one that isn't analyzed,
+    # and one that is analyzed with the 'lowercase_keyword' analyzer.
+    curl -XPUT 'http://localhost:9200/myindex/images/_mapping' -d '{
+      "images": {
+        "properties": {
+          "tags": {
+            "type": "multi_field",
+            "fields": {
+              "tags": {
+                "index": "not_analyzed",
+                "type": "string"
+              },
+              "lowercased": {
+                "index": "analyzed",
+                "analyzer": "lowercase_keyword",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }'
+    
+
+And finally your query (note lowercased values before building query to help
+find match):
+
+    
+    
+    # Issue queries against the index. The search query must be manually lowercased.
+    curl -XPOST 'http://localhost:9200/myindex/images/_search?pretty=true' -d '{
+      "query": {
+        "terms": {
+          "tags.lowercased": [
+            "event:battle at the boardwalk"
+          ]
+        }
+      },
+      "facets": {
+        "tags": {
+          "terms": {
+            "field": "tags",
+            "size": "500",
+            "regex": "^team:.*"
+          }
+        }
+      }
+    }'
+    
+
+To this scenarios, I suggest that you could combine `lowercase filter` and
+`keyword tokenizer` into your custom analyzer. And lowercase your search-input
+keywords.
+
+1.Create index with the analyzer combined with lowercase filter and keyword
+tokenizer
+
+    
+    
+    curl -XPUT localhost:9200/test/ -d '
+    {
+      "settings":{
+         "index":{
+            "analysis":{
+               "analyzer":{
+                  "your_custom_analyzer":{
+                     "tokenizer":"keyword",
+                     "filter": ["lowercase"]
+                  }
+               }
+            }
+        }
+    }'
+    
+
+2.Put mappings and set the field properties with the `analyzer`
+
+    
+    
+    curl -XPUT localhost:9200/test/_mappings/twitter -d '
+    {
+        "twitter": {
+            "properties": {
+                "content": {"type": "string", "analyzer": "your_custom_analyzer" }
+            }
+        }
+    }'
+    
+
+3.You could search what you want in wildcard query.
+
+    
+    
+    curl -XPOST localhost:9200/test/twitter/ -d '{
+    
+        "query": {
+            "wildcard": {"content": "**the words you want to search**"}
+        }  
+    }'
+    
+
+Another way for search a filed in different way. I offser a suggestion for U
+was that using the multi_fields type.
+
+You could set the field in `multi_field`
+
+    
+    
+    curl -XPUT localhost:9200/test/_mapping/twitter -d '
+    {
+        "properties": {
+            "content": {
+                "type": "multi_field",
+                "fields": {
+                    "default": {"type": "string"},
+                    "search": {"type": "string", "analyzer": "your_custom_analyzer"}
+                }
+            }
+        }
+    }'
+    
+
+So you could index data with above mappings properties. and finally search it
+in two way (default/your_custom_analyzer)
+
+We could achieve case insensitive searching on non-analyzed strings using
+ElasticSearch scripting.
+
+**Example Query Using Inline Scripting:**
+
+    
+    
+    {
+        "query" : {
+            "bool" : {
+    
+                "must" : [{
+                        "query_string" : {
+                            "query" : "\"apache\"",
+                            "default_field" : "COLLECTOR_NAME"
+                        }
+                    }, {
+                        "script" : {
+                            "script" : "if(doc['verb'].value != null) {doc['verb'].value.equalsIgnoreCase(\"geT\")}"
+                        }
+                    }
+                ]
+    
+            }
+        }
+    }
+    
+
+You need to [enable
+scripting](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-
+scripting.html#modules-scripting) in the elasticsearch.yml file. Using scripts
+in search queries could reduce your overall search performance. If you want
+scripts to perform better, then you should make them "native" using java
+plugin.
+
+**Example Plugin Code:**
+
+    
+    
+    public class MyNativeScriptPlugin extends Plugin {
+    
+        @Override
+        public String name() {
+            return "Indexer scripting Plugin";
+        }
+    
+    
+        public void onModule(ScriptModule scriptModule) {
+            scriptModule.registerScript("my_script", MyNativeScriptFactory.class);
+    
+        }
+    
+        public static class MyNativeScriptFactory implements NativeScriptFactory {
+    
+            @Override
+            public ExecutableScript newScript(@Nullable Map<String, Object> params) {
+                return new MyNativeScript(params);
+            }
+    
+            @Override
+            public boolean needsScores() {
+                return false;
+            }
+        }
+    
+        public static class MyNativeScript extends AbstractSearchScript {
+            Map<String, Object> params;
+    
+            MyNativeScript(Map<String, Object> params) {
+                this.params = params;
+            }
+    
+            @Override
+            public Object run() {
+                ScriptDocValues<?> docValue = (ScriptDocValues<?>) doc().get(params.get("key"));
+                if (docValue instanceof Strings) {
+                    return ((String) params.get("value")).equalsIgnoreCase(((Strings) docValue).getValue());
+                }
+                return false;
+            }
+        }
+    }
+    
+
+**Example Query Using Native Script:**
+
+    
+    
+    {
+        "query" : {
+            "bool" : {
+    
+                "must" : [{
+                        "query_string" : {
+                            "query" : "\"apache\"",
+                            "default_field" : "COLLECTOR_NAME"
+                        }
+                    }, {
+                        "script" : {
+                            "script" : "my_script",
+                            "lang" : "native",
+                            "params" : {
+                                "key" : "verb",
+                                "value" : "GET"
+                            }
+                        }
+                    }
+                ]
+    
+            }
+        }
+    }
+    
+
+it is so simple, just create mapping as follows
+
+    
+    
+    {
+        "mappings" : {
+            "products" : {
+                "properties" : {
+                    "category_name" : {
+                        "type" : "string" 
+                    }
+                }
+            }
+        }
+    
+    }
+    
+
+No Need of giving index if you want to work with case insensitive because the
+default index will be "standard" that will take care of case insensitive.
+

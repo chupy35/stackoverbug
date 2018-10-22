@@ -1,0 +1,46 @@
+20208927 Elastic index/search_analyzer match all tokens
+
+In my mapping file for ElasticSearch, for `"all"`, I have `index_analyzer` and
+`search_analyzer`:
+
+    
+    
+    {
+      "all": {
+        "enabled" : true,
+        "index_analyzer" : "index_analyzer",
+        "search_analyzer" : "search_analyzer"
+      }
+    }
+    
+
+If I search `"foo bar"` on `all`, it returns hits for `foo` `OR` `bar`. How
+would I make this `AND` by default?
+
+From the documentation of [Match
+Query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-match-query.html)
+
+The default match query is of type boolean. It means that the text provided is
+analyzed and the analysis process constructs a boolean query from the provided
+text. The operator flag can be set to or or and to control the boolean clauses
+(defaults to or). The minimum number of should clauses to match can be set
+using the minimum_should_match parameter.
+
+[...]
+
+Here is an example when providing additional parameters (note the slight
+change in structure, message is the field name):
+
+    
+    
+    {
+        "match" : {
+            "message" : {
+                "query" : "this is a test",
+                "operator" : "and"
+            }
+        }
+    }
+    
+

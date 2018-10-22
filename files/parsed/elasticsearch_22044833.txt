@@ -1,0 +1,79 @@
+22044833 How does elastic search keep the index
+
+I'm wondering how does elasticsearch search so fast. Does it use inverted
+index and how is it represented in memory? How is it stored on disk? How does
+it load from disk to memory? And how does it merges indexes so fast (I mean
+when searching how does it combine two lists so fast)?
+
+I'll share what I know of ElasticSearch (ES). Yes ES uses an inverted index,
+here is how it would be structured - if we have a white space analyzer on
+these documents -
+
+    
+    
+    {
+        "_id": 1,
+        "text": "Hello, John"
+    }
+    
+
+**AND**
+
+    
+    
+    {
+        "_id": 2,
+        "text": "Bonjour, John"
+    }
+    
+
+**INVERTED INDEX**
+
+    
+    
+      Word   |   Docs 
+    ___________________
+     Hello   |    1
+     Bonjour |    2
+     John    |   1&2
+    
+
+This index is built at index time, the document is allocated to a shard based
+on hashing the document `ID`. Whenever a search request is made, a lookup is
+performed an all shards, the results of which are then merged and returned to
+the requester. The results are returned and merged blazingly fast due to the
+performance of the inverted index.
+
+ES stores data within the data folder created once you have launched ES and
+created an index. The file structure resembles this -
+`/data/clustername/nodes/...`, if you look into this directory you will
+understand how it's organised. You can define how ES' index data is stored
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-store.html). For instance, all indexed data stored in memory on on
+disk.
+
+There is plenty of information on the ES website there are also several
+published books on ES, you can see these
+[here](https://www.google.co.uk/search?q=elasticsearch%20books&oq=elasticsearch%20books&aqs=chrome..69i57j69i60j69i64.3255j0j7&sourceid=chrome&espv=210&es_sm=122&ie=UTF-8).
+
+elasticsearch uses lucene to store inverse document indexes. Lucene in turn
+will store read-only files called segments with inverse index data. Each
+segment contains some documents. Those segments are read only and are never
+changed. To delete or update documents elasticsearch will maintain a
+delete/update list which will be used to overwrite results from read-only
+segments.
+
+With this approach some segments might become obsolete altogether or contain
+only few up-to date data. Such segments will be rewritten or deleted.
+
+There is an interesting elasticsearch plugin which visualizes the segments and
+the rewriting process: <https://github.com/polyfractal/elasticsearch-
+segmentspy>
+
+To see it in action start indexing a lot of data and see the segment
+information.
+
+With the Segment API you can retrieve information about the segments:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+segments.html>
+

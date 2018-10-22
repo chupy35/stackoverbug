@@ -1,0 +1,68 @@
+23610060 Multi Field search and Organizing by field
+
+I'am trying to match many fields in elasticsearch and grouping then from each
+field
+
+E.g:
+
+I have 5 fields that are
+"Team_Wii","Team_PS4","Team_XBOX","Emp_Microsoft","Emp_Teste".
+
+All fields are boolean, and have many entries with true or false
+
+I want to know HOW i can organize these fields to return me the occurrence for
+each field.
+
+My query right now:
+
+    
+    
+    {
+      "facets": {
+        "Match Team": {
+          "query": {
+            "multi_match": {
+              "query": "true",
+              "fields": [
+                "Team_*"
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+
+Output:
+
+    
+    
+        hits:{
+        total: 24173305,
+        max_score: 1,
+        hits:[...]
+    facets: {
+    Match Team: {
+    _type: query
+    count: 111343
+    }
+    }
+    
+
+What i am trying to get with the output:
+
+    
+    
+    hits:{
+    total: 24173305,
+    max_score: 1,
+    hits:[...]
+    Facets:{
+    Team_wii:{
+    Count: 2837}
+    Team_PS4:{
+    Count: 651}
+    Team_XBOX:{
+    Count: 321}
+    
+

@@ -1,0 +1,42 @@
+12925965 python like @property on angularjs model?
+
+Lets say i have simple user resource:
+
+    
+    
+    angular.module('models', ['ngResource']).
+        factory('User', function($resource) {
+        var User = $resource('/api/users/:userId', {userId:'@id'}, {});
+        return User;
+    });
+    
+
+this might return a user containing `{firstName: 'bob', lastName: 'smith'}`.
+i would like to display the users `fullName` which would be `firstName +' '+
+lastName` in my view. How to do do this?
+
+Right now in my controller i have:
+
+    
+    
+    $scope.user = User.get({userId: 42}); //bob smith
+    
+
+But where do i attach the `fullName` function ?
+
+You should be able to just take the resource and add a new property or method
+with JavaScript's prototyping. Since it returns a constructor.
+
+So something like:
+
+    
+    
+    User.prototype.fullName = function() {
+         return this.firstName + ' ' + this.lastName;
+    };
+    
+
+EDIT: If for some reason that doesn't work... there is a little JavaScript
+hack for modifying object prototypes hidden by closures: You can use the
+`.constructor` property of a create object and alter the prototype of that.
+

@@ -1,0 +1,23 @@
+16712642 Elasticsearch enum field
+
+Say I have a field that can only have a finite set of values. Would it not be
+more efficient (index-wise, and/or storage-wise) to store it as some kind of
+ENUM?
+
+Is there some such possibility in elasticsearch?
+
+An example would be the names of the states in a state machine.
+
+Yes it would. When you index full text fields, Elasticsearch also indexes
+information like the length of the field, and the position and frequency of
+each term in the field.
+
+These are irrelevant to ENUM values, and can be excluded completely.
+
+In fact, if you _map_ your field as `{"index": "not_analyzed"}` then, besides
+storing the exact value that you provide without trying to analyze it, it also
+disables storage of the extra info that I mentioned above.
+
+In your app use hash map `{ "enumVal1" => 1, "enumVal2" => 2, "enumValX" => 3
+}` and then use in ES only the values from hashmap, this can save space.
+

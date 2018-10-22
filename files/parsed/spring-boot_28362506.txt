@@ -1,0 +1,98 @@
+28362506 SPRING BOOT deployable war file with maven and profiles in STS
+
+I'm trying to make my spring boot app ready for easy packaging war using
+profiles (dev, prod ...) and maven 3 using spring source tool suite.
+
+The profiles are set and working good, I can switch profiles in
+application.properties using param : spring.profiles.active
+
+I've created application-{profiles}.properties and boot reads the property
+file accordingly with spring.profiles.active param set in
+application.properties
+
+Now I create a maven run configuration, using in goals section : package
+spring-boot:repackage
+
+and I also add in parameter section : spring.profiles.active with dev as
+value.
+
+At the end I would like 3 run configurations with different values in
+spring.profiles.active so the package will be prepared for different
+environnements.
+
+When I run the configuration with debug mode, I can see in the test section
+that my current param passed in maven is correctly used (if I set dev, I see
+in maven test that my dev DB is called, so reads the application-
+dev.properties file), but after when maven is generating the final war this
+param don't seem to be used anymore.
+
+When I deploy the package, spring boot read spring.profiles.active if present
+in application.properties. If I remove this in application.properties, boot
+just use the params in application.properties
+
+Am I doing something wrong ? I think it's during 'repackaging' that my param
+set in maven is lost.
+
+I've also another question, I try to give a name on the final war with maven
+in plugin section but it doesn't seem to work like I was doing before with
+maven.
+
+Here is the end of my pom.xml:
+
+    
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <warName>stdapps</warName>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    
+
+Here is a picture of my maven configuration :
+
+![Maven run configuration](https://i.stack.imgur.com/bx3pe.png)
+
+thanks for your help
+
+Regarding the spring boot maven plugin configuration, as described in the
+[plugin documentation](http://docs.spring.io/spring-boot/docs/current/maven-
+plugin/repackage-mojo.html), _warName_ is not a valid parameter, _finalName_
+is.
+
+Also, from my experience, even if the documentation says that the classifier
+param is optional, when I tried to configure the repackage goal with a final
+name and an output directory, when executing the command `mvn spring-
+boot:repackage` from a terminal, the result is a build failure and a error
+message indicating that classifier cannot be null. (bug?)
+
+So this is the plugin configuration that works for me:
+
+    
+    
+    <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>repackage</goal>
+                </goals>
+                <configuration>
+                    <outputDirectory>deployments</outputDirectory>
+                    <finalName>warName</finalName>
+                    <classifier>classifierName</classifier>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+    
+
+This generates warName-classifierName.war file in deployments folder in my
+project.
+

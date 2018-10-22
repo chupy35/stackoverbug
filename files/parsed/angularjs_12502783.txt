@@ -1,0 +1,124 @@
+12502783 dynamic directives in angularjs
+
+The directive's attributes don't change when the scope is updated, they still
+keep the initial value. What am I missing here?
+
+**HTML**
+
+    
+    
+    <ul class="nav nav-pills nav-stacked" navlist>
+        <navelem href="#!/notworking/{{foo}}"></navelem>
+        <navelem href="#!/working">works great</navelem>
+    </ul>
+    
+    <p>works: {{foo}}</p>
+    
+
+**Javascript** (based on angular tabs example on front-page)
+
+    
+    
+    angular.module('myApp.directives', []).
+    directive('navlist', function() {
+        return {
+            scope: {},
+            controller: function ($scope) {
+                var panes = $scope.panes = [];
+    
+                this.select = function(pane) {
+                    angular.forEach(panes, function(pane) {
+                        pane.selected = false;
+                    });
+                    pane.selected = true;
+                }
+    
+                this.addPane = function(pane) {
+                    if (panes.length == 0)
+                        this.select(pane);
+                    panes.push(pane);
+                }
+    
+            }
+        }
+    }).
+    directive('navelem', function() {
+        return {
+            require: '^navlist',
+            restrict: 'E',
+            replace: true,
+            transclude: true,
+            scope: { href: '@href' },
+            link: function(scope, element, attrs, tabsCtrl) {
+                tabsCtrl.addPane(scope);
+                scope.select = tabsCtrl.select;
+            },
+            template:
+                '<li ng-class="{active: selected}" ng-click="select(this)"><a href="{{href}}" ng-transclude></a></li>'
+        };
+    });
+    
+
+By defining `scope: {}` in your directive, it is creating a `isolated scope`.
+So the parent scope is now invisible from the directive.
+
+If you want to refer the parent scope, then you can put `scope: true` for
+shared  scope (among same directives) and omit the scope declaration for just
+normal scope nesting. Or if you want to just refer `$scope.foo` of the parent,
+you can define explicit scope variables like you've done in the child
+directive.
+
+There are three types of directive scope inheritance:
+
+  1. No 'scope: ...' or explicit `scope: false` \- no new scope is created. The directive uses the same scope as the parent. This is simple and convenient, but if you are building reusable components, this is not recommended, since the directive will likely only be usable if the parent scope has certain scope properties defined that the directive needs to use/access.
+  2. `scope: true` \- creates a new scope, shared by all directives on the same element, with normal prototypical inheritance of the parent scope. Again, probably not the best choice for reusable components, since the directive probably shouldn't have access to the parent scope properties -- it could accidentally change something in the parent.
+  3. `scope: { ... }` \- creates a new "isolated" scope -- it does not prototypically inherit from the parent scope. However, the object hash ( i.e., the { ... } ) allows us to define local directive scope properties that are derived from the parent scope -- so we can control which properties are shared, and how. 
+    1. Use '=' for powerful 2-way binding between a parent scope property and a directive scope property -- changes to either scope property affect the other.
+    2. Use '@' for binding a parent's attribute value to a directive scope property. This is essentially 1-way binding. Only parent scope changes affect the directive scope.
+    3. Use '&' to bind to parent scope expressions/functions.
+
+For your particular problem, you need to indicate in the object hash which
+scope properties you want to have 2-way binding.
+
+For more about directive scopes (including pictures), please see section
+**directives** here: [What are the nuances of scope prototypal / prototypical
+inheritance in AngularJS?](https://stackoverflow.com/questions/14049480/what-
+are-the-nuances-of-scope-prototypal-prototypical-inheritance-in-angularjs)
+
+Like Mark Rajcok said - scope: {} will create a new isolated scope that don't
+inherit properties from parent, however we still can get access to these
+properties by using $parent property.
+
+**Controller:**
+
+    
+    
+    app.controller('indexController', function($scope) {
+        $scope.test="Hello world!";
+    });
+    
+
+**Directive**
+
+    
+    
+    app.directive("test", function() {
+        return{
+            restrict: "A",
+            scope: {},
+            controller: function($scope){
+                console.log("directiv $scope.$parent.test: " + $scope.$parent.test);
+                console.log("directiv $scope.test: " + $scope.test);
+            }
+        };
+    });
+    
+
+**output:**
+
+    
+    
+    directiv $scope.$parent.test: Hello world!
+    directiv $scope.test: undefined
+    
+

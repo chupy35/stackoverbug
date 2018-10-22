@@ -1,0 +1,13 @@
+16647960 ElasticSearch Head: query
+
+I would like to run an ElasticSearch query via the HEAD to extract all brands
+currently mentioned in the "brand" field of the index?
+
+How can I do this (not using curl, just via the HEAD)?
+
+You browse to head and then Any Request tab where you can enter the queries as
+you like.
+
+There you enter this then: `{ "size" : 0, "query": { "match_all": {} },
+"facets" : { "Brands" : { "terms" : {"field" : "brand"} } } }`
+

@@ -1,0 +1,57 @@
+12729125 AngularJS: Poll $resource on hashchange
+
+Ok, so I have an Angular module working as intended on pageload - with a url
+like site.com#/catalog/1234. The $resources fetches the data for the view on
+reload, but not on hashchange.
+
+What do I need to add to get the hashchange to trigger a new fetch?
+
+    
+    
+    angular.module('Catalog', ['ngResource'])
+    .config( function( $routeProvider, $locationProvider ) {
+        $routeProvider
+            .when( '/catalog/:categoryid', {
+                controller: 'CatalogListCtrl',
+                templateUrl:'/layout/responsive/html/catalogListView.html'
+            })
+            .otherwise( { redirectTo:'/' } );
+    })
+    .factory( 'CatalogList', function( $resource, $routeParams ) {
+        var list = $resource('/test/products.json?query=:categoryid', { categoryid : $routeParams.categoryid },  {
+                query: { method: 'GET', isArray : true }
+        });
+        return list;
+    })
+    .controller( 'CatalogListCtrl', function ( $scope, CatalogList ) {
+        $scope.products = CatalogList.query();
+    });
+    
+
+Could it be that the standard binding you set for the service confuses
+angular?
+
+I would change your code the follow way, maybe you can try it.
+
+    
+    
+    angular.module('Catalog', ['ngResource'])
+    .config( function( $routeProvider, $locationProvider ) {
+        $routeProvider
+            .when( '/catalog/:categoryid', {
+                controller: 'CatalogListCtrl',
+                templateUrl:'/layout/responsive/html/catalogListView.html'
+            })
+            .otherwise( { redirectTo:'/' } );
+    })
+    .factory( 'CatalogList', function( $resource ) {
+        return list = $resource('/test/products.json?query=:categoryid', {},  {});
+    })
+    .controller( 'CatalogListCtrl', function ( $scope, $routeParams, CatalogList ) {
+        $scope.products = CatalogList.query({categoryid: $routeParams.categoryid});
+    });
+    
+
+I also removed some code which just repeats default values. Let me know if it
+works.
+

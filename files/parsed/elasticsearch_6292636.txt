@@ -1,0 +1,44 @@
+6292636 Register an ElasticSearch query with the Percolator using the Java API
+
+I am trying to use ElasticSearch's Percolator feature; doing this via the curl
+examples from the documentation is straightforward enough, as is percolating a
+document using the Java API. What I can't find out how to do is registering a
+query with the percolator using the Java API - how is this done?
+
+Using the example from the documentation, how would I do this in Java?
+
+    
+    
+    curl -XPUT localhost:9200/_percolator/test/kuku -d '{
+        "query" : {
+            "term" : {
+                "field1" : "value1"
+            }
+        }
+    }'
+
+`_percolator` is just an index. You register queries with it by indexing
+queries as you normally would index documents:
+
+    
+    
+    client.prepareIndex("_percolator", "test", "kuku")
+        .setSource(jsonBuilder().startObject()
+            .field("query", termQuery("field1", "value1"))
+            .endObject())
+        .setRefresh(true)
+        .execute().actionGet()
+    
+
+You can also check [elasticsearch integration
+tests](https://github.com/elasticsearch/elasticsearch/blob/master/src/test/java/org/elasticsearch/percolator/PercolatorTests.java)
+for more examples.
+
+**EDIT:** The link above is dead, you might want to take a look at the
+official documentation
+[here](https://www.elastic.co/guide/en/elasticsearch/reference/current/integration-
+tests.html) concerning the _integration tests_.
+
+I have also added a gist of the old PercolatorTests class on
+[gist](https://gist.github.com/eliasah/2d9dab2adb93cdda5500).
+

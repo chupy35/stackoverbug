@@ -1,0 +1,102 @@
+12367877 Change settings and mappings on existing index in Elasticsearch
+
+I would like the following settings and mapping set on an already existing
+index in Elasticsearch:
+
+    
+    
+    {
+        "analysis": {
+            "analyzer": {
+                "dot-analyzer": {
+                    "type": "custom",
+                    "tokenizer": "dot-tokenizer"
+                }
+            },
+            "tokenizer": {
+                "dot-tokenizer": {
+                    "type": "path_hierarchy",
+                    "delimiter": "."
+                }
+            }
+        }
+    }
+    
+    {
+        "doc": {
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "index_analyzer": "dot-analyzer",
+                    "search_analyzer": "keyword"
+                }
+            }
+        }
+    }
+    
+
+I have tried to add these two lines of code:
+
+    
+    
+    client.admin().indices().prepareUpdateSettings(Index).setSettings(settings).execute().actionGet();
+    client.admin().indices().preparePutMapping(Index).setType(Type).setSource(mapping).execute().actionGet();
+    
+
+But this is the result:
+
+    
+    
+    org.elasticsearch.index.mapper.MapperParsingException: Analyzer [dot-analyzer] not found for field [location]
+    
+
+Anyone? Thanks a lot,
+
+Stine
+
+* * *
+
+This seems to work:
+
+    
+    
+    if (client.admin().indices().prepareExists(Index).execute().actionGet().exists()) {            
+        client.admin().indices().prepareClose(Index).execute().actionGet();
+        client.admin().indices().prepareUpdateSettings(Index).setSettings(settings.string()).execute().actionGet();
+        client.admin().indices().prepareOpen(Index).execute().actionGet();
+        client.admin().indices().prepareDeleteMapping(Index).setType(Type).execute().actionGet();
+        client.admin().indices().preparePutMapping(Index).setType(Type).setSource(mapping).execute().actionGet();
+    } else {
+        client.admin().indices().prepareCreate(Index).addMapping(Type, mapping).setSettings(settings).execute().actionGet();
+    }
+    
+
+If you look at your settings after sending the changes you'll notice that the
+analyzer is not there. In fact you can't change the analysis section of the
+settings on a live index. Better to create it with the desired settings,
+otherwise you can just close it:
+
+    
+    
+    curl -XPOST localhost:9200/index_name/_close
+    
+
+While the index is closed you can send the new settings. After that you can
+reopen the index:
+
+    
+    
+    curl -XPOST localhost:9200/index_name/_open
+    
+
+While the index is closed it doesn't use any cluster resource, but it is not
+readable nor writable. If you want to close and reopen the index using the
+Java API you can use the following code:
+
+    
+    
+    client.admin().indices().prepareClose(indexName).execute().actionGet();
+    //TODO update settings
+    client.admin().indices().prepareOpen(indexName).execute().actionGet();
+    
+

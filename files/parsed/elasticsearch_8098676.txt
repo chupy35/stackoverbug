@@ -1,0 +1,69 @@
+8098676 How to perform a date range elasticsearch query given multiple dates
+per document?
+
+I'm using ElasticSearch to index forum threads and reply posts. Each post has
+a date field associated with it. I'd like to perform a query that includes a
+date range which will return threads that contain posts matching a date range.
+I've looked at using a nested mapping but the docs say the feature is
+experimental and may lead to inaccurate results.
+
+What's the best way to accomplish this? I'm using the Java API.
+
+You haven't said much about your data structure, but I'm inferring from your
+question that you have `post` objects which contain a `date` field, and
+presumably a `thread_id` field, ie some way of identifying which thread a post
+belongs to?
+
+Do you also have a `thread` object, or is your `thread_id` sufficient?
+
+Either way, your stated goal is to return a list of threads which have posts
+in a particular date range. This means that you need to group your threads
+(rather than returning the same `thread_id` multiple times for each post in
+the date range).
+
+This grouping can be done by using
+[facets](http://www.elasticsearch.org/guide/reference/api/search/facets).
+
+So the query in JSON would look like this:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/posts/post/_search?pretty=1&search_type=count'  -d '
+    {
+       "facets" : {
+          "thread_id" : {
+             "terms" : {
+                "size" : 20,
+                "field" : "thread_id"
+             }
+          }
+       },
+       "query" : {
+          "filtered" : {
+             "query" : {
+                "text" : {
+                   "content" : "any keywords to match"
+                }
+             },
+             "filter" : {
+                "numeric_range" : {
+                   "date" : {
+                      "lt" : "2011-02-01",
+                      "gte" : "2011-01-01"
+                   }
+                }
+             }
+          }
+       }
+    }
+    '
+    
+
+Note:
+
+  * I'm using `search_type=count` because I don't actually want the posts returned, just the `thread_id`s
+  * I've specified that I want the 20 most frequently encountered `thread_id`s (`size: 20`). The default would be 10
+  * I'm using a `numeric_range` for the `date` field because dates typically have many distinct values, and the `numeric_range` filter uses a different approach to the `range` filter, making it perform better in this situation
+  * If your `thread_id`s look like `how-to-perform-a-date-range-elasticsearch-query` then you can use these values directly. But if you have a separate `thread` object, then you can use the [multi-get](http://www.elasticsearch.org/guide/reference/api/multi-get.html) API to retrieve these
+  * your `thread_id` field should be mapped as `{ "index": "not_analyzed" }` so that the whole value is treated as a single term, rather than being analyzed into separate terms
+

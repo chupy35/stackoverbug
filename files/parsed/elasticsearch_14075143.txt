@@ -1,0 +1,42 @@
+14075143 elastic search optimal number of masters
+
+We currently have a cluster of 6 data node and one non-data node. Of those,
+two are currently master eligible. This cluster is on EC2.
+
+What is the optimal number of master nodes, or is there a reason to
+discriminate at all?
+
+A cluster cannot function without a master node. So, the number of master-
+eligible nodes depends on your tolerance for losing all master nodes.
+
+It might be also helpful to have an odd number of master-eligible nodes and
+set `discovery.zen.minimum_master_nodes` to be larger than half of the number
+of master eligible nodes in your cluster. This should significantly reduce
+chances of your cluster going into split-brain condition.
+
+For example, for a cluster with 3 master-eligible nodes, you can set
+`discovery.zen.minimum_master_nodes` to 2.
+
+As described in [Elasticsearch Pre-Flight
+Checklist](http://asquera.de/opensource/2012/11/25/elasticsearch-pre-flight-
+checklist/), you can set `discovery.zen.minimum_master_nodes` to at least
+`(N/2)+1` on clusters with `N > 2` nodes.
+
+Where N is the number of eligible master nodes.
+
+Which means in your case, `discovery.zen.minimum_master_nodes: 4` eligible
+master nodes - i.e `(6/2)+1`
+
+`minimum_master_nodes` (the quorum) should be calculated based on the number
+of master nodes, not data nodes, Uyi's suggestion would be correct if and only
+if all of your data nodes are also master eligible nodes.
+
+You should never have 2 master nodes, due to the potential of being in a
+[split-
+brain](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-
+node.html#split-brain) situation, my suggestion would be, make at least 3
+nodes master eligible and set minimum master node to 2.
+
+Another thing to consider is to have smaller but dedicated master nodes, to
+make sure they are more stable and not under pressure from handling indexing.
+

@@ -1,0 +1,314 @@
+14580752 Elasticsearch gives different scores for same documents
+
+I have some documents which have the same content but when I try to query for
+these documents, I am getting different scores although the queried field
+contains the same text. I have explained the scores but I am not able to
+analyse and find the reason for different scores.
+
+My query is
+
+    
+    
+     curl 'localhost:9200/acqindex/_search?pretty=1' -d '{
+        "explain" : true,
+        "query" : {           
+            "query_string" : {         
+                "query" : "text:shimla"
+            }
+        }     
+      }'
+    
+
+Search response :
+
+    
+    
+    {
+      "took" : 8,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 31208,
+        "max_score" : 268.85962,
+        "hits" : [ {
+          "_shard" : 0,
+          "_node" : "KOebAnGhSJKUHLPNxndcpQ",
+          "_index" : "acqindex",
+          "_type" : "autocomplete_questions",
+          "_id" : "50efec6c38cc6fdabd8653a3",
+          "_score" : 268.85962, "_source" : {"_class":"com.ixigo.next.cms.model.AutoCompleteObject","_id":"50efec6c38cc6fdabd8653a3","ad":"rajasthan,IN","category":["Destination"],"ctype":"destination","eid":"503b2a65e4b032e338f0d24b","po":8.772307692307692,"text":"shimla","url":"/travel-guide/shimla"},
+          "_explanation" : {
+            "value" : 268.85962,
+            "description" : "sum of:",
+            "details" : [ {
+              "value" : 38.438133,
+              "description" : "weight(text:shi in 5860), product of:",
+              "details" : [ {
+                "value" : 0.37811017,
+                "description" : "queryWeight(text:shi), product of:",
+                "details" : [ {
+                  "value" : 5.0829277,
+                  "description" : "idf(docFreq=7503, maxDocs=445129)"
+                }, {
+                  "value" : 0.074388266,
+                  "description" : "queryNorm"
+                } ]
+              }, {
+                "value" : 101.658554,
+                "description" : "fieldWeight(text:shi in 5860), product of:",
+                "details" : [ {
+                  "value" : 1.0,
+                  "description" : "tf(termFreq(text:shi)=1)"
+                }, {
+                  "value" : 5.0829277,
+                  "description" : "idf(docFreq=7503, maxDocs=445129)"
+                }, {
+                  "value" : 20.0,
+                  "description" : "fieldNorm(field=text, doc=5860)"
+                } ]
+              } ]
+            }, {
+              "value" : 66.8446,
+              "description" : "weight(text:shim in 5860), product of:",
+              "details" : [ {
+                "value" : 0.49862078,
+                "description" : "queryWeight(text:shim), product of:",
+                "details" : [ {
+                  "value" : 6.7029495,
+                  "description" : "idf(docFreq=1484, maxDocs=445129)"
+                }, {
+                  "value" : 0.074388266,
+                  "description" : "queryNorm"
+                } ]
+              }, {
+                "value" : 134.05899,
+                "description" : "fieldWeight(text:shim in 5860), product of:",
+                "details" : [ {
+                  "value" : 1.0,
+                  "description" : "tf(termFreq(text:shim)=1)"
+                }, {
+                  "value" : 6.7029495,
+                  "description" : "idf(docFreq=1484, maxDocs=445129)"
+                }, {
+                  "value" : 20.0,
+                  "description" : "fieldNorm(field=text, doc=5860)"
+                } ]
+              } ]
+            }, {
+              "value" : 81.75818,
+              "description" : "weight(text:shiml in 5860), product of:",
+              "details" : [ {
+                "value" : 0.5514458,
+                "description" : "queryWeight(text:shiml), product of:",
+                "details" : [ {
+                  "value" : 7.413075,
+                  "description" : "idf(docFreq=729, maxDocs=445129)"
+                }, {
+                  "value" : 0.074388266,
+                  "description" : "queryNorm"
+                } ]
+              }, {
+                "value" : 148.2615,
+                "description" : "fieldWeight(text:shiml in 5860), product of:",
+                "details" : [ {
+                  "value" : 1.0,
+                  "description" : "tf(termFreq(text:shiml)=1)"
+                }, {
+                  "value" : 7.413075,
+                  "description" : "idf(docFreq=729, maxDocs=445129)"
+                }, {
+                  "value" : 20.0,
+                  "description" : "fieldNorm(field=text, doc=5860)"
+                } ]
+              } ]
+            }, {
+              "value" : 81.8187,
+              "description" : "weight(text:shimla in 5860), product of:",
+              "details" : [ {
+                "value" : 0.55164987,
+                "description" : "queryWeight(text:shimla), product of:",
+                "details" : [ {
+                  "value" : 7.415818,
+                  "description" : "idf(docFreq=727, maxDocs=445129)"
+                }, {
+                  "value" : 0.074388266,
+                  "description" : "queryNorm"
+                } ]
+              }, {
+                "value" : 148.31636,
+                "description" : "fieldWeight(text:shimla in 5860), product of:",
+                "details" : [ {
+                  "value" : 1.0,
+                  "description" : "tf(termFreq(text:shimla)=1)"
+                }, {
+                  "value" : 7.415818,
+                  "description" : "idf(docFreq=727, maxDocs=445129)"
+                }, {
+                  "value" : 20.0,
+                  "description" : "fieldNorm(field=text, doc=5860)"
+                } ]
+              } ]
+            } ]
+          }
+        }, {
+          "_shard" : 1,
+          "_node" : "KOebAnGhSJKUHLPNxndcpQ",
+          "_index" : "acqindex",
+          "_type" : "autocomplete_questions",
+          "_id" : "50efed1c38cc6fdabd8b8d2f",
+          "_score" : 268.29953, "_source" : {"_id":"50efed1c38cc6fdabd8b8d2f","ad":"himachal pradesh,IN","category":["Hill","See and Do","Destination","Mountain","Nature and Wildlife"],"ctype":"destination","eid":"503b2a64e4b032e338f0d0af","po":8.781970310391364,"text":"shimla","url":"/travel-guide/shimla"},
+          "_explanation" : {
+            "value" : 268.29953,
+            "description" : "sum of:",
+            "details" : [ {
+              "value" : 38.52957,
+              "description" : "weight(text:shi in 14769), product of:",
+              "details" : [ {
+                "value" : 0.37895453,
+                "description" : "queryWeight(text:shi), product of:",
+                "details" : [ {
+                  "value" : 5.083667,
+                  "description" : "idf(docFreq=7263, maxDocs=431211)"
+                }, {
+                  "value" : 0.07454354,
+                  "description" : "queryNorm"
+                } ]
+              }, {
+                "value" : 101.67334,
+                "description" : "fieldWeight(text:shi in 14769), product of:",
+                "details" : [ {
+                  "value" : 1.0,
+                  "description" : "tf(termFreq(text:shi)=1)"
+                }, {
+                  "value" : 5.083667,
+                  "description" : "idf(docFreq=7263, maxDocs=431211)"
+                }, {
+                  "value" : 20.0,
+                  "description" : "fieldNorm(field=text, doc=14769)"
+                } ]
+              } ]
+            }, {
+              "value" : 66.67524,
+              "description" : "weight(text:shim in 14769), product of:",
+              "details" : [ {
+                "value" : 0.49850821,
+                "description" : "queryWeight(text:shim), product of:",
+                "details" : [ {
+                  "value" : 6.6874766,
+                  "description" : "idf(docFreq=1460, maxDocs=431211)"
+                }, {
+                  "value" : 0.07454354,
+                  "description" : "queryNorm"
+                } ]
+              }, {
+                "value" : 133.74953,
+                "description" : "fieldWeight(text:shim in 14769), product of:",
+                "details" : [ {
+                  "value" : 1.0,
+                  "description" : "tf(termFreq(text:shim)=1)"
+                }, {
+                  "value" : 6.6874766,
+                  "description" : "idf(docFreq=1460, maxDocs=431211)"
+                }, {
+                  "value" : 20.0,
+                  "description" : "fieldNorm(field=text, doc=14769)"
+                } ]
+              } ]
+            }, {
+              "value" : 81.53204,
+              "description" : "weight(text:shiml in 14769), product of:",
+              "details" : [ {
+                "value" : 0.5512571,
+                "description" : "queryWeight(text:shiml), product of:",
+                "details" : [ {
+                  "value" : 7.3951015,
+                  "description" : "idf(docFreq=719, maxDocs=431211)"
+                }, {
+                  "value" : 0.07454354,
+                  "description" : "queryNorm"
+                } ]
+              }, {
+                "value" : 147.90204,
+                "description" : "fieldWeight(text:shiml in 14769), product of:",
+                "details" : [ {
+                  "value" : 1.0,
+                  "description" : "tf(termFreq(text:shiml)=1)"
+                }, {
+                  "value" : 7.3951015,
+                  "description" : "idf(docFreq=719, maxDocs=431211)"
+                }, {
+                  "value" : 20.0,
+                  "description" : "fieldNorm(field=text, doc=14769)"
+                } ]
+              } ]
+            }, {
+              "value" : 81.56268,
+              "description" : "weight(text:shimla in 14769), product of:",
+              "details" : [ {
+                "value" : 0.55136067,
+                "description" : "queryWeight(text:shimla), product of:",
+                "details" : [ {
+                  "value" : 7.3964915,
+                  "description" : "idf(docFreq=718, maxDocs=431211)"
+                }, {
+                  "value" : 0.07454354,
+                  "description" : "queryNorm"
+                } ]
+              }, {
+                "value" : 147.92982,
+                "description" : "fieldWeight(text:shimla in 14769), product of:",
+                "details" : [ {
+                  "value" : 1.0,
+                  "description" : "tf(termFreq(text:shimla)=1)"
+                }, {
+                  "value" : 7.3964915,
+                  "description" : "idf(docFreq=718, maxDocs=431211)"
+                }, {
+                  "value" : 20.0,
+                  "description" : "fieldNorm(field=text, doc=14769)"
+                } ]
+              } ]
+            } ]
+          }
+        }
+      }
+    }
+    
+
+The documents are :
+
+>
+{"_class":"com.ixigo.next.cms.model.AutoCompleteObject","_id":"50efec6c38cc6fdabd8653a3","ad":"rajasthan,IN","category":["Destination"],"ctype":"destination","eid":"503b2a65e4b032e338f0d24b","po":8.772307692307692,
+**"text":"shimla"** ,"url":"/travel-guide/shimla"}
+
+>
+
+> {"_id":"50efed1c38cc6fdabd8b8d2f","ad":"himachal
+pradesh,IN","category":["Hill","See and Do","Destination","Mountain","Nature
+and
+Wildlife"],"ctype":"destination","eid":"503b2a64e4b032e338f0d0af","po":8.781970310391364,"
+**text":"shimla"** ,"url":"/travel-guide/shimla"}
+
+Please guide me in understanding the reason for the difference in scores.
+
+The lucene score depends on [different
+factors](http://lucene.apache.org/core/3_6_2/scoring.html). Using the tf idf
+similarity (default one) it mainly depends on:
+
+  1. Term frequency: how much the terms found are frequent within the document
+  2. Inverted document frequency: how much the terms found appear among the documents (while index)
+  3. Field norms (including index time boosting). Shorter fields get higher score than longer ones.
+
+In your case you have to take into account that your two documents come from
+different shards, thus the score is computed separately on each of those,
+since every shard is in fact a separate lucene index.
+
+You might want to have a look at the more expensive [DFS, Query then Fetch
+search type](http://www.elasticsearch.org/guide/reference/api/search/search-
+type.html) that elasticsearch provides for more accurate scoring. The default
+one is the simple Query then Fetch.
+

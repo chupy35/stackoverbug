@@ -1,0 +1,4 @@
+29953843
+Deleted index appearing in Elasticsearch /_status
+<p>I have an index appearing in my ES cluster's <code>/_status</code> listing, called <code>users_54ac2d97de674204ddd61096</code>.  However, if I try to GET (or DELETE) <code>/users_54ac2d97de674204ddd61096</code>, I get the folowing 404 response:</p>&#xA;&#xA;<pre><code>{&#xA;  "error": "RemoteTransportException[[Photon][inet[/10.10.2.72:9300]][indices:admin/get]]; nested: IndexMissingException[[users_54ac2d97de674204ddd61096] missing]; ",&#xA;  "status":404&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>If I try to recreate this index, I end up with a second index with that name in the listing.</p>&#xA;&#xA;<p>How did I get into this state, and how can I get out of it?</p>&#xA;
+<p>Try using the head plugin. It usually works for me if the usual delete operation fails.&#xA;<a href="https://github.com/mobz/elasticsearch-head" rel="nofollow">https://github.com/mobz/elasticsearch-head</a></p>&#xA;

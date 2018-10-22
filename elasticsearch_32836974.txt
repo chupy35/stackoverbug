@@ -1,0 +1,3 @@
+32836974
+indexing version numbers in ElasticSearch
+<p>Say my documents have a field, called "app_version".&#xA;That field is a string of the type: "1.16.21"</p>&#xA;&#xA;<p>I'd like to index it so I can search for versions within a range.</p>&#xA;&#xA;<p>How should I do that?</p>&#xA;&#xA;<p>Note that "1.13.5">"1.7.21" unlike a lexicographic ordering might mean (comparing strings).</p>&#xA;

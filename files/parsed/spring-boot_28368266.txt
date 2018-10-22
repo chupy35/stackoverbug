@@ -1,0 +1,19 @@
+28368266 Spring Boot:: Not able to override context path from application.yml
+
+I am just trying to set my context path as /v1/audit-management instead of my
+application war name(Audit_Management_DS-1.0-SNAPSHOT) but it's not working.
+My entry in application.yml (location of this is src/main/resources) is as
+follows
+
+server: context-path: /v1/audit-management
+
+When I hit the URL <http://localhost:1234/v1/audit-management> its giving HTTP
+404. However <http://localhost:1234/Audit_Management_DS-1.0-SNAPSHOT> is
+working fine.
+
+When you deploy your application as a war file to an external servlet
+container Spring Boot's server isn't being used so configuring its context
+path has no effect. If you want to configure the context path you'll need to
+rename your war file or use one of the other mechanisms supported by Tomcat
+such as using a context.xml file in your war.
+

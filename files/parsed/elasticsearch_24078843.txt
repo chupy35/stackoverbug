@@ -1,0 +1,83 @@
+24078843 Sub-Aggregations for Child documents in elasticsearch?
+
+Say I have a parent document
+
+    
+    
+    curl -XPUT es-host:9200/index/parent_type/1 -d '{
+    
+      "foo": "bar"
+    }'
+    
+
+and I have a child document
+
+    
+    
+    curl -XPUT es-host:9200/index/child_type/?parent=1 -d '{
+    
+      "child-foo-1": "child-bar-1",
+      "child-foo-2": "child-bar-2"
+    }'
+    
+
+Is there any way to get sub-aggregations for my child document data under
+parent document aggregations, something like,
+
+    
+    
+    {
+      "aggregations": {
+    
+        "foo-aggregations": {
+    
+          "buckets": [
+            {
+              "key": "bar",
+              "doc_count": 1,
+              "child-foo-1-aggregations": {
+    
+                "key": "child-bar-1",
+                "doc_count": 1
+              },
+              "child-foo-2-aggregations": {
+    
+                "key": "child-bar-2",
+                "doc_count": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+    
+    
+    curl -XPOST 'localhost:9200/index/parent/_search?pretty' -d '
+    {
+      "size": "0",
+        "aggs" : {
+            "name" : {
+                "terms" : {
+                    "field": "name.keyword"
+                },
+                  "aggs" : {
+                        "child_category": {
+                            "children" : {
+                                "type": "child_type_name"
+                            },
+                            "aggs" : {
+                                "data" : {
+                                    "terms" : {
+                                        "field": "child_field_text.keyword"
+                                    }
+    
+                                }
+                            }
+                        }
+                  }
+            }
+        }
+    }'
+    
+

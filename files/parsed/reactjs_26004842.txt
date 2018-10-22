@@ -1,0 +1,67 @@
+26004842 How to get information from children
+
+I'm very new to reactjs (three days, in fact). I want to construct a component
+that lays out its children according to a policy (implemented by the
+component) and certain children properties. Some properties are passed
+directly to the children as props upon creation; some other properties, such
+as its dimensions, are intrinsic to each child. That is, this Layout component
+will be used like:
+
+    
+    
+    <Layout>
+        <Child1 propx=... propy=...>...</Child1>
+        <Child2 propz=...>...</Child2>
+        ...
+    </Layout>
+    
+
+and the position of the children will depend on propx, propy, propz, ..., and
+the children sizes.
+
+Well, the Layout component needs to know the values of its children props and
+their sizes. At first, I gave the children classes a method 'getProperties' to
+return the relevant properties and I invoked the method in
+React.Children.forEach(this.props.children, fn) but I found that the object
+passed to fn is not the component instance so I cannot call getProperties on
+it. Then I tried to pass each Layout child an extra property
+'uploadProperties' with a callback to be called by the child to tell the
+Layout what it needs to know. I know I cannot call setProps in the children,
+so I came up with this:
+
+    
+    
+    var Layout = React.createClass({
+        storeChildProperties: function (properties) {
+            this.childData = this.childData || [];
+            this.childData.push(properties);
+        },
+        render: function () {
+            var self = this;
+            var children = [];
+            React.Children.forEach(this.props.children, function (child) {
+                var clone = React.addons.cloneWithProps(
+                    child,
+                    {key: child.props.key, uploadProperties: self.storeChildProperties});
+                children.push(clone);
+            });
+            this.props.children = children;
+            return <div>{this.props.children}</div>;
+        }
+    }
+    
+
+It seems to work, but I feel uneasy about two things. First, I don't like
+attaching 'childData' to the Layout instance (I didn't know where else to put
+it). Second, I don't know if it's ok to replace this.props.children. Actually,
+it works even if I don't and I just
+
+    
+    
+    return <div>{children}</div>;
+    
+
+Anyway, is this a reasonable way to get info from children?
+
+You can access children's props via `this.props.children[0].props`.
+

@@ -1,0 +1,121 @@
+23341860 Elasticsearch - Index word, bigram and trigram
+
+I'm trying to index some phrases, like this :
+
+    
+    
+    "Elasticsearch is a great search engine"
+    
+
+indexed like
+
+    
+    
+    Elasticsearch       # word
+    is                  # word
+    a                   # word
+    great               # word
+    engine              # word
+    Elasticsearch is    # bi-gram
+    is a                # bi-gram
+    a great             # bi-gram
+    great search        # bi-gram
+    search engine       # bi-gram
+    Elasticsearch is a  # tri-gram
+    is a great          # tri-gram
+    a great search      # tri-gram
+    great search engine # tri-gram
+    
+
+I know how to index words (with default indexer) and to index bigrams and
+trigrams (with n-grams indexer), but not both at same time.
+
+How can I do this ?
+
+Regards
+
+You would use the [`multi-field`
+type](http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/mapping-
+multi-field-type.html). Here is an example of one I have created -
+
+    
+    
+    {
+      "settings": {
+        "number_of_shards": 5,
+        "number_of_replicas": 0,
+        "analysis": {
+          "filter": {
+            "synonym": {
+              "type": "synonym",
+              "synonyms_path": "synonyms.txt"
+            },
+            "my_metaphone": {
+              "type": "phonetic",
+              "encoder": "metaphone",
+              "replace": false
+            }
+          },
+          "analyzer": {
+            "synonym": {
+              "tokenizer": "whitespace",
+              "filter": [
+                "lowercase",
+                "synonym"
+              ]
+            },
+            "metaphone": {
+              "tokenizer": "standard",
+              "filter": [
+                "my_metaphone"
+              ]
+            },
+            "porter": {
+              "tokenizer": "standard",
+              "filter": [
+                "lowercase",
+                "porter_stem"
+              ]
+            }
+          }
+        }
+      },
+      "mappings": {
+        "type": {
+          "_all": {
+            "enabled": false
+          },
+          "properties": {
+            "datafield": {
+              "type": "multi_field",
+              "store": "yes",
+              "fields": {
+                "datafield": {
+                  "type": "string",
+                  "analyzer": "simple"
+                },
+                "metaphone": {
+                  "type": "string",
+                  "analyzer": "metaphone"
+                },
+                "porter": {
+                  "type": "string",
+                  "analyzer": "porter"
+                },
+                "synonym": {
+                  "type": "string",
+                  "analyzer": "synonym"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+You can then specify which field you want to search against, i.e.
+`datafield.synonym` or in your case `datafield.bigram`. You can then build
+your query up, boosting the fields as to which is most important to your
+results.
+

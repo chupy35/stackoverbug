@@ -1,0 +1,107 @@
+24904157 Elasticsearch Date Histogram Aggregation
+
+I am attempting to do a date histogram query that lists the connections per
+brand_eid per day. I need the response formatted so that I can feed the data
+straight into the graphing app. My current query is as follows:
+
+    
+    
+     "aggregations": {
+      "connections": {
+         "buckets": [
+            {
+               "key_as_string": "02-Oct",
+               "key": 1380672000000,
+               "doc_count": 1,
+               "brand": {
+                  "buckets": [
+                     {
+                        "key": 2,
+                        "doc_count": 62
+                     },
+                     {
+                        "key": 7,
+                        "doc_count": 2
+                     },
+                     {
+                        "key": 12,
+                        "doc_count": 2
+                     },
+                     {
+                        "key": 8,
+                        "doc_count": 1
+                     },
+                     {
+                        "key": 11,
+                        "doc_count": 1
+                     }
+                  ]
+               }
+            },
+            {
+               "key_as_string": "17-Oct",
+               "key": 1381968000000,
+               "doc_count": 46,
+               "brand": {
+                  "buckets": [
+                     {
+                        "key": 2,
+                        "doc_count": 44
+                     },
+                     {
+                        "key": 7,
+                        "doc_count": 1
+                     },
+                     {
+                        "key": 8,
+                        "doc_count": 1
+                     }
+                  ]
+               }
+            }   
+        }
+    }
+    
+
+I am looking for a way to rewrite this query so that the response back is
+like:
+
+    
+    
+    Aggregations
+        connect_date
+            buckets
+                Object
+                    key2: 1
+                    key7: 3
+                    doc_count: 4
+                    key: 1380672000000
+                    key_as_string: "2013-10-02T00:00:00.000Z"
+    
+
+Is this possible without having to manipulate the response and restructure the
+objects client side?
+
+Post the response as it is from elasticsearch. Why dont you read terms and
+counts as you need and create a json and feed that json to you graphing app?
+
+For above response why dont you have something like this:
+
+    
+    
+    {
+      "02-Oct": {
+        "2": "62",
+        "7": "2",
+        "8": "1",
+        "11": "1",
+        "12": "2"
+      },
+      "17-Oct": {
+        "2": "44",
+        "7": "1",
+        "8": "1"
+      }
+    }
+    
+

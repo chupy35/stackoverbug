@@ -1,0 +1,4 @@
+29627375
+What are the ideal number of shards count for 3 node elasticsearch setup
+<p>I wanted to know how many primary shards and replicas are ideal to a three node cluster and wanted to know the rule of thumb to set the Primary shard and replicas depending on the servers. How can we change the number of shards safely in elasticsearch cluster. (Elasticsearch has great documentation but it was hard for me to get a answer for this, my bad). Thanks in advance</p>&#xA;
+<p>The ideal number of shards and replicas will all depend on how much data is in each index and how you want to query it.  My recommendation would be to leave all the shards and replicas at their default values until such time as you need to tune them.  This is what ES production support is ideal for.</p>&#xA;

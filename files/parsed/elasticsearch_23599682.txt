@@ -1,0 +1,120 @@
+23599682 Filtered Query in Elasticsearch Java API
+
+I am little bit confused while creating Filtered query in Elasticsearch Java
+API. SearchRequestBuilder class has setPostFilter method, javadoc of this
+method clearly says that filter will be applied after Query is executed.
+
+However, there is no setFilter method Or some other method which will allow to
+apply filter before  
+query is executed. How do I create filtered Query(which basically applies
+filter before query is executed) here? Am I missing something?
+
+    
+    
+     FilteredQueryBuilder builder = 
+     QueryBuilders.filteredQuery(QueryBuilders.termQuery("test", 
+     "test"),FilterBuilders.termFilter("test","test"));
+    
+
+It will build the filtered query...To filteredQuery, first argument is query
+and second arguments is Filter.
+
+**Update:** Filtered query is depreciated in elasticsearch
+2.0+.[refer](https://www.elastic.co/blog/better-query-execution-coming-
+elasticsearch-2-0)
+
+Hope it helps..!
+
+In case you just want to **execute filter without query** , you can do like
+this:
+
+    
+    
+    FilteredQueryBuilder builder = QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(),
+       FilterBuilders.termFilter("username","stackoverflow"));
+    
+
+Ref: [Filtering without a
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filtered-query.html#_filtering_without_a_query)
+
+`QueryBuilders.filteredQuery` is deprecated in API v. 2.0.0 and later.
+
+Instead, filters and queries have "equal rights". `FilterBuilders` no longer
+exists and all filters are built using `QueryBuilders`.
+
+To implement the query with filter only (in this case, geo filter), you would
+now do:
+
+    
+    
+    QueryBuilder query = QueryBuilders.geoDistanceQuery("location")
+            .point(center.getLatitude(), center.getLongitude())
+            .distance(radius, DistanceUnit.METERS);
+    
+    // and then...
+    SearchResponse resp = client.prepareSearch(index).setQuery(query);
+    
+
+If you want to query by two terms, you would need to use `boolQuery` with
+`must`:
+
+    
+    
+    QueryBuilder query = QueryBuilders.boolQuery()
+                .must(QueryBuilders.termQuery("user", "ben"))
+                .must(QueryBuilders.termQuery("rank", "mega"));
+    
+    // and then...
+    SearchResponse resp = client.prepareSearch(index).setQuery(query);
+    
+
+> It seems that by wrapping the query (a BoolQueryBuilder object) by giving it
+as an argument to boolQuery().filter(..) and then setting that in the
+setQuery() as you suggested- then this can be achieved. The "score" key in the
+response is always 0 (though documents are found)
+
+Be careful here! If the score is 0, the score has been calculated. That means
+the query is still in query context and not in filter context. In filter
+context the score is set to 1.0 (without calculation)
+[source](https://www.elastic.co/guide/en/elasticsearch/guide/current/_finding_exact_values.html)
+
+To create a query in filter context without calculation of the score (score =
+1.0) do the following (Maybe there is still a better way?):
+
+    
+    
+    QueryBuilder qb = QueryBuilders.constantScoreQuery(QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("name", "blub)));
+    
+
+This returns the same results like:
+
+    
+    
+    GET /indexName/typeName/_search 
+        {
+          "filter": {
+            "query": {
+              "bool": {
+                "must": [
+                  { "match": {
+                    "name": "blub"
+                  }}
+                ]
+              }
+            }
+          }
+        }
+    
+
+Since FilteredQueryBuilder is deprecated in the recent versions, one can use
+the `QueryBuilders.boolQuery()` instead, with a must clause for the query and
+a filter clause for the filter.
+
+    
+    
+    import static org.elasticsearch.index.query.QueryBuilders.*;
+    
+    QueryBuilder builder = boolQuery().must(termQuery("test", "test")).filter(  boolQuery().must(termQuery("test", "test")));
+    
+

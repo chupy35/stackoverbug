@@ -1,0 +1,17 @@
+20890448 Push id to ElasticSearch via PIG
+
+Is it possible to push the _id field via ESStorage / PIG towards the ES
+cluster? The
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/pig.html)
+doesn't state anything related to this subject.
+
+According to this
+[post](https://groups.google.com/forum/#!topic/elasticsearch/jK_MDNyeRgI),
+this functionality is in the current development version. Example:
+
+    
+    
+    B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links 
+    STORE B INTO 'pig/update' USING org.elasticsearch.hadoop.pig.ESStorage('es.mapping.id=id')
+    
+

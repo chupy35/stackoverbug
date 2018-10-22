@@ -1,0 +1,103 @@
+22093253 How to make a RESTful query to the elasticsearch search API for logs
+within a certain @timestamp range.
+
+I am trying to query elasticsearch for all logs that have a @timestamp within
+a certain range. This is being done by a $.get() request using jQuery. My
+attempts so far have resulted in queries not within the time range. I am
+listing the logs on my own HTML page and although I have tried different query
+messages I always get one of two responses, one with times starting at 4:25
+and the other with times starting at 6:39. I don't know if this is useless
+information but I thought it could be useful in understanding the nature of
+the problem.  So this is the message I have written myself.
+
+    
+    
+    {
+            "query" : {
+            "filtered": {
+                "query" : { "match_all" : {}},
+                "filter": {
+                    "range" : {
+                        "@timestamp": {
+                            "from" : 1393580102248,
+                            "to" : 1393583702248
+                        }
+                    }
+                }
+    
+            }       
+        }
+    }
+    
+
+We are also using Kibana (working) and I have tried copying and pasting the
+same exact query Kibana uses, with the SAME results as my query above.
+
+    
+    
+    {
+      "query": {
+    "filtered": {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "query_string": {
+                "query": "*"
+              }
+            }
+          ]
+        }
+      },
+      "filter": {
+        "bool": {
+          "must": [
+            {
+              "match_all": {}
+            },
+            {
+              "range": {
+                "@timestamp": {
+                  "from": 1393580102248,
+                  "to": 1393583702248
+                }
+              }
+            },
+            {
+              "bool": {
+                "must": [
+                  {
+                    "match_all": {}
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+     },
+      "highlight": {
+    "fields": {},
+    "fragment_size": 2147483647,
+    "pre_tags": [
+      "@start-highlight@"
+    ],
+    "post_tags": [
+      "@end-highlight@"
+    ]
+      },
+      "size": 500,
+      "sort": [
+    {
+      "@timestamp": {
+        "order": "desc"
+      }
+    }
+     ]
+    }
+    
+
+What am I doing wrong? I can change the time range as well and I still get the
+same results.
+

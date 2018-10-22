@@ -1,0 +1,47 @@
+25311683 Elasticsearch - search on index1/type2 document scores change when
+adding documents to /index1/type2
+
+I have an elasticsearch index (index1) in which I have one type (type1). I
+added documents to type1 and ran a search on it:
+
+    
+    
+    POST /index1/type1/_search
+    
+    {
+      "query": {
+        "match": {
+          "keyword": "quick brown fox"
+        }
+      }
+    }
+    
+
+I get a result set back with scores that generally range between .03 and 1.
+
+Then I add another type (type2) to index1 and add some documents to it. When I
+run the exact same search again, I get the same documents back, but they all
+have different scores, now ranging from 2 and 5. Ideally, the scores of these
+documents would not change even after adding documents to type2.
+
+Any ideas as to why this happening? I am running a search on type1, yet adding
+documents to type2 seems to influence the scoring of the results. Is there
+anyway to stop this from happening?
+
+I am using v1.1.2 of elasticsearch. I should also mention, I'm working with a
+pretty small dataset (less than 1000 docs).
+
+Elasticsearch scoring is detailed
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/scoring-
+theory.html), but basically what you are running into is that the inverse
+document frequency of some of your terms is changing based on what you are
+indexing into type2 (which is still in the same INDEX as type1). The change in
+IDF changes the relevancy of your search terms.
+
+The only way you could avoid it is to have separate indexes for type1 and
+type2 (and then if you need to search across both, your search would need to
+pass in both indexes).
+
+The scores really have no deep meaning though and really should only be used
+as a relative indication that some results are better than others.
+

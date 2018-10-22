@@ -1,0 +1,213 @@
+11380866 AngularJS how to force an input to be re-rendered on blur
+
+I have some custom validation code, which includes a $formatter. (I store
+currency in pence for correctness, but display in pounds.pence.)
+
+If the user types '10' into the input (which is a valid value), the input
+remains displaying '10' after they move to the next field.
+
+I would like it to display 10.00 for consistency.
+
+If the model changed the value to 1000, then the formatter would make the
+field display '10.00'.
+
+I would like the formatter to run on field.blur() (so long as the input is
+valid).
+
+My problem is that if I change the model value from 10 to 10, there is
+understandably no change, and so the field is not re-rendered.
+
+code:
+
+    
+    
+    var CURRENCY_REGEXP = /^\-?\d+(\.?\d?\d?)?$/;
+    app.directive('currency', function() {
+      return {
+        require: 'ngModel',
+        link: function(scope, elm, attrs, ctrl) {
+          ctrl.$parsers.unshift(function(viewValue) {
+            if (CURRENCY_REGEXP.test(viewValue)) {
+              // it is valid
+              ctrl.$setValidity('currency', true);
+              console.log("valid");
+              return viewValue * 100;
+            } else if (viewValue === '') {
+              return 0;
+            } else {
+              // it is invalid, return undefined (no model update)
+              ctrl.$setValidity('currency', false);
+              console.log("invalid");
+              return undefined;
+            }
+          });
+          ctrl.$formatters.push(function(modelValue) {
+             if (modelValue === 0) { // we're using integer pence, so this is safe
+                 return '';
+             }
+             return (modelValue / 100).toFixed(2); 
+          });
+        }
+      };
+    });
+    
+
+P.S. This has nothing to do with Angular's built-in 'currency'.
+
+* * *
+
+Update: I've added a 'renderOnBlur' directive, as per Andy's answer. It gets
+called, but calling the render method does not re-render the input. i.e. '10'
+stays as '10', rather than changing to '10.00' as desired.
+
+(When the model value changes in these fields, they are correctly rendered
+with the 2 decimal places.)
+
+The page which Andy mentions
+<http://docs.angularjs.org/api/ng.directive:ngModel.NgModelController> says
+that you have to implement `$render` yourself. This seems odd, as the inputs
+are already rendered correctly when the model value changes.
+
+    
+    
+    app.directive('renderOnBlur', function() {
+        return {
+            require: 'ngModel',
+            restrict: 'A',
+            link: function(scope, elm, attrs, ctrl) {
+                elm.bind('blur', function() {
+                    console.log('rendering ctrl', ctrl);
+                    ctrl.$render();
+                });
+            }
+        };  
+    });
+    
+
+P.S. I have no idea what `restrict: 'A',` does - it's true cargo-cult
+programming at its worst. The `require: 'ngModel',` seems necessary to
+populate the `ctrl` parameter.
+
+* * *
+
+Inspired by the answer from @Dan Doyen, I rewrote it as:
+
+    
+    
+    app.directive('renderOnBlur', function() {
+        return {
+            require: 'ngModel',
+            restrict: 'A',
+            link: function(scope, elm, attrs, ctrl) {
+                elm.bind('blur', function() {
+                    var viewValue = ctrl.$modelValue;
+                    for (var i in ctrl.$formatters) {
+                        viewValue = ctrl.$formatters[i](viewValue);
+                    }
+                    ctrl.$viewValue = viewValue;
+                    ctrl.$render();
+                });
+            }
+        };  
+    });
+    
+
+This has the benefit of being generic for any $formatter, rather than
+repeating the formatter code as in Dan's answer.
+
+Try using ctrl.$render on blur.
+
+`elm.bind('blur', function() { ctrl.$render() });`
+
+See it in
+[http://docs.angularjs.org/api/ng.directive:ngModel.NgModelController](http://docs.angularjs.org/api/ng.directive%3angModel.NgModelController).
+
+`10.00 === 10` true
+
+`a=10.00`
+
+`console.log(a)` 10
+
+.00 don't means anything on javascript, because of this your 10.00 are
+becoming 10
+
+I suggest to make the value a String so you can create the format that you
+want
+
+Your controller's $modelValue is being updated properly, however, but since
+the blur event is happening outside of angular, it seems your $viewValue is
+not. How about this?
+
+    
+    
+     elm.bind('blur', function() {
+           ctrl.$viewValue = (ctrl.$modelValue / 100).toFixed(2);
+           ctrl.$render();
+     });
+    
+
+A little improved: Do not reformat if the value is not valid (in my case
+invalid text just got cleared on blur, which is bad for usability, I think).
+
+Also, like Dark Falcon said: Formatters should be iterated backwards.
+
+Finally do not iterate over arrays with for-in, at least not without checking
+hasOwnProperty() (for me the code crashed because it treated Array.find() as a
+formatter).
+
+    
+    
+    // Reformat text on blur
+    elements.bind('blur', function() {
+        if(!ngModel.$valid) {
+            return;
+        }
+        var viewValue = ngModel.$modelValue;
+        var formatters = ngModel.$formatters;
+        for (var i = formatters.length - 1; i >= 0; --i) {
+            viewValue = formatters[i](viewValue);
+        }
+        ngModel.$viewValue = viewValue;
+        ngModel.$render();
+    });
+    
+
+An alternative implementation is to trigger angular's formatters. Angular 1.5
+implementation watches $modelValue for changes, and then triggers $formatters.
+To do this manually, one can do this
+
+    
+    
+    function triggerFormattersAndRender(ngModel, scope) {
+      /* Triggers angulars formatters, which watches for $modelValue changes */
+      var originalModelValue = ngModel.$modelValue;
+      if (originalModelValue === null) return;
+    
+      ngModel.$modelValue = null;
+      scope.$digest();
+      ngModel.$modelValue = originalModelValue;
+      scope.$digest();
+    }
+    
+
+And then in the directive
+
+    
+    
+    function link(scope, elem, attrs, ngModel) {
+    
+        elem.bind('blur', function() {
+            triggerFormattersAndRender(ngModel, scope);
+        });
+    
+        // when we get focus, display full precision
+        elem.bind('focus', function() {
+          if (ngModel.$modelValue) {
+            ngModel.$setViewValue(ngModel.$modelValue.toString());
+            ngModel.$render();
+          }
+        })
+    
+    }
+    
+

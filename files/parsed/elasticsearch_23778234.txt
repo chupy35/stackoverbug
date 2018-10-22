@@ -1,0 +1,32 @@
+23778234 Elasticsearch [mlt] query does not support [ids]]
+
+I recently update elasticsearch from 0.9x to 1.0.3, and i find more_like_this
+add a new parameters: ids from doc
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-mlt-query.html>. However when i want to use it like:
+
+    
+    
+    {
+      query: { 
+        more_like_this: {         
+          min_term_freq: 1,
+          max_query_terms: 12,
+          min_doc_freq: 1,
+          ids: ["doc_id_xxxxx"]
+        } 
+      }
+    }
+    
+
+It returns: **nested: QueryParsingException[[index] [mlt] query does not
+support [ids]];**
+
+but when changing ids to like_text, it works fine.
+
+Thanks for any help.
+
+The issue is caused by the official document is a little earlier than version
+release. So the parameter will be available when 1.2.0 is out.
+<https://github.com/elasticsearch/elasticsearch/issues/6272>
+

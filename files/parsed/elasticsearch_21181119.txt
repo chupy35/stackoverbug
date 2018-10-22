@@ -1,0 +1,119 @@
+21181119 Query multiple fields with single query string and words in any order
+
+I thought the scenario must be quite common, but I was unable to find any
+clues on how to progress.
+
+I've got an elasticsearch index that contains single type `Order`. In turn,
+`Order` contains `Customer` information, such as `firstName`, `lastName`,
+`middleName` (and their concatenation `fullName`), e.g.
+
+    
+    
+    "order": {
+        // other stuff
+        "customer": {
+            "firstName": ...,
+            "lastName": ...,
+            "middleName": ...,
+            "fullName": "FirstName MiddleName LastName"
+        }
+    }
+    
+
+The aim is to provide order search functionality, including search by
+customers' names. The input to the elastic would always be a single query
+string, containing whatever user typed into a search box. The problem is there
+are some dirty data (e.g. missing firstName, swapped first and last name,
+etc.) and I can't rely on users always input names in certain order.
+
+I've tried achieving that with `query_string` query like this:
+
+    
+    
+    "query_string": {
+        "query": "[User Input]*", // note asterisk here
+        "fields" : ["customer.firstName", "customer.lastName", "customer.middleName"],
+        "analyzer": "whitespace",
+        "use_dis_max": true,
+        "tie_breaker": 0.7,
+        "analyze_wildcard": true
+    }
+    
+
+It does a decent work of finding the results in some cases, but it's
+definitely not robust against dirty data, e.g. it finds John Doe's order if
+searching for "John Do" (not a typo), but fails to do so if searching for "Doe
+John".
+
+Desired query behavior would be something like `match_phrase_prefix` on
+multiple fields with `whitespace` analyzer to process query and do a prefixing
+on _each_ term coming out from analyzer. As an example, `John Doe` would be
+turned into something like `["John*", "Doe*"]` and each applied to
+
+  * `firstName`, `lastName`, `middleName` fields
+  * or to `fullName` allowing individual terms to come in any order
+
+I'm really new to elastic, so I might be missing something really simple, or
+not confident enough to write really complex queries.
+
+**Edit** : index mappings: <http://pastebin.com/fuLLgHjB>. Target fields are
+not yet analyzed because: (1) I'm not the one made an initial setup and (2)
+I'm really not sure what field analyzers should I set up, so it's a part of
+the question.
+
+Elasticsearch has really good defaults. You should start out with the
+defaults, and only add/change settings if something is not working the way you
+want. Simpler is better.
+
+When setting up your mappings, the default for string fields is to analyze
+them. This is a good thing because breaks the strings into tokens and does
+stemming, so that you can do partial and fuzzy matches. You don't need to
+specify the analyzer; the [standard
+analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html) should work fine. A not analyzed field means
+Elasticsearch won't do anything to the field; this is useful for things like
+faceting (count the number of orders by each of "John", "Jon", and
+"Jonathan"), but not as much for general full-text searching. If you really
+think you need a not analyzed version of the field, you can include the same
+field both analyzed and not analyzed with multi-fields; see the [multi-field
+docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+multi-field-type.html) for more info.
+
+Here's a sample mapping; you may not even need to generate the `fullName`
+field.
+
+    
+    
+        "properties": {
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "middleName": { "type": "string" },
+          "fullName": { "type": "string" }
+        }
+    
+
+Once your fields are analyzed, the order of terms in the query doesn't have to
+match exactly, the spelling doesn't have to be perfect, etc. Try the simplest
+query and it should work pretty well:
+
+    
+    
+    {
+      "query": {
+        "query_string": {
+          "query": "John Doe",
+          "fields": [
+            "firstName",
+            "middleName",
+            "lastName"
+          ]
+          ]
+        }
+      }
+    }
+    
+
+If it's not ordering the results in the way you expect, you could try
+replacing non-trailing whitespace in the query string with an AND, to require
+all terms: `John AND Doe`
+

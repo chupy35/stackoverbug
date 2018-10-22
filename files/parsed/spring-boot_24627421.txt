@@ -1,0 +1,18 @@
+24627421 How to manually shutdown embedded Tomcat?
+
+I'm trying to implement a graceful shutdown sequence for my Spring Boot
+application. For that I registered a custom shutdown hook with Runtime and
+disabled the one provided by Spring
+(SpringApplication.setRegisterShutdownHook(false)). From this custom shutdown
+hook I first would like to pause embedded Tomcat or the connectors and some
+other schedulers after which I manually invoke applicationContext.close() to
+shutdown the rest of the Spring application.
+
+What is the best way to get access to the embedded Tomcat instance? I was
+fiddling around with TomcatEmbeddedServletContainerFactory but this does not
+seem to give me access to default connectors or EmbeddedServletContainer which
+has a stop method.
+
+You can access the `EmbeddedServletContainer` from the
+`EmbeddedWebApplicationContext` (just inject that) and downcast it.
+

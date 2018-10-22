@@ -1,0 +1,86 @@
+22996337 Elasticsearch "no requests added" Bulk API Error
+
+Trying to get Bulk Update to work on ES 1.0.1.
+
+I am within Postman posting the following:
+
+**URL** `POST` or `PUT` to `http://localhost:9200/_bulk`
+
+**Request Body** :
+
+    
+    
+    { "update" : { "_index" : "test_people", "_type" : "person", "_id" : "1" }} \n
+    { "doc" : { "name":"hi", "age":100 }} \n
+    
+
+I have tried it with and without the `\n`. I always get
+
+    
+    
+    {
+        "error": "ActionRequestValidationException[Validation Failed: 1: no requests added;]",
+        "status": 500
+    }
+    
+
+It also does the same thing on a create using the data:
+
+    
+    
+    {
+      "create": {
+        "_index": "test_people",
+        "_type": "person",
+        "_id": "1"
+      }
+    }
+    {
+      "name": "hi",
+      "age": 100
+    }
+    
+
+### Update
+
+I have tried this on a Mac, PC, and Linux and I am continually getting the
+same error.
+
+Even though i had `\n` on the last line I literally HAD to have a full
+carriage return after my last json line.
+
+The following worked:
+
+    
+    
+    { "update" : { "_index" : "test_people", "_type" : "person", "_id" : "1" }} \n
+    { "doc" : { "name":"hi", "age":100 }}
+    
+
+So there needs to be an empty line below the `"doc"` line.
+
+True that one blank **new line** , after document row does the trick.
+
+![enter image description here](https://i.stack.imgur.com/O7iv3.png)
+
+If you're using cURL, you must have a blank line at the end of your bulk items
+and you **must use`--data-binary` (instead of plain `-d`)**. For example,
+suppose you have a file called `bulk` that has:
+
+    
+    
+    { "index" : { "_id" : 1 } }
+    { "accounts" : ["hillary", "sidney"]}
+    { "index" : { "_id" : 2 } }
+    { "accounts" : ["hillary", "donald"]}
+    { "index" : { "_id" : 3 } }
+    { "accounts" : ["vladimir", "donald"]}
+    
+
+Ensure the file is terminated by a blank line, then post with cURL:
+
+    
+    
+    curl -i -XPOST -H'content-type: application/json' 'localhost:9200/emails/message/_bulk?refresh&pretty' --data-binary @bulk
+    
+

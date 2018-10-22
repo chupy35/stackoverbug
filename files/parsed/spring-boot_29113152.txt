@@ -1,0 +1,51 @@
+29113152 spring.profiles.active is not working from the command line
+
+I am using spring-boot: 1.2.2
+
+This is the syntax supplied in the [docs](http://docs.spring.io/spring-
+boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-adding-active-
+profiles) (I get `Unknown command-line option '--spring.profiles.active'.`
+when I start using the command)
+
+    
+    
+    gradlew bootRun --spring.profiles.active=noAuthentication
+    
+
+I tried this but it does not work
+
+    
+    
+    gradlew bootRun -Dspring.profiles.active=noAuthentication
+    
+
+I have found elsewhere that this should work but it does not
+
+    
+    
+    gradlew bootRun -Drun.jvmArguments="-Dspring.profiles.active=noAuthentication"
+    
+
+I added the following to application.properties and it works correctly.
+
+    
+    
+    spring.profiles.active=noAuthentication
+    
+
+How to you pass this argument from the command line?
+
+Fixed it via
+
+    
+    
+    project.gradle.projectsEvaluated {
+    applicationDefaultJvmArgs = ["-Dspring.profiles.active=${project.gradle.startParameter.systemPropertiesArgs['spring.profiles.active']}"]
+    
+
+}
+
+And run
+
+gradlew bootRun -Dspring.profiles.active=prod
+

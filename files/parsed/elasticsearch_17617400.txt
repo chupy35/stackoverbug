@@ -1,0 +1,34 @@
+17617400 finding duplicate field values in elasticsearch
+
+Using elasticsearch 0.19.4 (I know this is old, but its what is required by a
+dependency)
+
+I have a field "digest" in an elasticsearch index - and I would like to
+execute a query that will return me all the cases where there are duplicate
+values of digest. Can this be done?
+
+For the records that have duplicate values, I would like to return other
+values - such as "url" which may not be duplicated.
+
+You can use `Terms Aggregation` for this.
+
+    
+    
+    POST <index>/<type>/_search?search_type=count
+    {
+        "aggs": {
+           "duplicateNames": {
+               "terms": {
+                   "field": "digest",
+                   "size": 0,
+                   "min_doc_count": 2
+                }
+            }
+        }
+    }
+    
+
+This will return all values of the field `digest` which occur in at least 2
+documents. I agree this does not exactly match to your use case but it might
+help.
+

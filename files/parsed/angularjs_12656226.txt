@@ -1,0 +1,18 @@
+12656226 AngularJS and a failed templateUrl
+
+Does anyone know how to catch the error in AngularJS when a templateUrl has
+lead to a 404 error or a 500 error when it's assigned to a route which is
+directed to a controller? When a failure occurs, I see the issue in my
+console, but I can't seem to instruct angularJS to deal with gracefully.
+
+John Lindquist offers this example (js in [1]) which uses an overarching
+AppCtrl to listen for $routeChangeError [2]. I assume this will fire for an
+error loading the templateUrl but I have not tested that. Via [3].
+
+[1] <https://github.com/johnlindquist/angular-
+resolve/blob/master/client/js/app.js#L51>
+
+[2] <http://docs.angularjs.org/api/ng>.$route
+
+[3] <https://groups.google.com/forum/?fromgroups=#!topic/angular/KUIVbdlGGbE>
+

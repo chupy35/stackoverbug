@@ -1,0 +1,38 @@
+15907542 Implement favorites documents in elasticsearch
+
+My data model contains two objects - User and Product (stored in mongodb). I
+have already built a faceted product search using elasticsearch. Now I'm
+struggling with implementation of "favorite products" - user can mark some
+products as _his_ favorite and then when searching they should be at the top
+of the list. The question is - how to model this favorite products marking to
+make search aware of it and to be able to perform correct sort operation?
+
+This is my guess - without having tried it. And you know how finicky
+elasticsearch queries can be. So feel free to try and let us have feedback.
+
+In your code, extract the document IDs that the user has as favorites (from
+your user data model). Then use the elasticsearch constant_score to promote
+those that are marked as favorite, by adding this clause into your existing
+bool query (or however you are searching your products already).
+
+    
+    
+    {
+      "constant_score" : {
+         "ids" : {
+            "values" : ["1", "4", "100"]
+         }
+      }
+    }
+    
+
+Feel free to edit your question or this response with more details about your
+query if this is anywhere close to the right track.
+
+Another aproach parent\child document is described in this
+[article](http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-
+children-and-nested-documents/)
+
+I found it very helpfull while ivestigating imlementation of the same feature.
+But I don't know its drawbacks, as i'am not implemented it yet.
+

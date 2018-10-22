@@ -1,0 +1,45 @@
+17495962 is there a way to boost matches in long documents in elasticsearch
+
+In elasticsearch the length of the document matters a lot to the final score
+of the search results. So if I have a match in a field that is just one line
+long, its going to score much higher than a single match in say .... a
+document with 5 pages of text. Is there a way to override this behavior, or
+reliably and repeatedly boost the result to overcome this behavior?
+
+I guess you mean that the length of the matching field is taken into account
+when computing the score. If you want to just disable this behaviour you can
+omit norms while indexing. That way you would lose index time boosting as
+well, but I guess you're not using it and even if you need boosting you should
+use query time boosting, way more flexible.
+
+You have to update the mapping for your field like this:
+
+    
+    
+    "field_name" : {
+        "type" : "string",
+         "omit_norms" : true
+    }
+    
+
+If you want to override this default behaviour for all your string fields you
+can use a dynamic template like this:
+
+    
+    
+    {
+        "type_name" : {
+            "dynamic_templates" : [
+                {
+                    "omit_norms_template" : {
+                        "match_mapping_type" : "string",
+                        "mapping" : {
+                            "omit_norms" : true
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    
+

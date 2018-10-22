@@ -1,0 +1,57 @@
+24395130 Elastic Search Date Range
+
+I have a query that properly parses date ranges. However, my database has a
+default value that all dates have a timestamp of 00:00:00. This means that
+items that are still valid today are shown as expired even if they should
+still be valid. How can I adjust the following to look at just the date and
+not the time of the item (expirationDate).
+
+    
+    
+    {
+        "range": {
+            "expirationDate": {
+                "gte": "now"
+            }
+        }
+    }
+    
+
+An example of the data is:
+
+    
+    
+    "expirationDate": "2014-06-24T00:00:00.000Z",
+    
+
+Did you look into the [different format options for dates stored in
+ElasticSearch](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+date-format.html)? If this does not work for you or you don't want to store
+dates without the time you can try this query, which will work for your exact
+use case I guess:
+
+    
+    
+    {
+        "range": {
+            "expirationDate": {
+                "gt": "now-1d"
+            }
+        }
+    }
+    
+
+You can also round down the time so that your query returns anything that
+occurred since the beginning of the day:
+
+Assuming that  _now_ is **2017-03-07T07:00:00.000** ,  _now/d_ is
+**2017-03-07T00:00:00.000**
+
+Your query would be:
+
+`{ "range": { "expirationDate": { "gte": "now/d" } } }`
+
+[elastic search documentation on rounding
+times](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-range-query.html)
+

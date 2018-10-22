@@ -1,0 +1,73 @@
+24746165 Why elastic does not find my search text?
+
+I have multiple instances of one type, each has field displayName. This field
+is:
+
+    
+    
+    "Contributor1"
+    "Contributor2"
+    ...
+    "Contributor49"
+    
+
+I have all mappings/analyzers/etc set to defaults.
+
+I try to find this:
+
+    
+    
+    fuzzy_like_this_field: { "displayName": { like_text: "49" } }
+    
+
+But it does not return any matches. When I try following search texts:
+
+    
+    
+    "c49" -> nothing
+    "co49" -> nothing
+    "con49" -> nothing
+    "cont49" -> nothing
+    "contr49" -> nothing
+    "contri49" -> nothing
+    "contrib49" -> CORRECT MATCH
+    
+
+How I can improve the search? Strange that elastic does not find "49" - it is
+unique along all sources...
+
+Elasticsearch fuzzy searches on string fields are based on the Levenshtein
+Edit Distance:
+
+> **String**
+
+>
+
+> When querying string fields, fuzziness is interpreted as a Levenshtein Edit
+Distance — the number of one character changes that need to be made to one
+string to make it the same as another string.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/common-
+options.html#fuzziness>
+
+A detailed explanation of the Levenshtein Edit Distance can be found here:
+<http://en.wikipedia.org/wiki/Levenshtein_distance>
+
+For purposes of your example, it's the total number of character adds and
+removals that would be needed to change the term you are searching for to the
+term you find. The string "contrib49" is much closer to "Contributor49" than
+"49" is and it falls within the default distance or fuzziness for this field
+and search.
+
+You can increase the fuzziness with the fuzziness parameter which defaults to
+.5 :
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-flt-field-query.html>
+
+Increasing it (let's say .7 or .8) will increase the overall fuzziness it will
+match.
+
+Overall though are you sure you are using the right approach here? If all you
+are looking for is wildcard search, a fuzzy search may not be the best way to
+go - you might want to look at wildcards and ngram analyzers instead.
+

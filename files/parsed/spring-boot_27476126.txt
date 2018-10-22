@@ -1,0 +1,134 @@
+27476126 Customizing HATEOS URI
+
+I have a Spring Boot Data Rest project I'm working on.
+
+Specifically, I have the following dependencies:
+
+    
+    
+    dependencies {
+        compile 'org.springframework.boot:spring-boot-starter-data-jpa:1.1.9.RELEASE'
+        compile 'org.springframework.boot:spring-boot-starter-data-rest:1.1.9.RELEASE'
+        compile 'org.springframework.boot:spring-boot-starter-actuator:1.1.9.RELEASE'
+    }
+    
+
+I have three entities:
+
+    
+    
+    @Entity
+    @Table(name = "prefecture", uniqueConstraints={@UniqueConstraint(columnNames = {"code", "name"})})
+    public class Prefecture implements Serializable {
+    
+        private static final long serialVersionUID = -4664664252005282494L;
+    
+        @Id
+        @Column(name = "code")
+        private Integer code;
+    
+        @Column(name = "name")
+        private String name;
+    
+        @OneToMany(cascade = CascadeType.ALL, mappedBy = "prefecture")
+        private List<City> cities;
+    
+        ...
+    
+    
+    
+    @Entity
+    @Table(name = "city", uniqueConstraints = {@UniqueConstraint(columnNames = {"code", "name"})})
+    public class City implements Serializable {
+    
+        private static final long serialVersionUID = 1077260811602686775L;
+    
+        @Id
+        @Column(name = "code")
+        private Integer code;
+    
+        @ManyToOne
+        @JoinColumn(name = "prefecture_code", referencedColumnName = "code")
+        private Prefecture prefecture;
+    
+        @Column(name = "name", unique = true)
+        private String name;
+    
+        @OneToMany(cascade = CascadeType.ALL, mappedBy = "city")
+        private List<TownArea> townAreas;
+    
+        ...
+    
+    
+    
+    @Entity
+    @Table(name = "town_area", uniqueConstraints={@UniqueConstraint(columnNames = {"name"})})
+    public class TownArea implements Serializable {
+    
+        private static final long serialVersionUID = -4908446167092081914L;
+    
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(name = "id")
+        private Integer id;
+    
+        @Column(name = "name")
+        private String name;
+    
+        @ManyToOne
+        @JoinColumn(name = "city_code", referencedColumnName = "code")
+        private City city;
+    
+        @Column(name = "prefecture_code")
+        private Integer prefectureCode;
+    
+        @Column(name = "postal_code")
+        private String postalCode;
+    
+        ...
+    
+
+And three repositories:
+
+    
+    
+    @RepositoryRestResource(collectionResourceRel = "cities", path = "cities")
+    public interface CityRepository extends PagingAndSortingRepository<City, Integer> {}
+    
+    
+    @RepositoryRestResource(collectionResourceRel = "prefectures", path = "prefectures")
+    public interface PrefectureRepository extends PagingAndSortingRepository<Prefecture, Integer> {}
+    
+    
+    @RepositoryRestResource(collectionResourceRel = "town_areas", path = "town_areas")
+    public interface TownAreaRepository extends PagingAndSortingRepository<TownArea, Integer> {}
+    
+
+Given this, when I run my application locally I have a set of URLs like this:
+
+    
+    
+    http://localhost:8080/prefectures
+    
+    http://localhost:8080/prefectures/1
+    
+    http://localhost:8080/prefectures/1/cities
+    
+    http://localhost:8080/cities/2/townareas
+    
+    http://localhost:8080/townareas/3
+    
+
+However, I would like to configure the following URLs:
+
+    
+    
+    http://localhost:8080/prefectures/1/cities/2/
+    
+    http://localhost:8080/prefectures/1/cities/2/townareas
+    
+    http://localhost:8080/prefectures/1/cities/2/townareas/3
+    
+
+Is there a way I can customize the uris to accomplish this?
+

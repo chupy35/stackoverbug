@@ -1,0 +1,128 @@
+24224335 Elasticsearch fails silently if document has mapping mismatch for a
+field
+
+I am facing a weird issue with Elasticsearch. My mapping specifies that a
+certain field is of type `long`. Now accidentally I was trying to index some
+documents which had `string` type for that field instead of `long`. I was
+getting no errors from Elasticsearch but the documents were never indexed.
+When I fixed the issue the documents were indexed just fine.
+
+Example:
+
+My mapping:
+
+    
+    
+    {
+        "field1": {
+            "type": "long"
+        }
+    }
+    
+
+When I send this document it fails silently:
+
+    
+    
+     {
+         "field1": "this is a string"
+     }
+    
+
+When I send this it works as expected:
+
+    
+    
+     {
+         "field1": 12345
+     }
+    
+
+Is there a way to detect this kind of errors?
+
+I suspect your mapping looks similar to this:
+
+    
+    
+    {
+        "long_field": {
+            "type": "long"
+        }
+    }
+    
+
+If that's the case, you can set the `coerce` flag to `false` as it is [`true`
+by
+default](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#number) and will always try to convert strings to numbers and
+truncate fractions for integers.
+
+    
+    
+    {
+        "long_field": {
+            "type": "long",
+            "coerce": false
+        }
+    }
+    
+
+If you do this, the next time you try to index a long field as a string, ES
+will tell you this:
+
+    
+    
+    MapperParsingException[failed to parse [long_field]]; nested: IllegalArgumentException[Long value passed as String]; 
+    
+
+If you set
+[ignore_malformed](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html#mapping-
+settings) string to false. It would not index the document if it is malformed
+but throws an exception. At least in elasticsearch 1.6.0.
+
+Example:
+
+    
+    
+    put test
+    
+    put test/test/_mapping 
+    {
+        "properties" : {
+            "title" : {"type" : "string"},
+            "data" : {"type": "long" ,"ignore_malformed":false}
+    
+        }
+    }
+    
+    put test/test/1
+    {
+        "data" : "1",
+        "title" : "valid coerce string to number"
+    }
+    
+    put test/test/2
+    {
+        "data" : "hello",
+        "title" : "invalid number"
+    }
+    
+    #Failed Response
+    {
+       "error": "MapperParsingException[failed to parse [data]]; nested: NumberFormatException[For input string: \"hello\"]; ",
+       "status": 400
+    }
+    
+    Query with Get fails
+    
+    get test/test/2
+    
+    
+    {
+       "_index": "test",
+       "_type": "test",
+       "_id": "2",
+       "found": false
+    }
+    
+

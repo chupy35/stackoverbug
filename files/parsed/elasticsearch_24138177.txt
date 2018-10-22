@@ -1,0 +1,36 @@
+24138177 Elasticsearch RangeFacet errors for response object in Java API
+
+I have crated a range facet for a fields(`CREDITS`) and trying to search it
+with Match all query and get response as below-
+
+    
+    
+    facetCreditRange =rangeFacet("Credit").field("CREDITS").addUnboundedFrom(5).addRange(5,10).addUnboundedTo(10);
+    SearchResponse response1 = client.prepareSearch(index).setTypes(type).addFacet(facetCreditRange).setQuery(matchAllQuery()).execute().actionGet();
+    
+
+when I run this code it gives me error -
+
+> <[Arsenal] Message not fully read (response) for [194] handler
+org.elasticsearch.action.TransportActionNodeProxy$1@fc63c33, error [true],
+resetting>  org.elasticsearch.transport.TransportSerializationException:
+Failed to deserialize exception response from stream at
+org.elasticsearch.transport.netty.MessageChannelHandler.handlerResponseError(MessageChannelHandler.java:169)
+at
+org.elasticsearch.transport.netty.MessageChannelHandler.messageReceived(MessageChannelHandler.java:123)
+at
+org.elasticsearch.common.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.j
+
+and so on Please let me know how can I create a range facet for '`Credits`'
+field with different ranges like '0-5',5-10,10-15.
+
+Didn't you swap the values of your addUnboundedFrom and your addUnboundedTo ?
+
+What I read, here, is that you want 3 ranges ..
+
+  * bigger than 5
+  * between 5 and 10
+  * lower than 10
+
+those ranges are overlapping .. maybe that's the cause of your problem?
+

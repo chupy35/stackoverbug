@@ -1,0 +1,56 @@
+28383604 How to show the state of a checkbox with used 'linkState' in reactjs?
+
+I want to use `linkState` for a checkbox, but I found I can't get the state
+back and show it:
+
+    
+    
+    var Item = React.createClass({
+      mixins: [React.addons.LinkedStateMixin],
+      getInitialState: function() {
+        return {
+          ok: true
+        }
+      },
+      render: function() {
+         return (
+         <div>
+           <input type="checkbox" checkedLink={this.linkState('ok')} />
+           Is it OK: [{this.state.ok}]
+           </div>
+         )
+      }
+    });
+    React.render(<Item />, document.body);
+    
+
+The key line is:
+
+    
+    
+    Is it OK: [{this.state.ok}]
+    
+
+But the state is not shown. Is it correct to use `this.state.ok` to show it?
+
+Live demo: <http://jsbin.com/detese/2/edit>
+
+Your main code is correct, the actual problem is with how you're debugging the
+code.
+
+  * `<div>{true}</div>` renders as `<div>true</div>`
+  * `<div>{false}</div>` renders as `<div></div>`
+
+To just drop state into a component's render I use this snippet:
+
+    
+    
+    <pre>{JSON.stringify(this.state, null, 4)}</pre>
+    
+
+[jsbin](http://jsbin.com/fazapisocu/2/edit?html,js,output)
+
+If you have a boolean and want to render the string representation, do
+`String(thatBoolean)`. React will always render your string exactly as you
+tell it to, but there are quite a few edge cases for non-string values.
+

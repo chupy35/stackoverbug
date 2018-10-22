@@ -1,0 +1,77 @@
+25567007 Error running Spring-Boot samples
+
+I've just cloned the github repo for [Spring Boot
+samples](https://github.com/spring-projects/spring-boot), and I am trying to
+run various samples but they all return the same error:
+
+    
+    
+        c:\temp\spring-boot\spring-boot-samples\spring-boot-sample-web-jsp>mvn package
+    [INFO] Scanning for projects...
+    [INFO]
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Building Spring Boot Web JSP Sample 1.2.0.BUILD-SNAPSHOT
+    [INFO] ------------------------------------------------------------------------
+    [WARNING] The POM for org.springframework.boot:spring-boot-maven-plugin:jar:1.2.0.BUILD-SNAPSHOT is missing, no dependency information available
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD FAILURE
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Total time: 0.197s
+    [INFO] Finished at: Fri Aug 29 11:57:22 BST 2014
+    [INFO] Final Memory: 3M/183M
+    [INFO] ------------------------------------------------------------------------
+    [ERROR] Plugin org.springframework.boot:spring-boot-maven-plugin:1.2.0.BUILD-SNAPSHOT or one of its dependencies could not be resolved: Failed to read
+     artifact descriptor for org.springframework.boot:spring-boot-maven-plugin:jar:1.2.0.BUILD-SNAPSHOT: Could not find artifact org.springframework.boot:
+    spring-boot-maven-plugin:pom:1.2.0.BUILD-SNAPSHOT -> [Help 1]
+    [ERROR]
+    [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+    [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+    [ERROR]
+    [ERROR] For more information about the errors and possible solutions, please read the following articles:
+    [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/PluginResolutionException
+    
+
+Have I missed anything? Do I need to add a repo for Spring Boot? The only
+Spring Boot artifacts in the main maven repo are all `1.1.5.RELEASE`. If I
+replace `1.2.0.BUILD-SNAPSHOT` with `1.1.5.RELEASE`, it builds; but then
+unsurprisingly fails to run.
+
+I ran into the same problem when I updated from `1.1.5.RELEASE`.
+
+I ran `mvn install` from the `spring-boot` directory.
+
+It took over 1 hour 10 minutes!
+
+Let me know if this fixes it!
+
+Did you have the pom file pointing to the snapshot repo as in this
+[link](http://docs.spring.io/autorepo/docs/spring-boot/1.2.0.BUILD-
+SNAPSHOT/reference/html/getting-started-first-application.html)? The [repo
+link](http://repo.spring.io/snapshot/org/springframework/boot/spring-boot-
+maven-plugin/1.2.0.BUILD-SNAPSHOT/) has the maven plugin contents listed.
+
+    
+    
+    <repositories>
+        <repository>
+            <id>spring-snapshots</id>
+            <url>http://repo.spring.io/snapshot</url>
+            <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+        <repository>
+            <id>spring-milestones</id>
+            <url>http://repo.spring.io/milestone</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>spring-snapshots</id>
+            <url>http://repo.spring.io/snapshot</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>spring-milestones</id>
+            <url>http://repo.spring.io/milestone</url>
+        </pluginRepository>
+    </pluginRepositories>
+    
+

@@ -1,0 +1,67 @@
+24969230 How to return data (string) from aggregation without any
+modifications?
+
+Part of my _source looks like this:
+
+    
+    
+     "category": {
+                "id": 2,
+                "translations": [
+                    {
+                        "slug": "word1-and-word2",
+                        "language": "en-us",
+                        "name": "Word1 & Word2"
+                    }
+                ]
+            }
+    
+
+Mapping for this part:
+
+    
+    
+              category:
+                    properties:
+                        id:
+                            type: "long"
+                            index: "not_analyzed"
+                        translations:
+                            properties:
+                                name:
+                                    type: 'string'
+                                slug:
+                                    type: 'string'
+                                    index: "not_analyzed"
+                                language:
+                                    type: 'string'
+                                    index: "not_analyzed"
+    
+
+I am using aggregation:
+
+    
+    
+    category:
+        terms:
+        field: "category.translations.name"
+    
+
+However key returned from aggregation is: `word2` instead of `Word1 & Word2`.
+So it is lowercased and trimmed somehow... How I can return data in intact
+format?
+
+Define a sub field in your mapping:
+
+    
+    
+    name: 
+       type: 'string'
+       fields:
+          untouched:
+             type: 'string'
+             index: 'not_analyzed'
+    
+
+Then run the terms aggregation on `category.translations.name.untouched`
+

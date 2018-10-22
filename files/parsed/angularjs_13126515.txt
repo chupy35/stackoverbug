@@ -1,0 +1,97 @@
+13126515 Best practice to save form state and progress in angularjs
+application?
+
+I'm writing a multi step wizard in angularjs. On each step, I wish to save to
+the server, and progress to the next step in the the wizard.
+
+Using simple links to progress to the next step, and saving to the backend
+server, is simple and it updates my location, maintaining browser history, but
+this approach violates the intent of GET being safe and idempotent.
+
+I'm taking this approach instead;
+
+    
+    
+    $scope.progressToSetp2 = function() {
+    
+        $http.put('quote/' + $routeParams.quoteId, $scope.quote)....;
+    
+        $scope.OnAfterSubmit = function() {
+            $location.path('/steptwo').replace();
+            $scope.$apply();
+        };
+    
+    $scope.includeFormPartial = 'partials/steptwo.html';
+    };
+    
+
+Is this a good approach? Are there better approaches?
+
+Thanks.
+
+of course there are! why are you saving to the server in each step? it is not
+the angular way of thinking.
+
+the best practice is to save the state in the scope and do local validation,
+and after finishing you save to the back end the whole steps in on send.
+(local validation does not cancel the need to back end validation)
+
+If you want even better practice, use a service to hold the data. Look at
+[this](http://jsfiddle.net/simpulton/VJ94U/)
+
+    
+    
+    angular.module('myApp', [])
+    .service('notesService', function () {
+        var data = [
+            {id:1, title:'Note 1'},
+            {id:2, title:'Note 2'},
+            {id:3, title:'Note 3'},
+            {id:4, title:'Note 4'},
+            {id:5, title:'Note 5'},
+            {id:6, title:'Note 6'},
+            {id:7, title:'Note 7'},
+            {id:8, title:'Note 8'}
+        ];
+    
+        return {
+            notes:function () {
+                return data;
+            },
+            addNote:function (noteTitle) {
+                var currentIndex = data.length + 1;
+                data.push({
+                    id:currentIndex, title:noteTitle
+                });
+            },
+            deleteNote:function (id) {
+                var oldNotes = data;
+                data = [];
+    
+                angular.forEach(oldNotes, function (note) {
+                    if (note.id !== id) data.push(note);
+                });
+            }
+        };
+    })
+    
+
+If you care about the user input in each step and want to keep it for him/her
+for multiple sessions, you may save the input data in the client side
+temporarily until finishing all the steps.
+
+also read all [this](http://onehungrymind.com/) blog
+
+A better approach is to break down your process in to tasks and serialize the
+information and persist that to the database upon each task completion.
+
+When your complete the final step you don't have to resubmit everything again
+either. You can just call the web api that processes the persisted steps in
+the workflow.
+
+Like you've mentioned this gives the user the ability to continue the workflow
+later (intentionally or in the case of a system failure).
+
+Breaking down the workflow / process in to tasks will also help you understand
+the process a bit more too. Which is a nice side effect of this approach.
+

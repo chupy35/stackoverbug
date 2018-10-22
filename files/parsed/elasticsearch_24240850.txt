@@ -1,0 +1,42 @@
+24240850 query not applying custom score
+
+I'm making the next query, my problem is that the custom score (scrip_score)
+is not being applied. Am I doing something wrong?:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "terms": {
+                "tactics": [
+                  "user_id"
+                  "type_user",
+                  "browser_plugins",
+                  "cashback"
+                ]
+              }
+            }
+          ]
+        },
+        "script_score": {
+          "script": "type_user === 2 ? 1 : 2"
+        }
+      },
+      "from": "0",
+      "size": 50,
+      "sort": {
+        "name": {
+          "order": "desc",
+          "ignore_unmapped": true
+        }
+      }
+    }
+    
+
+The `script_score` section in your query gets ignored. If you want it to be
+taken into account you need to wrap you existing `bool` query into a
+`function_score` query where you can use the `script_score` part as well.
+

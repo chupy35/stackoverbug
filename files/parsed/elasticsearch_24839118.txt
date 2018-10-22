@@ -1,0 +1,62 @@
+24839118 Elasticsearch delete duplicates
+
+Some of the records are duplicated in my index identified by a numeric field
+`recordid`.
+
+There is delete-by-query in elasticsearch, Can I use it to delete any one of
+the duplicate record?
+
+Or some other way to achieve this?
+
+Elasticsearch recommends ["use(ing) the scroll/scan API to find all matching
+ids and then issue a bulk request to delete
+them"](https://www.elastic.co/guide/en/elasticsearch/reference/1.6/docs-
+delete-by-query.html).
+
+**Edited
+
+The first challenge here would be to identify the duplicate documents. For
+that you need to run a terms aggregation on the fields that defines the
+uniqueness of the document. On the second level of aggregation use top_hits to
+get the document ID too. Once you are there , you will get the ID of documents
+having duplicates.
+
+Now you can safely remove them , may be using Bulk API.
+
+You can read of other approaches to detect and remove duplicate documents
+[here](https://qbox.io/blog/minimizing-document-duplication-in-elasticsearch).
+
+Yes, you can find duplicated document with an aggregation query:
+
+    
+    
+    curl -XPOST http://localhost:9200/your_index/_search -d '
+     {
+      "size": 0,
+      "aggs": {
+        "duplicateCount": {
+          "terms": {
+            "field": "recordid",
+            "min_doc_count": 2,
+            "size": 10
+          },
+          "aggs": {
+            "duplicateDocuments": {
+              "top_hits": {
+                "size": 10
+              }
+            }
+          }
+        }
+      }
+    }'
+    
+
+then delete duplicated documents preferably using a bulk query. Have a look at
+[es-deduplicator](https://github.com/deric/es-deduplicator) for automated
+duplicates removal (disclaimer: I'm author of that script).
+
+**NOTE** : Aggregate queries could be very expensive and might lead to crash
+of your nodes (in case that your index is too large and number of data nodes
+too small).
+

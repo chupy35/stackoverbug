@@ -1,0 +1,68 @@
+13363709 How to join 2 match queries into a query for elasticsearch?
+
+I'd like to query for data that `user_id` is `'1'` and `name` is `'John'`.
+It's easy to write a commonly-used SQL:
+
+    
+    
+    select * from t where user_id = '1' and name = 'John';
+    
+
+But it's not easy for me to make a query for elasticsearch.
+
+First, I made a query for `user_id`:
+
+    
+    
+    {
+      "query" : {
+        "match" : {
+          "user_id" : "1"
+        }
+      }
+    }
+    
+
+And the results were what I expected.
+
+Then, I made a query for `name`:
+
+    
+    
+    {
+      "query" : {
+        "match" : {
+          "name" : "John"
+        }
+      }
+    }
+    
+
+It worked well, too.
+
+But I couldn't make a query joining 2 conditions with and operation. How can I
+join those 2 match queries into one using and operation?
+
+What you need is a [bool
+query](http://www.elastic.co/guide/en/elasticsearch/reference/1.4/query-dsl-
+bool-query.html) in which you put all your single queries:
+
+_(I could not test the query, it might be wrong, but the bool-query is the
+answer to your problem)_
+
+    
+    
+    {
+        "bool" : {
+            "must" : [{
+                "match" : {
+                    "user_id" : "1"
+                },
+                "match" : {
+                    "name" : "John"
+                }
+            }]
+        }
+    }
+    
+

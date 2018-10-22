@@ -1,0 +1,60 @@
+21691795 Elasticsearch - Different between indices.fielddata.cache.size and
+indices.fielddata.breaker.limit
+
+[One of the biggest causes of instability in Elasticsearch is fielddata: field
+values have to be loaded into memory to make aggregations, sorting and
+scripting perform as fast as they do.
+](http://www.elasticsearch.org/blog/1-0-0-rc1-released/)
+
+As description above on Elasticsearch page, large fielddata always causes
+Elasticsearch out of memory(OOM). Thus we can set
+**_indices.fielddata.cache.size_** and **_indices.fielddata.breaker.limit_**
+to prevent OOM. What is the different between those two settings? Are they
+have any relation?
+
+For example, My Elasticsearch JVM has 2g total memory. If I set
+**_indices.fielddata.cache.size_** to 1g but
+**_indices.fielddata.breaker.limit_** set to 60% (Which means 1.2g). The
+fielddata allowed to load to memory is over the fielddata cache size. Is it
+will causes any error? ([Reference
+Fielddata](http://www.elasticsearch.org/guide/en/elasticsearch/reference/master/index-
+modules-fielddata.html))
+
+Thank you.
+
+After study for a long time, I found some answer.
+
+When you set **indices.fielddata.cache.size** to 1g. It means how many field
+cache size elasticsearch can use to handle query request. But when you set
+**indices.fielddata.breaker.limit** to 60% (means 1.2g), If the query data is
+larger than this size, elasticsearch will reject this query request and causes
+an exception.
+
+So, if query data is smaller than 1.2g but larger than 1g, elassticsearch will
+accept this query request. After reach the **indices.fielddata.cache.size** ,
+the old data will be flush and release the memory for new data.
+
+Their difference is, I quote
+
+> Fielddata size is checked after the data is loaded. What happens if a query
+arrives that tries to load more into fielddata than available memory? The
+answer is ugly: you would get an OutOfMemoryException.
+
+>
+
+> Elasticsearch includes a fielddata circuit breaker that is designed to deal
+with this situation. The circuit breaker estimates the memory requirements of
+a query by introspecting the fields involved (their type, cardinality, size,
+and so forth). It then checks to see whether loading the required fielddata
+would push the total fielddata size over the configured percentage of the
+heap.
+
+>
+
+> If the estimated query size is larger than the limit, the circuit breaker is
+tripped and the query will be aborted and return an exception. This happens
+before data is loaded, which means that you won’t hit an OutOfMemoryException.
+
+from [Limiting Memory
+Usage](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/_limiting_memory_usage.html).
+

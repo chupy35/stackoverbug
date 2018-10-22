@@ -1,0 +1,27 @@
+19034521 How can I use score_mode=sum with Elasticsearch multi-match query
+
+When I submit my mult-match query below with explain, it appears the scoring
+is using the highest score of a matched field... I want the sum score of all
+fields... How can I do that.
+
+    
+    
+    echo 'Name multi-match BOOSTED query: name.name name.asis name.phonetic name.basename'
+    curl -sXPOST "localhost:9200/names-test/doc/_search?pretty" -d '{
+        "query": {
+            "multi_match": {
+                "query": "William Jurgenson",
+                "fields": [ "name.name^1.6", "name.asis^3", "name.phonetic^1.4", "name.basename^1.2" ]
+            }
+        }
+    }'
+    
+
+You can set `use_dis_max` to `false`. The `multi_match` query defaults to
+using a `dis_max` query, which will take the max score instead of the sum -
+setting `use_dis_max` to `false` will use a bool query (which will take the
+sum).
+
+Source: <http://www.elasticsearch.org/guide/reference/query-dsl/multi-match-
+query/>
+

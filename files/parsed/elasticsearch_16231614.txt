@@ -1,0 +1,54 @@
+16231614 quick recovery after node restart in elasticsearch
+
+Consider the below settings in the elasticsearch.yml
+
+    
+    
+    gateway.recover_after_data_nodes: 3
+    gateway.recover_after_time: 5m
+    gateway.expected_data_nodes: 3
+    
+
+Current setting: Say, I have 3 data nodes. Now if I decide to restart a data
+node(due to a small change in setting), the recovery will start immediately
+after node restart as per the expected_data_nodes setting. There will be many
+unassigned shards, which will get allocated slowly depending on the data it
+contains.
+
+In order to avoid that, is there any way to allocate all the unassigned shards
+to a specific node?(in my case the restarted node) and once that is done, ES
+should take over the rebalancing.
+
+Mainly I want to avoid the heavy timelag of the cluster state from yellow to
+green.(it is in the range of hours in my case)
+
+Can I use the cluster reroute api for this purpose?
+
+or is there any other api to transfer all the unassigned shards to specific
+node at one go?
+
+**For Elasticsearch version >= 1.0.0:**
+
+    
+    
+    curl -XPUT localhost:9200/_cluster/settings -d '{"transient":{"cluster.routing.allocation.enable": "none"}}'
+    /etc/init.d/elasticsearch restart
+    curl -XPUT localhost:9200/_cluster/settings -d '{"transient":{"cluster.routing.allocation.enable": "all"}}'
+    
+
+**For earlier version of ES:**
+
+    
+    
+    curl -XPUT localhost:9200/_cluster/settings -d '{"transient":{"cluster.routing.allocation.disable_allocation": true}}'
+    /etc/init.d/elasticsearch restart
+    curl -XPUT localhost:9200/_cluster/settings -d '{"transient":{"cluster.routing.allocation.disable_allocation": false}}'
+    
+
+Shard keep unallocated until "cluster.routing.allocation.disable_allocation":
+false, then shards recover on the server just restarted (starting at size they
+were before shutdown) It is very quick.
+
+Reference: <http://elasticsearch-users.115913.n3.nabble.com/quick-recovery-
+after-node-restart-in-elasticsearch-td4033876.html#a4034211>
+

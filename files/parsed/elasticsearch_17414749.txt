@@ -1,0 +1,33 @@
+17414749 How exactly does elasticsearch versioning work?
+
+My understanding was that Elasticsearch would store the lastest copy of the
+document and just update the version field number? But I was playing around
+with a few thousand documents and had the need to index them repeatedly
+without changing any data in the document. My thinking was that the index size
+would remain the same, but that wasn't the case ... the index size seemed to
+increase.
+
+This confused me a little bit, so i just wanted to seek clarification on the
+internal mechanism of versioning within elasticsearch.
+
+An update is a Delete + Insert Lucene operation behind the scene. But you
+should know that Lucene does not really delete the document but mark it as
+deleted.
+
+To remove deleted docs, you have to optimize your Lucene segments.
+
+    
+    
+    $ curl -XPOST 'http://localhost:9200/twitter/_optimize?only_expunge_deletes=true'
+    
+
+See [Optimize API](http://www.elasticsearch.org/guide/reference/api/admin-
+indices-optimize/). Also have a look at [merge
+options](http://www.elasticsearch.org/guide/reference/index-modules/merge/).
+Merging segments happens behind the scene at some time.
+
+For a general overview of versioning support in Elasticsearch, please refer to
+the [_Elasticsearch Versioning
+Support_](http://www.elasticsearch.org/blog/elasticsearch-versioning-
+support/).
+

@@ -1,0 +1,42 @@
+21835212 Delete from elasticsearch all items where field does not match a
+certan value
+
+I'm trying to delete all items from Elasticsearch index where field
+time_crawl_started does NOT match a specific value. I'm using match_all query
+in combination with NOT filter.
+
+This is what I got so far:
+
+    
+    
+        $client = new Elasticsearch\Client();
+        $params = Array(
+          'index' => ...,
+          'type'  => ...
+        );
+        $params['body']['query']['filtered']['query']['match_all'] = Array();
+        $params['body']['query']['filtered']['filter']['not']['term']['time_crawl_started'] = $someDate;
+        $client->deleteByQuery($params);
+    
+
+The problem is that this deletes all items, even ones having
+time_crawl_started set to $someDate, which is simply a datetime such as
+"2014-02-17 19:13:31".
+
+How should I change this to delete only the items that don't have the correct
+date?
+
+The problem was that time_crawl_started field was analyzed and thus any
+comparison by value was wrong. I had to create index manually (as opposed to
+automagically by just inserting a new document into non-existing index) and
+specify mapping for my item type, setting 'index' => 'not_analyzed' for
+time_crawl_started.
+
+And I ended up using script filter like this:
+
+    
+    
+        $params['body']['query']['filtered']['query']['match_all'] = Array();
+        $params['body']['query']['filtered']['filter']['script']['script'] = "doc['time_crawl_started'].value != \"" . $someDate . "\"";
+    
+

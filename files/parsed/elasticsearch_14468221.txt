@@ -1,0 +1,57 @@
+14468221 In elasticsearch, is there some method to reduce the importance of a
+set of search terms?
+
+Ideally, I would like to reduce the importance of certain words such as
+"store", "shop", "restaurant".
+
+I would like "Jimmy's Steak Restaurant" to be about as important as "Ralph's
+Steak House" when a user searches for "Steak Restaurant". I hope to accomplish
+this by severely diminishing the importance of the word "restaurant" (along
+with 20-50 other words).
+
+Stop words work well for some words, such as "a", "the", "of", etc, but they
+are all-or-nothing.
+
+**Is there a way to provide a weighting or boost value per word at the index
+or mapping level?**
+
+I can probably accomplish this at the query level, but that could be very bad
+if I have 50 words whose impact I need to reduce.
+
+This was a generalized example. In my actual complex solution, I really do
+need to reduce the impact of quite a few search terms.
+
+I don't believe it is possible to specify a term-level boost during indexing.
+[In this thread](http://elasticsearch-users.115913.n3.nabble.com/Modification-
+of-term-weight-td1449157.html), Shay mentions that it is possible in Lucene,
+but that it's a tricky feature to surface through the API.
+
+Another [relevant thread](http://elasticsearch-
+users.115913.n3.nabble.com/Handling-tag-quot-weights-quot-td1395562.html),
+suggesting the same thing. Shay recommends trying to sort it out using a
+custom_score query:
+
+> I think that you should first try and solve it on the search side. If you
+know the weights when you do a search, you can either construct a query that
+applies different boosts depending the tag, or use custom_score query.
+
+>
+
+> Custom_score query is slower than other queries, but I suggest you run and
+check if it's ok for you (with actual data, and relevant index size). The good
+thing is that if its slow for you (and slow here means both latency and QPS
+under load), you can always add more replicas and more machines to separate
+the load.
+
+[Here is an example of a custom_score
+query](https://gist.github.com/913260#gistcomment-26720) that boosts on a
+somewhat-similar term level (except it's for a special field that only has one
+category term, so this may not apply). It might be easier to break the script
+out into a native script, instead of using mvel, since you'll have a big list
+of words.
+
+As an alternative, perhaps add a [synonym token
+filter](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/synonym-tokenfilter.html) that interchanges words like
+"shop", "restaurant", "store", etc?
+

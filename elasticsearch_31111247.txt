@@ -1,0 +1,4 @@
+31111247
+Elastic search : Scenarie to store a query, and be informed of last document fulfilling that query
+<p>I want to store a request in elastic search, and be informed of the last document fulfilling that request when they are inserted in the search, is there a custom solution in elastic search to do so?</p>&#xA;
+<p>What you're asking sounds a lot like the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-percolate.html" rel="nofollow">Percolator</a> functionality:</p>&#xA;&#xA;<blockquote>&#xA;  <p>Traditionally you design documents based on your data, store them into an index, and then define queries via the search API in order to retrieve these documents. The percolator works in the opposite direction. First you store queries into an index and then, via the percolate API, you define documents in order to retrieve these queries.</p>&#xA;</blockquote>&#xA;

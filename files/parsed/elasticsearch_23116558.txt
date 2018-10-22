@@ -1,0 +1,30 @@
+23116558 How do index aliases work in Elasticsearch?
+
+I'm wondering how exactly do index aliases work behind the scenes in
+Elasticsearch?
+
+Does an alias have a separate copy of the data for each index it is linked to?
+Or is it only aware of the index names, and the not the data within each
+index?
+
+If this is the case, are aggregations much slower when performed on an alias
+with many linked indices?
+
+From the [Index
+Aliases](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+aliases.html) Elasticsearch reference:
+
+> APIs in elasticsearch accept an index name when working against a specific
+index, and several indices when applicable. The index aliases API allow to
+alias an index with a name, with all APIs automatically converting the alias
+name to the actual index name. An alias can also be mapped to more than one
+index, and when specifying it, the alias will automatically expand to the
+aliases indices. An alias can also be associated with a filter that will
+automatically be applied when searching, and routing values.
+
+So based on this it is only aware of the index names and not the data within
+each index. An aggregation could be slower when performed against an alias
+that spans multiple indexes. Because as far as I know in order to perform the
+aggregation action, Elasticsearch must collect the dataset to perform the
+aggregation function(s) against.
+

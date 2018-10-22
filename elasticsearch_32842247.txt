@@ -1,0 +1,3 @@
+32842247
+How to find lexically smallest string in elasticsearch?
+<p>I am trying to find lexically smallest string in an index of elasticsearch. The <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-min-aggregation.html#_script?q=min" rel="nofollow" title="Min Aggregation">Min Aggregation</a> works only for numeric values. Is there any other aggregation that solves this problem ?</p>&#xA;

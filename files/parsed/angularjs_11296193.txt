@@ -1,0 +1,68 @@
+11296193 AngularJS - ng-bind-html-unsafe and ng-model Problems
+
+I have the following line in my html:
+
+`<div ng-bind-html-unsafe="departmentConfig" class="control-group"></div>`
+
+and I use a `$resource` get to retrieve the HTML, assign the HTML to
+`$scope.departmentConfig`, and then the view is updated perfectly. The HTML
+that is assigned to `$scope.departmentConfig` contains form elements, with
+`ng-model` attributes in it, but when I change the values in these input
+elements, they don't update the `$scope` model at all.
+
+This is what I have tried, based on a lot of other internet posts, and it
+isn't working:
+
+    
+    
+    $resource('resources/sources/departments/:mappedName', {
+            mappedName:departmentKey
+        }).get(function(departmentConfig) {
+            // This will call another function that will build a chunk of HTML
+            $scope.departmentConfig = $scope.buildDepartmentConfigHtml(departmentConfig);
+            // This is my feeble attempt to access the element, and bootstrap it to include the items in the $scope model.
+            var $departmentConfigContainer = $('#departmentConfig');
+            angular.bootstrap($departmentConfigContainer, ['sourcemanager']);
+    
+
+I have even seen some jsFiddle examples where this appears to be working, but
+mine isn't. Am I calling bootstrap too soon? I also tried putting a `$watch`
+on `$scope.departmentConfig` like this:
+
+    
+    
+    $scope.$watch('departmentConfig', function() {
+        var $departmentConfigContainer = $('#departmentConfig');
+        angular.bootstrap($departmentConfigContainer);
+    });
+    
+
+but it didn't work either. I bet there is an easy explanation to this, I just
+can't seem to get the input elements with `ng-model` that are loaded after
+page compile to get bound to the model. Any help is appreciated, this is the
+last piece of functionality I need to get working on my page. Let me know if
+you need more information about my configuration as well.
+
+So, simply put, how can I force a section of the DOM to recompile after I know
+it has been loaded?
+
+**UPDATE**
+
+Here is a jsfiddle outlining what I would like to do:
+<http://jsfiddle.net/j_snyder/ctyfg/>. You will notice that property two and
+three don't update the model, and I am calling bootstrap on the outer div,
+hoping that will include those in the model binding. This is the first time I
+have posted to jsfiddle, please let me know if you can't see the example.
+
+ng-bind-html is made for regular HTML, not compiling new angular elements.
+
+You will have use the [$compile
+service](http://docs.angularjs.org/api/ng.%24compile).
+
+Here is how you would edit your current example to work:
+<http://jsfiddle.net/andytjoslin/ctyfg/21/>. But this way ends up being bad,
+because you have to do DOM manipulation in your controller.
+
+You just need to create a directive that will basically do what you wanted ng-
+bind-html to do: <http://jsfiddle.net/andytjoslin/ctyfg/22/>
+

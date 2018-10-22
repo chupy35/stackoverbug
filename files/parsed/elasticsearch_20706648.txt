@@ -1,0 +1,48 @@
+20706648 How can I take n-documents for each query in a nested query?
+
+I currently have a document type that has an array of string identifiers
+stored in Elasticsearch. I would now like to search for many companies worth
+of identifiers at once -- which is easy enough, I was just able to tell ES to
+match on **any** of the identifiers by providing a combined list of all
+identifiers.
+
+Now, I would like to tell ES to match 5 documents of each group of
+identifiers. For example, if I had the following items stored:
+
+    
+    
+    { text: "Goodbye!", Identifiers: [q]}
+    { text: "So long!", Identifiers: [a]}
+    { text: "Goodnight!", Identifiers: [a, z]}
+    { text: "See you tomorrow!", Identifiers: [b, r]}
+    { text: "Farewell!", Identifiers: [c, b, d, m]}
+    
+
+I want to provide several queries and have each return only 1 element for each
+group. So if I searched for items grouped in either (don't really care about
+overlap):
+
+    
+    
+    [d], [b, z, r], [d, r]
+    
+
+I would expect to get back:
+
+    
+    
+    { text: "Farewell!", Identifiers: [c, b, d, m]}
+    { text: "Goodnight!", Identifiers: [a, z]}
+    { text: "See you tomorrow!", Identifiers: [b, r]}
+    
+
+The first, because it matched on `d`, the second because it matched on `z`,
+the third because it matched on `b`.
+
+Is this, at all possible to perform in one query, or am I going to have to
+query once per group to achieve this?
+
+Using
+[mulitsearch](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+multi-search.html) allows you to search for n-documents in each query.
+

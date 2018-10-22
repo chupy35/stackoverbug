@@ -1,0 +1,37 @@
+12360634 How to reduce number of segments in elasticsearch index
+
+I have a two node elasticsearch cluster which is configured to have 5 shards
+and 2 replicas. After I indexed a db table with ~2M records, there are 124
+segments generated under the corresponding cache. This number is too big, and
+I am afraid it would easily reach the hard limit of nofiles with more indices
+added.
+
+Is there a way to reduce the number of segments per index? Thanks
+
+You have control over [merge
+policy](http://www.elasticsearch.org/guide/reference/index-modules/merge.html)
+in elasticsearch. The merge settings can be updated dynamically using [Update
+Index Settings API](http://www.elasticsearch.org/guide/reference/api/admin-
+indices-update-settings.html). You can, for example, reduce
+`index.merge.policy.segments_per_tier` to some value below 10 and this will
+reduce the number of segments on each tier and, as a result, the total number
+of segments.
+
+You can also force merge manually using [Optimize
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+optimize.html). For example:
+
+    
+    
+    $ curl -XPOST 'http://localhost:9200/your-index/_optimize?max_num_segments=1'
+    
+
+You can reduce the max number of segments using the following command
+
+    
+    
+    $ curl -XPOST 'http://localhost:9200/_forcemerge?max_num_segments=5'
+    
+
+in case of windows you will need to remove the inverted commas.
+

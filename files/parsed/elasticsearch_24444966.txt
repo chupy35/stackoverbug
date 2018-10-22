@@ -1,0 +1,141 @@
+24444966 Elastic search find sum of two fields in single query
+
+I have a requirement of find sum of two fields in a single query. I have
+managed to find the sum of one field, but facing difficulty to add two
+aggression in a single query.
+
+My json look like the following way
+
+    
+    
+    {
+        "_index": "outboxprov1",
+        "_type": "message",
+        "_id": "JXpDpNefSkKO-Hij3T9m4w",
+        "_score": 1,
+        "_source": {
+           "team_id": "1fa86701af05a863f59dd0f4b6546b32",
+           "created_user": "1a9d05586a8dc3f29b4c8147997391f9",
+           "created_ip": "192.168.2.245",
+           "folder": 1,
+           "post_count": 5,
+           "sent": 3,
+           "failed": 2,
+           "status": 6,
+           "message_date": "2014-08-20T14:30Z",
+           "created_date": "2014-06-27T04:34:30.885Z"
+        }
+     } 
+    
+
+My search query
+
+    
+    
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match": {
+                   "team_id": {
+                      "query": "1fa86701af05a863f59dd0f4b6546b32"
+                   }
+                }
+             },
+             "filter": {
+                "and": [
+                   {
+                      "term": {
+                         "status": "6"
+                      }
+                   }
+                ]
+             }
+          }
+       },
+       "aggs": {
+          "intraday_return": {
+             "sum": {
+                "field": "sent"
+             }
+          }
+       },
+        "aggs": {
+          "intraday_return": {
+             "sum": {
+                "field": "failed"
+             }
+          }
+       }
+    }
+    
+
+How to put two aggression in one query? Please help me to solve this issue.
+Thank you
+
+You can compute the sum using script
+
+Example:
+
+    
+    
+    {
+       "size": 0,
+      "aggregations": {
+      "age_ranges": {
+         "range": {
+            "script": "DateTime.now().year - doc[\"birthdate\"].date.year",
+            "ranges": [
+               {
+                  "from": 22,
+                  "to": 25
+               }
+            ]
+         }
+      }
+    }
+    }
+    
+
+your query should contain "script" : "doc['sent'].value+doc['failed'].value"
+
+There can be multiple sub aggregates
+
+    
+    
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match": {
+                   "team_id": {
+                      "query": "1fa86701af05a863f59dd0f4b6546b32"
+                   }
+                }
+             },
+             "filter": {
+                "and": [
+                   {
+                      "term": {
+                         "status": "6"
+                      }
+                   }
+                ]
+             }
+          }
+       },
+       "aggs": {
+          "intraday_return_sent": {
+             "sum": {
+                "field": "sent"
+             }
+          },
+          "intraday_return_failed": {
+             "sum": {
+                "field": "failed"
+             }
+          }
+       }
+    }
+    
+

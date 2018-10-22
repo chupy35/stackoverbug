@@ -1,0 +1,33 @@
+22546760 Enabling TTL (Time-to-Live) On ElasticSearch
+
+Imagine I am adding documents once per second to an ElasticSearch whose TTL is
+disabled.
+
+Each document has a TTL of `2h`.
+
+After one hour, I enable TTL on the index.
+
+I continue adding documents up until the beginning of the second hour.
+
+In my mind, the chain of events which should occur is:
+
+    
+    
+    -  -  -  -  -  -  -  -  - 
+    |     |     |           |
+    |     |     |           |_4hr: All documents dead
+    |     |     |_2hr: Stop adding documents, first documents should die
+    |     |_1hr: Enable TTL on index
+    |_0hr: Begin adding documents
+    
+
+This corresponds to the [principle of least
+astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment),
+but is it actually what happens? The [TTL
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+ttl-field.html) doesn't explain what happens if an index's TTL is turned on
+late, or on and off repeatedly.
+
+Naturally, answers making use of references to solid documentation are most
+appreciated.
+

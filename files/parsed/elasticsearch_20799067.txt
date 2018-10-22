@@ -1,0 +1,144 @@
+20799067 filter empty array fields in elasticsearch
+
+My document structure is something like:
+
+    
+    
+    {
+        title: string,
+        description: string,
+        privacy_mode: string,
+        hidden: boolean,
+        added_by: string,
+        topics: array
+    }
+    
+
+I am trying to query elasticsearch. However I dont want any document with
+empty topics array field.
+
+Below is a function which builds the query object:
+
+    
+    
+    function getQueryObject(data) {
+        var orList = [{ "term": {"privacy_mode": "public", "hidden": false} }]
+        if (data.user) {
+            orList.push({ "term": {"added_by": data.user} });
+        }
+    
+        var queryObj = {
+            "fields": ["title", "topics", "added_by", "img_url", "url", "type"],
+            "query": {
+                "filtered" : {
+                    "query" : {
+                        "multi_match" : {
+                            "query" : data.query + '*',
+                            "fields" : ["title^4", "topics", "description^3", "tags^2", "body^2", "keywords",
+                                    "entities", "_id"]
+                        }
+                    },
+                    "filter" : {
+                        "or": orList
+                    },
+                    "filter" : {
+                        "limit" : {"value" : 15}
+                    },
+                    "filter": {
+                       "script": {
+                            "script": "doc['topics'].values.length > 0"
+                       }
+                   }
+                }
+            }
+        }
+        return queryObj;
+    };
+    
+
+This still gives me elements with empty topics array. wondering whats wrong!
+
+Thank for the help
+
+You probably want the [missing-
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-missing-filter.html). Your script approach will load _all_ the values of
+topics into memory, which will be very wasteful if you are not also e.g.
+faceting on them.
+
+Also, the structure of your filter is wrong. You cannot have repeated values
+for `filter`, but should wrap them with a `bool`-filter. (Here is why you
+usually want to use `bool` and not `and|or|not`:
+<http://www.elasticsearch.org/blog/all-about-elasticsearch-filter-bitsets/>
+
+Lastly, you probably want to specify the `size` on the search object, instead
+of using the `limit`-filter.
+
+I made a runnable example you can play with:
+<https://www.found.no/play/gist/aa59b987269a24feb763>
+
+    
+    
+    #!/bin/bash
+    
+    export ELASTICSEARCH_ENDPOINT="http://localhost:9200"
+    
+    # Index documents
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_bulk?refresh=true" -d '
+    {"index":{"_index":"play","_type":"type"}}
+    {"privacy_mode":"public","topics":["foo","bar"]}
+    {"index":{"_index":"play","_type":"type"}}
+    {"privacy_mode":"private","topics":[]}
+    '
+    
+    # Do searches
+    
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_search?pretty" -d '
+    {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "privacy_mode": "public"
+                                }
+                            }
+                        ],
+                        "must_not": [
+                            {
+                                "missing": {
+                                    "field": "topics"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    '
+    
+
+The keyword `missing` is remove since ES5.0 and it suggests using `exists`(see
+[here](https://www.elastic.co/guide/en/elasticsearch/reference/5.0/query-dsl-
+exists-query.html)):
+
+    
+    
+    curl -XGET 'localhost:9200/_search?pretty' -H 'Content-Type: 
+    application/json' -d'
+    {
+        "query": {
+            "bool": {
+                "must_not": {
+                       "exists": {
+                           "field": "topics"
+                       }
+                }
+            }
+        }
+    }'
+    
+

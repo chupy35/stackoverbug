@@ -1,0 +1,50 @@
+14006869 What's wrong with this Elastic query
+
+Why this query works fine (returns the proper result):
+
+    
+    
+    {
+      "filter": {
+        "term": { "id": "123456" }
+      }
+    }
+    
+
+and this one does not (returns HTTP 500):
+
+    
+    
+    {
+      "filtered": {
+        "query": {
+          "match_all": {}
+        },
+        "filter": {
+          "term": { "id": "123456" }
+        }
+      }
+    }
+    
+
+?
+
+Elasticsearch expects query element on the root level similar to the "filter"
+element. Try this:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "term": { "id": "123456" }
+          }
+        }
+      }
+    }
+    
+

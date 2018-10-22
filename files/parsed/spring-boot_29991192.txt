@@ -1,0 +1,15 @@
+29991192 Spring Boot says that JPA doesn't support custom isolation levels,
+but it seems like spring can do it
+
+In spring boot's BasicBatchConfigurer there is a warning presented:
+
+logger.warn("JPA does not support custom isolation levels, so locks may not be
+taken when launching Jobs");
+
+However, I get the impression that this issue has been addressed:
+<https://jira.spring.io/browse/SPR-11942>
+
+Is there a work around for this issue? Should I just be extending
+BatchConfigurer and implementing my own createJobRepository method? Should
+there be a change to spring boot code?
+

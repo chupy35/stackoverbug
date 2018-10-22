@@ -1,0 +1,29 @@
+15707321 Elastic Search way to hide document form search till end of import
+process
+
+I am wondering if there is any way to "hide" documents from search routine in
+following case:
+
+  1. Import process are run daily.
+  2. Import process are indexing documents to Elastic Search via multiple calls to `_bulk`
+  3. While import process is running I do not what just imported documents where able for getting via `_search`.
+
+Does Elastic search have some kind of transaction support - no index document
+will be available till transactions is committed?
+
+I expect number of documents being indexed in one import process to be quite
+numerous. So I cannot do one `_bulk` call.
+
+I tried `index.refresh_interval` index setting and calling `_refresh` at the
+end of import process. But it does not helped much - documents became
+searchable in the middle of import process.
+
+Elasticsearch doesn't support transaction. You will need to handle this
+functionality on the client side. If you are only adding documents (no
+updates), you can associate a batch id with each record and filter out all
+records with batch id >= the currently running batch. At the end of the batch
+when you want to make new records available you can update the filter to
+include just finished batch id. You can associate this filter with an alias,
+which will make the switch transparent for searchers. This approach is not
+going to work in case of updates though.
+

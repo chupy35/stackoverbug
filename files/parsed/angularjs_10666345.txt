@@ -1,0 +1,42 @@
+10666345 Angularjs : Learning how ngChecked works
+
+I tried modifying the ng-checked example so that clicking on one of the
+checkboxes would automatically update the other.
+
+Clicking A, then B, then A again, is not doing what I'm expecting.
+
+What part of the documentation should I look at to understand what's happening
+?
+
+<http://jsfiddle.net/cantcopy/ev62U/>
+
+Why don't you connect both checkboxes to the same model ?
+
+    
+    
+    <div ng-app>
+      A - Check me to check both: 
+        <input type="checkbox" ng-model="master"><br/>
+      B - Check me to check both:
+        <input type="checkbox" ng-model="master">
+    </div>​
+    
+
+<http://jsfiddle.net/ev62U/133/>
+
+==================================================================================
+
+To explain your fiddle:
+
+`ng-checked` does not update the model, it only updates the view (checkbox),
+once the expression changes.
+
+Click A: the `master` is changed to `true`, the B checkbox is watching its
+`ng-checked` value and therefore updates the view to be checked as well.
+
+Click B: the `master2` is changed to `false`, the A checkbox is watching its
+`ng-checked` value and therefore updates the view to be unchecked as well.
+
+Click A: the `master` is set to `true` and that's not really a change as the
+value already was `true`, so it does not trigger update of B.
+

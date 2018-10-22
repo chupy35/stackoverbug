@@ -1,0 +1,175 @@
+7438268 elasticsearch boosting slowing query
+
+this is a very novice question but I'm trying to understand how  boosting
+certain elements in a document works.
+
+I started with this query,
+
+    
+    
+    {
+      "from": 0,
+      "size": 6,
+      "fields": [
+        "_id"
+      ],
+      "sort": {
+        "_score": "desc",
+        "vendor.name.stored": "asc",
+        "item_name.stored": "asc"
+      },
+      "query": {
+        "filtered": {
+          "query": {
+            "query_string": {
+              "fields": [
+                "_all"
+              ],
+              "query": "Calprotectin",
+              "default_operator": "AND"
+            }
+          },
+          "filter": {
+            "and": [
+              {
+                "query": {
+                  "query_string": {
+                    "fields": [
+                      "targeted_countries"
+                    ],
+                    "query": "All US"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+then i needed to boost certain elements in the document more than the others
+so I did this
+
+    
+    
+    {
+      "from": 0,
+      "size": 60,
+      "fields": [
+        "_id"
+      ],
+      "sort": {
+        "_score": "desc",
+        "vendor.name.stored": "asc",
+        "item_name.stored": "asc"
+      },
+      "query": {
+        "filtered": {
+          "query": {
+            "query_string": {
+              "fields": [
+                "item_name^4",
+                "vendor^4",
+                "id_plus_name",
+                "category_name^3",
+                "targeted_countries",
+                "vendor_search_name^4",
+                "AdditionalProductInformation^0.5",
+                "AskAScientist^0.5",
+                "BuyNowURL^0.5",
+                "Concentration^0.5",
+                "ProductLine^0.5",
+                "Quantity^0.5",
+                "URL^0.5",
+                "Activity^1",
+                "Form^1",
+                "Immunogen^1",
+                "Isotype^1",
+                "Keywords^1",
+                "Matrix^1",
+                "MolecularWeight^1",
+                "PoreSize^1",
+                "Purity^1",
+                "References^1",
+                "RegulatoryStatus^1",
+                "Specifications/Features^1",
+                "Speed^1",
+                "Target/MoleculeDescriptor^1",
+                "Time^1",
+                "Description^2",
+                "Domain/Region/Terminus^2",
+                "Method^2",
+                "NCBIGeneAliases^2",
+                "Primary/Secondary^2",
+                "Source/ExpressionSystem^2",
+                "Target/MoleculeSynonym^2",
+                "Applications^3",
+                "Category^3",
+                "Conjugate/Tag/Label^3",
+                "Detection^3",
+                "GeneName^3",
+                "Host^3",
+                "ModificationType^3",
+                "Modifications^3",
+                "MoleculeName^3",
+                "Reactivity^3",
+                "Species^3",
+                "Target^3",
+                "Type^3",
+                "AccessionNumber^4",
+                "Brand/Trademark^4",
+                "CatalogNumber^4",
+                "Clone^4",
+                "entrezGeneID^4",
+                "GeneSymbol^4",
+                "OriginalItemName^4",
+                "Sequence^4",
+                "SwissProtID^4",
+                "option.AntibodyProducts^4",
+                "option.AntibodyRanges&Modifications^1",
+                "option.Applications^4",
+                "option.Conjugate^3",
+                "option.GeneID^4",
+                "option.HostSpecies^3",
+                "option.Isotype^3",
+                "option.Primary/Secondary^2",
+                "option.Reactivity^4",
+                "option.Search^1",
+                "option.TargetName^1",
+                "option.Type^4"
+              ],
+              "query": "Calprotectin",
+              "default_operator": "AND"
+            }
+          },
+          "filter": {
+            "and": [
+              {
+                "query": {
+                  "query_string": {
+                    "fields": [
+                      "targeted_countries"
+                    ],
+                    "query": "All US"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    } 
+    
+
+the query slowed down considerably, am I doing this correctly? Is there a  way
+to speed it up? I'm currently in the process of doing the boosting when I
+index the document, but using it in the query that way is best for the way my
+application runs. Any help is much appreciated
+
+Query time boosting is used for assigning larger weight to a term. If you want
+to permanently boost a field, use [index time
+boosting](http://www.elasticsearch.org/guide/reference/mapping/boost-
+field.html). If you don't want to use this boosting all the time, then it
+makes sense to create a separate mapping just for it with `store: "no"` set.
+

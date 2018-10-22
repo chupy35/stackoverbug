@@ -1,0 +1,15 @@
+21012750 Where will be store all my local database tables records into
+elasticsearch server after dumping?
+
+> At present I am using elasticsearch-1.0.0.Beta2 for quick search the
+records.But while dumping I have 20000 recods in user table. But in
+elasticsearch server(<http://www.domain.com>) I can see only fifty records.But
+all records are dumping(means when I using this
+<http://www.domain.com/index/type/id>
+(<http://www.domain.com/salambc/Question/51f9ac9024c8ce5261f4ee55>)) by this
+time I get every record data from elasticsearch server what ever I have in my
+local database. But It will show only 50 records in elasticsearch browser.
+
+Can you please help me where is the remaianing records are store. Thanks in
+advance.
+

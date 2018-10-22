@@ -1,0 +1,44 @@
+23723425 How can I make sure my custom filter script is executed the minimum
+number of times based on the size parameter?
+
+We are using Elasticsearch to store documents (around 500 million) which have
+fairly complex rules to determine whether a given user can see them or not. In
+addition, each query will always have a maximum of, say, 2000 results applied
+using the "size" parameter. Ideally, for performance, we would be able to
+apply the data visibility algorithm in batches on the query results, but
+applying it on each document at filter time can also work.
+
+In order to do this, we have tried writing a plugin which registers a custom
+filter script to apply this visibility restriction. Unfortunately, the
+performance hit has been unacceptable for our SLA (it added anywhere between
+10 and 60 seconds to the query time, from around 250 milliseconds without the
+filter). Queries look something like this:
+
+    
+    
+    {
+      "size" : 2000,
+      "query" : {
+        "user" : "John Biggs"
+      },
+      "filter" : {
+        "script" {
+          "script" : "entitlements",
+          "lang" : "native",
+          "params" : {
+            "viewingUser" : "John Biggs"
+          }
+        }
+      }
+    }
+    
+
+In this situation, I'd ideally want the filter to be applied to the results of
+the query until 2000 results have been retrieved and then bail out. However,
+the filter still seems to be applied to every single query result. Is there a
+way to achieve this desired behaviour? Or is there a better way to apply a
+data visibility algorithm such as this? Note that the visibility for a given
+user can change intra-day and recomputation of ACLs would be very expensive.
+
+Many thanks.
+

@@ -1,0 +1,15 @@
+26788561 User-defined vs. native ReactJS components
+
+Is there a good way to tell if a child is a user-defined ReactJS component or
+an "html" component (React.DOM.div, React.DOM.p, etc.)?
+
+In React 0.12 you check if the "type" property is a string. In older versions
+you would have to inspect the "constructor" property (`child.constructor.name`
+would be a good hint)
+
+    
+    
+    var Element = <p>Some Tag</p>;
+    if (_.isString(Element.type)) console.log("got DOM primitive")
+    
+

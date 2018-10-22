@@ -1,0 +1,4 @@
+33417909
+elasticsearch: Is it safe to reference self in discovery.zen.ping.unicast.hosts?
+<p>Elasticsearch 1.7.x on CentOS</p>&#xA;&#xA;<p>Setting up a 3 node cluster.</p>&#xA;&#xA;<p>IP addresses are:</p>&#xA;&#xA;<pre><code>192.168.3.100&#xA;192.168.3.101&#xA;192.168.3.102&#xA;</code></pre>&#xA;&#xA;<p>For simplicity, we would like to use the same entry in all elasticsearch.yml files.:</p>&#xA;&#xA;<pre><code>discovery.zen.ping.unicast.hosts: ["192.168.3.100", "192.168.3.101", "192.168.3.102"]&#xA;</code></pre>&#xA;&#xA;<p>Is it OK to reference "yourself" in this list?</p>&#xA;&#xA;<p>(The docs don't make it clear whether this is OK or not.)</p>&#xA;
+<p>You can do it both ways:</p>&#xA;&#xA;<p>Either reference nodes B and C on node A, nodes A and B on node C and nodes A and C on node B &#xA;...or use the same list of nodes A, B, C on each nodes.</p>&#xA;&#xA;<p>I usually prefer the latter one as you can copy/paste the same list on all your nodes.</p>&#xA;

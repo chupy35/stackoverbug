@@ -1,0 +1,30 @@
+18955363 How to use a document with same type as nested in elastic search?
+
+I am using elastic search.  I need to use a self reference in nested
+documents.
+
+    
+    
+    Example: Employee will have manager(Himself an employee). 
+    
+
+fields:
+
+    
+    
+    employee_id - long, 
+    employee_name - string 
+    manager(document of another employee)
+    
+
+I am able to do mapping for employee id, employee name. I am struggling to do
+the mapping for manager field. Do I need to map the complete set of
+fields(emplyee_id, employee_name) in nested?
+
+Thanks in advance.
+
+With nested document you will have to repeat entire mappings for manager and
+manager of the manager and manager of the manager of the manager if you want
+to store several levels. It might be better to represent this as parent-child
+relationship.
+

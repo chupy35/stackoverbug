@@ -1,0 +1,149 @@
+16113439 ElasticSearch geo distance filter with multiple locations in array -
+possible?
+
+Let's say we have a bunch of documents in an ElasticSearch index. Each
+documents has multiple locations _in an array_ , like this:
+
+    
+    
+    {
+      "name": "foobar",
+      "locations": [
+        {
+          "lat": 40.708519,
+          "lon": -74.003212
+        },
+        {
+          "lat": 39.752609,
+          "lon": -104.998100
+        },
+        {
+          "lat": 51.506321,
+          "lon": -0.127140
+        }
+      ]
+    }
+    
+
+According to the [ElasticSearch reference
+guide](http://www.elasticsearch.org/guide/reference/query-dsl/geo-distance-
+filter/)
+
+> the `geo_distance` filter can work with multiple locations / points per
+document. Once a single location / point matches the filter, the document will
+be included in the filter.
+
+So, is it possible to create a geo distance filter which checks all the
+locations in the array?
+
+This doesn't seem to work, unfortunately:
+
+    
+    
+    {
+      "filter": {
+        "geo_distance": {
+          "distance": "100 km",
+          "locations": "40, -105"
+        }
+      }
+    }
+    
+
+throws "`QueryParsingException[[myIndex] failed to find geo_point field
+[locations]`" since `locations` is not a single `geo_point` but an array of
+`geo_point`s.
+
+Did you specify a [geo_point
+mapping](http://www.elasticsearch.org/guide/reference/mapping/geo-point-type/)
+for your document?
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/twitter/'
+    curl -XPUT 'http://localhost:9200/twitter/'
+    
+    curl -XPUT 'http://localhost:9200/twitter/tweet/_mapping' -d '
+    {
+        "tweet" : {
+            "properties" : {
+                "locations" : {"type" : "geo_point"}
+            }
+        }
+    }'
+    
+    curl -XPUT 'http://localhost:9200/twitter/tweet/1' -d '
+    { 
+        "user": "kimchy", 
+        "postDate": "2009-11-15T13:12:00", 
+        "message": "Trying out Elastic Search, so far so good?",
+        "locations" : [{
+            "lat" : 50.00,
+            "lon" : 10.00
+        },
+        {
+            "lat" : 40.00,
+            "lon" : 9.00
+        }]
+    }'
+    
+    curl -XPUT 'http://localhost:9200/twitter/tweet/2' -d '
+    { 
+        "user": "kimchy", 
+        "postDate": "2009-11-15T13:12:00", 
+        "message": "Trying out Elastic Search, so far so good?",
+        "locations" : [{
+            "lat" : 30.00,
+            "lon" : 8.00
+        },
+        {
+            "lat" : 20.00,
+            "lon" : 7.00
+        }]
+    }'
+    
+    curl -XGET 'http://localhost:9200/twitter/tweet/_search' -d '{
+        "query": {
+            "filtered" : {
+                "query" : {
+                    "match_all" : {}
+                },
+                "filter" : {
+                    "geo_distance" : {
+                        "distance" : "20km",
+                        "tweet.locations" : {
+                            "lat" : 40.00,
+                            "lon" : 9.00
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+
+For Elasticsearch version 5.1, for same above index, query will go like this,
+
+    
+    
+    curl -XGET 'http://localhost:9200/twitter/tweet/_search' -d '
+    {
+        "query": {
+            "bool": {
+                "must": {
+                    "match_all": {}
+                },
+                "filter": {
+                    "geo_distance": {
+                        "distance": "200km",
+                        "locations": {
+                            "lat": 40.00,
+                            "lon": 9.00
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+

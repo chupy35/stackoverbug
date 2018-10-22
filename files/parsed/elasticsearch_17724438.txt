@@ -1,0 +1,25 @@
+17724438 Alias for types in elasticsearch
+
+I have an index, htldb, and it has two types, facebook and twitter.  I want to
+change twitter's mapping, as I learn from there:
+<http://www.elasticsearch.org/blog/changing-mapping-with-zero-downtime/> I
+must change mapping of htldb, and reindex facebook and twitter.
+
+Im curious about that, is there any way to implement a alias for types. so, I
+just create a new type twitter_v2 and get all data from the old one, twitter
+then remove twitter. At the end I set an alias named "twitter" to twitter_v2,
+so I can reach twitter_v2 with twitter type name.
+
+Before writing this post, I searched it on the forum, and I found this:
+<http://elasticsearch-users.115913.n3.nabble.com/Alias-for-types-
+td3282044.html>
+
+It is recommended to create new indices for each type. It is reasonable,but as
+he mentioned, it costs me extra spaces.  Sorry about the word salad, my
+question is the solution,recomended above still valid one? is there a new way
+to create alias for types?
+
+Thanks
+
+As far as I know that thread is still 100% valid. So, no aliases for types.
+

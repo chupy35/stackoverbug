@@ -1,0 +1,12 @@
+10819002 ElasticSearch and inequalities
+
+Does anyone know how to perform a filter using the ElasticSearch JSON API that
+sets a greater than, less than, or between filter on any search results?
+
+Figured out how to do it. You need to use a range value:
+
+    
+    
+    curl -X GET "http://0.0.0.0:9200/users/_search?pretty=true" -d '{"filter":{"range" : { "age" : { "from":20, "to": 21 } } }}'
+    
+

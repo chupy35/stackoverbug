@@ -1,0 +1,115 @@
+23002781 ElasticSearch: Perform a simple IN query
+
+I'm new to ElasticSearch, trying to learn it.
+
+In a regular RDBM, I can perform an "in" statement as follows:
+
+    
+    
+     select * from results where mycal in ['abc', 'def', 'ghi'] and col2 in ['er', 'es', 'et']
+    
+
+How do I do this in elasticsearch?
+
+Thanks
+
+A lot would depend on how you index the data in elasticsearch. But you could
+use the [terms
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-terms-filter.html) to achieve the above:
+
+    
+    
+      {
+       "filter": {
+          "and": [
+             {
+                "terms": {
+                   "cal": [
+                      "abc",
+                      "def",
+                      "ghi"
+                   ],
+                   "execution": "or"
+                }
+             },
+             {
+                "terms": {
+                   "col2": [
+                      "er",
+                      "es",
+                      "et"
+                   ],
+                   "execution": "or"
+                }
+             }
+          ]
+       }
+    }
+    
+
+Depending on whether you want a [filter or a
+query](https://stackoverflow.com/a/14600680/706724), you can go use either the
+[`bool`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-query.html) query/filter or the shortcut
+[`terms`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-terms-query.html) query/filter (both linked to the query, as I expect this
+will not want to be cached).
+
+As you are going with more than one field, then you want to use the `bool`
+query using `terms` within it:
+
+    
+    
+    {
+      "query" : {
+        "bool" : {
+          "should" : [
+            { "terms" : { "mycal" : [ "abc", "def", "ghi" ] } },
+            { "terms" : { "col2" : [ "er", "es", "et" ] } }
+          ],
+          "minimum_should_match" : 2
+        }
+      }
+    }
+    
+
+By default, `"minimum_should_match"` will be `1`, which would make the above
+query an `OR`.
+
+This assumes documents like:
+
+    
+    
+    { "mycal" : "abc", "col2" : "es" }
+    { "mycal" : "def", "col2" : "er" }
+    
+
+If your fields were nested within an object (e.g., `{ "key" : { "mycal" :
+"abc" } }`), then you would just access them like `"key.mycal"`.
+
+The important part is how you do your mapping. By default, your string will be
+analyzed and stored in all lowercase, and therefore you need to search using
+the `term`(s) query in all lowercase. If you wanted to find `"ABC"`, then you
+would _still_ look for `"abc"`. However, if you used something else, like
+`match` instead of `term`(s), then you do not need to put it in all lowercase:
+
+    
+    
+    {
+      "query" : {
+        "bool" : {
+          "should" : [
+            { "match" : { "mycal" : "ABC" } },
+            { "match" : { "mycal" : "DEF" } },
+            { "match" : { "mycal" : "GHI" } },
+            { "match" : { "col2" : "ER" } },
+            { "match" : { "col2" : "ES" } },
+            { "match" : { "col2" : "ET" } }
+          ],
+          "minimum_should_match" : 2
+        }
+      }
+    }
+    
+

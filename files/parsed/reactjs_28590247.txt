@@ -1,0 +1,73 @@
+28590247 React onClick not firing when using react/addons
+
+I decided I needed React Addons however upon requiring this instead of just
+react my click events stopped getting triggered. The following example works
+when doing a require('react').
+
+    
+    
+    window.React = require('react/addons');
+    
+
+And
+
+    
+    
+    /** @jsx React.DOM */
+    
+    var AppActions = require('../../actions/app-actions.js');
+    
+    module.exports = React.createClass({
+        getInitialState: function() {
+            return {
+                rememberMe: false
+            }
+        },
+        _rememberMeChanged: function(e) {
+            this.setState({
+                rememberMe: !this.state.rememberMe
+            });
+        },
+        login: function() {
+            AppActions.login(this.state.rememberMe);
+            return true;
+        },
+        render: function () {
+            return (
+                <header className="navbar navbar-default navbar-static-top bs-docs-nav" id="top" role="banner">
+                    <div className="container-fluid">
+                        <div className="navbar-header">
+                            <button className="navbar-toggle collapsed" type="button" data-toggle="collapse"
+                                data-target=".bs-navbar-collapse">
+                                <span className="sr-only">Toggle navigation</span>
+                                <span className="icon-bar"></span>
+                                <span className="icon-bar"></span>
+                                <span className="icon-bar"></span>
+                            </button>
+                            <a href="../" className="navbar-brand">{ Constants.TITLE }</a>
+                        </div>
+                        <nav className="collapse navbar-collapse bs-navbar-collapse">
+                            <div className="navbar-form navbar-right">
+                                <div className="input-group">
+                                    <div className="checkbox">
+                                        <label>
+                                            <input checked={this.state.rememberMe} onChange={ this._rememberMeChanged } type="checkbox"/>
+                                            Keep me logged in
+                                        </label>
+                                    </div>
+                                </div>
+                                <button disabled={ this.props.loading } onClick={ this.login }  className="btn btn-default">
+                                    { this.props.loading ? 'Logging In' : 'Login' }
+                                </button>
+                            </div>
+                        </nav>
+                    </div>
+                </header>
+            );
+        }
+    });
+    
+
+It turns out I was being a moron. My gulp process skips some of my vendor
+files(including react), cleaning this solved my issues.
+

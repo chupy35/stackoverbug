@@ -1,0 +1,54 @@
+26890472 How to count the number of Grandchildren
+
+New to React and JSX so apologies if this is a very basic question.
+
+I have a "GrandParent" node and I can count the number of "Parent" nodes
+using:
+
+    
+    
+     {React.Children.count(this.props.children)
+    
+
+However - given a particular "Parent" - how can I return the count of their
+children? I can do it at the parent level, but can't figure out how to do it
+at the GrandParent level.
+
+As usual - probably best to explain by example, so I have an example at:
+<http://jsfiddle.net/zuoza31g/1/>
+
+I would like my output to be:
+
+    
+    
+    I am the grandfather 'Grandfather'
+    I have '1' children
+    I have '4' grandchildren
+    
+    I am the father 'Father' 
+    I have '4' children
+    
+    I am a son 'Son 1'
+    I am a son 'Son 2'
+    I am a son 'Son 3'
+    I am a son 'Son 4'
+    
+
+It's part of a much bigger problem, so I'm simplified it down to this example
+..
+
+Can anyone help please?
+
+You can count the number of grand children using following code:
+
+    
+    
+        var count = 0;
+        React.Children.forEach(this.props.children, function (child){
+            count = count + React.Children.count(child.props.children);
+        });
+    
+
+Here is your fiddle with this solution implemented:
+<http://jsfiddle.net/db8o8920/>
+

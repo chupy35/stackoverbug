@@ -1,0 +1,96 @@
+21285236 Not getting any highlights from ElasticSearch
+
+I'm trying to create a query that will return me a highlighted response. The
+query I have is:
+
+    
+    
+    POST myindex/_search
+    {
+      "from": 0,
+      "size": 1,
+      "query": {
+        "query_string": {
+          "query": "search for this"
+        }
+      },
+      "highlight": {
+        "pre_tags": [
+          "<b>"
+        ],
+        "post_tags": [
+          "</b>"
+        ],
+        "fields": {
+          "_all": {}
+        }
+    }}
+    
+
+But the result won't have any highlights, all it contain is the hits like
+this:
+
+    
+    
+    {
+       "took": 0,
+       "timed_out": false,
+       "_shards": {
+          "total": 5,
+          "successful": 5,
+          "failed": 0
+       },
+       "hits": {
+          "total": 1,
+          "max_score": 0.2791085,
+          "hits": [
+             {
+                "_index": "devintranett_1",
+                "_type": "searchdocuments",
+                "_id": "/link/ae0089b649e14de080fd94acb79bdfcd.aspx?id=1412&epslanguage=no",
+                "_score": 0.2791085,
+                "_source": {
+                   "id": "/link/ae0089b649e14de080fd94acb79bdfcd.aspx?id=1412&epslanguage=no",
+                   "contentType": 0,
+                   "location": "/link/ae0089b649e14de080fd94acb79bdfcd.aspx?id=1412&epslanguage=no",
+                   "ingress": "...",
+                   "content": "...",
+                   "title": "...",
+                   "createdDate": "2014-01-15T15:16:24",
+                   "changedDate": "2014-01-15T15:16:45.887"
+                }
+             }
+          ]
+       }
+    }
+    
+
+What am I missing to get the highlighted results back?
+
+**UPDATE:**
+
+I think I figured it out, to get the highlights I need to have a match query,
+is that correct?
+
+You chose the wrong field to highlight. In fact, highlighting means that the
+field needs to be indexed, so that its tokens can be retrieved (together with
+their positions and offsets). Also, the field needs to be stored in order to
+be highlighted and returned.
+
+You don't usually need to store your fields separately as elasticsearch always
+stores the
+[`_source`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+source-field.html) field by default. The problem is that you chose to
+highlight the
+[`_all`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+all-field.html) field, which is not part of your documents, thus not part of
+the `_source` field either. It would need to be stored separately in lucene,
+but it isn't by default.
+
+I would suggest to switch to make highlighting on fields that actually appear
+in your documents. In fact, given that the `_all` field contains the content
+coming from all fields in your documents, its content might not be that nice
+to be shown to your users. As an experiment you can configure the `_all` field
+to be stored in lucene by changing the mappings for it to `"store":"yes"`.
+Just keep in mind that this would cause wasting some disk space too.
+

@@ -1,0 +1,27 @@
+21437612 Setting up a single backup node for an elasticsearch cluster?
+
+Given Elasticsearch cluster with several machines, I would want to have a
+single machine(special node) that is located on a different geographical
+region that can effectively sync with the cluster for read only purpose. (i.e.
+no write for the special node; and that special node should be able to handle
+all query on its own). Is it possible and how can this be done?
+
+With elasticsearch 1.0 (currently available in RC1) you can use the [snapshot
+& restore
+api](http://www.elasticsearch.org/guide/en/elasticsearch/reference/master/modules-
+snapshots.html); have a look at [this
+blog](http://www.elasticsearch.org/blog/introducing-snapshot-restore/) too to
+know more.
+
+You can basically make a snapshot of your indices, then copy the snapshot over
+to the secondary location and restore it into a different cluster. The nice
+part is that snapshots are incremental, which means that only the files that
+have changed since the last snapshot are actually backed up. You can then
+create snapshots at regular intervals, and import them into the secondary
+cluster.
+
+If you are not using 1.0 yet, I would suggest to have a look at it, snapshot &
+restore is a great addition. You can still make backups manually and restore
+them with 0.90, but you don't have a nice api to do that and you need to do
+everything pretty much manually.
+

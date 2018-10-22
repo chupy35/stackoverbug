@@ -1,0 +1,46 @@
+21129092 Elastic Search Indexing the Internet
+
+This is mostly a Design Pattern Question for Elastic Search.
+
+If I wanted to index The Internet with Elastic Search, what would be the most
+efficient way to organize such a task?
+
+[@kimchy](http://vimeo.com/44716955) talks about different patterns and [Rafal
+Kuc](http://www.elasticsearch.org/videos/scaling-massive-elasticsearch-
+clusters/) discusses scaling massive clusters, but I didnt get a sense of how
+to organize an index of the internet after watching these.
+
+I think logically you could organize such an effort by creating a new index
+for each domain. So you could shard heavily on indexes like Stackoverflow.com
+but maybe have as little as 1 shard for indexes like momandpopsite.com
+
+Does that look efficient to you ES Community? I'm not sure because we can very
+quickly get into millions of indexes not to mention their individual shards.
+And now I'm wondering if there is a lot of overhead associated with this type
+of design and it becomes bloated. (That is, does this pattern's structure
+create too much overhead?).
+
+I know this question has to be theoretical because resources are not
+specified. But if you could use your imagination and try to stick purely to a
+design strategy -- how would you index the world wide web? Lets say there are
+275 million domains. What is the most efficient design pattern for indexing
+the internet using Elastic Search?
+
+An index per domain (so 275 million indexes) is not feasible. Indexes do have
+an overhead, and I've lost the reference, but I don't think you want more than
+~100 indexes on a single "normal" server.
+
+To get more sites into a single Index, you would want to introduce routing and
+views, but I would imagine that a single index for everything would also
+introduce un-needed overhead. I'm guessing, but the routing rule look up might
+become incredibly large etc. So you would want to find some way of splitting
+things across indexes. At such a high volume, you can't design it all on
+paper, so I would advise PoC work to determine what kind of performance you
+get for different sized indexes. You would then look to use aliases to map
+correctly to the underlying index.
+
+For further reading:
+<https://groups.google.com/forum/#!searchin/elasticsearch/index>$20per$20user/elasticsearch/i-G5NlP1VeY/PK9vVP0myAgJ
+
+<https://groups.google.com/forum/#!msg/elasticsearch/9L5cWIAib94/K7zdHEW-4P0J>
+

@@ -1,0 +1,184 @@
+11868393 Angularjs: input[text] ngChange fires while the value is changing
+
+ngChange is firing while the value is changing (ngChange are not similiar to
+the classic onChange event). How can i bind the classic onChange event with
+angularjs, that will only fire when the contents are commited?
+
+Current binding:
+
+    
+    
+    <input type="text" ng-model="name" ng-change="update()" />
+    
+
+[This post](https://groups.google.com/d/msg/angular/LH0Q1A-qTVo/eyVIjJsFZGcJ)
+shows an example of a directive that delays the model changes to an input
+until the [blur](http://www.w3schools.com/jsref/event_onblur.asp) event fires.
+
+[Here](http://jsfiddle.net/cn8VF/308/) is a fiddle that shows the ng-change
+working with the new ng-model-on-blur directive. Note this is a slight tweak
+to the [original fiddle](http://jsfiddle.net/carpasse/JYTUB/3/).
+
+If you add the directive to your code you would change your binding to this:
+
+    
+    
+    <input type="text" ng-model="name" ng-model-onblur ng-change="update()" />
+    
+
+Here is the directive:
+
+    
+    
+    // override the default input to update on blur
+    angular.module('app', []).directive('ngModelOnblur', function() {
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            priority: 1, // needed for angular 1.2.x
+            link: function(scope, elm, attr, ngModelCtrl) {
+                if (attr.type === 'radio' || attr.type === 'checkbox') return;
+    
+                elm.unbind('input').unbind('keydown').unbind('change');
+                elm.bind('blur', function() {
+                    scope.$apply(function() {
+                        ngModelCtrl.$setViewValue(elm.val());
+                    });         
+                });
+            }
+        };
+    });
+    
+
+* * *
+
+**Note: as @wjin mentions in the comments below this feature is supported
+directly in Angular 1.3 (currently in beta) via`ngModelOptions`. See [the
+docs](https://docs.angularjs.org/api/ng/directive/ngModelOptions) for more
+info.**
+
+In case anyone else looking for additional "enter" keypress support, here's an
+update to the [fiddle](http://jsfiddle.net/stiucsib86/8eGm7/1/) provided by
+[Gloppy](https://stackoverflow.com/users/1207991/gloopy)
+
+Code for keypress binding:
+
+    
+    
+    elm.bind("keydown keypress", function(event) {
+        if (event.which === 13) {
+            scope.$apply(function() {
+                ngModelCtrl.$setViewValue(elm.val());
+            });
+        }
+    });
+    
+
+For anyone struggling with IE8 (it doesn't like the unbind('input'), I found a
+way around it.
+
+Inject $sniffer into your directive and use:
+
+    
+    
+    if($sniffer.hasEvent('input')){
+        elm.unbind('input');
+    }
+    
+
+IE8 calms down if you do this :)
+
+> Override the default input onChange behavior (call the function only when
+control loss focus and value was change)
+
+>
+
+> NOTE: ngChange is not similar to the classic onChange event it firing the
+event while the value is changing This directive stores the value of the
+element when it gets the focus  
+>  On blurs it checks whether the new value has changed and if so it fires the
+event
+
+>
+
+> @param {String} - function name to be invoke when the "onChange" should be
+fired
+
+>
+
+> @example < input my-on-change="myFunc" ng-model="model">
+
+    
+    
+    angular.module('app', []).directive('myOnChange', function () { 
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            scope: {
+                myOnChange: '='
+            },
+            link: function (scope, elm, attr) {
+                if (attr.type === 'radio' || attr.type === 'checkbox') {
+                    return;
+                }
+                // store value when get focus
+                elm.bind('focus', function () {
+                    scope.value = elm.val();
+    
+                });
+    
+                // execute the event when loose focus and value was change
+                elm.bind('blur', function () {
+                    var currentValue = elm.val();
+                    if (scope.value !== currentValue) {
+                        if (scope.myOnChange) {
+                            scope.myOnChange();
+                        }
+                    }
+                });
+            }
+        };
+    });
+    
+
+Isn't using $scope.$watch to reflect the changes of scope variable better?
+
+_This is about recent additions to AngularJS, to serve as future answer (also
+for[another question](https://stackoverflow.com/a/23045547/340290))._
+
+Angular newer versions (now in 1.3 beta), AngularJS natively supports this
+option, using `ngModelOptions`, like
+
+    
+    
+    ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
+    
+
+[NgModelOptions
+docs](http://docs.angularjs.org/api/ng/directive/ngModelOptions)
+
+Example:
+
+    
+    
+    <input type="text" name="username"
+           ng-model="user.name"
+           ng-model-options="{updateOn: 'default blur', debounce: {default: 500, blur: 0} }" />
+    
+
+According to my knowledge we should use ng-change with the select option and
+in textbox case we should use ng-blur.
+
+I had exactly the same problem and this worked for me. Add `ng-model-update`
+and `ng-keyup` and you're good to go! Here is the
+[docs](https://docs.angularjs.org/api/ng/directive/ngModelOptions)
+
+    
+    
+     <input type="text" name="userName"
+             ng-model="user.name"
+             ng-change="update()"
+             ng-model-options="{ updateOn: 'blur' }"
+             ng-keyup="cancel($event)" />
+    
+

@@ -1,0 +1,55 @@
+22876314 having issues accessing elasticsearch
+
+I'm very new to elasticsearch. Using SSH, I've been able to run it via
+bin/elasticsearch and if I run curl localhost:9200, I can see the details and
+confirm that it's running. Furthermore, I've installed Marvel and Head, but
+I'm not sure how to access these GUIs from a browser.
+
+The documentation says to browse to localhost:9200/_plugin/marvel but
+obviously on our live server this will not work. I've tried replacing
+localhost with my servers IP but I get nothing. Am I missing something?
+
+In response to Drew R. The latest version is installed and it had been
+restarted after the installation via the shutdown api.
+
+Sudo IP Tables did produce a lot of DROP results, but I can't make sense of
+that `(This policy will halt a connection to a host without any communication
+unless there is a target rule that applies.)`
+
+`curl -vv server:9200/_plugin/marvel` returned:
+
+    
+    
+    * About to connect() to server port 9200 (#0)
+    * Trying 50.28.35.72... connected
+    * Connected to server (50.28.35.72) port 9200 (#0)
+    > GET /_plugin/marvel HTTP/1.1
+    > User-Agent: curl/7.19.7 (x86_64-redhat-linux-gnu) libcurl/7.19.7 NSS/3.14.0.0 zlib/1.2.3 libidn/1.18 libssh2/1.4.2
+    > Host: server:9200
+    > Accept: */*
+    >  
+    < HTTP/1.1 301 Moved Permanently
+    < Content-Type: text/html
+    < Content-Length: 74
+    < 
+    * Connection #0 to host server left intact
+    * Closing connection #0
+    <head><meta http-equiv="refresh" content="0; URL=/_plugin/marvel/"></head>[root@host2     /usr/share/elasticsearch]# url -vv server:9200/_plugin/marvel
+    
+
+First of all, double-check you've installed marvel:
+
+    
+    
+    bin/plugin -i elasticsearch/marvel/latest
+    
+
+Then restart ES. Do you see it in the list of plugins in the logs?
+
+If you do, then make sure you aren't blocked from seeing port 9200 outside the
+machine (`sudo iptables -L`, for example). If it's AWS, make sure your
+security group has it open as well.
+
+If it's none of those, what do you get if you run `curl -vv
+server:9200/_plugin/marvel`?
+

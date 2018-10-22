@@ -1,0 +1,26 @@
+23787583 How does elasticsearch handle skip requests (from/size parameter)
+
+I am deploying an approach which uses from parameter a lot of times. I wish to
+understand how 'skip' works in elasticsearch or other such systems in general
+to judge what performance lost does it incur.
+
+It depends on [search
+type](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-search-type.html). If you use the default, i.e. `query then fetch`,
+then to fetch page 20 with size 10 (`from: 190, size: 10`), elasticsearch
+will:
+
+  * ask each primary shard for ids and relevance scores of top 200 documents (which are selected from all docs matching the query, so this means searching the whole index, but this is the same as with fetching only the first page)
+  * merge the results, sorting by relevance, and skip 190 top hits of such merged list, taking those 10 that follow
+  * fetch actual docs (i.e. 10 of them) from relevant shards
+
+It means that if you have e.g. 3 primary replicas, then elasticsearch nodes
+need to exchange information about 3 * 200 = 600 docs. There are some
+optimizations to make obtaining particularly 'distant' pages more efficient,
+but in a nutshell, you need to process more and more documents each time you
+fetch next page.
+
+If your use case involves going through a result set sequentially, consider
+[scrolling](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-scroll.html).
+

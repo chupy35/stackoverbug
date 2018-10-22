@@ -1,0 +1,60 @@
+21849804 ElasticSearch Global Analyzer
+
+I want to define a global analyzer in ElasticSearch. I edited the
+configuration file of ES (elasticsearch.yml)
+
+    
+    
+    index :
+       analysis :        
+          analyzer :            
+             myTestAnalyzer :                
+                type : standard
+                max_token_length : 50 
+    
+
+and restarted the service.
+
+When i run in Sense
+
+    
+    
+    GET /_analyze?analyzer=myTestAnalyzer
+    {"This is a test"}
+    
+
+I get
+
+{ "error": "ElasticsearchIllegalArgumentException[failed to find analyzer
+[myTestAnalyzer]]", "status": 400 }
+
+I have read in another post ([define analyzer globally
+(ES)](https://stackoverflow.com/questions/16913073/define-analyzer-globally-
+es)) that I need to create a mapping that uses the analyzer and then use that
+index in the analyzer call.
+
+Can you please give me an example how to do that.
+
+Thank you
+
+Here is how you would add the mapping:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/test_index/test/_mapping' -d '
+    {
+        "test": {
+            "properties": {
+                "myField": {"type": "string"}
+            },
+        "analyzer": "myTestAnalyzer"
+        }
+    }'
+    
+
+Instead of `analyzer` you could also use `search_analyzer` and
+`index_analyzer` if you want to specify different analyzers for search and
+index.
+(<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+root-object-type.html#_index_search_analyzers>)
+

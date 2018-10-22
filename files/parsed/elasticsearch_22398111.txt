@@ -1,0 +1,114 @@
+22398111 How to set a global _ttl in elasticsearch
+
+In my setup I have a central syslog server, which forwards all of its logs to
+node with elasticsearch through td-agent (fluentd). I will post the
+configuration at the end.
+
+Now, everything works nicely, I can search through the logs, I was able to
+make a cluster of elastichsearch nodes and so on. What I need to have now is
+to set _ttl of all incomming documents. I want them to be deleted after 30
+days.
+
+I tried to
+
+    
+    
+    curl -XPUT 'http://172.19.19.225:9200/fluentd' -d '{ "tweet" : { "_ttl" : { "enabled" : true, "default" : "2h" }}}'
+    
+
+(yes, I was that stupid, that I let the 'tweet' there), but of course it did
+not work and now every other try gives me
+
+    
+    
+    {"error":"IndexAlreadyExistsException[[fluentd] already exists]","status":400}
+    
+
+and I dont know what to do anymore.
+
+Iam open to all solutions, thanks ^^
+
+/etc/td-agent/td-agent.conf:
+
+    
+    
+    <source> #Input plugins are defined be <source>...</source> statements
+      type syslog #This is the Syslog input plugin, which we will use later in this tutorial
+      port 42185
+      tag es.syslog
+    </source>
+    
+    #<source>
+    #  type http #This is the HTTP input plugin, which turns Fluentd into an HTTP endpoint
+    #  port 8888 #Send data to http://localhost:8888/<Fluentd tag>?json=<json event>
+    #</source>
+    
+    <match es.**>
+      type copy
+      <store>
+        type elasticsearch
+        logstash_format true
+        index_name fluentd
+        type_name fluentd
+        flush_interval 3 # For testing
+        host localhost
+        port 9200
+      </store>
+    #  <store>
+    #    type stdout
+    #  </store>
+    </match>
+    
+
+Elastic search is in default configuration. Directory with indices looks like
+this: ls /var/lib/elasticsearch/elasticsearch/nodes/0/indices:
+
+    
+    
+    fluentd          logstash-2014.02.13  logstash-2014.02.16  logstash-2014.02.19  logstash-2014.02.22  logstash-2014.02.25  logstash-2014.02.28  logstash-2014.03.03  logstash-2014.03.06  logstash-2014.03.09  logstash-2014.03.12
+    kibana-int       logstash-2014.02.14  logstash-2014.02.17  logstash-2014.02.20  logstash-2014.02.23  logstash-2014.02.26  logstash-2014.03.01  logstash-2014.03.04  logstash-2014.03.07  logstash-2014.03.10  logstash-2014.03.13
+    logstash-2014.02.12  logstash-2014.02.15  logstash-2014.02.18  logstash-2014.02.21  logstash-2014.02.24  logstash-2014.02.27  logstash-2014.03.02  logstash-2014.03.05  logstash-2014.03.08  logstash-2014.03.11  logstash-2014.03.14
+    
+
+**Close the index first:**
+
+    
+    
+          $ curl -X POST 'http://172.19.19.225:9200/fluentd/_close'
+    
+
+**update the settings**
+
+    
+    
+          $ curl -X PUT 'http://172.19.19.225:9200/thegame/_settings' -d \
+         '{ "tweet" : { "_ttl" : { "enabled" : true, "default" : "30d" }}}'
+    
+
+If it again throws the error.Then you need to delete the index and recreate
+the index with ttl value of 30d
+
+**DELETE an index**
+
+    
+    
+          $ curl -X DELETE 'http://172.19.19.225:9200/fluentd/'
+    
+
+**Create an index**
+
+    
+    
+          $ curl -X PUT 'http://172.19.19.225:9200/thegame'
+    
+
+**Update mapping**
+
+    
+    
+          $ curl -X PUT 'http://172.19.19.225:9200/thegame/_settings' -d \
+          '{ "tweet" : { "_ttl" : { "enabled" : true, "default" : "30d" }}}'
+    
+
+HOpe it helps..!
+

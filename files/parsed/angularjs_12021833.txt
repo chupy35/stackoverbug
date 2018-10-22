@@ -1,0 +1,96 @@
+12021833 Changing property of controller from directive
+
+EDIT: see [jsfiddle](http://jsfiddle.net/py5um/2/)
+
+I have a list of items, that I show as text via a directive (all is simplified
+here, it's more comlicated than just text, but it's the same in principle).
+Like so:
+
+    
+    
+    <body ng:controller="BaseController">
+        ...
+        <div ng:controller="Controller">
+            <itemdir ng:repeat="item in items" item="item"></item>
+        </div>
+        ...
+        <input ng:model="currentItem" />
+    </body>
+    
+
+When I click it, it should show the content of the clicked item in an input.
+
+`items` array as well as `currentItem` belong to BaseController scope.
+
+The directive produces a template (see below) with ng:click which should
+change BaseController scope's property (called currentItem). However it does
+not do anything to it (input value is not changed to the new current item). In
+Batarang for Chrome I can see that the currentItem property is visible and
+changed in the scope of the directive but not of the BaseController.
+
+    
+    
+    module.directive 'itemdir', () ->
+        restrict: 'E'
+        replace: true
+        template: '<div ng:click="show(item)"></div>'
+        controller: 'EditorController'
+        scope: 
+            item: '=item'
+        link: ($scope, $element, $attrs) ->
+            update = -> 
+                        $element.html($scope.item)
+    
+            $scope.$watch('item', update)
+    
+
+For changing the property I tried a method `show(item)` which is defined in
+the BaseController's scope which only assigns the item parameter to
+$scope.currentItem.
+
+It doesn't work even when I change the ng:click value from `show(item)` to
+`currentItem = item`
+
+I know this is some scope issue, but it seems I still don't grasp all the
+details of it.
+
+So, looking at the provided jsFiddle we can see that the `BaseController` is
+being used both in a directive _and_ in top div. This introduced a subtle
+issue since it was possible to invoke the `show(item)` method from top-buttons
+and HTML produced by directives, but those methods _were invoked on different
+controllers and writing to different scopes_.
+
+Now, it is hard to deduce from your question if the use of BaseController in a
+directive was intentional or not (in the question the directive has the
+EditorController) but assuming that this was by accident and you want to keep
+BaseController for a div and still invoke methods on it from a directive _you
+need to take special care when creating isolated scopes_ (as the name implies
+those are really isolated so not inheriting from a parent scope). Basically
+you need to make sure that the `show` method is available in an isolated scope
+and points to the right method in the parent scope.
+
+Taking your example you would define your directive like this (please note
+`show : '&ngClick'`):
+
+    
+    
+    module.directive('itemdir', function () {
+      return {
+        restrict:'E',
+        replace:true,
+        template:'<div ng:click="show(item)" class="clickable"></div>',
+        scope : {item : '=', show : '&ngClick'},
+        link:function ($scope, $element, $attrs) {
+          $element.html($scope.item)
+        }
+      }
+    });
+    
+
+Here is the working jsFiddle:
+<http://jsfiddle.net/pkozlowski_opensource/M9B93/>
+
+In the future you might find AngularJS Batarang extension for Chrome
+(<http://blog.angularjs.org/2012/07/introducing-angularjs-batarang.html>)
+useful as it allows to visualize scopes and their content.
+

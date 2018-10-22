@@ -1,0 +1,174 @@
+13217849 elasticsearch - Return term frequency of a single field
+
+I have being trying to use facet to get the term frequency of a field. My
+query returns just one hit, so I would like to have the facet return the terms
+that have the most frequency in a particular field.
+
+My mapping:
+
+    
+    
+    {
+    "mappings":{
+        "document":{
+            "properties":{
+                "tags":{
+                    "type":"object",
+                    "properties":{
+                        "title":{
+                            "fields":{
+                                "partial":{
+                                    "search_analyzer":"main",
+                                    "index_analyzer":"partial",
+                                    "type":"string",
+                                    "index" : "analyzed"
+                                }
+                                "title":{
+                                    "type":"string",
+                                    "analyzer":"main",
+                                    "index" : "analyzed"
+                                }
+                            },
+                            "type":"multi_field"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    
+    "settings":{
+        "analysis":{
+            "filter":{
+                "name_ngrams":{
+                    "side":"front",
+                    "max_gram":50,
+                    "min_gram":2,
+                    "type":"edgeNGram"
+                }
+            },
+    
+            "analyzer":{
+                "main":{
+                    "filter": ["standard", "lowercase", "asciifolding"],
+                    "type": "custom",
+                    "tokenizer": "standard"
+                },
+                "partial":{
+                    "filter":["standard","lowercase","asciifolding","name_ngrams"],
+                    "type": "custom",
+                    "tokenizer": "standard"
+                }
+            }
+        }
+    }
+    
+    }
+    
+
+Test data:
+
+    
+    
+     curl -XPUT localhost:9200/testindex/document -d '{"tags": {"title": "people also kill people"}}'
+    
+
+Query:
+
+    
+    
+     curl -XGET 'localhost:9200/testindex/document/_search?pretty=1' -d '
+    {
+        "query":
+        {
+           "term": { "tags.title": "people" }
+        },
+        "facets": {
+           "popular_tags": { "terms": {"field": "tags.title"}}
+        }
+    }'
+    
+
+This result
+
+    
+    
+    "hits" : {
+       "total" : 1,
+        "max_score" : 0.99381393,
+        "hits" : [ {
+        "_index" : "testindex",
+        "_type" : "document",
+        "_id" : "uI5k0wggR9KAvG9o7S7L2g",
+        "_score" : 0.99381393, "_source" : {"tags": {"title": "people also kill people"}}
+     } ]
+    },
+    "facets" : {
+      "popular_tags" : {
+      "_type" : "terms",
+      "missing" : 0,
+      "total" : 3,
+      "other" : 0,
+      "terms" : [ {
+        "term" : "people",
+        "count" : 1            // I expect this to be 2
+       }, {
+        "term" : "kill",
+        "count" : 1
+      }, {
+        "term" : "also",
+        "count" : 1
+      } ]
+    }
+    
+
+}
+
+The above result is not what I want. I want to have the frequency count be 2
+
+    
+    
+    "hits" : {
+       "total" : 1,
+       "max_score" : 0.99381393,
+       "hits" : [ {
+       "_index" : "testindex",
+       "_type" : "document",
+       "_id" : "uI5k0wggR9KAvG9o7S7L2g",
+       "_score" : 0.99381393, "_source" : {"tags": {"title": "people also kill people"}}
+    } ]
+    },
+    "facets" : {
+    "popular_tags" : {
+      "_type" : "terms",
+      "missing" : 0,
+      "total" : 3,
+      "other" : 0,
+      "terms" : [ {
+        "term" : "people",
+        "count" : 2            
+      }, {
+        "term" : "kill",
+        "count" : 1
+      }, {
+        "term" : "also",
+        "count" : 1
+      } ]
+     }
+    }
+    
+
+How do I achieve this? Is facet the wrong way to go?
+
+A facet counts the documents, not the terms belonging to them. You get 1
+because only one document contains that term, it doesn't matter how many times
+that happens. I'm not aware of an out of the box way to return the term
+frequency, the facet is not a good choice.  
+That information could be stored in the index if you enable the term vectors,
+but there's no way to read the term vectors from elasticsearch by now.
+
+Unfortunately term frequency for field is not available in Elastic. GitHub
+project [Index TermList](https://github.com/jprante/elasticsearch-index-
+termlist) is working with Lucene's Terms and calculate total number of
+occurrences of all docs, you can check it and alternate for your needs.
+

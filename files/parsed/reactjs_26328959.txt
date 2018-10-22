@@ -1,0 +1,62 @@
+26328959 React error message missing
+
+I have a very simple React case where I have an error in the render function
+and nothing gets logged when the state gets updated to contain a bad value.
+
+The error is that after the state is updated to contain a 'stuff' value that
+is not an array, which means that calling join(", ") on the 'stuff' value
+should fail, but nothing happens. React only keeps the data previously set in
+the getInitialState-function.
+
+Am I doing something wrong here to loose errors messages or is this just how
+React works?
+
+    
+    
+    var someComp = React.createClass({
+    
+        getInitialState: function () {
+            return {persons: [
+                {name: "Jane", stuff: ["a", "b"]},
+                {name: "Jim", stuff: ["c", "d"]}
+            ]}
+        },
+    
+        componentDidMount: function () {
+            superagent.get('/api/tags')
+                .end(function (res) {
+    
+                    // The res.body contains a stuff-value that is not an array.
+                    this.setState({persons: res.body});
+                }.bind(this));
+        },
+    
+        render: function () {
+            return R.table({}, [
+                R.thead({},
+                    R.tr({}, [
+                        R.th({}, "Name"),
+                        R.th({}, "List of stuff")
+                    ])),
+                R.tbody({},
+                    this.state.persons.map(function (person) {
+                        return R.tr({}, [
+                            R.td({}, person.name),
+                            // If person.stuff is not an array, then no error is logged..!
+                            R.td({}, person.stuff.join(", "))]);
+                    }))
+            ])
+        }
+    });
+    
+
+In my experience with React, it logs much more useful error messages if you
+build things step-by-step. Do that `R.td({}, person.stuff.join(", "))]` before
+the return statement, then use that result later on. If `person.stuff` isn't
+an array you'll get a better error message then.
+
+More to the point, why do you want React to throw an error? If it's for
+development purposes, there are easier ways to check than waiting for error
+messages from React. Otherwise, shouldn't you be including a check to see if
+`person.stuff` is an array _before_ attempting to use it as one?
+

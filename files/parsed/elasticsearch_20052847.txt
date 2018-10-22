@@ -1,0 +1,97 @@
+20052847 ElasticSearch: Is there a way to apply two scripts in the same query?
+
+I'd like to build a query based on two script filters, but I can't seem to get
+it to work. I've tried using nesting (following the example in the doc), but
+keep getting a syntax error:
+
+    
+    
+    QueryParsingException[[my_index] [_na] filter malformed, no field after start_object
+    
+
+The query is:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query":{
+                    "query_string": {
+                        "query": "things.type:1 AND things.status:1"
+                    }
+                }, 
+                "filter": {
+                    "nested": {
+                       "path": "obj",
+                       "_cache": true, 
+                       "filter": {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "script": "doc['things.type'].values.size() == 1"
+                                    },
+                                    {
+                                        "script": "obj['other_things.key'].values.size() >= 1"
+                                    }
+                                ]
+                           }
+                       }
+                    }
+                }
+            }
+        }
+    }
+    
+
+I could just pull the records from the first script (`"script":
+"doc['things.type'].values.size() == 1"`) and iterate over the list in Python
+(sing `pyelasticsearch` to execute these queries), but it seems that elastic
+search should be able to do this.
+
+You have two nested objects, so you need two separated nested filters. Each
+nested filter applies to a single document, so you can't access different
+documents in one nested clause. You can have as many filters as you need,
+connected with and:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "query_string": {
+              "query": "things.type:1 AND things.status:1"
+            }
+          },
+          "filter": {
+            "and": {
+              "filters": [
+                {
+                  "nested": {
+                    "path": "other_things",
+                    "filter": {
+                      "script": {
+                        "script": "doc['other_things.key'].values.size() >= 1"
+                      }
+                    }
+                  }
+                },
+                {
+                  "nested": {
+                    "path": "things",
+                    "filter": {
+                      "script": {
+                        "script": "doc['things.type'].values.size() == 1"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+

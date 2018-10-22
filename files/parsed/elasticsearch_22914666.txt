@@ -1,0 +1,38 @@
+22914666 Finding documents lacking a field in ElasticSearch
+
+I'm new to ES and currently evaluating how it would work for us as a backend
+for storing log data/events. One of the requirements is to bulk update all
+indexed events and, e.g. add a field.
+
+I looked at the query DSL but I can't find an example for a query that would
+retrieve all docs **which do NOT contain** a certain field. The DSL is very
+expressive when it comes to describing values, but not fieldnames and field
+existence.
+
+Maybe this is an unusual usecase for typical ES users but I already ran into a
+real need for it when playing with the ElasticSearch ELK stack. When I
+inserted data into ES which had the wrong format for Kibana, I got loads of
+exceptions. Now I wanted to correct the format but I can't retrieve the
+corrupted documents. Is there a way?
+
+You should be able to use the
+"[exists](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-exists-filter.html)" filter in conjunction with the
+"[not](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-not-filter.html)" filter mentioned above by @touchpad or simply the
+"[missing](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-missing-filter.html)" filter
+
+    
+    
+      {
+       "filter": {
+          "not": {
+             "exists": {
+                "field": <field_name>
+             }
+          }
+       }
+    }
+    
+

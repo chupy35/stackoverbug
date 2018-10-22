@@ -1,0 +1,219 @@
+24685579 Conditional aggregation on multi-field in Elasticsearch
+
+Here's an example of a document in my ES index:
+
+    
+    
+    { 
+        "concepts": [ 
+            { 
+                "type": "location",
+                "entities": [ 
+                    { "text": "Raleigh" }, 
+                    { "text": "Damascus" }, 
+                    { "text": "Brussels" } 
+                ] 
+            }, 
+            { 
+                "type": "person", 
+                "entities": [ 
+                    { "text": "Johnny Cash" }, 
+                    { "text": "Barack Obama" }, 
+                    { "text": "Vladimir Putin" }, 
+                    { "text": "John Hancock" } 
+                ] 
+            }, 
+            { 
+                "type": "organization", 
+                "entities": [ 
+                    { "text": "WTO" }, 
+                    { "text": "IMF" }, 
+                    { "text": "United States of America" } 
+                ] 
+            } 
+        ] 
+    }
+    
+
+I'm trying to aggregate and count the frequency of each concept entity in my
+set of documents _for a specific concept type_. Let's say I'm only interested
+in aggregating concept entities of type "location". My aggregation buckets are
+then going to be "concepts.entities.text", but I only want to aggregate them
+if "concepts.type" is equal to "location". Here's my attempt:
+
+    
+    
+    {
+        "query": {
+            // Whatever query
+        },
+        "aggs": {
+            "location_concept_type": {
+                "filter": {
+                    "term": { "concepts.type": "location" }
+                },
+                "aggs": {
+                    "entities": {
+                        "terms": { "field": "concepts.hits.text" }
+                    }
+                }
+            }
+        }
+    }
+    
+
+The problem with this is that it will filter out of the aggregation the
+documents that do not have any concept entities of type "location". But for
+the documents who do have concept entities of type "location" _and_ something
+else, it will bucket _all_ the concept entities, regardless of the concept
+type.
+
+I have also tried by restructuring my doc in the following way:
+
+    
+    
+    { 
+        "concepts": [ 
+            { 
+                "type": "location",
+                "text": "Raleigh"
+            },
+            { 
+                "type": "location",
+                "text": "Damascus"
+            },
+            { 
+                "type": "location",
+                "text": "Brussels"
+            }, 
+            { 
+                "type": "person",
+                "text": "Johnny Cash"
+            },
+            { 
+                "type": "person",
+                "text": "Barack Obama"
+            }
+            { 
+                "type": "person",
+                "text": "Vladimir Putin"
+            }
+            { 
+                "type": "person",
+                "text": "John Hancock"
+            }, 
+            { 
+                "type": "organization",
+                "text": "WTO" 
+            },
+            { 
+                "type": "organization",
+                "text": "IMF" 
+            },
+            { 
+                "type": "organization",
+                "text": "United States of America" 
+            }
+        ] 
+    }
+    
+
+But that doesn't work either. Finally I cannot use the concept type as the key
+(which would solve my problem, I believe), because I also need to be able to
+aggregate across all concept types (and there potentially is an indefinite and
+changing number of concept types).
+
+Any idea of how to proceed? Thanks in advance for your help.
+
+I found a workaround that is kind of a hack. I'll put it as an answer but
+please feel free to add an alternative more elegant answer. What I did is to
+add a property alongside "type" and "text", let's call it "text_exp", that
+combines type and text as follows:
+
+    
+    
+    {
+        "concepts": [
+            { "type": "location", "text": "Raleigh", "text_exp": "location~Raleigh" },
+            //...
+        ]
+    }
+    
+
+Then I use a regex in the terms aggregation, as follows. Let's say I only want
+to aggregate entities of type "location":
+
+    
+    
+    {
+        "query": {
+            // Whatever query
+        },
+        "aggs": {
+            "location_entities": {
+                "terms": { 
+                    "field": "concepts.text_exp",
+                    "include": "location~.*"
+                }
+            }
+        }
+    }
+    
+
+Then in the response I just split on "~" and take the right part.
+
+If you structure your index as follows:
+
+    
+    
+    { 
+        "concepts": [ 
+            { 
+                "type": "location",
+                "text": "Raleigh"
+            },
+            { 
+                "type": "location",
+                "text": "Damascus"
+            }
+        ]
+    }
+    
+
+and define the "concepts" field in your mapping as a _nested_ object, you can
+apply the following search, nesting a filter aggregation _within_ a nested
+aggregation:
+
+    
+    
+    {
+        "query": {
+            "match_all": {}
+        },
+        "aggs": {
+            "location_entities": {
+                "nested": { "path": "concepts" }
+            },
+            "aggs": {
+                "filtered_aggregation": {
+                    "filter": { "term": { "concepts.type": "location" } },
+                    "aggs": {
+                        "my_aggregation": {
+                            "terms": { "field": "concepts.text" }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+In the response, you know you are only getting location entities. This
+approach is way faster than the "hack" in the other answer.
+
+Starting version 1.0.4Beta1, Elasticsearch offers [filters
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-filters-aggregation.html). Replacing the filter
+aggregation within the nested aggregations with a filters aggregation, you can
+bucketize your aggregations per entity type.
+

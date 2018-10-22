@@ -1,0 +1,20 @@
+12067772 Redirecting to referer
+
+In AngularJS, I have a login controller that is redirected to by every single
+page in the app if the user arrives at the page and is not logged in. After
+the login sequence, I would like to redirect the user back to the page that
+they came from. What's the best way to do this? Save the old location in the
+`$rootScope`? Redirect to `'/login?returnto=' + $location.path()`? Is there a
+built in function?
+
+You can use `$rootScope` or define a service to save the old location. Here is
+a [SO post](https://stackoverflow.com/questions/11938380/how-to-go-
+globals/11938785#11938785) that contrasts the two approaches. I personally
+don't like adding `returnto=` to the URL.
+
+This blog post, [Authentication in
+AngularJS](http://www.espeo.pl/2012/02/26/authentication-in-angularjs-
+application), might be of interest to you. Note the comment that Vojta (one of
+AngularJS authors) made on that blog post about using `$rootScope` \-- he
+recommends a service instead.
+

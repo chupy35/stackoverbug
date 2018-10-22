@@ -1,0 +1,81 @@
+24252275 How to retrieve all document ids matching a search, in elastic
+search?
+
+I'm working on a simple side project, and have a tech stack that involves both
+a SQL database and ElasticSearch. I only have ElasticSearch because I assumed
+that as my project grows, my full text searching would be most efficiently
+performed by ES. My ES schema is very simple - documents that I insert into ES
+have 2 fields, one being the id and the other being the field with the body of
+text to search. The id being inserted into ES corresponds to that document's
+primary key id from the SQL database.
+
+    
+    
+    insert record into SQL -> insert record into ES using PK from SQL
+    
+
+Searching would be the reverse of that. Query ES and grab all the matching
+ids, and then turn around and use those ids to get records from SQL.
+
+    
+    
+    search ES can get all PK ids -> use those ids to get documents from SQL
+    
+
+The problem that I am facing though, is that ES can only return documents in a
+paginated manner. This is a problem because I also have a `WHERE` clause on my
+SQL query, beyond just the ids. My SQL query might look like this ...
+
+    
+    
+    SELECT * FROM foo WHERE id IN (1,2,3,4,5) AND bar != 'baz'
+    
+
+Well, with ES paginating the results, my `WHERE` clause will always only be
+querying a subset of the full results from ES. Even if I utilize ES' `skip`
+and `take`, I'm still only querying SQL using a subset of document ids.
+
+**Is there a way to get Elastic Search to only return the entire list of
+matching document ids?** I realize this is here to not allow me to shoot
+myself in the foot, because doing this across all shards and many many
+documents is not efficient. Is there no way, though?
+
+After putting in some hours on this project, I've only now realized that I've
+poorly engineered this, unless I can get all of these ids from ES. Some
+alternative implementations that I've thought of would be to store the things
+that I'm filtering on, in SQL, in ES as well. A problem there is that I'd have
+to update the ES document every time I update the document in SQL. This would
+require a pretty big rewrite to some of my data access code. I could scrap
+ElasticSearch all together and just perform searching in Postgres, for now,
+until I can think of a better way to structure this.
+
+The elasticsearch not support return each and every doc match to you queries.
+Because it Ll overload the system. Instead of this.. Use scroll concept in
+elasticsearch.. It's lik cursor concept in db's..
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/scan-
+scroll.html>
+
+For more examples refer the Github repo.
+<https://github.com/sidharthancr/elasticsearch-java-client>
+
+Hope it helps..
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-fields.html>
+
+please have a look into the elastic search document where you can specify only
+particular fields that return from the match documents
+
+hope this resolves your problem
+
+    
+    
+    {
+        "fields" : ["user", "postDate"],
+        "query" : {
+            "term" : { "user" : "kimchy" }
+        }
+    }
+    
+

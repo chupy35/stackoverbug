@@ -1,0 +1,4 @@
+28923117
+React tools to transform JSX does nothing
+<p>When I run the react-tools to transform jsx to js, nothing happens - what am I missing? There are no errors either</p>&#xA;&#xA;<pre><code>F:\&gt;jsx -x jsx "path to jsx scripts" "path to build folder"&#xA;</code></pre>&#xA;
+<p>There was a backslash at the end of the path that was apparently causing the issue. It would be nice it jsx told you that it could not find the path instead of just being silent</p>&#xA;

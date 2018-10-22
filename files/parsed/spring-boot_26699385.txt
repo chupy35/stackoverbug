@@ -1,0 +1,128 @@
+26699385 Spring Boot yaml configuration for a list of strings
+
+I am trying to load an array of strings from application.yml file. This is the
+config:
+
+    
+    
+    ignore:
+        filenames:
+            - .DS_Store
+            - .hg
+    
+
+This is the class:
+
+    
+    
+    @Value("${ignore.filenames}")
+    private List<String> igonoredFileNames = new ArrayList<>();
+    
+
+There are other configurations in the same class that loads just fine. There
+are no tabs in my yaml file. Still I get the following exception:
+
+    
+    
+    Caused by: java.lang.IllegalArgumentException: Could not resolve placeholder 'ignore.filenames' in string value "${ignore.filenames}"
+    
+
+My _guess_ is, that the `@Value` can not cope with "complex" types. You can go
+with a prop class like this:
+
+    
+    
+    @Configuration
+    @ConfigurationProperties('ignore')
+    class IgnoreSettings {
+        List<String> filenames
+    }
+    
+
+**Please note:** This code is _Groovy_ \- **not Java** \- to keep the example
+short! See the comments for tips how to adopt.
+
+See the complete example <https://github.com/christoph-frick/so-springboot-
+yaml-string-list>
+
+use comma separated values in application.yml
+
+    
+    
+    ignoreFilenames: .DS_Store, .hg
+    
+
+java code for access
+
+    
+    
+    @Value("${ignoreFilenames}")    
+    String[] ignoreFilenames
+    
+
+I tried and succeeded ;)
+
+From the spring boot docs <https://docs.spring.io/spring-
+boot/docs/current/reference/html/boot-features-external-config.html>
+
+YAML lists are represented as property keys with [index] dereferencers, for
+example this YAML:
+
+    
+    
+    my:
+       servers:
+           - dev.bar.com
+           - foo.bar.com
+    
+
+Would be transformed into these properties:
+
+    
+    
+    my.servers[0]=dev.bar.com
+    my.servers[1]=foo.bar.com
+    
+
+To bind to properties like that using the Spring DataBinder utilities (which
+is what @ConfigurationProperties does) you need to have a property in the
+target bean of type java.util.List and you either need to provide a setter, or
+initialize it with a mutable value, e.g. this will bind to the properties
+above. Here is what the question's code would look like.
+
+    
+    
+    @ConfigurationProperties(prefix="ignore")
+    public class Filenames {
+    
+        private List<String> ignoredFilenames = new ArrayList<String>();
+    
+        public List<String> getFilenames() {
+            return this.ignoredFilenames;
+        }
+    }
+    
+
+As an addition to [Ahmet's
+answer](https://stackoverflow.com/a/41462567/2065796) you can add line brakes
+to the coma separated string using `>` symbol.
+
+The `application.yml`:
+
+    
+    
+    ignoreFilenames: >
+      .DS_Store, 
+      .hg
+    
+
+Java code:
+
+    
+    
+    @Value("${ignoreFilenames}")    
+    String[] ignoreFilenames;
+    
+
+It is useful when the items are long and don't fit into the screen.
+

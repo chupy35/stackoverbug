@@ -1,0 +1,3 @@
+33670263
+how to search location by place name in elasticsearch like "location" : "India"
+<p>I want to filter twitter data by location.I've used the query below ...  </p>&#xA;&#xA;<p>code :</p>&#xA;&#xA;<pre><code>query = { &#xA;    "query": {&#xA;        "term" : { &#xA;            "location" : "India"&#xA;        }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>But I'm not getting desired output</p>&#xA;

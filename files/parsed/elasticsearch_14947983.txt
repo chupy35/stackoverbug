@@ -1,0 +1,15 @@
+14947983 ElasticSearch: is it possible to query with geo spatial biasing?
+
+I want to query documents with biasing according to distance from a geo_point,
+currently I'm using the geo_distance filter which filters all documents with
+larger distance, but I want some sort of biasing.
+
+for example, If I'm querying for 10 documents and only 6 falls inside the
+geo_distance filter, return also 4 documents that have a larger distance.
+
+how can I do this ?
+
+Wrap your main query into [Custom Filters Score
+Query](http://www.elasticsearch.org/guide/reference/query-dsl/custom-filters-
+score-query.html) and put your geo_distance filter as one of the filters.
+

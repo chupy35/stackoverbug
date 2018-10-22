@@ -1,0 +1,4 @@
+28438846
+Are Elasticsearch types required?
+<p>Are Elastic Search types required? I don't really need them, but are there negative consequences to not including them, instead of hardcoding them to some constant string?</p>&#xA;
+<p>Elasticsearch will assign a type to your data even if you don't explicitly define a type for your mapping. That assignment involves "dynamic mapping" to come up with a best guess based on the JSON types you hand it. See: </p>&#xA;&#xA;<p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/mapping-intro.html" rel="nofollow">http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/mapping-intro.html</a></p>&#xA;&#xA;<p>The most obvious negative consequence is that you may not agree with Elasticsearch's guess, or that you may want to add some extra features to the mapping for a given field (different analyzer, null_value, etc.). </p>&#xA;

@@ -1,0 +1,167 @@
+28501414 Spring-Boot html in /templates don't render from command line
+
+I have read several online posts about this issue, but for some reason none of
+those helped me solve this. I looked at the spring-boot examples and I don't
+think I am doing much different than those.
+
+I am using Spring-boot 1.2.1, Thymeleaf, embedded tomcat without issue in
+IntelliJ. However, when I do a "gradle clean build", move the jar file, and an
+application.properties file to a deploy directory. I then start on the command
+with:
+
+    
+    
+    java -jar edm-0.1.0.jar
+    
+    org.thymeleaf.exceptions.TemplateInputException: Error resolving template "/loginPage", template might not exist or might not be accessible by any of the configured Template Resolvers
+        at org.thymeleaf.TemplateRepository.getTemplate(TemplateRepository.java:245)
+    
+
+I am letting spring-boot configure my site for the most part. I am using the
+recommended directory structure: ![enter image description
+here](https://i.stack.imgur.com/46Vd2.png)
+
+I can hit the index page, and the REST calls seem to work just fine.
+
+**UPDATE based upon feedback** : I don't know if this is a broken jar issue,
+but when I extract it the structure and files appear correct. I can run "
+**gradle bootRun** " from the top of my project structure just fine. But if I
+deploy the jar file and run it, I get an error:
+
+    
+    
+    Task 'bootRun' not found in root project 'edm'
+    
+
+Here is my build.gradle file in case there might be an issue in it:
+
+    
+    
+    apply plugin: 'java'
+    apply plugin: 'groovy'
+    apply plugin: 'idea'
+    apply plugin: 'spring-boot'
+    apply plugin: 'jacoco'
+    apply plugin: 'maven'
+    
+    idea {
+        project {
+            //if you want to set specific jdk and language level
+            jdkName = '1.8'
+            languageLevel = '1.8'
+        }
+    }
+    
+    jacoco {
+        toolVersion = "0.7.0.201403182114"
+    }
+    
+    project.ext {
+        springBootVersion = '1.2.1.RELEASE'
+    }
+    
+    configurations {
+        querydslapt
+    }
+    
+    buildscript {
+        repositories {
+            maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+            maven { url "http://repo.spring.io/libs-milestone" }
+            maven { url "http://repo.spring.io/libs-snapshot" }
+            mavenLocal()
+            mavenCentral()
+        }
+        dependencies {
+            classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
+        }
+    }
+    
+    jar {
+        baseName = 'edm'
+        version = '0.1.0'
+    }
+    
+    dependencies {
+        querydslapt group: 'com.mysema.querydsl', name: 'querydsl-jpa', version: '2.8.0', classifier:   'apt-one-jar', transitive: false
+    
+        compile("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
+        compile("org.springframework.boot:spring-boot-starter-thymeleaf")
+        compile("org.springframework.boot:spring-boot-starter-security")
+        compile("org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion")
+        compile("org.springframework.security:spring-security-web:4.0.0.M1")
+        compile("org.springframework.security:spring-security-config:4.0.0.M1")
+        compile('org.thymeleaf.extras:thymeleaf-extras-springsecurity3:2.1.1.RELEASE')
+    
+        compile('com.android.tools.build:gradle:1.0.1')
+    
+        compile("org.hibernate:hibernate-core:4.3.4.Final")
+        compile("org.hibernate:hibernate-entitymanager:4.3.4.Final")
+        compile("org.hibernate:hibernate-validator")
+    
+        compile("org.apache.velocity:velocity:1.7")
+        compile('javax.mail:mail:1.4.1')
+        compile("org.springframework:spring-context-support")
+        compile("com.h2database:h2:1.3.172")
+        compile("joda-time:joda-time:2.3")
+        compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.5.0")
+        compile("org.codehaus.groovy.modules.http-builder:http-builder:0.7.1")
+        compile('org.codehaus.groovy:groovy-all:2.2.1')
+        compile('org.jadira.usertype:usertype.jodatime:2.0.1')
+    
+        compile("postgresql:postgresql:9.1-901.jdbc4")
+    
+        testCompile('org.spockframework:spock-core:1.0-groovy-2.0-SNAPSHOT') {
+            exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+        }
+    
+        testCompile('org.spockframework:spock-spring:1.0-groovy-2.0-SNAPSHOT') {
+            exclude group: 'org.spockframework', module: 'spock-core'
+            exclude group: 'org.spockframework', module: 'spring-beans'
+            exclude group: 'org.spockframework', module: 'spring-test'
+            exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+        }
+        testCompile("org.springframework.boot:spring-boot-starter-test:$springBootVersion")
+        testCompile('org.codehaus.groovy.modules.http-builder:http-builder:0.7+')
+        testCompile("junit:junit")
+    
+    
+        // for the anontation processor
+        querydslapt group: 'com.mysema.querydsl', name: 'querydsl-jpa', version: '2.8.0', classifier: 'apt-one-jar', transitive: false
+    // for compiling
+        compile("com.mysema.querydsl:querydsl-jpa:3.3.3")
+        compile("com.mysema.querydsl:querydsl-apt:3.3.3")
+    }
+    
+    task wrapper(type: Wrapper) {
+            gradleVersion = '2.0'
+    }
+    project.configurations {
+        providedRuntime
+        }
+    
+    project.bootRepackage {
+        enabled = true
+        }
+    
+
+I also tried adding some thymeleaf configuration (even though I am not
+explicitly using Thymeleaf) to my application.properties file:
+
+    
+    
+    liquibase.changeLog=classpath:/db/changelog/db.changelog-master.xml
+    spring.thymeleaf.prefix=classpath:/templates/
+    spring.thymeleaf.suffix=.html
+    spring.thymeleaf.check-template-location=true
+    
+
+So I guess my question is, why does running the "java -jar" not let me view
+the webpages?
+
+It turns out that my REST controllers were proceeded by "/" so login page
+became "//loginPage" and that was causing the problem. I found the answer
+[here](http://expertland.net/question/z5sb1c3m48s2p423ms247uub1cv5bl67/detail.html)
+but it took me a while to realize that was the issue. Hopefully this answer
+will help out someone in the future as it as a bear to figure out.
+

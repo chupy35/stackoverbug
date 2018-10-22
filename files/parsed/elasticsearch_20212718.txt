@@ -1,0 +1,9 @@
+20212718 Completion Suggester within categories
+
+I want to create an auto complete feature that generates suggestions within a
+category. As an example, I want to suggest 'hotels' within 'Amsterdam' and not
+get suggestions for any other cities.
+
+Is it possible to do this with Elastic Search with Completion Suggester? I
+don't see an option to 'categorize' name_suggestions.
+

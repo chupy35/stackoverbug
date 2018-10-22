@@ -1,0 +1,207 @@
+22305891 Elasticsearch multi_field type search and sort issue
+
+I'm having an issue with `multi_field` mapping type in one of my indexes and I
+am not sure what the issue is. I use a very similar mapping in another index
+and I don't have these issues. ES version is 90.12
+
+I have set this up I have a mapping that looks like this:
+
+    
+    
+    {
+      "settings": {
+        "index": {
+          "number_of_shards": 10,
+          "number_of_replicas": 1
+        }
+      },
+      "mappings": {
+        "production": {
+          "properties": {
+            "production_title": {
+              "type": "multi_field",
+              "fields": {
+                "production_title_edgengram": {
+                  "type": "string",
+                  "index": "analyzed",
+                  "index_analyzer": "autocomplete_index",
+                  "search_analyzer": "autocomplete_search"
+                },
+                "production_title": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+The `.yml` looks like this:
+
+    
+    
+    index:
+      mapper:
+        dynamic: true
+      analysis:
+        analyzer:
+          autocomplete_index:
+            tokenizer: keyword
+            filter: ["lowercase", "autocomplete_ngram"]
+          autocomplete_search:
+            tokenizer: keyword
+            filter: lowercase
+          ngram_index:
+            tokenizer: keyword
+            filter: ["ngram_filter"]
+          ngram_search:
+            tokenizer: keyword
+            filter: lowercase
+        filter:
+          autocomplete_ngram:
+            type: edgeNGram
+            min_gram: 1
+            max_gram: 15
+            side: front
+          ngram_filter:
+            type: nGram
+            min_gram: 2
+            max_gram: 8
+    
+
+So doing this:
+
+    
+    
+    curl -XGET 'http://localhost:9200/productionindex/production/_search' -d '{
+      "sort": [
+        {
+          "production_title": "asc"
+        }
+      ],
+      "size": 1
+    }'
+    
+
+and
+
+    
+    
+    curl -XGET 'http://localhost:9200/productionindex/production/_search' -d '{
+      "sort": [
+        {
+          "production_title": "desc"
+        }
+      ],
+      "size": 1
+    }'
+    
+
+I end up with the exact same result somewhere in the middle of the alphabet:
+
+    
+    
+    "production_title": "IL, 'Hoodoo Love'"
+    
+
+However, if I do this:
+
+    
+    
+    {
+      "query": {
+        "term": {
+          "production_title": "IL, 'Hoodoo Love'"
+        }
+      }
+    }
+    
+
+I get zero results.
+
+Furthermore, if I do this:
+
+    
+    
+    {
+      "query": {
+        "match": {
+          "production_title_edgengram": "Il"
+        }
+      }
+    }
+    
+
+I also get zero results.
+
+If I don't use `multi_field` and I separate them out, I can then search on
+them fine, (term and autocomplete) but I still can't sort.
+
+While indexing I am only sending `production_title` when indexing
+`multi_field`.
+
+Does anyone have any idea what is going on here?
+
+Below please find the explain (last result only for brevity)
+
+    
+    
+    {
+      "_shard": 6,
+      "_node": "j-D2SYPCT0qZt1lD1RcKOg",
+      "_index": "productionindex",
+      "_type": "production",
+      "_id": "casting_call.productiondatetime.689",
+      "_score": null,
+      "_source": {
+        "venue_state": "WA",
+        "updated_date": "2014-03-10T12:08:13.927273",
+        "django_id": 689,
+        "production_types": [
+          69,
+          87,
+          89
+        ],
+        "production_title": "WA, 'Footloose'"
+      },
+      "sort": [
+        null
+      ],
+      "_explanation": {
+        "value": 1.0,
+        "description": "ConstantScore(cache(_type:audition)), product of:",
+        "details": [
+          {
+            "value": 1.0,
+            "description": "boost"
+          },
+          {
+            "value": 1.0,
+            "description": "queryNorm"
+          }
+        ]
+      }
+    }
+    
+
+from this curl:
+
+    
+    
+    curl -XPOST 'http://localhost:9200/productionindex/production/_search?pretty=true&explain=true' -d '{
+      "query": {
+        "match_all": {}
+      },
+      "sort": [
+        {
+          "production_title": {
+            "order": "desc"
+          }
+        }
+      ]
+    }'
+    
+

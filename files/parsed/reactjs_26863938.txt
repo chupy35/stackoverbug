@@ -1,0 +1,44 @@
+26863938 Modify attributes of children in ReactJS component
+
+I am trying to figure out how to modify the children of a component to for
+example, add a class. I have tried to do:
+
+    
+    
+    var inputReactObject = React.Children.only(this.props.children);
+    
+    inputReactObject.className = "test";
+    
+
+However that does not seem to work.
+
+Is it possible to modify children attributes in a ReactJS component?
+
+Full plunker: <http://plnkr.co/edit/msbUSDBQn17qXzBHzGXD?p=preview>
+
+As mentioned by @lpiepiora plunker, the code to do what I want would be:
+
+    
+    
+    var inputReactObject = React.Children.only(this.props.children);
+    var clonnedChild = React.addons.cloneWithProps(inputReactObject, {
+      className: "input-element test"
+    });
+    
+    return clonnedChild;
+    
+
+Now that `cloneWithProps` is
+[deprecated](https://facebook.github.io/react/blog/2015/03/03/react-v0.13-rc2.html#react.cloneelement),
+the current approach would be
+
+    
+    
+    var inputReactObject = React.Children.only(this.props.children);
+    var clonedChild = React.cloneElement(inputReactObject, {
+      className: "input-element test"
+    });
+    
+    return clonedChild;
+    
+

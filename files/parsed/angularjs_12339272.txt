@@ -1,0 +1,515 @@
+12339272 angular js unknown provider
+
+I'm trying to "customize" the mongolab example to fit my own REST API. Now I'm
+running into this error and I am not sure what I am doing wrong:
+
+    
+    
+    Error: Unknown provider: ProductProvider <- Product
+        at Error (unknown source)
+        at http://localhost:3000/js/vendor/angular.min.js:28:395
+        at Object.c [as get] (http://localhost:3000/js/vendor/angular.min.js:26:180)
+        at http://localhost:3000/js/vendor/angular.min.js:28:476
+        at c (http://localhost:3000/js/vendor/angular.min.js:26:180)
+        at d (http://localhost:3000/js/vendor/angular.min.js:26:314)
+    
+
+This is my controller:
+
+    
+    
+    function ProductListCtrl($scope, Product) {
+      $scope.products = Product.query();
+    }
+    
+
+and this is the module:
+
+    
+    
+    angular.module('productServices', ['ngResource']).
+        factory('Product', ['$resource', function($resource){
+          var Product = $resource('/api/products/:id', {  }, {
+            update: { method: 'PUT' }
+          });
+    
+          return Product;
+        }]);
+    
+
+Your code looks good, in fact it works (apart from the calls themselves) when
+copied & pasted into a sample jsFiddle: <http://jsfiddle.net/VGaWD/>
+
+Hard to say what is going on without seeing a more complete example but I hope
+that the above jsFiddle will be helpful. **What I'm suspecting is that you are
+not initializing your app with the 'productServices' module**. It would give
+the same error, we can see this in another jsFiddle:
+<http://jsfiddle.net/a69nX/1/>
+
+If you are planning to work with AngularJS and MongoLab **I would suggest
+using an existing adapter for the $resource and MongoLab** :
+<https://github.com/pkozlowski-opensource/angularjs-mongolab> It eases much of
+the pain working with MongoLab, you can see it in action here:
+<http://jsfiddle.net/pkozlowski_opensource/DP4Rh/> Disclaimer! I'm maintaining
+this adapter (written based on AngularJS examples) so I'm obviously biased
+here.
+
+pkozlowski's answer is correct, but just in case this happens to someone else,
+I had the same error after creating the same module twice by mistake; the
+second definition was overriding the provider of the first:
+
+I created the module by doing
+
+    
+    
+    angular.module('MyService'...
+    ).factory(...);
+    
+
+then a bit further down in the same file:
+
+    
+    
+    angular.module('MyService'...
+    ).value('version','0.1');
+    
+
+The correct way of doing this is:
+
+    
+    
+    angular.module('MyService'...
+    ).factory(...).value('version','0.1');
+    
+
+I just had a similar problem. The error said the same the in the question,
+tried to solve it with the answer of pkozlowski.opensource and Ben G, which
+both are correct and good answers.
+
+My problem was indeed different with the same error:
+
+in my HTML-Code I had the initialisation like this...
+
+    
+    
+    <html ng-app>
+    
+
+A bit further down I tried to do something like this:
+
+    
+    
+    <div id="cartView" ng-app="myApp" ng-controller="CartCtrl">
+    
+
+I got rid of the first one... then it worked... obviously you can't initialise
+ng-app twice or more times. fair enough.
+
+I totaly forgot about the first "ng-app" and got totaly frustrated. Maybe this
+is gonna help someone oneday...
+
+Make sure your main `app.js` includes the services on which it depends. For
+example:
+
+    
+    
+    /* App Module */
+    angular.module('myApp', ['productServices']). 
+    .....
+    
+
+Another 'gotcha': I was getting this error injecting $timeout, and it took a
+few minutes to realize I had whitespace in the array values. This will not
+work:
+
+    
+    
+    angular.module('myapp',[].
+      controller('myCtrl', ['$scope', '$timeout ', 
+        function ($scope, $timeout){
+          //controller logic
+        }
+      ]);
+    
+
+Posting just in case some else has a silly error like this.
+
+For me the problem was lazy loading; I loaded my controller and service late,
+so they were not available at page load (and Angular initialization). I did
+this with an ui-if tag, but that's irrelevant. The solution was to load the
+service with the page load already.
+
+I got that error because I was passing an incorrect parameter to the factory
+definition. I had:
+
+    
+    
+    myModule.factory('myService', function($scope, $http)...
+    
+
+It worked when I removed the `$scope` and changed the factory definition to:
+
+    
+    
+    myModule.factory('myService', function( $http)...
+    
+
+In case you need to inject `$scope`, use:
+
+    
+    
+    myModule.factory('myService', function($rootScope, $http)...
+    
+
+Since this is the top result for "angularjs unknown provider" on Google right
+now, here's another gotcha. When doing unit testing with Jasmine, make sure
+you have this statement in your `beforeEach()` function:
+
+    
+    
+    module('moduleName'); 
+    
+
+Otherwise you'll get this same error in your tests.
+
+In my case, I've defined a new provider, say, `xyz`
+
+    
+    
+    angular.module('test')
+    .provider('xyz', function () {
+        ....
+    });
+    
+
+When you were to config the above provider, you've to inject it with
+`Provider` string appended --> `xyz` becomes `xyzProvider`.
+
+Ex:
+
+    
+    
+    angular.module('App', ['test'])
+    .config(function (xyzProvider) {
+         // do something with xyzProvider....
+    });
+    
+
+If you inject the above provider without the 'Provider' string, you'll get the
+similar error in OP.
+
+I got an "unknown provider" error related to angular-mocks (ngMockE2E) when
+compiling my project with Grunt. The problem was that angular-mocks cannot be
+minified so I had to remove it from the list of minified files.
+
+In my Ruby on Rails app, I had done the following:
+
+    
+    
+    rake assets:precompile
+    
+
+This was done in the 'development' environment, which had minified Angular.js
+and included it in the `/public/assets/application.js` file.
+
+Removing the `/public/assets/*` files solved the problem for me.
+
+For me, this error was caused by running the minified version of my angular
+app. Angular docs suggest a way to work around this. Here is the relevant
+quote describing the issue, and you can find the suggested solution in the
+docs themselves [here](http://docs.angularjs.org/tutorial/step_05 "Angular
+Docs"):
+
+> A Note on Minification Since Angular infers the controller's dependencies
+from the names of arguments to the controller's constructor function, if you
+were to minify the JavaScript code for PhoneListCtrl controller, all of its
+function arguments would be minified as well, and the dependency injector
+would not be able to identify services correctly.
+
+After handling with this error too, I can support this list of answers with my
+own case.
+
+It's at the same time simple and dumb (maybe not dumb for beginners like me,
+but yes for experts), the script reference to angular.min.js must be the first
+one in your list of scripts in the html page.
+
+This works:
+
+    
+    
+    <script src="Scripts/angular.min.js"></script>
+    <script src="MyScripts/MyCartController.js"></script>
+    <script src="MyScripts/MyShoppingModule.js"></script>
+    
+
+This not:
+
+    
+    
+    <script src="MyScripts/MyCartController.js"></script>
+    <script src="MyScripts/MyShoppingModule.js"></script>
+    <script src="Scripts/angular.min.js"></script>
+    
+
+Notice about the angular.min.js.
+
+Hope it helps anyone !! :)
+
+My case was dodgy typing
+
+    
+    
+    myApp.factory('Notify',funtion(){
+    
+
+function has a 'c' !
+
+My problem was with Yeoman, using (capitalized):
+
+    
+    
+    yo angular:factory Test
+    
+
+Made files (uncapitalized):
+
+    
+    
+    app/scripts/services/test.js
+    
+
+but the index.html file included (capitalized):
+
+    
+    
+    <script src="scripts/services/Test.js"></script>
+    
+
+Hope this helps someone.
+
+This took me way too long to track down. Make sure you minisafe your
+controller within your directive.
+
+    
+    
+    .directive('my_directive', ['injected_item', function (injected_item){
+    
+      return {
+    
+        controller: ['DO_IT_HERE_TOO', function(DO_IT_HERE_TOO){
+    
+        }]
+      }
+    }
+    
+
+Hope that helps
+
+Yet another possibility.
+
+I had `unknown Provider <- <- nameOfMyService`. The error was caused by the
+following syntax:
+
+    
+    
+    module.factory(['', function() { ... }]);
+    
+
+Angular was looking for the `''` dependency.
+
+My scenario may be a little obscure but it can cause the same error and
+someone may experience it, so:
+
+When using the $controller service to instantiate a new controller (which was
+expecting '$scope' as it's first injected argument) I was passing the new
+controller's local scope into the $controller() function's second parameter.
+This lead to Angular trying to invoke a $scope service which doesn't exist (
+_though, for a while, I actually thought that I'd some how deleted the
+'$scope' service from Angular's cache_ ). The solution is to wrap the local
+scope in a locals object:
+
+    
+    
+    // Bad:
+    $controller('myController', newScope);
+    
+    // Good:
+    $controller('myController, {$scope: newScope});
+    
+
+Here's another possible scenario where you can see this error:
+
+If you use Sublime Text 2 and the angular plugin, it will generate stubs like
+this
+
+    
+    
+    angular.module('utils', [])
+    .factory('utilFactory', [''
+        function() {
+            return {
+    
+            }
+        }
+    ]);
+    
+
+notice the empty ' ' as the first element of the array after the 'utilFactory'
+string. If you don't have any dependencies, remove that so it's like this:
+
+    
+    
+    angular.module('utils', [])
+    .factory('utilFactory', [
+        function() {
+            return {
+    
+            }
+        }
+    ]);
+    
+
+I was forgetting to inject the file that held my services altogether. Remember
+to do this when initializing your app module:
+
+    
+    
+    angular.module('myApp', ['myApp.services', ... ]);
+    
+
+None of the answers above worked for me, maybe I was doing completely wrong,
+but as a beginner that's what we do.
+
+I was initializing the controller in a `div` in order to have a list:
+
+    
+    
+     <div ng-controller="CategoryController" ng-init="initialize()">
+    
+
+And then using `$routeProvider` to map a URL to the same controller. As soon
+as I removed the `ng-init` the controller worked with the route.
+
+I had same problem. I fixed that using `$('body').attr("ng-app", 'MyApp')`
+instead of `<body ng-app="MyApp">` to boostrap.
+
+Because I did
+
+    
+    
+    angular.element(document).ready(function () {        
+        angular.bootstrap(document, [App.Config.Settings.AppName]);
+    })
+    
+
+for architecture requirements.
+
+Since this question is top google result, I will add another possible thing to
+the list.
+
+If the module that you're using has a failure on the dependency injection
+wrapper, it will provide this same result. For example copy & paste modules
+from the internet may rely on underscore.js and attempt to inject with '_' in
+the di wrapper. If underscore doesn't exist in your project dependency
+providers, when your controller attempts to reference your module's factory,
+it will get 'unknown provider' for your factory in the browser's console log.
+
+Yet another case where this error will occur, if you're service is defined in
+a separate javascript file, make sure you reference it! Yes, I know, rookie
+mistake.
+
+The problem for me was that there were some new javascript files I created
+that referenced the service yet Chrome saw only the older version. A CTRL + F5
+fixed it for me.
+
+To add my own experience in here, I was trying to inject a service into one of
+my module config functions. This paragraph from the docs which I eventually
+found explains why that doesn't work:
+
+> During application bootstrap, before Angular goes off creating all services,
+it configures and instantiates all providers. We call this the configuration
+phase of the application life-cycle. During this phase, services aren't
+accessible because they haven't been created yet.
+
+Meaning you can inject providers into module.config(...) functions, but you
+can't inject services, for that you need to wait until module.run(...), or
+expose a provider you can inject to module.config
+
+In my case, I used an anonymous function as a wrapper for the angular module,
+like this:
+
+    
+    
+    (function () {
+    var app = angular.module('myModule', []);
+    ...
+    })();
+    
+
+After closing the parenthesis, I forgot to call the anonymous function by
+opening and closing the parentheses again as above.
+
+At the end of the JS file to close the factory function I had
+
+`});`
+
+instead of
+
+`}());`
+
+I faced similar issue today and issues was really very small
+
+    
+    
+     app.directive('removeFriend', function($scope) {
+    return {
+        restrict: 'E',
+        templateUrl: 'removeFriend.html',
+        controller: function($scope) {
+            $scope.removing = false;
+            $scope.startRemove = function() {
+                $scope.removing = true;
+            }
+            $scope.cancelRemove = function() {
+                $scope.removing = false;
+            }
+            $scope.removeFriend = function(friend) {
+                var idx = $scope.user.friends.indexOf(friend)
+                if (idx > -1) {
+                    $scope.user.friends.splice(idx, 1);
+                }
+            }
+        }
+    }
+    });
+    
+
+If you observe the above block, in the first line you will observe I injected
+$scope by mistake which is incorrect. **I removed that unwanted dependency to
+solve the issue.**
+
+    
+    
+     app.directive('removeFriend', function() {
+    return {
+        restrict: 'E',
+        templateUrl: 'removeFriend.html',
+        controller: function($scope) {
+            $scope.removing = false;
+            $scope.startRemove = function() {
+                $scope.removing = true;
+            }
+            $scope.cancelRemove = function() {
+                $scope.removing = false;
+            }
+            $scope.removeFriend = function(friend) {
+                var idx = $scope.user.friends.indexOf(friend)
+                if (idx > -1) {
+                    $scope.user.friends.splice(idx, 1);
+                }
+            }
+        }
+    }
+    });
+    
+

@@ -1,0 +1,65 @@
+17268495 How to remove node from elasticsearch cluster on runtime without down
+time
+
+Suppose I had 5 nodes in cluster and I had to remove 2 node on run-time. So
+how it can be done without affecting the indices?
+
+I had continuous stream of data coming at nearly 10 Gbphour which is getting
+indexed continuously.
+
+Is rebalancing will do any help in this? Thanks in advance
+
+You can always kill the process to remove the node at runtime. Elasticsearch
+cluster will automatically rebalance in the remaining nodes. But, there are
+some cons here.
+
+  1. How many replicas do you have in your settings?
+  2. How many shards do you have in your settings?
+  3. If the data present in shards are too large(10GB Per Hour) then it might take long time to rebalance.
+  4. If you have enough replicas then the cluster state would go to yellow. In this state you can index and search during this time. However the shards go to unassigned initially and then move to balance nodes slowly.
+
+You can decommission a node by telling the cluster to exclude it from
+allocation. (From the documentation
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+cluster.html))
+
+    
+    
+    curl -XPUT localhost:9200/_cluster/settings -H 'Content-Type: application/json' -d '{
+      "transient" :{
+          "cluster.routing.allocation.exclude._ip" : "10.0.0.1"
+       }
+    }';echo
+    
+
+This will cause Elasticsearch to allocate the shards on that node to the
+remaining nodes, without the state of the cluster changing to yellow or red
+(even if you have replication 0).
+
+Once all the shards have been reallocated you can shutdown the node and do
+whatever you need to do there. Once you're done, include the node for
+allocation and Elasticsearch will rebalance the shards again.
+
+To remove elasticsearch node from the cluster just run the following command
+
+    
+    
+    curl -XPUT P.P.P.P:9200/_cluster/settings -H 'Content-Type: application/json' -d '{
+      "transient" :{
+          "cluster.routing.allocation.exclude._ip" : "X.X.X.X"
+       }
+    }';echo
+    
+
+Here `P.P.P.P` is the private IP of the master node, you may also use the
+`localhost` if elasticsearch is running on `localhost`. `X.X.X.X` is the
+private IP of the node to be removed from the cluster.
+
+This command will give `acknowledgement` `true` if the node is accepted to be
+removed and the data relocation will start. Check if the data relocation is
+over and the node doesn't have any shards left on it, than stop
+`elasticsearch` process and `stop/terminate` the instance. The commands to
+check data relocation and shards left can be found on [this
+article](http://jee-appy.blogspot.com/2016/09/replace-node-elasticsearch-
+cluster.html).
+

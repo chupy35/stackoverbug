@@ -1,0 +1,4 @@
+30218208
+Aggregations and filtering with Elasticsearch
+<p>Using ES 1.5.2</p>&#xA;&#xA;<p>Speaking strictly of aggregations, is it better for performance?&#xA;The query/filter/aggregation returns the exact same result in both cases.</p>&#xA;&#xA;<ul>&#xA;<li><p>Filter query and then aggregate.</p>&#xA;&#xA;<pre><code>{&#xA;    "size":0,&#xA;    "query": {},&#xA;    "aggs": {}&#xA;}&#xA;</code></pre></li>&#xA;<li><p>Or filter inside the aggregate.</p>&#xA;&#xA;<pre><code>{&#xA;    "size":0,&#xA;    "aggs": {&#xA;        "filter": {&#xA;            "query": {},&#xA;        },&#xA;        "aggs": {}&#xA;    }&#xA;}&#xA;</code></pre></li>&#xA;</ul>&#xA;
+<p>The main difference between filtering and quering ist that filters do not affect scoring.</p>&#xA;&#xA;<p>Filters only reduce the result set size, but there is no relevance scoring on the matched items at all.</p>&#xA;

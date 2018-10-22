@@ -1,0 +1,3 @@
+30181343
+What is the best index.store.fs for timestamp based indices ( ELK stack)
+<p>Just stumbled upon this page on ES documentation <a href="http://www.elastic.co/guide/en/elasticsearch/reference/1.5/index-modules-store.html" rel="nofollow">index-modules-store</a>. We are using timestamp based indices as we are using ELK stack. Just curious to know which index.store.fs is best for the case. Our on average index size is 15gb and we are using 3 linux nodes running on vmware 64bit. Thanks in advance. </p>&#xA;

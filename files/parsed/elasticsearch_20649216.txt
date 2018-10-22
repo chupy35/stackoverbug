@@ -1,0 +1,65 @@
+20649216 Elastic search multiple terms in a dictionary
+
+I have mapping like:
+
+    
+    
+     "profile": {
+            "properties": {               
+                "educations": {
+                    "properties": {
+                        "university": {
+                            "type": "string"
+                        },
+                        "graduation_year": {
+                            "type": "string"
+                        }
+                     }
+                 }
+             }
+       }
+    
+
+which obviously holds the educations history of people. Each person can have
+multiple educations. What I want to do is search for people who graduated from
+"SFU" in "2012". To do that I am using filtered search:
+
+    
+    
+    "filtered": {
+         "filter": {
+            "and": [
+               {
+                  "term": {
+                     "educations.university": "SFU"
+                  }
+               },
+               {
+                  "term": {
+                     "educations.graduation_year": "2012"
+                  }
+               }
+            ]
+         }
+    
+
+But what this query does is to find the documents who have "SFU" and "2012" in
+their education, so this document would match, which is wrong:
+
+    
+    
+    educations[0] = {"university": "SFU", "graduation_year": 2000}
+    educations[1] = {"university": "UBC", "graduation_year": 2012}
+    
+
+Is there anyway I could filter both terms on each education?
+
+You need to define nested type for `educations` and use nested filter to
+filter it, or Elasticsearch will internally flattens inner objects into a
+single object, and return the wrong results. You can refer here for detail
+explainations and samples:
+
+<http://www.elasticsearch.org/blog/managing-relations-inside-elasticsearch/>
+<http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-children-and-
+nested-documents/>
+

@@ -1,0 +1,51 @@
+21946753 ElasticSearch is skipping the word "no" from query or facet?
+
+We're having problem with ElasticSearch skipping the term **"no"** so we came
+up with a toy dataset for easier troubleshooting. Below is the toy collection
+of 6 documents total (shown on the Sense chrome plugin):
+
+![All documents](https://i.stack.imgur.com/s0WZ9.png)
+
+And below is the query we're having problem with. We want it to return all 6
+documents with the 4 facets for the **"healthy"** field which should be **[no,
+yes, hell no, probably no]**. ![Troubled
+query](https://i.stack.imgur.com/l04lf.png)
+
+Instead, only 4 out of 6 documents were returned and the missing ones,
+**meat** and **egg** , were those having **"healthy"=="no"** (case
+insensitive).
+
+![Incorrect results](https://i.stack.imgur.com/422Np.png)
+
+...and instead of 4 facets we only got 3 back ( **"no"** is missing). Also
+note that **"probably"** was returned instead of **"probably not"**.
+Similarly, only **"hell"** was returned instead of **"hell no"**.
+
+![Incorrect facets](https://i.stack.imgur.com/CU2CV.png)
+
+We came up with these examples to illustrate the problem and not to offend
+anyone's dietary choices! Many thanks in advance!!!
+
+EDIT: We didn't do anything fancy with the mapping (we did in our real
+system). It just simply won't work "out of the box".
+
+![Default mapping](https://i.stack.imgur.com/Re6u5.png)
+
+Sounds like you are running into stop words. "no" is a very typical English
+stop word, which are words deemed to be so common that they are usually not
+useful for searching, and so they are eliminated during analysis.
+ElasticSearch has actually changed their default behavior to use an empty stop
+word set, for exactly this reason. Stop words can be helpful, but if you
+aren't expecting it, it's just confusing.
+
+You can customize the stop word set being used in your analyzer (such as
+[StandardAnalyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html)).
+
+The ElasticSearch folks have a very insteresting article on stop words as
+well: ["Stop Stopping Stop Words: a Look at Common Terms
+Query"](http://www.elasticsearch.org/blog/stop-stopping-stop-words-a-look-at-
+common-terms-query/) (to be clear, common terms queries may not suit your
+needs, but at least the first few sections should help describe the problem a
+little better).
+

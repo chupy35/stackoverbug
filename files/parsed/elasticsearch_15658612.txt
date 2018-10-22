@@ -1,0 +1,35 @@
+15658612 Why does ElasticSearch Heap Size not return to normal?
+
+I have setup elasticsearch and it works great.
+
+I've done a few bulk inserts and did a bit of load testing. However, its been
+idle for a while and I'm not sure why the Heap size doesn't reduce to about
+`50mb` which is what it was when it started? I'm guessing GC hasn't happened?
+
+![enter image description here](https://i.stack.imgur.com/e7M3b.png)
+
+Please note the nodes are running on different machines on AWS. They are all
+on small instances and each instance has 1.7GB of RAM.
+
+Any ideas?
+
+Probably. Hard to say, the JVM manages the memory and does what it thinks is
+best. It may be avoiding GC cycles because it simply isn't necessary. In fact,
+it's recommended to set `mlockall` to true, so that the heap is fully
+allocated at startup and will never change.
+
+It's not really a problem that ES is using memory for heap...memory is to be
+used, not saved. Unless you are having memory problems, I'd just ignore it and
+continue on.
+
+ElasticSearch and Lucene maintains cache data to perform fast sorts or facets.
+
+If your queries are doing sorts, this may increase the Lucene FieldCache size
+which may not be released because objects here are not eligible for the GC.
+So the default threshold (CMSInitiatingOccupancyFraction) of 75% do not apply
+here.
+
+You can manage FieldCache duration as explained here :
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-fielddata.html>
+

@@ -1,0 +1,71 @@
+16148633 Elasticsearch dynamic mapping with geopoint
+
+We use Elasticsearch to index schemaless data. The thing is that the majority
+of the entries that we want to index contain fields like `"longitude"`,
+`"latitude"`, `"lat"` or `"long"`.
+
+What would be the best way to index that data so the field type allows search
+with geo distance filter ?
+
+Thanks a lot.
+
+I know it's been some time since you posted this but in case someone stumbles
+upon it like I did, here's some ways to do it.
+
+In our case, we needed a dynamic radius so here's the mapping we have:
+
+    
+    
+    "mappings": {
+        "mygeopoints": {
+            "properties": {
+                "geopoint": {
+                    "type": "geo_point",
+                    "lat_lon" : true
+                },
+                "radius": {
+                    "type": "long"
+                }
+            }
+        }
+    }
+    
+
+Our document is indexed using a SQL query that looks like that:
+
+    
+    
+    SELECT label, (lat || ',' || lon) as geopoint, radius FROM points;
+    
+
+We're sending the geopoint as a string that contains both latitude and
+longitude seperated by a coma.
+
+To now search through the points you can use the [geo_distance
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/geo-distance-
+filter/):
+
+    
+    
+    "filter" : {
+        "geo_distance" : {
+            "geopoint" : [ 5.7, 43.5 ],
+            "distance" : "15km"
+        }
+    }
+    
+
+On our side though, we needed a dynamic range so we did not find any other
+solution than using a [script
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/script-
+filter/).
+
+    
+    
+    "filter" : {
+        "script" : {
+            "script" : "!doc['geopoint'].empty && doc['geopoint'].distanceInKm(43.5,5.7) <= doc['radius'].value"
+        }
+    }
+    
+

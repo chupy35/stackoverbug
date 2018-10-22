@@ -1,0 +1,52 @@
+17736755 How to disable a property to be indexed in ElasticSearch
+
+I am indexing data using the default mechanism ( without passing any
+schema/structure ). I simply XPOST the JSON document.
+
+I want to use :
+
+  * one single index 
+  * various types, but not tied to the data itself
+
+The issue I am having is that my JSON document has one particular property
+that has sometimes recursively nests itself. When it does, ElasticSearch
+errors on the data indexing PUT operation.
+
+The content of such attribute is not important for my searches/indexing
+purposes. I know I can exclude it from the data, but I still want it to be
+stored like a NoSQL solution.
+
+example:
+
+{  prop1 : "something", dirty_prop : { someprop : 123 , dirty_prop : { .... }
+}  }
+
+As it can be seen above, there is a nested inclusion, which will fail.
+
+The question is : how to avoid the error, preserving the data. I **presume**
+that removing **dirty_prop** from the indexing will allow it through. What is
+the simplest way to exclude it, without having to supply a complete structure
+( I cannot supply a complete structure/schema because I get new attributes in
+my data ).
+
+I'd say that having a JSON like that is probably not a good idea, but if you
+do have it and can't do anything to fix it, you can have a look at the
+`enabled` property that you can use for fields of type `object` in your
+mapping. Have a look
+[here](http://www.elasticsearch.org/guide/reference/mapping/object-type/) to
+know more. If you say `enabled: false` that branch of the json will not be
+parsed nor indexed, but kept in the
+[`_source`](http://www.elasticsearch.org/guide/reference/mapping/source-
+field/) field as you wish.
+
+On the other hand, I'm not 100% sure this will work, depending on how broken
+your json is. Of course the json parser (which uses a pull approach) needs to
+be able to identify the next object and continue parsing the other fields of
+the json.
+
+The fact that you provide complete structure of your json makes things
+slightly more complex. You can use [dynamic
+templates](http://www.elasticsearch.org/guide/reference/mapping/root-object-
+type/) to specify a pattern that identifies all the objects that need to be
+ignored and their mapping, specifying `enabled: false`.
+

@@ -1,0 +1,43 @@
+28433964 How to add Classpath attribute in manifest.mf when using spring boot
+maven plugin to build jar
+
+I am using spring boot maven plugin.I need to add class-path attribute in the
+manifest.mf file generated.This class-path entry should contain all jar files
+present in lib folder of the fat jar file created by spring boot.How is this
+possible?
+
+there is simple solution
+
+Only what you need it is add
+
+> maven-war-plugin
+
+or
+
+> maven-jar-plugin
+
+    
+    
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>2.6</version>
+        <configuration>
+            <archive>
+                <manifest>
+                    <addClasspath>true</addClasspath>
+                </manifest>
+                <manifestEntries>
+                    <mode>development</mode>
+                    <url>http://sample.com</url>
+                    <key>value</key>
+                </manifestEntries>
+            </archive>
+        </configuration>
+    </plugin>
+    
+
+And put your additional values in manifestEntries .
+
+Regards Aleksandar
+

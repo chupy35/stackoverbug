@@ -1,0 +1,77 @@
+28565687 Reactjs - create factory, passing props into component
+
+Trying to achieve the following:
+
+    
+    
+    if(typeof window === 'undefined'){
+        return React.renderToString(React.createFactory(AppComponent)());
+    }
+    React.render(<AppComponent component={component} />, document.body);
+    
+
+How exactly can I pass in the `component` prop to the component when it's
+being put through the `createFactory` method?
+
+EDIT:
+
+Got it working:
+
+    
+    
+    renderApp: function(component){
+        if(typeof window === 'undefined'){
+            var appComponentFactory = React.createFactory(AppComponent);
+            return React.renderToString(appComponentFactory({
+                component: component
+            }));
+        }
+        React.render(<AppComponent component={component} />, document.body);
+    }
+    
+
+If you're already transpiling JSX for the `React.render()` call, you don't
+need to jump through hoops with factories...
+
+    
+    
+    renderApp: function(component){
+        var app = <AppComponent component={component}/>
+        if (typeof window === 'undefined') {
+          return React.renderToString(app);
+        }
+        React.render(app, document.body);
+    }
+    
+
+...since it's just sugar for:
+
+    
+    
+    var app = React.createElement(AppComponent, {component: component})
+    
+
+* * *
+
+This may not apply, but If your `AppComponent` isn't doing anything but
+rendering the `component` prop it's given, you could also just render the
+component directly:
+
+    
+    
+    renderApp: function(Component) {
+        var app = <Component/>
+        if (typeof window === 'undefined') {
+          return React.renderToString(app);
+        }
+        React.render(app, document.body);
+    }
+    
+
+...showing the desugaring again:
+
+    
+    
+    var app = React.createElement(Component)
+    
+

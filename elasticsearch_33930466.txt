@@ -1,0 +1,3 @@
+33930466
+how to find term statistics of a document by specifying its field value in elastic search
+<p>I'm new to elasticsearch. I need to get the term statistics from documents by specifying a field that contains a certain value. I put following kind of documents to elasticsearch.</p>&#xA;&#xA;<pre><code>PUT /twitter/tweet/1&#xA;{&#xA;    "user" : "ABC",&#xA;    "post_date" : "2015-11-25T14:12:12",&#xA;    "message" : "this is my first tweet."&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>Now I want to get the term statistics of the field "message" of every Document where the "user" field contains value "ABC". I want to do this through Java. First I would like to know how to write the query for this.</p>&#xA;

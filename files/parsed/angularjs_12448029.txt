@@ -1,0 +1,30 @@
+12448029 AngularJS ng-show with Bootstrap visible-phone
+
+I have the following HTML snippet:
+
+    
+    
+    <div ng-show="loggedIn()" class="visible-phone">Show only on phone and if logged in.</div>
+    
+
+And in JS:
+
+    
+    
+    $rootScope.loggedIn = function () {
+        return window.usr ? true : false;
+    };
+    
+
+But the element is always shown regardless of `loggedIn()` value. Any solution
+for this? (or at least workaround)
+
+If window.usr was set to 'true' prior to your $rootScope.loggedIn function was
+called then this would work. I suspect this will not be the case. I would
+recommend rethinking your direct use of window object. If you were to
+encapsulate your authentication logic in an angular service, you would be much
+better served.
+
+I would highly recommend you look at [Witold Szczerba's http auth
+implementation](https://github.com/witoldsz/angular-http-auth)
+

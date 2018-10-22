@@ -1,0 +1,188 @@
+23970462 EADDRNOTAVAIL on elasticsearch high load
+
+I am using [es](https://github.com/ncb000gt/node-es) module to communicate
+with elasticsearch server.
+
+When I do massive insert I got error after about 10000 queries:
+
+    
+    
+    Trace: { [Error: connect EADDRNOTAVAIL]
+      code: 'EADDRNOTAVAIL',
+      errno: 'EADDRNOTAVAIL',
+      syscall: 'connect' }
+    
+
+# Update:
+
+    
+    
+    OS X 10.9.3
+    
+    ❯ elasticsearch -v
+    Version: 1.2.0, Build: c82387f/2014-05-22T12:49:13Z, JVM: 1.7.0_45
+    
+    ❯ node -v
+    v0.10.26
+    
+
+# Update 2
+
+According to Alex advice:
+
+    
+    
+    ❯ ulimit -a
+    -t: cpu time (seconds)              unlimited
+    -f: file size (blocks)              unlimited
+    -d: data seg size (kbytes)          unlimited
+    -s: stack size (kbytes)             8192
+    -c: core file size (blocks)         0
+    -v: address space (kbytes)          unlimited
+    -l: locked-in-memory size (kbytes)  unlimited
+    -u: processes                       709
+    -n: file descriptors                256
+    
+    ❯ sudo sysctl -w kern.maxfilesperproc=20000
+    Password:
+    kern.maxfilesperproc: 10240 -> 20000
+    
+
+But same result: after about 10000 operations it fails with the same errors.
+
+# Update 3
+
+I run command `netstat -an | grep -e tcp -e udp | wc -l` during my script
+execution thich last about 30 seconds:
+
+    
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         109
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         110
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         110
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         110
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         114
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         114
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         114
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         114
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         114
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         113
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         111
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         110
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         110
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         112
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         110
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         110
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         108
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         108
+    
+    [user@mac] ~  
+    ❯  netstat -an | grep -e tcp -e udp | wc -l
+         108
+    
+    [user@mac] ~  
+    ❯ 
+    
+
+I suppose node.js insert requests are processed in async mode, so it creates
+more connections, elasticsearch could handle. Could you use some delay or
+connection pool (not sure how it's done in node.js)?
+
+update
+
+use also ulimit -a to check max number of open handlers and find a way to
+increase it using this post [Maximum number of open filehandles per process on
+OSX (and how to
+increase)](https://stackoverflow.com/questions/5377450/maximum-number-of-open-
+filehandles-per-process-on-osx-and-how-to-increase)
+
+If these inserts are running from a script and some data source you have i
+wouldn't recommend doing an insert for each entry. Instead I would recommend
+you use the bulk uploading API. The node library you're using supports this
+and it is documented [here](https://github.com/ncb000gt/node-es#bulk).
+

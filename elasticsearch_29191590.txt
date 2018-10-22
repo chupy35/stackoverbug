@@ -1,0 +1,4 @@
+29191590
+elasticsearch: rename output fields of query
+<p>Is there a way to rename the output fields from an elasticsearch query (like the "select .. AS .." in SQL)? I want to keep the original names of the fields in the index, and only modify their names in the result of the query.</p>&#xA;&#xA;<p>I've read <a href="https://groups.google.com/forum/#!topic/elasticsearch/xyeUZ-jSzEo" rel="nofollow">this</a> but it says to re-index the data.</p>&#xA;
+<p>This isn't currently possible in Elasticsearch. If you need this kind of transformation, you'll need to do it application-side.</p>&#xA;

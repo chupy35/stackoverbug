@@ -1,0 +1,66 @@
+16546294 How to delete document types in elasticsearch?
+
+I create an index "myindex" with a specified document type "mytype". I am able
+to delete the index, but it appears that "mytype" still exists without being
+tied to the index.
+
+How do I get rid of "mytype"?
+
+If you really deleted the index, the mapping in this index should not exist
+anymore. Do you have any other index in your cluster with a similar type name?
+
+To answer to the question: `How to delete document types in elasticsearch?`,
+use [Delete Mapping
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-delete-
+mapping/):
+
+    
+    
+    curl -XDELETE http://localhost:9200/index/type
+    
+
+**EDIT** : From elasticsearch 2.0, it won't be possible anymore. See [Mapping
+changes](https://www.elastic.co/guide/en/elasticsearch/plugins/2.0/plugins-
+delete-by-query.html). You will have to install the [Delete By Query
+plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/current/plugins-
+delete-by-query.html) and run a query which will remove your documents but the
+mapping will still exist. So it will most likely better to reindex your
+documents in another index without the old type.
+
+But as @mguillemin and @javanna said, when you delete an index, every mapping
+attached to this index is deleted as well:
+
+    
+    
+    curl -XDELETE http://localhost:9200/index
+    
+
+In the latest version of elastic search, they no longer support deleting
+document types. It's mentioned in the
+[documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-
+delete-mapping.html)
+
+> It is no longer possible to delete the mapping for a type. Instead you
+should delete the index and recreate it with the new mappings.
+
+You can use `_delete_by_query` path to delete type.
+
+    
+    
+    POST index-name/type-name/_delete_by_query
+    {
+        "query": { 
+            "match": {
+                "message": "some message"
+            }
+        }
+    }
+    
+
+You don't even need to specify the request body. Just
+
+    
+    
+    curl -XPOST http://<host>:9200/<index>/<type>/_delete_by_query
+    
+

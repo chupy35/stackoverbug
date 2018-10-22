@@ -1,0 +1,61 @@
+20078761 Multiple types in Elasticsearch Type Filter
+
+I have a filtered query like this
+
+    
+    
+    query: {
+      filtered: {
+        query: {
+          bool: {
+            should: [{multi_match: {
+                        query: @query,
+                        fields: ['title', 'content']
+                        }
+                      },{fuzzy: {
+                         content: {
+                           value: @query,
+                           min_similarity: '1d',
+                           }
+                     }}]
+                   }
+                 },
+        filter: {
+          and: [
+             type: {
+                value: @type
+              }]
+        }}}
+    
+
+That works fine if @type is a string, but does not work if @type is an array.
+How can I search for multiple types?
+
+This worked, but I'm not happy with it:
+
+    
+    
+    filter: {
+      or: [
+        { type: { value: 'blog'} },
+        { type: { value: 'category'} },
+        { type: { value: 'miscellaneous'} }
+      ]
+    }
+    
+
+I'd love to accept a better answer
+
+You can easily specify multiple types in your search request's URL, e.g.
+`http://localhost:9200/twitter/tweet,user/_search`, or with `type` in the
+header if using `_msearch`, as [documented
+here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+search.html#search-multi-index-type).
+
+These are then added as filters for you by Elasticsearch.
+
+Also, you usually want to be using `bool` to combine filters, for reasons
+described in this article: [all about elasticsearch filter
+bitsets](http://www.elasticsearch.org/blog/all-about-elasticsearch-filter-
+bitsets/)
+

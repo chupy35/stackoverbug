@@ -1,0 +1,30 @@
+22306484 Why does ElasticSearch give a lower score to a term when it's with
+more terms?
+
+I have an index (on a local, testing, cluster), with some fields using the
+simple analizer.
+
+When I search for a term, the results where the term is in a field with more
+terms, get a lower score - why is that? I couldn't find any reference.
+
+For example, 'koala' in a boolean search returns:
+
+  * (title 'a koala'): score 0.04500804
+  * (title 'how the Koala 1234'): score 0.02250402
+
+In the query explanation, the fieldNorm is 1.0 in the first case, and 0.5 in
+the second.
+
+Is it possible to return a score indipendent from the number of terms in the
+field?
+
+To return a bool must term query of koala with all documents scoring equal on
+"koala". You could use the constant score query to basically remove the score
+from your query.
+
+Here is a runnable example
+<http://sense.qbox.io/gist/21ae7b7e743dc30d66309f2a6b93043ded4ee401>
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-constant-score-query.html>
+

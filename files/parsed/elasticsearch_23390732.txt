@@ -1,0 +1,87 @@
+23390732 ElasticSearch with multiple filters
+
+I am trying to build a query that will find all user documents (docType =
+user) and then filter them based on many filters. Such as location, gender,
+age, etc. The filters are added / removed based on user input on the search
+function I'm building.
+
+Below returns no results:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                 },
+                 "filter": {
+                     "and": {
+                         "filters": 
+                         [
+                             {
+                                 "term": {
+                                     "doc.docType": "user"
+                                 }
+                             },
+                             {
+                                 "term": {
+                                     "doc.data.profile.location" : "CA"
+                                 }
+                             }
+                         ]
+                     }
+                 }
+            }
+        }
+    }
+    
+
+Below return results:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "field": {
+                        "doc.data.profile.location" : "CA"
+                    }
+                 },
+                 "filter": {
+                     "and": {
+                         "filters": 
+                         [
+                             {
+                                 "term": {
+                                     "doc.docType": "user"
+                                 }
+                             }
+                         ]
+                     }
+                 }
+            }
+        }
+    }
+    
+
+The latter, although returning results, isn't going to work in the long run as
+I may want to include an extra filter for age, gender, etc and I can't seem to
+add multiple fields. The first query works if I remove the filter for
+location.
+
+Any guidance help very much appreciated.
+
+I think what you want is a bool query
+(<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-query.html>)
+
+That way you can chain multiple musts together to get the desired result.
+
+[The bool
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-filter.html#query-dsl-bool-filter) allows you to chain multiple
+`MUST`, `SHOULD` and `SHOULD_NOT` requests together. Allowing for you to
+construct this into one query.
+

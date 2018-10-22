@@ -1,0 +1,4 @@
+29823708
+ElasticSearch - Determining which terms matched no documents
+<p>Given a filtered query with a terms filter, is there any way to determine which terms in the filter matched no documents? In other words, determine the redundant terms in the filter?</p>&#xA;&#xA;<p>Alternatively is it possible to specify an aggregation that counts matches for the <em>filter</em> terms rather than the unique terms in the matching documents?</p>&#xA;
+<p>You can use the <a href="http://www.elastic.co/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-filters-aggregation.html" rel="nofollow">Filters Aggregation</a>.</p>&#xA;

@@ -1,0 +1,33 @@
+25275819 Does an elasticsearch parent entry have to exist before its children?
+
+I'm using parent relationships in elasticsearch, and I'm wondering if the
+parent must exist before the child. Elasticsearch doesn't complain when I add
+a child with an id of a not yet existing parent. However, it seams (I haven't
+completely validated it yet), that once the parent has been added, sometimes
+the "has_parent" query returns the entry and othertimes not. I've searched for
+an answer but haven't found it. Anyone have a clue ?
+
+ElasticSearch isn't a relational DB : the parent, which id is used to insert
+documents of the children type, doesn't have to exist.
+
+However, once you add the parent document, you may experience problems as
+parent document and its children must live on the same shard.
+
+To achieve this, ElasticSearch use the parent id as the routing key. If the
+parent ID is not specified, the request will probably be forwarded to the
+wrong shard [as specified in the
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/indexing-
+parent-child.html). This could explain the behavior you are talking about the
+"has_parent" query.
+
+If you want to add the parent after the children, you have to delete and
+reindex it to be sure it is stored on the same shard as its parent.
+
+As I had understood it the relationship IS loosely coupled. So you CAN index a
+child before it's parent gets indexed but have to ensure the child gets
+indexed in the same shard as its future parent. This means if you have a
+simple parent-child relationship you have to know the parent's id value. BUT
+if the structure of you index is more complex, the routing might get complex
+also. If your parent, itself has a parent, then everything should be routed in
+the same place as the grandparent.
+

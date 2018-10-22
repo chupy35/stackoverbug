@@ -1,0 +1,115 @@
+11244559 Elasticsearch adding new fields showing Error in Elasticsearch
+
+I am using the Elasticsearch JSON Mapping as
+
+    
+    
+    {
+        "mappings": {
+            "test": {
+                "_routing": {
+                    "path": "harvestdate", 
+                    "required": true
+                }, 
+                "_source": {
+                    "enabled": false
+                }, 
+                "properties": {
+                    "infoid": {
+                        "precision_step": "0", 
+                        "store": "yes", 
+                        "type": "long"
+                    }, 
+                    "productid": {
+                        "index": "not_analyzed", 
+                        "omit_norms": "true", 
+                        "omit_term_freq_and_positions": "true", 
+                        "store": "yes", 
+                        "type": "string"
+                    }, 
+                    "saleid": {
+                        "precision_step": "0", 
+                        "store": "yes", 
+                        "type": "long"
+                    }
+                }
+            }
+        }
+    }
+    
+
+  1. I am using the Index as index1 
+  2. I have to add a new field in the JSON and it looks like  
+` { "mappings": { "test": { "_routing": { "path": "harvestdate", "required":
+true }, "_source": { "enabled": false }, "properties": { "deal": { "index":
+"not_analyzed", "omit_norms": "true", "omit_term_freq_and_positions": "true",
+"store": "no", "type": "string" }, "infoid": { "precision_step": "0", "store":
+"yes", "type": "long" }, "productid": { "index": "not_analyzed", "omit_norms":
+"true", "omit_term_freq_and_positions": "true", "store": "yes", "type":
+"string" }, "saleid": { "precision_step": "0", "store": "yes", "type": "long"
+} } } } } `
+
+I am trying to update this mapping using Elasticsearch with the Index(index1)
+by using the command
+
+    
+    
+    curl -XPUT 'http://localhost:9200/index1/test/_mapping' -d  '{
+        "mappings": {
+            "test": {
+                "_routing": {
+                    "path": "harvestdate", 
+                    "required": true
+                }, 
+                "_source": {
+                    "enabled": false
+                }, 
+                "properties": {
+                    "deal": {
+                        "index": "not_analyzed", 
+                        "omit_norms": "true", 
+                        "omit_term_freq_and_positions": "true", 
+                        "store": "no", 
+                        "type": "string"
+                    }, 
+                    "infoid": {
+                        "precision_step": "0", 
+                        "store": "yes", 
+                        "type": "long"
+                    }, 
+                    "productid": {
+                        "index": "not_analyzed", 
+                        "omit_norms": "true", 
+                        "omit_term_freq_and_positions": "true", 
+                        "store": "yes", 
+                        "type": "string"
+                    }, 
+                    "saleid": {
+                        "precision_step": "0", 
+                        "store": "yes", 
+                        "type": "long"
+                    }
+                }
+            }
+        }
+    }' 
+    
+
+While checking the mapping the mapping it is not Set with the Updated  Mapping
+in the Index(index1). What is the error in this curl or mapping?
+
+Thanks in Advance!
+
+Cheers!
+
+I think you need to remove the
+
+    
+    
+    "mappings": {
+    
+
+thing. From what I read (don't remember where, but on the elastic search
+mailing list, the "mappings" comes from the `GET`, but should not be here when
+`PUTing`, and IIRC, they want to do something in next versions about it).
+

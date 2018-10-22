@@ -1,0 +1,174 @@
+23252128 spring boot management end points basic security
+
+How do I use basic security for management end points such as `/env, /health,
+/metrics`? I want to use different user credentials for the above end points
+compared to the other application controller end points security. In my
+application.properties file, I specified below for the application controller
+security
+
+    
+    
+    security.user.name=user
+    security.user.password=password
+    
+
+But I want different username/password for management end points. Could not
+find `management.security.user.name` property.
+
+Spring security has a "global" `AuthenticationManager` configured in `@Bean`
+instances of type `GlobalAuthenticationConfigurerAdapter`. This
+`AuthenticationManager` is the one that is configured by the `security.user.*`
+properties, unless you set `security.basic.enabled=false`. The global `AM` is
+also attached to the management endpoints by default, and it is the parent of
+any "Local" `AuthenticationManagers` defined in
+`WebSecurityConfigurationAdapters` (they are all `ProviderManagers`).
+
+Thus, if you want different user accounts for management endpoints and
+application endpoints, you have (at least) two choices:
+
+  * Define a local `AM` for your application endpoints in a `WebSecurityConfigurationAdapter` and ensure that the management endpoints are not covered by that filter. This is easy, since it's what you get without thinking very much and just adding an `AuthenticationManagerBuilder` to your `WebSecurityConfigurationAdapter` (as long as it is ordered carefully in relation to the [filter that secures the management endpoints](https://github.com/spring-projects/spring-boot/blob/master/spring-boot-actuator/src/main/java/org/springframework/boot/actuate/autoconfigure/ManagementSecurityAutoConfiguration.java#L174)).
+
+  * Use the global `AM` (or indeed another local one) for application endpoints and reconfigure the security for the management endpoints (e.g. set `security.basic.enabled=false` and add your own `WebSecurityConfigurerAdapter` covering the management endpoints). This might be more work, and duplicates some of the Boot defaults, but at least you will know what you are getting.
+
+Dave already explained well, but here some complete example with using
+WebSecurityConfigurerAdapter and database as auth source.
+
+**SecurityConfig.java**
+
+    
+    
+    @Configuration
+    @EnableWebSecurity
+    public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    
+        @Autowired
+        private DataSource dataSource;
+    
+        @Override
+        public void configure(WebSecurity web) throws Exception {
+            // Ignore any request that starts with /resources or /webjars
+            web.ignoring()
+                .antMatchers("/resources/**")
+                .antMatchers("/webjars/**");
+        }
+    
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http.csrf().disable();
+            // for app access
+            http.authorizeRequests()
+                .antMatchers("/configuration").hasRole("ADMIN")
+                .antMatchers("/user").hasRole("ADMIN")
+                .anyRequest().fullyAuthenticated()
+                .and()
+                .exceptionHandling().accessDeniedPage("/auth_error")
+                .and()
+                .formLogin().loginPage("/login").failureUrl("/login?error").permitAll()
+                .and()
+                .logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout")).logoutSuccessUrl("/").invalidateHttpSession(true);
+             // for management access with basic auth
+             http.httpBasic()
+                 .and()
+                 .authorizeRequests()
+                 .antMatchers("/management/**").hasRole("ADMIN");
+        }
+    
+        @Override
+        public void configure(AuthenticationManagerBuilder auth) throws Exception {
+            auth.jdbcAuthentication().dataSource(dataSource)
+                .passwordEncoder(new BCryptPasswordEncoder());
+        }
+    }
+    
+
+And this is my application.properties
+
+**application.properties**
+
+    
+    
+    # MANAGEMENT HTTP SERVER (ManagementServerProperties) 
+    management.port=8081 
+    management.address=127.0.0.1 
+    management.context-path=/management 
+    management.security.enabled=true 
+    
+    # MVC ONLY ENDPOINTS 
+    endpoints.jolokia.path=/jolokia 
+    endpoints.jolokia.sensitive=true 
+    endpoints.jolokia.enabled=true 
+    
+    # JMX ENDPOINT (EndpointMBeanExportProperties) 
+    endpoints.jmx.enabled=true 
+    endpoints.jmx.domain=org.springboot 
+    endpoints.jmx.unique-names=false 
+    
+    # ENDPOINT 
+    endpoints.enabled=true
+    
+    endpoints.shutdown.id=shutdown 
+    endpoints.shutdown.sensitive=true 
+    endpoints.shutdown.enabled=true 
+    
+    # HYPERMEDIA ENDPOINTS 
+    endpoints.actuator.enabled=true 
+    endpoints.actuator.path=/actuator 
+    endpoints.actuator.sensitive=false
+    
+
+You can check more endpoints properties from [spring application
+properties](http://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#common-application-properties)
+
+**Management Request Example**
+
+There is ADMIN Role user (username: admin, password: password) already added
+on database.
+
+  * The example management request for shutting down
+    
+        $ curl -u admin:password -X POST http://127.0.0.1:8081/management/shutdown
+    {"message":"Shutting down, bye..."}
+    
+
+  * The example management request for checking HeapMemoryUsage and ThreadCount via jolokia
+    
+        $ curl -u admin:password http://127.0.0.1:8081/management/jolokia/read/java.lang:type=Memory/HeapMemoryUsage
+    {"request":{"mbean":"java.lang:type=Memory","attribute":"HeapMemoryUsage","type":"read"},"value":{"init":268435456,"committed":829947904,"max":3817865216,"used":466033000},"timestamp":1444167809,"status":200}
+    
+    
+    $ curl -u admin:password http://127.0.0.1:8081/management/jolokia/read/java.lang:type=Threading/ThreadCount
+    {"request":{"mbean":"java.lang:type=Threading","attribute":"ThreadCount","type":"read"},"value":47,"timestamp":1444174639,"status":200}
+    
+
+  * The example management request for checking health
+    
+        $ curl -u admin:password http://127.0.0.1:8081/management/health
+    {"status":"UP","diskSpace":{"status":"UP","free":163634987008,"threshold":10485760},"db":{"status":"UP","database":"H2","hello":1}}
+    
+
+To implement end points basic security you need to use below code
+
+    
+    
+    security.user.name=user
+    security.user.password=password
+    
+
+and in configuration file should be like below one
+
+    
+    
+    @Configuration
+    public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http.csrf().disable().authorizeRequests().anyRequest().authenticated().and().httpBasic();
+        }
+    }
+    
+
+still not working then hope this will work
+
+[Basic Authentication](https://www.youtube.com/watch?v=LV0mdCWq2wY)
+

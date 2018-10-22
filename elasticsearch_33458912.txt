@@ -1,0 +1,4 @@
+33458912
+Elasticsearch boost and order alphabetically
+<p>Is it possible to use sort and order a field alphabetically and then also use a script to boost certain documents using the same field all other documents order should be preserved?</p>&#xA;
+<p>Yes , its possible.&#xA;Make sure your script returns 0 for all the fields it dont have a say about.</p>&#xA;&#xA;<pre><code>{&#xA;  "sort": [&#xA;    {&#xA;      "_script": {&#xA;        "type": "number",&#xA;        "script": "doc['age'].value ",&#xA;        "params": {&#xA;          "factor": 1.1&#xA;        },&#xA;        "order": "asc"&#xA;      }&#xA;    },&#xA;    {&#xA;      "name": {&#xA;        "order": "asc"&#xA;      }&#xA;    }&#xA;  ]&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>As we have given sum , the sum of the field value and the script would be taken as score.</p>&#xA;

@@ -1,0 +1,69 @@
+28958886 Invoke child component function
+
+    
+    
+    var popup = React.render(
+                  <PopUp>
+                    <Countdown />
+                  </PopUp>,
+                  document.getElementById('popup')
+                );
+    
+
+The Countdown component is rendered in the Popup component as
+{this.props.children}
+
+How can I call the Countdown component's `Stop` method?
+
+I think that what you should do it is to have another top-level component that
+handle all the state of your app and in your case have a callback function
+'stop-countdown' that it is passed to your component Countdown like that:
+
+    
+    
+    var popup = React.render(
+                  <PopUp>
+                    <Countdown handleStop={this.handleStop} />       
+                  </PopUp>,
+                  document.getElementById('popup')
+                );
+    
+
+So now inside your Countdown component you call the **handleStop** function
+when it is time.
+
+You can pass in a prop `stopped`, which will allow the countdown to continue
+when false.
+
+    
+    
+    var stopped = true; // set value of stopped however you want
+    var popup = React.render(
+      <PopUp>
+        <Countdown stopped={stopped} />       
+      </PopUp>,
+      document.getElementById('popup')
+    );
+    
+
+within `Countdown`, you can check the value of stopped within the
+`componentWillReceiveProps` method:
+
+    
+    
+    var Countdown = React.createClass({
+        componentWillRecieveProps: function(nextProps){
+          if (this.props.stopped == nextProps.stopped){
+            return; // do nothing if the value has not changed
+          }
+          if (nextProps.stopped){
+            //call stop timer here
+          }
+          else {
+            //start the timer here
+          }
+        },
+        //getInitialState, render, and other methods
+    });
+    
+

@@ -1,0 +1,59 @@
+23799267 "Fan-out" indexing strategy
+
+I'm planning to use Elasticsearch for a social network kind of platform where
+users can post "updates", be friends with other users and follow their
+friends' feed. The basic and probably most frequent query will be **"get posts
+shared with me by friends I follow"**. This query could be augmented by
+additional constraints (like tags or geosearch).
+
+I've learned that social networks usually take a fan-out-on-write approach to
+disseminate "updates" to followers so queries are more localized. So I can see
+2 potential indexing strategies:
+
+  1. Store all posts in a single index and search for posts (1) shared with the requester and (2) whose author is among the list of users followed by the requester (the "naive" approach).
+  2. Create one index per user, inject posts that are created by followed users and directly search among this index (the "fan-out" approach).
+
+The second option is obviously much more efficient from a search perspective,
+although it presents sync challenges (like the need to delete posts when I
+stop following a friend, for example). But the thing I would be most concerned
+with is the multiplication of indices; in a (successful) social network, we
+can expect at least tens of thousands of users...
+
+So my questions here are:
+
+  * how does ES cope with a very high number of indices? can it incur performance issues?
+  * any thoughts about a better indexing strategy for my particular use-case?
+
+Thanks
+
+Each elasticsearch _index shard_ is a separate _Lucene index_ , which means
+several open file descriptors and memory overhead. Generally, even after
+reducing number of shards per index from default 5, the resource consumption
+in index-per-user scenario may be too large.
+
+It is hard to give any concrete numbers, but my guess is that if you stick to
+two shards per index, you would be able to handle no more than 3000 users per
+m3.medium machine, which is prohibitive in my opinion.
+
+However, you don't necessarily need to have dedicated index for every user.
+You can use filtered aliases to use one index for multiple users. From
+application point of view, it would look like a per-user scenario, without
+incurring overhead mentioned above. See this
+[video](http://vimeo.com/44716955#t=13m45s) for details.
+
+With that being said, I don't think elasticsearch is particularly good fit for
+fan-out-on-write strategy. It is, however, very good solution to employ in
+fan-out-on-read scenario (something similar to what you've outlined as (1)):
+
+  * The biggest advantage of using elasticsearch is that you are able to perform relevance scoring, typically based on some temporal features, like browsing context. Using elasticsearch to just retrieve documents sorted by timestamp means that you don't utilize its potential. Meanwhile, solutions like Redis will give you far superior read performance for such task.
+
+  * Fan-out-on-write scenario means a lot of writes on each update (especially, if you have users with many followers). Elasticsearch is not a database and is not optimized for such usage-pattern. It is, however, prepared for frequent reads.
+
+  * Fan-out-on-write also means that you are producing a lot of 'extra' data by duplicating info about posts. To keep this data in RAM, you need to store only metadata, like id of document in separate document storage and tags. Again, there are other formats than JSON to store and search this kind of structured data effectively.
+
+Choosing between the two scenarios is a question about your requirements, like
+average number of followers, number of 'hubs' that nearly everybody follows,
+whether the feed is naturally ordered (e.g. by time) etc. I think that
+deciding whether to use elasticsearch needs to be a consequence of this
+analysis.
+

@@ -1,0 +1,31 @@
+15880103 Elasticsearch scoring based on how close a number is to a query
+
+I want to score my documents based on on how close a number is to a query.
+Given I have two documents `document1.field = 1` and `document2.field = 10`, a
+query `field = 3` then I want `document1._score > document2._score`. Or in
+other words I want something like a fuzzy query against number. How would I
+achieve this? The use case is I want to support price queries (exact or
+range), but want to rank stuff that isn't exactly in the boundaries.
+
+It can be implemented using
+[custom_score](http://www.elasticsearch.org/guide/reference/query-dsl/custom-
+score-query/) query where script will determine boost depending on absolute
+value of the difference between exact price and desired price. The desired
+price should be passed to the script as a parameter to avoid script
+recompilation for every request.
+
+Alternatively, it can be implemented using
+[custom_filters_score](http://www.elasticsearch.org/guide/reference/query-
+dsl/custom-filters-score-query/) query. Filters here will contain different
+ranges around desired price. Smaller ranges will have higher boost and appear
+higher in the list than larger ranges.
+
+You are looking for [Decay
+functions](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html#function-decay):
+
+> Decay functions score a document with a function that decays depending on
+the distance of a numeric field value of the document from a user given
+origin. This is similar to a range query, but with smooth edges instead of
+boxes.
+

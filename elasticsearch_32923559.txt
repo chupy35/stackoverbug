@@ -1,0 +1,3 @@
+32923559
+Why "Hello World" combining AngularJS and Elasticsearch doesn't show results?
+<p>In this <a href="https://stackoverflow.com/questions/22661996/example-of-angular-and-elasticsearch#new-answer">thread</a> John D explain how to combine ES with AngularJs. When I render index.html with Firefox, the page dosn't show results of a test search on elesticsearch server, nevertheless I followed all steps in the tutorial. Maybe Is it a configuration problem of elasticsearch?</p>&#xA;&#xA;<p>Anyone knows why?</p>&#xA;&#xA;<p>Any Suggestion is very helpful for me.</p>&#xA;&#xA;<p>Thanks</p>&#xA;

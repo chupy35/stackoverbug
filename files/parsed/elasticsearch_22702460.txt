@@ -1,0 +1,37 @@
+22702460 elasticsearch aggregations on a filtered result set
+
+I am trying to utilize the aggregations feature in elasticsearch.
+
+  1. Is there a way to filter a set of documents and then apply the aggregation on the  
+filtered set of documents?
+
+  2. Is there a way to retrieve a paginated set of buckets from the aggregator? I am looking at potentially a million buckets and would like to get the buckets in a paged fashion.
+
+I searched for information about this and came across this very useful article
+on aggregations. <https://www.found.no/foundation/elasticsearch-aggregations/>
+But I am not able to find any information about filtering and pagination in
+combination with aggregation
+
+From the [ElasticSearch guide on
+aggregations](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations.html) (emphasis mine):
+
+> An aggregation can be seen as a unit-of-work that builds analytic
+information over a set of documents. The context of the execution defines what
+this document set is (e.g. **a top-level aggregation executes within the
+context of the executed query/filters of the search request** ).
+
+So yes, you can filter a set of documents and only then apply the aggregation,
+by using a query followed by an aggregations clause.
+
+    
+    
+    {
+      "query": { /* any query */ },
+      "aggs" : { /* aggregations on resulting documents */ }
+    }
+    
+
+I don't think you can paginate through aggregation results, but perhaps `from`
+and `size` would work.
+

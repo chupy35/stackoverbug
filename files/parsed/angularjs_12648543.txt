@@ -1,0 +1,107 @@
+12648543 AngularJS and its use of Dollar Variables
+
+Does anyone know if the reasoning behind the use of dollar methods and
+variables in angularJS is to instruct angularJS to avoid checking those values
+when a digestion is going on? So, if angular comes across `$scope.$value` and
+`$scope.value`, then it will avoid checking the former since it's prefixed
+with a dollar character in its variable name?
+
+There are a few times Angular ignores variables prefixed with the dollar sign:
+
+  1. In [Schumli's comment](https://stackoverflow.com/questions/12648543/angularjs-and-its-use-of-dollar-variables#comment19433906_12648794) below, where json filters will not output them
+  2. When using the `{{ }}` directive, angular will not show _nested_ `$` variables. For example this only displays the `visible` property.
+    
+        <div ng-init="n = { visible: 'foo', $ignore: 'bar' };">{{ n }}</div>
+    
+
+  3. Additionally when adding an explicit watcher on a scope object, changes to properties with a leading dollar sign of this object will not trigger the watcher. See [this updated fiddle](http://jsfiddle.net/R9Tfb/13/).
+
+  4. `angular.equals()` [ignores keys prefixed with `$`](http://jsfiddle.net/R9Tfb/14/).
+
+Not completely sure, but I believe AngularJS internals rely on manipulating
+these $-prefixed variables during the digest. Checking these variables would
+mean that the digest would never stabilize, since they may constantly change
+during each cycle of the digest.
+
+Don't quote me on it though. :)
+
+It is just a naming convention from the below snippet
+<http://docs.angularjs.org/tutorial/step_05>
+
+> '$' Prefix Naming Convention  
+>  You can create your own services, and in fact we will do exactly that in
+step 11. As a naming convention, angular's built-in services, Scope methods
+and a few other angular APIs have a '$' prefix in front of the name. Don't use
+a '$' prefix when naming your services and models, in order to avoid any
+possible naming collisions.
+
+<http://docs.angularjs.org/guide/concepts#angular_namespace>
+
+> Angular Namespace  
+>  To prevent accidental name collision, Angular prefixes names of objects
+which could potentially collide with $. Please do not use the $ prefix in your
+code as it may accidentally collide with Angular code.
+
+See also this blog post, on the [difference of "$scope" and "scope" in
+angularjs](http://www.thinkster.io/angularjs/aw9kWmdnik/angularjs-scope-vs-
+scope)...
+
+Dollar ( **$** ) signs also prevent elements from being iterated (or
+interpreted) in certain directives. So for example properties that start with
+**$** are not used in `ng-repeat` because of [an if clause in the for
+loop](https://github.com/angular/angular.js/blob/master/src/ng/directive/ngRepeat.js#L420):
+
+    
+    
+    if(collection.hasOwnProperty(key) && key.charAt(0) != '$')
+    
+
+Someone made an issue about the topic [here on angulars github
+page](https://github.com/angular/angular.js/issues/6266)
+
+* * *
+
+In the method `shallowCopy` properties that start with **$$** are skipped
+because of an [if clause while iterating the
+properies](https://github.com/angular/angular.js/blob/master/src/Angular.js#L900):
+
+    
+    
+    if (!(key.charAt(0) === '$' && key.charAt(1) === '$')) {
+    
+
+There's a huge difference, not in variables, but in the parameters that a
+controller receives. A scope parameter is completely different from a $scope
+one.
+
+For more information, check out this useful post:
+<http://www.thinkster.io/angularjs/aw9kWmdnik/angularjs-scope-vs-scope>
+
+The `$` prefix denotes a variable, parameter, property, or method that belongs
+to the core of Angular.
+
+Properties on objects that originate inside the framework, but are not
+actually part of the API, may begin with `$` – or even `$$` – to denote a
+**private** method or property. This is the same way the `_` prefix is often
+used in other libraries.
+
+It doesn't have any effect on the way code is interpreted by the runtime,
+although the framework itself may give it special meaning. Basically, it is a
+naming convention that says "You shouldn't mess with this".
+
+I always figured `$` looks like an "S" for service.
+
+@MarcoS provided the link to <https://thinkster.io/a-better-way-to-learn-
+angularjs/scope-vs-scope> which explains a difference between $scope and
+scope. I found this useful, adding to the information in other answers.
+
+In an angular directive there is a link and controller. The link is a standard
+function with a fixed set of parameters: scope, element, attributes object.
+
+The controller's arguments are managed by the Angular injector and are not
+order dependent. The injector resolves which objects to pass in by looking for
+the parameters starting with $.
+
+The author of <https://thinkster.io/a-better-way-to-learn-angularjs/scope-vs-
+scope> does a better job of explaining it.
+

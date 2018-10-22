@@ -1,0 +1,17 @@
+17315036 Elasticsearch range query for string
+
+The ES index contains a "PRICE" field mapped as a string (due to various
+reasons): e.g. "2.00" or "245.00"
+
+Running a RANGE FROM/TO (e.g. "5" to "20") query also shows documents with
+prices such as "500.00", "1515.00" etc.
+
+Does anyone have a functional solution how to circumvent these additional out
+of range documents from showing up?
+
+You can define a new field like "PRICE_VAL" (or using multi_field "PRICE.val")
+and explicit map it to "float" or "double" type.
+
+After that, index both the string value and the number value of "PRICE". Now
+you can do a range query on "PRICE_VAL" without touching the "PRICE" field.
+

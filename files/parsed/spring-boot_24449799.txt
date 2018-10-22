@@ -1,0 +1,67 @@
+24449799 Non WAR JSP spring-boot example
+
+I've been checking out most of all spring-boot provided examples for JSP as
+view technologie are being packaged as WAR artifacts.
+
+Would be nice to provide a jar example for this if possible?
+
+I know that JSP requires a Servlet Engine/Servlet Container as opposed as e.g
+Freemarker .. for rendering .. but being Jetty or Tomcat Servlet Containers is
+this option viable and possible ?
+
+Trying that setup so far with not much success, my last try was to create a
+
+META-INF/resources folder to put all those jsp resources but they are still
+not visible to the ViewResolver
+
+    
+    
+    @Bean
+    public ViewResolver jspViewResolver() {
+        InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+        viewResolver.setPrefix("/META-INF/resources/jsp/");
+        viewResolver.setSuffix(".jsp");
+        viewResolver.setOrder(2);
+        return viewResolver;
+    }
+    
+
+At the end.. was trying some setup like here:
+
+<http://alexismp.wordpress.com/2010/04/28/web-inflib-jarmeta-infresources/>
+
+Thanks
+
+AFAIK it's not possible (owing to limitations imposed by the containers):
+<http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-
+features-jsp-limitations>
+
+This is not a _jar_ answer, but still a _non WAR_ one :)
+
+Put your JSP files under:
+
+    
+    
+    { "src/main/webapp", "public", "static" }
+    
+
+The code is taken from
+[AbstractEmbeddedServletContainerFactory](http://grepcode.com/file/repo1.maven.org/maven2/org.springframework.boot/spring-
+boot/1.0.0.RELEASE/org/springframework/boot/context/embedded/AbstractEmbeddedServletContainerFactory.java).
+Now I find the spring-boot reference misleading ([27.1.5 Static
+Content](https://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#boot-features-spring-mvc-static-content)). It
+mentions several directories for static content, but says nothing about those
+above. But still I'm happy it's an open source world and UTSL works :)
+
+As you can see the `resources` dir is not included. The [JSP sample
+application](https://github.com/spring-projects/spring-
+boot/tree/master/spring-boot-samples/spring-boot-sample-web-jsp) (mentioned
+under 27.3.5 JSP limitations) works well, because it uses `src/main/webapp`
+for jsp file.
+
+The root directory is chosen on a **first match basis**. And
+ServletContainerFactory anounces a debug (fine) level message mentioning
+`.ocument root`. You can look for it, whether it did locate the root directory
+or not.
+

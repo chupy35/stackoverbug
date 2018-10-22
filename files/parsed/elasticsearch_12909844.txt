@@ -1,0 +1,86 @@
+12909844 Query string returning results not found in edgeNGram
+
+I'm having trouble getting a edgengram query to behave properly. I have one
+record "blue grass" with an edgengram minimum of 2. A query string of "blv"
+however returns "blue grass" although it shouldn't.
+
+    
+    
+    curl -X POST http://localhost:9200/test -d '{ 
+        "mappings": { 
+            "product/fragrance": { 
+                "properties": { 
+                    "name_query": { 
+                        "index_analyzer": "query_index_analyzer", 
+                        "search_anaylzer": "query_search_analyzer", 
+                        "as": {}, 
+                        "type": "string" 
+                    } 
+                } 
+            } 
+        }, 
+        "settings": { 
+            "analysis": { 
+                "filter": { 
+                    "query_edgengram": { 
+                        "type": "edgeNGram", 
+                        "min_gram": 2, 
+                        "max_gram": 20, 
+                        "side": "front" 
+                    } 
+                }, 
+                "analyzer": { 
+                    "query_index_analyzer": { 
+                        "tokenizer": "lowercase", 
+                        "filter": ["asciifolding", "query_edgengram"] 
+                    }, 
+                    "query_search_analyzer": { 
+                        "tokenizer": "lowercase", 
+                        "filter": ["asciifolding"] 
+                    } 
+                } 
+            } 
+        } 
+    }' 
+    
+    curl -X POST "http://localhost:9200/test/product%2Ffragrance/1" -d '{ 
+        "name_query": "blue grass" 
+    }' 
+    
+    curl -X GET "http://localhost:9200/test/product%2Ffragrance/_search?load=true&pretty=true" -d '{ 
+        "query": { 
+            "bool": { 
+                "must": [{ 
+                    "query_string": { 
+                        "query": "blv", 
+                        "fields": ["name_query"], 
+                        "default_operator": "OR" 
+                    } 
+                }] 
+            } 
+        } 
+    }' 
+    
+
+For some reason, I get a result from that. Can anyone explain why? Thanks.
+What I want to happen is "blv" shouldn't be returning "blue grass" although
+"bl" should. I've used the analyze API and see "blue grass" being broken down
+to "bl", "blu", "blue", "gr", "gra", "gras", "grass" but "blv" doesn't match
+any of those.
+
+When you search for something using a MatchQuery or QueryString, the same
+analyzer is applied. So blv is tokenized into bl, blv and bl matches bl!
+
+You can use a TermQuery which is not analyzed.
+
+Hard to say more as I don't have your query.
+
+David
+
+As David told you in his answer some elasticsearch queries are analyzed.
+Usually you don't want to apply ngrams to your queries, but you seem to
+already know that given your mapping. In fact, the reason why your search
+analyzer without ngrams is not taken into account is a typo: `search_anaylzer`
+instead of `search_analyzer`. That's why your query becomes `bl` and `blv`,
+and `bl` does match the returned document.
+

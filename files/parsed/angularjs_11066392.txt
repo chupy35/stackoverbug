@@ -1,0 +1,24 @@
+11066392 load a expression from another one
+
+Is there any directive or way to load a scope expression from another
+expression?
+
+Suppose we have
+
+    
+    
+    $scope.find = 'a_expression';
+    $scope.a_expression = 'found';
+    
+
+How could we do something like that?
+
+    
+    
+    {{ {{ find }} }}
+    
+
+`{{$eval(find)}}`
+
+That would do it.
+

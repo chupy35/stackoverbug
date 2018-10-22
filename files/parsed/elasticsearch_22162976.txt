@@ -1,0 +1,44 @@
+22162976 Is there a way i can add Snowball filter while performing the query
+in elastic search.?
+
+I need to perform word variant search in elastic search. I just indexed data
+in normal way. I need to search normally as well as well with word variants.
+After going through some posts, either snowball or porter stem filter can do
+the word variant search for me. But i needed them to trigger in query time
+when i select word variants. Please suggest me right way..
+
+thank you..
+
+For a multi-match Query:
+
+    
+    
+    curl -XGET "http://my-server.com:9200/test/stack/_search" -d'
+    {
+        "query": {
+            "multi_match": {
+               "query": "lazy",
+               "fields": ["name","field"],
+               "analyzer":"snowball"
+            }
+        }
+    }'
+    
+
+For a match Query:
+
+    
+    
+    curl -XGET "http://my-server.com:9200/test/stack/_search" -d'
+    {
+        "query": {
+            "match": {
+               "field": "lazy"
+            },
+            "analyzer":"snowball"
+        }
+    }'
+    
+
+Hope you get the point
+

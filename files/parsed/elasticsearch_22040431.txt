@@ -1,0 +1,59 @@
+22040431 Elasticsearch get the last ten added events
+
+I have an index with multiple types, one of these being **event** and I would
+like to get the last 10 events sorted by their start date
+
+    
+    
+    {
+    
+    "from":0, 
+    "size":10,
+    "query":{
+        "range":{
+            "start":{
+                "from":"2014-02-25 00:00:01 UTC",
+                "to":"2014-03-04 23:59:00 UTC"
+            }
+        }
+    },
+    "filter" :{
+        "and": [
+            {
+                "type": {
+                    "value": "event"
+                }
+            }
+        ]
+    },
+    "sort":[
+        { "start":
+            {"order":"asc"}
+        }
+    ]
+    }
+    
+
+I have tried variations of the above query but cannot seem to get it working,
+elastic-search does not apply the type filter
+
+the filter syntax above is correct (the and is not needed).
+
+if you are just interested in events you might as well just query their
+endpoint (like `localhost:9200/idx/event/_search`)
+
+In fact if you want to use the 'type' in your query, you have to do use the
+'_type' name with the underscore. This here is an example:
+
+    
+    
+    POST /items/_search
+    {
+        "query": {
+            "match": {
+               "_type": "item"
+            }
+        }
+    }
+    
+

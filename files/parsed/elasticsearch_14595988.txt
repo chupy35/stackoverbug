@@ -1,0 +1,161 @@
+14595988 Queries vs. Filters
+
+I can't see any description of when I should use a query or a filter or some
+combination of the two. What is the difference between them? Can anyone please
+explain?
+
+The difference is simple: filters are cached and don't influence the score,
+therefore faster than queries. Have a look
+[here](http://www.elasticsearch.org/guide/reference/query-dsl/) too. Let's say
+a query is usually something that the users type and pretty much
+unpredictable, while filters help users narrowing down the search results ,
+for example using facets.
+
+This is what official documentation says:
+
+> As a general rule, filters should be used instead of queries:
+
+>
+
+>   * for binary yes/no searches
+
+>   * for queries on exact values
+
+>
+
+* * *
+
+> As a general rule, queries should be used instead of filters:
+
+>
+
+>   * for full text search
+
+>   * where the result depends on a relevance score
+
+>
+
+Basically, a query is used when you want to perform a search on your documents
+with scoring. And filters are used to narrow down the set of results obtained
+by using query. Filters are boolean.
+
+For example say you have an index of restaurants something like zomato. Now
+you want to search for restaurants that serve **'pizza'** , which is basically
+your search keyword.
+
+So you will use query to find all the documents containing **"pizza"** and
+some results will obtained.
+
+Say now you want list of restaurant that serves pizza and has rating of
+atleast 4.0.
+
+So what you will have to do is use the keyword **"pizza"** in your query and
+apply the filter for rating as 4.0.
+
+What happens is that filters are usually applied on the results obtained by
+querying your index.
+
+Few more addition to the same. A filter is applied first and then the query is
+processed over its results. To store the binary true/false match per document
+, something called a bitSet Array is used.  This BitSet array is in memory and
+this would be used from second time the filter is queried. This way , using
+bitset array data-structure , we are able to utilize the cached result.
+
+One more point to note here , the filter cache is created only when the
+request is executed hence only from the second hit , we actually get the
+advantage of caching.
+
+But then you can use [warmer
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+warmers.html) , to outgrow this. When you register a query with filter against
+a warmer API , it will make sure that this is executed against a new segment
+whenever it comes live. Hence we will get consistent speed from the first
+execution itself.
+
+# An example (try it yourself)
+
+Say index `myindex` contains three documents:
+
+    
+    
+    curl -XPOST localhost:9200/myindex/mytype  -d '{ "msg": "Hello world!" }'
+    curl -XPOST localhost:9200/myindex/mytype  -d '{ "msg": "Hello world! I am Sam." }'
+    curl -XPOST localhost:9200/myindex/mytype  -d '{ "msg": "Hi Stack Overflow!" }'
+    
+
+> # Query: How well a document matches the query
+
+## Query `hello sam` (using keyword `must`)
+
+    
+    
+    curl localhost:9200/myindex/_search?pretty  -d '
+    {
+      "query": { "bool": { "must": { "match": { "msg": "hello sam" }}}}
+    }'
+    
+
+Document `"Hello world! I am Sam."` is assigned a higher score than `"Hello
+world!"`, because the former matches both words in the query. **Documents are
+scored.**
+
+    
+    
+    "hits" : [
+       ...
+         "_score" : 0.74487394,
+         "_source" : {
+           "name" : "Hello world! I am Sam."
+         }
+       ...
+         "_score" : 0.22108285,
+         "_source" : {
+           "name" : "Hello world!"
+         }
+       ...
+    
+
+> # Filter: Whether a document matches the query
+
+## Filter `hello sam` (using keyword `filter`)
+
+    
+    
+    curl localhost:9200/myindex/_search?pretty  -d '
+    {
+      "query": { "bool": { "filter": { "match": { "msg": "hello sam" }}}}
+    }'
+    
+
+Documents that contain either `hello` or `sam` are returned. **Documents are
+NOT scored**.
+
+    
+    
+    "hits" : [
+       ...
+         "_score" : 0.0,
+         "_source" : {
+           "name" : "Hello world!"
+         }
+       ...
+         "_score" : 0.0,
+         "_source" : {
+           "name" : "Hello world! I am Sam."
+         }
+       ...
+    
+
+* * *
+
+## Unless you need full text search or scoring, filters are preferred because
+frequently used filters will be cached automatically by Elasticsearch, to
+speed up performance. See [Elasticsearch: Query and filter
+context.](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+filter-context.html)
+
+`Filters` -> Does this document match? a binary **yes or no** answer
+
+`Queries` -> Does this document match? How well does it match? uses
+**scoring**
+

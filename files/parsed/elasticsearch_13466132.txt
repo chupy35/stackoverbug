@@ -1,0 +1,32 @@
+13466132 Elasticsearch: Is there a function like mongodb findOne
+
+When I search in Mongodb with same query term by findOne / find, findOne is
+much faster than find.
+
+In my search case, I just need know if it is exists, So I want search engine
+pick one and return, and run my search query fast.
+
+And when I search anything in ElasticSearch, I can always get total of
+searching results, It's not very slow but not fast as I expected.
+
+FYI, My elasticsearch store about 2 million documents, and some search terms
+hint over 200 thousands documents, which may take over 500 ms.
+
+I'm looking for a function like Mongodb's findOne, which can slow my query
+time to less than 100 ms.
+
+Or is there any other solutions ?
+
+Thanks.
+
+Try either count api:
+
+<http://www.elasticsearch.org/guide/reference/api/count.html>
+
+Or search_type=count:
+
+<http://www.elasticsearch.org/guide/reference/api/search/search-type.html>
+
+Either should be more efficient if you don't need any hit data, though they do
+still calculate total document count.
+

@@ -1,0 +1,73 @@
+13148609 binding issue when a directive in a ngRepeat
+
+so this is how it looks like, and here is the
+[Plunker](http://plnkr.co/edit/IPwDLT?p=preview)
+
+    
+    
+    parent scope 
+       ng-repeat
+           directive
+    
+
+in the directive there is an attribute is bi-directional binding with a
+variable in parent scope.
+
+But this doesn't work as I wanted.(But I can understand why it doesn't work)
+
+The reason is ngRepeat will create it's own scope, so once the variable is
+changed in directive, Angular add a variable in ngRepeat, but it leave the
+variable in parent unchanged.
+
+I can do something like scope.$parent.$parent.variable to change the variable,
+but it is kinda not the idea in Angular.
+
+How should I do ?
+
+Moreover, if I change the repeated item in the items collection, the item
+can't be changed.
+
+Because of the same reason above.
+
+EDIT (again): It looks like the issue is you need to have _reference types_ in
+your array, such as objects or arrays.
+
+Gloopy was exactly right in the comments. The bi-directional binding wasn't
+working because it seems like Angular was creating copies of your primitives
+types (strings, numbers, etc) between the second scope pairing. So... when you
+have a nesting of bi-directionally bound primitive types between two scopes
+it's fine because it uses one instance, but when you nest it more than one
+deep, it creates a copy of the primitive and you're no longer updating the
+same instance.
+
+[Here's a new demo](http://plnkr.co/edit/3mHtcp)
+
+    
+    
+    app.controller('MainCtrl', function($scope) {
+      $scope.items = [
+        { text: 'apples' },
+        { text: 'bananas' },
+        { text: 'oranges' }
+      ];
+      $scope.addItem = function(){
+        $scope.items.push({ text: 'test' });
+      };
+    });
+    
+    app.directive('test', function(){
+      return {
+        restrict: 'E',
+        scope: {
+          foo: '=foo'
+        },
+        template: '<div>{{foo}} <a ng-click="bar()">bar</a></div>',
+        controller: function($scope){ 
+          $scope.bar = function() {
+            $scope.foo += '!';
+          };
+        }    
+      };
+    });
+    
+

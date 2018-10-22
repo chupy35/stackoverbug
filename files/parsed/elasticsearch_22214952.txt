@@ -1,0 +1,164 @@
+22214952 Elasticsearch facets not returned with a ranged query
+
+I'm storing documents that look something like this:
+
+    
+    
+    {
+       "title" : "My title",
+       "posted_date" : "2014-03-04T04:00:12+00:00",
+       "category" : ["cat1", "cat2"],
+    }
+    
+
+Then I am showing listings of these with various sidebar filters for things
+like category and date(by year, by month). Depending on the options the user
+selects the resulting query may end up looking something like:
+
+    
+    
+    {
+    "query": {
+      "range": {
+        "posted_date": {
+          "gte": "2014-01-01T00:00:00+00:00",
+          "lte": "2015-01-01T00:00:00+00:00"
+        }
+      },
+      "filtered": {
+        "filter": {
+          "and": {
+            "filters": [
+              {
+                "term": {
+                  "category": "cat1"
+                }
+              }
+            ]
+       }}}}}
+    
+
+Which seems to work entirely as expected, except when I try to add facets so I
+can put little numbers (1) next to the dates etc:
+
+    
+    
+    {
+      "query": {
+        "range": {
+          "posted_date": {
+            "gte": "2014-01-01T00:00:00+00:00",
+            "lte": "2015-01-01T00:00:00+00:00"
+          }
+        },
+        "filtered": {
+          "filter": {
+            "and": {
+              "filters": [
+                {
+                  "term": {
+                    "category": "fiction"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "facets": {
+        "bymonth": {
+          "date_histogram": {
+            "field": "posted_date",
+            "interval": "month"
+          }
+        },
+        "byyear": {
+          "date_histogram": {
+            "field": "posted_date",
+            "interval": "year"
+          }
+        }
+      }
+    } 
+    
+
+This works only if I don't include the range in the query. If the range is in
+there I don't get anything returned for facets. It's just not in the result.
+Even if I change the faceting to be by another term rather than date, I don't
+get anything.
+
+Is there something incompatible between range queries and facets? Is there
+something else about the way these queries are structured that makes it not do
+what I think it should be?
+
+I think you need here
+[facet_filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets.html).
+
+    
+    
+    {
+        "facets": {
+            "facet1": {
+                "terms_stats": {
+                    "key_field" : "name",
+                    "value_field": "count"
+                },
+                 "facet_filter": {
+                    "range": {
+                       "filed": {
+                          "from": 0,
+                          "to": 20
+                       }
+                    }
+                 }
+            }
+        }
+    }
+    
+
+Your updated query will be look like this:
+
+    
+    
+    {
+       "query": {
+          "filtered": {
+             "filter": {
+                "and": {
+                   "filters": [
+                      {
+                         "term": {
+                            "category": "fiction"
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       },
+       "facets": {
+          "bymonth": {
+             "date_histogram": {
+                "field": "posted_date",
+                "interval": "month"
+             },
+             "facet_filter": {
+                "range": {
+                   "posted_date": {
+                      "gte": "2014-01-01T00:00:00+00:00",
+                      "lte": "2015-01-01T00:00:00+00:00"
+                   }
+                }
+             }
+          },
+          "byyear": {
+             "date_histogram": {
+                "field": "posted_date",
+                "interval": "year"
+             }
+          }
+       }
+    }
+    
+

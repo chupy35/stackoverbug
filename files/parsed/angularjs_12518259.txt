@@ -1,0 +1,180 @@
+12518259 Using ng-repeat with table rows
+
+I'm trying to insert data from a model into a template but I want to add a new
+table row after every 7 repetitions. With strign-based templates I could do it
+quite easily using the iteration index and modulo but I can't quite figure out
+how to do this using angular's DOM templates.
+
+Here's the HTML:
+
+    
+    
+    <div ng-controller="MyCtrl">
+      <table cellspacing="0" cellpadding="0">
+       <colgroup span="7"></colgroup>
+    
+       <tbody>
+         <tr class="days">
+           <th scope="col" title="Monday">Mon</th>
+           <th scope="col" title="Tuesday">Tue</th>
+           <th scope="col" title="Wednesday">Wed</th>
+           <th scope="col" title="Thursday">Thu</th>
+           <th scope="col" title="Friday">Fri</th>
+           <th scope="col" title="Saturday">Sat</th>
+           <th scope="col" title="Sunday">Sun</th>
+         </tr>
+         <tr>
+             <td ng-repeat="date in dates">
+                 {{ date }}
+                 <!-- After seven iterations a new `<tr>` should be aded -->
+            </td>
+         </tr>
+     </tbody>
+     </table>
+    </div>
+    
+
+And the javascript it something like:
+
+    
+    
+    myApp = this.angular.module('myApp', []);
+    
+    var monthDays = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1516, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31];
+    
+    myApp.controller('MyCtrl', function($scope) {
+      return $scope.dates = monthDays;
+    });​
+    
+
+You can view the code in a JSFiddle here: <http://jsfiddle.net/3zhbB/2/>
+
+Make `$scope.dates` an array of arrays with the days.
+
+Each array inside of it is a row, and each day inside of the row's array is a
+day
+
+See this updated JSFiddle <http://jsfiddle.net/6aqtj/1/>
+
+I agree with Renan about the array of arrays and got caught up in an attempt
+to make this more calendar-like. Assuming you want blank table cells and you
+want the month to start on the correct day of the week (0-6). Have a look at
+this function:
+
+    
+    
+    function generateWeeks(startDay, numDays){
+      var weeks = [];
+      var numWeeks = (numDays + startDay) / 7;
+      for(var i=0; i<numWeeks; i++){
+        weeks[i] = [];
+        for(var j=0; j<7; j++){
+          if(i==0 && j<startDay){
+            weeks[i].push('');
+          }else{
+            var day = (j-startDay+1)+(i*7);
+            weeks[i].push(day<=numDays ? day : '');
+          }
+        }
+      }
+      return weeks;
+    }
+    
+
+For the current month, I'd call generateWeeks(5,30). September has 30 days and
+started on Saturday (and your calendar week is Monday - Sunday).
+
+    
+    
+    <tr ng-repeat="week in weeks">
+      <td ng-repeat="day in week">{{day}}
+    </tr>
+    
+
+If you'd like to leave your scope data the way it is (as an array), you could
+write a directive, and encapsulate all of the HTML generation there, hence:
+
+    
+    
+    <div ng-controller="MyCtrl">
+        <calendar></calendar>
+    </div>
+    
+    myApp.directive('calendar', function() {
+    // Requires that scope contains a 'monthDays' array.
+    // Adds 'weeks' to scope.
+    return {
+        restrict: 'E',
+        replace: true,
+        template: '<table cellspacing="0" cellpadding="0">'
+        + ...
+        + '<th scope="col" title="Sunday">Sun</th></tr>'
+        + '<tr ng-repeat="week in weeks">'
+        + '<td ng-repeat="day in week">{{day}}</td>'
+        + '</tr></tbody></table>',
+        link: function(scope) {
+            scope.weeks = [];
+            for (var i = 0; i < scope.monthDays.length; i++) {
+                if (i % 7 == 0) {
+                    scope.weeks.push([]);
+                }
+                scope.weeks[scope.weeks.length-1].push(scope.monthDays[i]);
+    
+
+Fiddle: <http://jsfiddle.net/mrajcok/dGpsr/>
+
+You can do this pretty easily with your current data. I just added a simple
+filter: <http://jsfiddle.net/3zhbB/6/>
+
+It's not really the best solution though, as it's pretty inefficient. It will
+have to create a new array and do a lot of slicing. But it's still cool :-D
+
+Just had this problem myself. Instead of html tables though, I'm going to use
+an unordered list over a single "days" collection and use css to make it look
+like a table. So, if each element is 14% wide, it will wrap on 7
+automatically.
+
+This was the genesis of my approach: [Creating three-column table with CSS
+only? (No table
+element)](https://stackoverflow.com/questions/3474737/creating-three-column-
+table-with-css-only-no-table-element)
+
+You could use a conditional like `$index % 7 == 0` to write the `</tr><tr>`
+
+I just created a simple table like this:
+
+    
+    
+    <style type="text/css">
+        .selectable.year {
+            display:inline-block; 
+            width:25%;
+            border-right-width:0px;
+            text-align: center;
+        }
+        .selectable.year.first {
+            margin-left:0;
+        }
+        .selectable.year.lastcol, .selectable.year:last-child {
+            border-right-width:1px;
+        }
+    </style>
+    <div class="calendar">
+        <div class="selectable year" 
+            ng-class="{ 'firstcol' : $index % 4 == 0 , 'lastcol' : $index % 4 == 3 }"
+            ng-repeat="year in search.yearList"
+            <span class="caption">{{ year }}</span>
+        </div>
+    </div>
+    
+
+as you can see, it wraps .. its not a table, really.
+
+This is an old question that nevertheless now has a clean answer! The whole
+process of repeating complex sections in angular is vastly improved by the use
+of the `ng-repeat-start` and `ng-repeat-end`, which you can read about in
+detail here:
+
+<http://www.undefinednull.com/2015/04/10/repeating-multiple-elements-using-ng-
+repeat-start-and-ng-repeat-end-in-angularjs/>
+

@@ -1,0 +1,147 @@
+21317400 Start Elasticsearch service with 2 nodes
+
+I try to start Elastic search in clustering with 2 nodes : I run Command :
+
+    
+    
+    service elasticsearch start
+    
+
+then I run 2 instances of elasticsearch in order to join the cluster with
+commands:
+
+    
+    
+    /bin/elasticsearch 
+    
+
+But when I check the head_plugin : `localhost:2900/_plugin/head/` I get the
+Cluster health status Yellow, and the nodes didn't join the cluster  
+How can I configure the two nodes to make them join the cluster ?  thanks
+**EDIT:** This is what I get :
+
+    
+    
+    root@vmi17663:~# curl -XGET 'http://localhost:9200/_cluster/nodes?pretty=true'
+    {
+      "ok" : true,
+      "cluster_name" : "nearCluster",
+      "nodes" : {
+        "aHUjm3SjQa6MbRoWCnL4pQ" : {
+          "name" : "Primary node",
+          "transport_address" : "inet[/ip@dress:9300]",
+          "hostname" : "HOSTNAME",
+          "version" : "0.90.5",
+          "http_address" : "inet[/ip@dress:9200]"
+        }
+      }
+    }root@vmi17663:~# curl -XGET 'http://localhost:9201/_cluster/nodes?pretty=true'
+    {
+      "ok" : true,
+      "cluster_name" : "nearCluster",
+      "nodes" : {
+        "pz7dfIABSbKRc92xYCbtgQ" : {
+          "name" : "Second Node",
+          "transport_address" : "inet[/ip@dress:9301]",
+          "hostname" : "HOSTNAME",
+          "version" : "0.90.5",
+          "http_address" : "inet[/ip@dress:9201]"
+        }
+      }
+    
+
+Make sure you have different `elasticsearch.yml` files for each node.  
+Make sure each is configured to join the same cluser via `cluster.name:
+"mycluster"`
+
+You can start an additional nodes (new jvm process) off the same code install
+like this:
+
+`<es home>/bin/elasticsearch -d
+-Des.config=<wherever>/elasticsearch-1/config/elasticsearch.yml`
+
+`<es home>/bin/elasticsearch -d
+-Des.config=<wherever>/elasticsearch-2/config/elasticsearch.yml`
+
+My setup looks like this:
+
+    
+    
+    elasticsearch-1.0.0.RC1
+    ├── LICENSE.txt
+    ├── NOTICE.txt
+    ├── README.textile
+    ├── bin
+    ├── config
+    ├── data
+    ├── lib
+    ├── logs
+    └── plugins
+    elasticsearch-2
+    ├── config
+    ├── data
+    ├── logs
+    ├── run
+    └── work
+    elasticsearch-3
+    ├── config
+    ├── data
+    ├── logs
+    ├── run
+    └── work
+    elasticsearch-1
+    ├── config
+    ├── data
+    ├── logs
+    ├── run
+    └── work
+    
+
+I start all three with aliases like this:
+
+    
+    
+    alias startes1='/usr/local/elasticsearch-1.0.0.RC1/bin/elasticsearch -d -Des.config=/usr/local/elasticsearch-1/config/elasticsearch.yml'
+    alias startes2='/usr/local/elasticsearch-1.0.0.RC1/bin/elasticsearch -d -Des.config=/usr/local/elasticsearch-2/config/elasticsearch.yml'
+    alias startes3='/usr/local/elasticsearch-1.0.0.RC1/bin/elasticsearch -d -Des.config=/usr/local/elasticsearch-3/config/elasticsearch.yml'
+    
+
+I made it work !  As expected It was iptables Problem I added this rule
+
+    
+    
+    -A INPUT -m pkttype --pkt-type multicast -j ACCEPT
+    
+
+and everything went smooth
+
+If your nodes don't join, then you need to check your cluster.name setting,
+and make sure that each node can communicate to each other via port 9300.
+(9200 is for incoming traffic, and 9300 is for node to node traffic).
+
+So as @mcolin mentioned make sure your cluster name is the same for each node.
+To do so, open up your /etc/elasticsearch/elasticsearch.yml file on your 1st
+server, and find the line that says "cluster.name" and note what it is set to.
+Then go to your other servers and make sure they are set to the exact same
+thing.
+
+To do this, you could run this command: `sudo vim
+/etc/elasticsearch/elasticsearch.yml`
+
+and set the following line to be something like: `cluster.name: my_node_name`
+
+Additionally, your nodes might not be able to talk to each other. My nodes are
+running on AWS, so I went to my EC2 panel and made sure my instances were in
+the same security group. Then I set my security group to allow all instances
+within it to talk to each other by creating a rule like this:
+
+`Custom TCP Rule TCP 9300 dev-elasticsearch`
+
+(or to be wild and dangerous, set this:)
+
+`All traffic All All dev-elasticsearch`
+
+Within a minute of setting this I checked my cluster status and all was well:
+
+`curl -XGET 'http://127.0.0.1:9200/_cluster/health?pretty=true'`
+

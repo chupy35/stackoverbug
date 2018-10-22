@@ -1,0 +1,83 @@
+12236905 How to extend or override existing filters in angularjs?
+
+Is it possible to extend existing "standard" filters (`date`, `number`,
+`lowercase` etc)? In my case I need to parse date from YYYYMMDDhhmmss format
+so I'd like to extend (or override) `date` filter instead of writing my own.
+
+I'm not sure if I understand your question correctly, but if you would like to
+extend functionality of existing filters you could create a new filter that
+decorates an existing one. Example:
+
+    
+    
+    myApp.filter('customDate', function($filter) {
+        var standardDateFilterFn = $filter('date');
+        return function(dateToFormat) {
+         return 'prefix ' + standardDateFilterFn(dateToFormat, 'yyyyMMddhhmmss');
+        };
+    });
+    
+
+and then, in your template:
+
+    
+    
+    {{now | customDate}}
+    
+
+Having said the above, if you simply want to format a date according to a
+given format this can be done with the existing date filter:
+
+    
+    
+    {{now | date:'yyyyMMddhhmmss'}}
+    
+
+Here is the working jsFiddle illustrating both techniques:
+<http://jsfiddle.net/pkozlowski_opensource/zVdJd/2/>
+
+Please note that if a format is not specified AngularJS will assume that this
+is 'medium' format (the exact format depends on a locale). Check
+<http://docs.angularjs.org/api/ng.filter:date> for more.
+
+The last remark: I'm a bit confused about the 'parse from' part of your
+question. The thing is that filters are used to parse an object (date in this
+case) to string and not vice verse. If you are after parsing strings (from an
+input) representing dates you would have to look into
+NgModelController#$parsers (check the "Custom Validation" part in
+<http://docs.angularjs.org/guide/forms>).
+
+I prefer to implement the [decorator
+pattern](http://en.wikipedia.org/wiki/Decorator_pattern), and actually in
+angular is very easy..  
+So, if we take @pkozlowski.opensource example, you can do something like that:  
+
+    
+    
+     myApp.config(['$provide', function($provide) {
+      $provide.decorator('dateFilter', ['$delegate', function($delegate) {
+        var srcFilter = $delegate;
+    
+        var extendsFilter = function() {
+          var res = srcFilter.apply(this, arguments);
+          return arguments[2] ? res + arguments[2] : res;
+        }
+    
+        return extendsFilter;
+      }])
+    }])
+    
+
+And then in your views, you can use both.. the standard output and the
+extended behavior.  
+with the same filter
+
+    
+    
+    <p>Standard output : {{ now | date:'yyyyMMddhhmmss' }}</p>
+    <p>External behavior : {{ now | date:'yyyyMMddhhmmss': ' My suffix' }}</p>
+    
+
+Here is the working jsFiddle illustrating both techniques:
+<http://jsfiddle.net/ar8m/9dg0hLho/>
+

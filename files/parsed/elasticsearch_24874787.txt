@@ -1,0 +1,35 @@
+24874787 How do I configure elasticsearch to retain documents up to 30 days?
+
+Is there a default data retention period in elasticsearch? If yes can you help
+me find the configuration?
+
+Yeah you can set a TTL on the data. Take a look here for the configuration
+options available.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+ttl-field.html>
+
+This is no longer supported in Elasticsearch 5.0.0 or greater. The best
+practice is to create indexes periodically (daily is most common) and then
+delete the index when the data gets old enough.
+
+Here's a reference to how to delete an index
+(<https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-
+delete-index.html>)
+
+This article (though it's old enough to reference _ttl) also gives some
+insight: <https://www.elastic.co/blog/using-elasticsearch-and-logstash-to-
+serve-billions-of-searchable-events-for-customers>
+
+As a reminder, it's best to protect your Elasticsearch cluster from the
+outside world via a proxy and restrict the methods that can be sent to your
+cluster. This way you can prevent your cluster from being ransomed.
+
+Elasticsearch curator is the tool to use if you want to manage your indexes:
+<https://www.elastic.co/guide/en/elasticsearch/client/curator/current/index.html>
+
+Here's an example of how to delete indices based on age:
+<https://www.elastic.co/guide/en/elasticsearch/client/curator/current/ex_delete_indices.html>
+
+Combine with cron to have this done at regular intervals.
+

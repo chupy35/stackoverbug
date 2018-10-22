@@ -1,0 +1,90 @@
+23742320 custom filters score query for elasticsearch giving parsing error
+
+it's telling me there's No query registered for [custom_filters_score]];
+
+here's my code in basic form:
+
+    
+    
+      "query": {
+        "custom_filters_score": {
+          "query": {
+            "match_all": {}
+          },
+          "filters": [
+            {
+              "filter": {
+                "exists": {
+                  "field": "salesrank"
+                }
+              }
+              ,"script": "1 / doc['salesrank'].value"
+            }
+          ]
+        }
+      }
+    }
+    
+
+* * *
+
+**EDIT:**
+
+the only thing i've noticed that works is to put another query after the first
+'query' and before 'custom_filters_score'. this then leaves me with two
+queries - not sure what to do with them both however, and the documentation
+does not indicate this. :(
+
+i also have to get rid of the 'filters' array and only use a 'filter' object.
+so, the only thing i've found to work is something like this:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}, 
+        "custom_filters_score": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "exists": {
+              "field": "salesrank"
+            }
+             ,"script": "1 / doc['salesrank'].value"
+          }
+        }
+      }
+    }
+    
+
+According to the elasticsearch documentation:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/query-dsl-
+custom-filters-score-query.html>, the "custom_filters_score" was deprecated.
+The correct way to do it is to replace it with "function_score"
+
+    
+    
+    {
+      "query": {
+        "function_score": {
+          "functions": [
+            {
+              "script_score": {
+                "script": "1 / doc['salesrank'].value"
+              }
+            }
+          ],
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "exists": {
+              "field": "salesrank"
+            }
+          }
+        }
+      }
+    }
+    
+

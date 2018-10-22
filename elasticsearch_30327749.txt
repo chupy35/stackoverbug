@@ -1,0 +1,3 @@
+30327749
+When do you need large heap for Elasticsearch?
+<p>Let say we are running a moderate cluster with 4 nodes with daily indexes and about 3 billion documents.</p>&#xA;&#xA;<p>Using doc values as much as possible.&#xA;Will run mostly scheduled scroll searches and ad hoc tool to build and preview those searches.</p>&#xA;&#xA;<p>Do we really need to set ES_HEAP_SIZE to 30g?</p>&#xA;

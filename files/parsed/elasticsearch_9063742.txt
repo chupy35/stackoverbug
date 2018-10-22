@@ -1,0 +1,16 @@
+9063742 elasticsearch: how can i boost documents having sub-objects
+
+How can i _boost_ documents having sub-objects over documents without having
+such sub-objects even if i don't query directly for information of sub-
+objects?
+
+Here an example:
+
+I put events in my search index. Each event has a name and optional one ore
+more dates. you can search for events by name. I want the matching events with
+dates to become the first results. Events that also match by name but don't
+have a date should come afterwards.
+
+You can create "has_dates" field and use boosting query boosting objects with
+"has_dates" field.
+

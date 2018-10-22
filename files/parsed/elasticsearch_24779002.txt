@@ -1,0 +1,23 @@
+24779002 Elasticsearch query SQL Server LAG function analog
+
+I am looking for a SQL Server [LAG](http://msdn.microsoft.com/en-
+us/library/hh231256\(v=sql.110\).aspx)/[LEAD](http://msdn.microsoft.com/en-
+us/library/hh213125\(v=sql.110\).aspx) functions analog in Elasticsearch.
+
+Assume I have a list of documents in result set found by particular criteria.
+The result set is also ordered in some order.
+
+I know the id of one of the documents in that result set and I need to find
+next and/or previous document in the same result set.
+
+SQL Server 2012 and above has `LAG/LEAD` functions to get next/previous row in
+the recordset. So I wondering if there is such functionality in the
+elasticsearch.
+
+Could you please point me on the corresponding documentation/examples please?
+
+There isn't. Lots of stuff from relational land doesn't translate directly
+into Elasticsearch land. What do you want to do with LAG/LEAD? Just getting
+the ids is simple enough by asking for more results and looking up or down the
+list. I imagine its something more fun but I don't want to speculate.
+

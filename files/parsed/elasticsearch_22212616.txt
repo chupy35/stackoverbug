@@ -1,0 +1,40 @@
+22212616 Elasticsearh nested query - custom scoring
+
+I am trying to see if i can find all the records whose age value is not null -
+boost them by 1000 else find all the records whose age value is null, then
+find only those records with censusyear greater than 1910
+
+    
+    
+    GET _search
+    {
+     "size":20, 
+      "from":0, 
+      "query" : {
+          "custom_filters_score": {
+             "query": {
+             "filtered": {
+                "query": {
+                    "match_all": {}
+                },
+                "filter": {
+                    "or":  [
+                    {"query":{"field": { "Age": "exists"}}},
+                    { "and":[
+                        {"query":{"field": { "Age" : null}}},
+                        {"range":{"CensusYear": {"gte":1910}}}
+                        ]
+                       }]
+                }
+             }
+             },
+             "filters": [
+                {
+                   "filter": {"term":{"Age":"exists"}}, "boost":"1000"
+                }
+             ]
+          }
+      }
+    }
+    
+

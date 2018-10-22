@@ -1,0 +1,73 @@
+14623611 Filtered Query not showing proper result
+
+when i run through curl it shows proper results and Statistical facet also,but
+through java api it won't show proper result
+
+    
+    
+        curl  http://localhost:9200/Data/my_data/_search?pretty=true -d '{
+    "fields" : ["price","total"],
+     "query" : {
+      "filtered": {
+    "query":{
+     "bool": {
+      "must": [
+    {"term" : { "empId" : "1" }},
+    
+    {
+     "range": {
+      "datetime" : {"gte" : "2005-12-23T23:10:52Z", "lte" : "2005-12-23T23:10:56Z" }}
+    },
+    {
+     "range": {
+      "price" : {"gt" : 0 }}
+    },
+    {
+     "range": {
+      "total" : {"gt" : 0 }}
+    }
+      ]
+     }
+    }
+      }
+     },
+    
+     "facets" : {
+      "stat1" : {
+    "statistical" : {
+     "field" : "price"
+    }
+      }
+     }
+    }'
+    
+
+following is my java code :
+
+    
+    
+    QueryBuilder qb2 = boolQuery()
+        .must(termQuery("empId", 1))
+        .must(rangeQuery("price").gt(0))
+        .must(rangeQuery("total").gt(0))
+        .must(rangeQuery("datetime").gte("2005-12-23T23:10:52Z").lte("2005-12-23T23:10:56Z"));
+    
+    SearchResponse respStats = client.prepareSearch(indexName)
+                .setTypes(indexType)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setQuery(QueryBuilders.filteredQuery(qb2 ,null))
+                .addFields("empId","price","datetime")
+                .addFacet(statisticalFacet("FacetCountStats").field("price"))
+                .setFrom(0)
+                .setExplain(false)
+                .execute()
+                .actionGet();
+    
+
+but it show zero values of price and total which i don' want.
+
+Thanks in advance.
+
+Just wondering if `termQuery("empId", 1)` should not be `termQuery("empId",
+"1")`?
+

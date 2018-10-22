@@ -1,0 +1,49 @@
+25067615 Getting the count for several document properties by grouping similar
+values
+
+I'm trying to build a set of filters in a UI for an es object. I'd like to
+aggregate all the documents and group certain property's by value and get a
+count for each.
+
+For example I'd like to be able to build a list of available filters like:
+
+State :
+
+  * TX (5)
+  * NJ (1)
+  * CA (10) 
+
+Source :
+
+  * Location1 (30) 
+  * Location2 (25)
+  * Location3 (22)
+
+Where "State" and "Source" are different properties of the document type and
+the counts are in parenthesis obviously. I understand an Aggregation request
+would be what I want, I'm just looking for a little guidance. Ideally I'd like
+to do this with one request and not multiple requests for each property I need
+a group by count on.
+
+So, If I am correct then, you just want count of 'state' for each state, and
+same case for source.
+
+here is a request for that,
+
+    
+    
+    POST _/_search
+    {
+        "size": 0,
+        "aggs":{
+            "state":{
+                "terms":{
+                    "field" :"state"
+                }
+            }
+        }
+    }
+    
+
+Does that helps??
+

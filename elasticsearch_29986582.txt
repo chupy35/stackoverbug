@@ -1,0 +1,4 @@
+29986582
+Disable warmers on replicas in Elasticsearch
+<p>I am working on a cluster that handles a lot of complex aggregation calculations. This means that our field data cache gets large. Furthermore data is bulk loaded at certain times of the day. </p>&#xA;&#xA;<p>Ideally we only want the primary shards to serve requests and let the replica act as a failover. We can do this via the preferences API but it introduces one of two issues...</p>&#xA;&#xA;<p>If we just set the fields to be lazy loaded then right after a bulk load, things take a bit to cache. This causes a huge spike in response times. If we enable eager loading then field data eats up a lot of memory on the replicas. Same goes for using warmers (unless there is a way to disable them for replicas).</p>&#xA;&#xA;<p>What I want is eager on the primaries and lazy on the replicas. Is this possible?</p>&#xA;
+<p>This is currently not possible in Elasticsearch (sorry!)</p>&#xA;

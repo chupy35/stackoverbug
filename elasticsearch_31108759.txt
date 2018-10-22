@@ -1,0 +1,4 @@
+31108759
+Track what documents are coming from which shards in Elasticsearch
+<p>I have enabled routing and all my sets of documents are going to same shard. Now i need to directly hit that machines and see if there is performance gain . But then i haven't found a mechanism to find what document went to which shard. Kindly let me know if there is any way to achieve this.</p>&#xA;
+<p>You can use <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-shards.html" rel="nofollow">Search Shards API</a>.</p>&#xA;&#xA;<p>Sample Syntax:</p>&#xA;&#xA;<pre><code>GET /index/type/_search_shards?routing={routing_id}&#xA;</code></pre>&#xA;

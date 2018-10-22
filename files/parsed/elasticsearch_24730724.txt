@@ -1,0 +1,45 @@
+24730724 How to search documents by version?
+
+Is it possible to search documents in Elastic Search index by version? I try
+this:
+
+    
+    
+    curl -XGET eshost:9200/myindex/mytype/_search -d '{query:{match:{_version:"2"}}}'
+    
+
+But it does not work.
+
+I need such a query to get all documents, that have never been updated.
+
+Try using version
+
+Returns a version for each search hit.
+
+    
+    
+    {
+        "version": true,
+        "query" : {
+            "term" : { "user" : "kimchy" }
+        }
+    }
+    
+
+Unfortunately, you cannot query or filter by _version - the problem is that
+that field is not indexed, so queries and filters cannot access it:
+
+<http://elasticsearch-users.115913.n3.nabble.com/Can-i-filter-query-by-
+version-td4044331.html>
+
+you can search like normal and set version as true and it will return you
+count of all the versions for each document:
+
+    
+    
+    GET indextest/original/_search?pretty=true
+    {
+        "version": true
+    }
+    
+

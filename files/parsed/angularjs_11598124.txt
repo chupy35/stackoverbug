@@ -1,0 +1,103 @@
+11598124 AngularJS $save form data in a separate hash
+
+Using this setup I can save a form in AngularJS.
+
+I want to have the data values pushed to the server (via the $save method) as
+defined in the name="" attributes.
+
+So a form submitted like this would look like this:
+
+### Ideal Form Data
+
+    
+    
+    {
+      book: {
+        word : '...',
+        book : '...',
+        page : '...'
+      }
+    }
+    
+
+But instead its being submitted directly as a hash (without the inner book
+block).
+
+Here's what my form and controller looks like:
+
+### My Form
+
+    
+    
+    <div>
+      <form data-ng-submit="save()">
+        <ol class="fields">
+          <li>
+            <div class="label">
+              <label for="word">Word: </label>
+            </div>
+            <div class="details">
+              <input type="text" name="word[word]" data-ng-model="word.word" />
+            </div>
+          </li>
+          <li>
+            <div class="label">
+              <label for="book">book: </label>
+            </div>
+            <div class="details">
+              <input type="text" name="word[book]" data-ng-model="word.book" />
+            </div>
+          </li>
+          <li>
+            <div class="label">
+              <label for="page">page: </label>
+            </div>
+            <div class="details">
+              <input type="text" name="word[page]" data-ng-model="word.page" />
+            </div>
+          </li>
+        </ol>
+        <nav class="actions">
+          <input type="submit" value="save" />
+        </nav>
+      </form>
+    </div>
+    
+
+### My Controller (Angular)
+
+    
+    
+    var saveCtrl = function($scope, $routeParams, Word, $location) {
+      $scope.word = Word.get({
+        id : $routeParams.id 
+      });
+      $scope.save = function() {
+        $scope.word.$save({
+          id : $scope.word.id
+        });
+        $location.path('/').replace();
+      };
+    }
+    
+
+Any ideas?
+
+Maybe something like this would work in your controller:
+
+    
+    
+    Word.save({
+      id : $scope.word.id
+    }, {
+      book : { word: $scope.book }
+    });
+    
+
+Taken from the [docs](http://docs.angularjs.org/api/ngResource.%24resource) I
+think you need to set the `postData` to override the default data being
+posted.
+
+> non-GET "class" actions: Resource.action([parameters], postData, [success],
+[error])
+

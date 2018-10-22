@@ -1,0 +1,70 @@
+20665396 Elasticsearch: Not analyzing when searching on a particular field
+
+I'm indexing some data into elasticsearch, one bit of which is an IP address
+(stored as string type, rather than ip type). I'm using a custom analyzer for
+the IP address field which is defined as follows:
+
+    
+    
+    'ipv4_address_analyzer' => [
+        'type' => 'custom',
+        'tokenizer' => 'ipv4_path_tokenizer',
+        'filter' => [],
+    ],
+    
+
+The ipv4_path_tokenizer is defined as follows:
+
+    
+    
+    'ipv4_path_tokenizer' => [
+        'type' => 'path_hierarchy',
+        'delimiter' => '.',
+        'buffer_size' => 15,
+    ],
+    
+
+When I use the `index_analyzer` property on the field in the mapping, this is
+indexed and searched correctly with the following query:
+
+    
+    
+    {
+      "query": {
+        "query_string": {
+          "query": "95.129",
+          "fields": [
+            "external_ip",
+            "domains",
+            "_all"
+          ],
+          "use_dis_max": true
+        }
+      },
+      "size": 1000
+    }
+    
+
+However... the search term is still processed by the default search analyser
+and this produces a few false positive matches.
+
+I know I can specify a search_analyzer property on the IP field to use a
+different search analyzer however what I really want is for the search term to
+be left untouched when searching this field rather than being run through an
+analyzer.
+
+Is there a way to disable search term analysis on a per field basis?
+
+Finally found the answer when cruising the manual. The **keyword** tokenizer
+leaves the original term in tact, except for truncating it to the maximum
+buffer size. No filters are required. Custom analyzer below:
+
+    
+    
+    'leave_me_alone' => [
+        'type' => 'custom',
+        'tokenizer' => 'keyword',
+        'filter' => [],
+    ],
+    
+

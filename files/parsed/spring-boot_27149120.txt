@@ -1,0 +1,15 @@
+27149120 how to use redismetricrepository in spring boot
+
+I am working on spring boot actuator and able to see the metrics of my
+application. But I want to store these metrics to some db. In Spring doc it
+has been mentioned that RedisMetricRepository provides option for storing
+metrics to redis db. But I dont how to make use of this RedisMetricRepository
+to store metrics to redis db.Kindly help me out how to use
+RedisMetricRepository for storing metrics to redis db.
+
+You can just create a `@Bean` of type `RedisMetricRepository`. I suspect that
+will just store the metrics in Redis immediately. I prefer to buffer in memory
+and export to Redis periodically. Here's a sample using `@Scheduled` to export
+to Redis every 5s):
+<https://github.com/scratches/aggregator/blob/master/generator/src/main/java/demo/GeneratorApplication.java#L61>.
+

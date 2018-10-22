@@ -1,0 +1,4 @@
+31856534
+How to changing the field datatypes in elasticsearch using the Mapping API or reindexing
+<p>How to changing the field datatypes using the Mapping API or reindexing In Elasticsearch.</p>&#xA;
+<p>I am new to Elasticsearch but faced similar problem. According to my understanding once a mapping is decided for a index it cannot be changed. </p>&#xA;&#xA;<p>Please check the following link:</p>&#xA;&#xA;<p><a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/mapping-intro.html" rel="nofollow">https://www.elastic.co/guide/en/elasticsearch/guide/current/mapping-intro.html</a></p>&#xA;&#xA;<p>"We can update a mapping to add a new field, but we can’t change an existing field from analyzed to not_analyzed."</p>&#xA;&#xA;<p>But what you can do is update the mapping of a new field. So you can change the datatype of the data and save it again as a new field.</p>&#xA;

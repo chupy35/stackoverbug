@@ -1,0 +1,12 @@
+23241635 how to eliminate duplicate's documents while searching in
+elasticsearch search server
+
+> Is there any technique To eliminate duplicate documents while search in
+elastic-search.how to compare the values among the different documents in the
+search results.is any script available. >
+
+You can use the [More Like This
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+more-like-this.html) to look for documents that match a specified documents
+field values. Some customization maybe required.
+

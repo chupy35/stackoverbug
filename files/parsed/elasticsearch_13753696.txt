@@ -1,0 +1,125 @@
+13753696 Multiple nodes returning 500 errors for custom script query
+
+Everything was working fine then I reindexed things and suddenly 3/5 nodes
+started giving an error. Obviously this is also causing only 2/3 of my results
+to come back properly. This is only happening for custom search query. The
+code nor the jar changed between when things were working and when they
+weren't.
+
+Note: Regular filtered multi_match search queries are working just fine.
+
+I have tried:
+
+  1. Deleting all indexes and reindexing all data
+  2. Stopping and starting Elasticsearch
+  3. Recompiling my custom script
+  4. Tried the search query 50+ times (Half in Java and half with CURL)
+
+Pastebin is the errors appearing in console: <http://pastebin.com/1iq3M6fk>
+
+Search query being performed (this has worked for days now and is untouched):
+
+    
+    
+    {
+      "query": {
+        "custom_score": {
+          "query": {
+            "multi_match": {
+              "query": "italian",
+              "fields": [
+                "name",
+                "tags"
+              ]
+            }
+          },
+          "script": "customscript",
+          "params": {
+            "lat": 40.76405282025,
+            "lon": -73.972994269042
+          },
+          "lang": "native"
+        }
+      }
+    }
+    
+
+Below is the response I'm getting when doing the above query:
+
+    
+    
+    {
+      "took": 225,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 2,
+        "failed": 3,
+        "failures": [
+          {
+            "status": 500,
+            "reason": "RemoteTransportException[Failed to deserialize exception response from stream]; nested: TransportSerializationException[Failed to deserialize exception response from stream]; nested: StreamCorruptedException[unexpected end of block data]; "
+          },
+          {
+            "status": 500,
+            "reason": "RemoteTransportException[Failed to deserialize exception response from stream]; nested: TransportSerializationException[Failed to deserialize exception response from stream]; nested: StreamCorruptedException[unexpected end of block data]; "
+          },
+          {
+            "status": 500,
+            "reason": "RemoteTransportException[Failed to deserialize exception response from stream]; nested: TransportSerializationException[Failed to deserialize exception response from stream]; nested: StreamCorruptedException[unexpected end of block data]; "
+          }
+        ]
+      },
+      "hits": {
+        "total": 548,
+        "max_score": 16.027588,
+        "hits": [
+          {
+            ...
+          }
+        ]
+      }
+    }
+    
+
+Below is the custom script being used in the above query (It has a factory as
+well):
+
+    
+    
+    import org.elasticsearch.common.Nullable;
+    import org.elasticsearch.script.ExecutableScript;
+    import org.elasticsearch.script.NativeScriptFactory;
+    import org.elasticsearch.script.AbstractDoubleSearchScript;
+    import org.elasticsearch.index.mapper.geo.GeoPointDocFieldData;
+    
+    import java.util.Collection;
+    import java.util.Map;
+    import java.io.IOException;
+    import java.lang.Math;
+    
+    public class CityMapsCustomScript extends AbstractDoubleSearchScript {
+    
+        double lat;
+        double lon;
+    
+        public CityMapsCustomScript(@Nullable Map<String, Object> params) {
+            lat = ((Double) params.get("lat")).doubleValue();
+            lon = ((Double) params.get("lon")).doubleValue();
+        }
+    
+        @Override
+        public double runAsDouble() {
+            double distance = ((GeoPointDocFieldData) doc().field("location")).distance(lat, lon);
+            String str = doc().field("_type").getStringValue();
+            float score = score();
+    
+            if (str.equals("business")) {
+                return -distance + (double) score;
+            } else {
+                return Double.parseDouble(doc().field("_boost").getStringValue());
+            }
+        }
+    }
+    
+

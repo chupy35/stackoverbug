@@ -1,0 +1,173 @@
+21739509 ElasticSearch - Dot in field name of nested object
+
+I have data of this form:
+
+    
+    
+    {
+      "workers": {
+        "worker.1": {
+          "jobs": 1234
+        }, 
+      }, 
+      "total_jobs": 1234
+    }
+    
+
+and I'm trying to deal with having the "dot" in the field-name. I tried this
+mapping:
+
+    
+    
+    {
+      "worker_stats": {
+        "properties": {
+          "workers": {
+            "type": "object", 
+            "properties": {
+              "worker.1": {
+                "type": "nested", 
+                "index_name": "worker_1", 
+                "properties": {
+                  "jobs": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }, 
+          "total_jobs": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+    
+
+but when I fetch my mapping, the index_name is no-where to be seen, and when I
+add a document, it's still got the dot.
+
+Ultimately, I'm just trying to do some aggregations:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          }
+        }
+      }, 
+      "aggs": {
+        "worker1_stats": {
+          "aggs": {
+            "stats": {
+              "stats": {
+                "field": "workers.worker.1.jobs"
+              }
+            }
+          }, 
+          "nested": {
+            "path": "workers.worker.1"
+          }
+        }
+      }
+    }
+    
+
+but the dot interferes.
+
+What can I do to deal with this dot? Is there a way to use `script` instead of
+`field`? (Is my use of `nested` even correct?
+
+I think you can use a `index_name`, `path`, and `type : object` in your
+mapping to change the name of that field during indexing.
+
+Here is my example:
+
+    
+    
+    PUT /twitter/
+    {
+        "settings" : {
+            "number_of_shards" : 5,
+            "number_of_replicas" : 0
+        },
+        "mappings": {
+            "tweet":{
+                "properties": {
+                    "desc.youbet":{"type":"object","path":"just_name",
+                    "properties": {
+                        "one": {
+                        "type": "integer", "index_name":"one"
+                        }
+                    }
+                    }
+                }
+            }
+        }
+    }
+    
+    PUT /twitter/tweet/1 
+    {
+        "name":"chicken",
+        "desc.youbet":{
+            "one":1,
+        }
+    }
+    
+    PUT /twitter/tweet/2 
+    {
+        "name":"chicken",
+        "desc.youbet":{
+            "one":1,
+        }
+    }
+    
+
+You can now used desc to do operations on and search for what was one in your
+document so this:
+
+    
+    
+    POST /twitter/tweet/_search
+    {
+        "query": {"match_all": {}},
+        "aggs":{
+            "stats": {
+              "stats": {"field": "one"}
+            }
+        }, "size":0
+    }
+    
+
+Results in something like this:
+
+    
+    
+    {
+       "took": 2,
+       "timed_out": false,
+       "_shards": {
+          "total": 5,
+          "successful": 5,
+          "failed": 0
+       },
+       "hits": {
+          "total": 2,
+          "max_score": 0,
+          "hits": []
+       },
+       "aggregations": {
+          "stats": {
+             "count": 2,
+             "min": 1,
+             "max": 1,
+             "avg": 1,
+             "sum": 2
+          }
+       }
+    }
+    
+

@@ -1,0 +1,38 @@
+19454963 index_name and _routing in elasticsearch
+
+I have a mapping as below
+
+    
+    
+    {
+       "obj" : {
+          "properties": {
+             "name" : {
+                  "type" : "string",
+                  "index_name" : "firstname"
+             }
+         },
+         "_routing" : {
+             "required" : "true",
+             "path"  : "name"
+    
+         }
+       }
+    }
+    
+
+Now if I upload a document like
+
+{ "name" : "test" }
+
+I am getting below error
+
+nested: MapperParsingException[External routing [test] and document path
+routing [null] mismatch]
+
+However if I remove "index_name" from the mapping I am able to upload the
+document. Am I missing any configuration here ? We would like to retain the
+index_name as it provides much more readable string to end user.
+
+I checked the above mapping in 1.3.1 and mapping is getting created.
+

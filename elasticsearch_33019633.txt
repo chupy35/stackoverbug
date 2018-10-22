@@ -1,0 +1,4 @@
+33019633
+How to create a new type in ElasticSearch?
+<p>I'm very new to ElasticSearch. I have created new index and I was wondering how to put a new type "users" in it.</p>&#xA;&#xA;<p>Thanks in advance</p>&#xA;
+<p>You don't really need to put a type, it will be automatically created when you put your first document with the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html" rel="nofollow">Index API</a>. However, you usually want to <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-put-mapping.html" rel="nofollow">put a mapping</a> before starting to put documents. When you put a mapping, the type is initialized as well.</p>&#xA;

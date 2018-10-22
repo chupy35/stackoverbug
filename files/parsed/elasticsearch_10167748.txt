@@ -1,0 +1,87 @@
+10167748 Which structure is better for searching inventory in elasticsearch?
+
+Which structure is better for queries like:
+
+Person has 5 bananas and 1 apple.
+
+Person has 5 bananas or 1 apple.
+
+Nested?
+
+    
+    
+    {
+        id: 1,
+        has: 
+        [
+            {
+                'name': 'banana',
+                'quantity': 5,
+            },
+            {
+                'name': 'apple',
+                'quantity': 1,
+                'species': 'gala'
+            }
+        ]
+    }
+    
+
+Or fixed slots?
+
+    
+    
+    {
+        id: 1,
+        slot1: {
+                'name': 'banana',
+                'quantity': 5,
+                },
+        slot2: {
+                'name': 'apple',
+                'quantity': 1,
+                'species': 'gala'
+                }
+        slot3: null,
+        slot4: null
+    }
+    
+
+The nested approach is simpler: You can do a simple nested query [1], instead
+of having to do slot1 OR slot2 OR... Indexing each "slot" as a document would
+be even simpler, if Person had no other fields.
+
+[1] <http://www.elasticsearch.org/guide/reference/query-dsl/nested-query.html>
+
+I would go for:
+
+    
+    
+    {
+      id: 1,
+      banana: {
+            'quantity': 5,
+      },
+      apple: {
+            'quantity': 1,
+            'species': 'gala'
+      }
+    }
+    
+
+then the queries are simple. via [query string
+query](http://www.elasticsearch.org/guide/reference/query-dsl/query-string-
+query.html) your queries will look like:
+
+    
+    
+    banana.quantity:5 AND apple.quantity:1
+    
+
+and
+
+    
+    
+    banana.quantity:5 OR apple.quantity:1
+    
+

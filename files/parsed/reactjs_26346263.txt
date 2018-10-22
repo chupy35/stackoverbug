@@ -1,0 +1,73 @@
+26346263 React click handlers and binding this
+
+I have a react component where I am iterating over a list and creating rows.
+In each row, there is a delete button. When the delete button is clicked, I
+want to pass a reference to the element in that row.
+
+    
+    
+    var TagTable = React.createClass({
+    
+            onTagDelete: function(tagName) {
+                this.props.onTagDelete(tagName);
+            },
+    
+            render: function () {
+                return R.table({className: "bg-box padded"}, [
+                    R.thead({},
+                        R.tr({}, [
+                            R.th({}, ""),
+                            R.th({}, "Tag"),
+                            R.th({}, "Regexes")
+                        ])),
+                    R.tbody({},
+                        this.props.tags.map(function (tag) {
+                            return R.tr({}, [
+                                R.td({}, R.button({onClick: function() {this.onTagDelete(tag.name)}.bind(this), // BIND
+                                    className: "delete"}, "\u2716")),
+                                R.td({key: "name"}, tag.name),
+                                R.td({key: "regexes"}, tag.regexes.join(", "))]);
+                        }.bind(this))) // BIND
+                ])
+            }
+        }
+    );
+    
+
+So in order to preserve the this-value in the click-handler; I use bind both
+for the map() and the click-handler.
+
+Is this the proper way to pass arguments to handlers in React or is there a
+better way?
+
+I'm fairly new to react, but I figured I'd throw this out here to help.
+
+I think you need to change this line,
+
+    
+    
+    R.td({}, R.button({onClick: function() {this.onTagDelete(tag.name)}.bind(this), // BIND
+                                className: "delete"}, "\u2716")),
+    
+
+to
+
+    
+    
+    R.td({}, R.button({onClick: function() {this.onTagDelete.bind(this, tag.name)}, // BIND
+                                className: "delete"}, "\u2716")),
+    
+
+I'm pretty sure that this should now pass the tag name to the function.
+Another way of getting data from the clicked subject is through refs, but with
+lists of items I don't think this works well because of repeated ref names. So
+I would just do what you are doing now.
+
+You can do less verbose:
+
+    
+    
+     R.td({}, R.button({onClick: this.onTagDelete.bind(this, tag.name), // BIND
+                                    className: "delete"}, "\u2716")),
+    
+

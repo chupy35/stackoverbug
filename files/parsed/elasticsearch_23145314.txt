@@ -1,0 +1,136 @@
+23145314 elasticsearch - nested document sort/score with typical e-commerce
+data
+
+I am trying to move our ecommerce search system to elastic search. We have a
+bunch of products and each product can have multiple offers (sold by
+merchants). Roughly the format of the document is
+
+    
+    
+    {
+        "productId": 1234,
+        "title": "Apple Macbook Pro",
+        "description": "Macbook Pro ModelNo:ABC 2.4GHz 8GB RAM",
+        "offers": [
+            {
+                "offer_id": "123",
+                "offer_seller": "ebay"
+                "offer_price": 900
+                "condition": "refurb"
+                "times_bought": 25,
+            },        
+            {
+                "offer_id": "124",
+                "offer_seller": "amazon"            
+                "offer_price": 1200,
+                "condition": "new",
+                "times_bought": 35,
+            },
+            {
+                "offer_id": "125",
+                "offer_seller": "bestbuy"                        
+                "offer_price": 1400
+                "condition": "new",
+                "times_bought": 10,
+            }
+        ]
+    }
+    
+    {
+        "productId": 1235,
+        "title": "Apple Macbook Air",
+        "description": "Macbook Air ModelNo:ABC 1.2GHz 4GB RAM",
+        "offers": [
+    
+            {
+                "offer_id": "123",
+                "offer_seller": "ebay"
+                "offer_price": 600
+                "condition": "refurb"
+                "times_bought": 50,
+            },        
+            {
+                "offer_id": "124",
+                "offer_seller": "amazon"            
+                "offer_price": 999,
+                "condition": "new",
+                "times_bought": 55,
+            },
+            {
+                "offer_id": "125",
+                "offer_seller": "bestbuy"                        
+                "offer_price": 1100
+                "condition": "new",
+                "times_bought": 20,
+            }
+        ]
+    }  
+    
+
+**Some more facts** :
+
+  1. The offers are updated at a higher rate than products. 
+  2. There are 50 offers on an average for every product. 
+
+Here is the query I have
+
+    
+    
+    {
+    "query" : {
+    "function_score": {
+        "boost_mode": "replace",
+        "multi_match": {
+             "query": "macbook",
+             "fields": [
+                "title^10",
+                "description^5"
+             ]
+          },
+        "script_score": {
+            "params": {
+                "param1": 2,
+                "param2": 3.1
+            },
+            "script": "_score * doc['offers.times_bought'].value / pow(param1, param2)"
+        }
+    }
+    }
+    }
+    
+
+**My Questions**  
+1\. I went with nested type for offers as I would like to use the offer_price
+to sort the products. I
+[read](https://github.com/elasticsearch/elasticsearch/issues/2917) that
+parent/child doesnt support sorting, but the fact every update to a offer will
+reindex the whole product makes me wonder whether parent/child is a better
+choice.  
+2\. I would like to show the best(1 or 2) offers for each products that are
+returned. Is there a way to sort the nested documents for each returned result
+or should i do that by myself ?  
+3\. If I want to store the 'times_bought' outside the index as it gets updated
+more frequently than anything else in the index. how do i plug it into ranking
+? Can I extend elastic search scoring classes and modify it use this external
+data structure ?
+
+Any suggestions/recommendation would be appreciated.
+
+How about:
+
+  * Doing the 'best offer' aggregation in your indexing code. Which would mean you store it in a KV-store (redis, couchbase, whatever) and repopulate every time an offer for a particular product changes. You probably have the data available anyhow to do this.
+  * That way you just index `_price` to refer to the price of the best offer.
+  * THis correctly returns the products in the right order.
+  * Lastly (after ES has returned the products in order) you do a call on product-id(s) to your kv-store to fetch the entire top (1 or 2) offers for each of the returned products.
+
+This combination of ES and a KV-store may seem more trouble than it's worth,
+but trust me it works wonders to keep complexity down in the end.
+
+That answers 1 and 2.
+
+As for 3:  You could probably model that as a parent/child, which would allow
+for indexing with separate intervals, performance trade-off but I'm not really
+sure to be honest.
+
+hth a bit
+

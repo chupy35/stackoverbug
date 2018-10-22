@@ -1,0 +1,91 @@
+21629453 Best way to search/index the data - with and without whitespace
+
+I am having a problem indexing and searching for words that may or may not
+contain whitespace...Below is an example
+
+Here is how the mappings are set up:
+
+    
+    
+    curl -s -XPUT 'localhost:9200/test' -d '{
+        "mappings": {
+            "properties": {
+                "name": {
+                    "street": {
+                        "type": "string",
+                        "index_analyzer": "index_ngram",
+                        "search_analyzer": "search_ngram"
+                    }
+                }
+            }
+        },
+        "settings": {
+            "analysis": {
+                "filter": {
+                    "desc_ngram": {
+                        "type": "edgeNGram",
+                        "min_gram": 3,
+                        "max_gram": 20
+                    }
+                },
+                "analyzer": {
+                    "index_ngram": {
+                        "type": "custom",
+                        "tokenizer": "keyword",
+                        "filter": [ "desc_ngram", "lowercase" ]
+                    },
+                    "search_ngram": {
+                        "type": "custom",
+                        "tokenizer": "keyword",
+                        "filter": "lowercase"
+                    }
+                }
+            }
+        }
+    }'
+    
+
+This is how I built the index:
+
+    
+    
+    curl -s -XPUT 'localhost:9200/test/name/1' -d '{ "street": "Lakeshore Dr" }'
+    curl -s -XPUT 'localhost:9200/test/name/2' -d '{ "street": "Sunnyshore Dr" }'
+    curl -s -XPUT 'localhost:9200/test/name/3' -d '{ "street": "Lake View Dr" }'
+    curl -s -XPUT 'localhost:9200/test/name/4' -d '{ "street": "Shore Dr" }'
+    
+
+Here is an example of the query that is not working correctly:
+
+    
+    
+    curl -s -XGET 'localhost:9200/test/_search?pretty=true' -d '{
+    
+       "query":{
+          "bool":{
+             "must":[
+                {
+                   "match":{
+                      "street":{
+                         "query":"lake shore dr",
+                         "type":"boolean"
+                      }
+                   }
+                }
+             ]
+          }
+       }
+    }';
+    
+
+If a user attempts to search for "Lake Shore Dr", I want to only match to
+document 1/"Lakeshore Dr" If a user attempts to search for "Lakeview Dr", I
+want to only match to document 3/"Lake View Dr"
+
+So is the issue with how I am setting up the mappings (tokenizer?, edgegram vs
+ngrams?, size of ngrams?) or the query (I have tried things like setting the
+minimum_should_match, and the analyzer to use), but I have not been able to
+get the desired results.
+
+Thanks all.
+

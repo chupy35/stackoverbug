@@ -1,0 +1,23 @@
+23219772 spring-boot and AspectJ based LTW without Java agent
+
+I've been having very hard time trying to make it work on my end. What I want
+to achieve is bringing up my spring-boot project that would weave all Java
+classes with AspectJ when I just run "java -jar app.jar" (Tomcat 8 embedded is
+used) without any Java agent params.
+
+Is this generally possible? And if yes, what are the required config stuff
+that should be paid attention to?
+
+Thanks a lot in advance.
+
+It might be possible, but you would probably (at a minimum) need a custom
+`main()` method that created an LTW classloader and used that to launch your
+app. The default classloader in the `java -jar` would not be LTW-enabled. Any
+reason you don't want to use an agent (since you obviously control the
+launcher)?
+
+Here a library that initializes aspectj and spring-aspects at runtime by
+injecting instrumentation: <https://github.com/subes/invesdwin-instrument>
+
+You can use it as a sample.
+

@@ -1,0 +1,91 @@
+23422296 Elasticsearch date range query ignore month field
+
+I've been using Elasticsearch as my data store and I got lots of documents in
+it. My problem is, I figured it out that Elasticsearch does ignore month field
+regarding mapping and I can not get real search response.
+
+Here is what I have in my index and my query, please tell me if I'm wrong:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/tt6/' -d '{}'
+    curl -XPUT 'http://localhost:9200/tt6/tweet/_mapping' -d '{"tweet" : {"properties" : {"date" : {"type" : "date", "format": "YYYY-MM-DD HH:mm:ss" }}}}'
+    curl -XPUT 'http://localhost:9200/tt6/tweet/1' -d '{"date": "2014-02-14 04:00:45"}'
+    
+    curl -XGET 'http://localhost:9200/tt6/_search' -d '
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "tweet.date": {
+                  "from": "2014-12-01 00:00:00",
+                  "to": "2014-12-30 00:00:00"
+                }
+              }
+            }
+          ],
+          "must_not": [],
+          "should": []
+        }
+      },
+      "from": 0,
+      "size": 10,
+      "sort": [],
+      "facets": {}
+    }'
+    
+
+And my response is
+
+    
+    
+    {
+      "took": 3,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 1,
+        "max_score": 1,
+        "hits": [
+          {
+            "_index": "tt6",
+            "_type": "tweet",
+            "_id": "1",
+            "_score": 1,
+            "_source": {
+              "date": "2014-02-14 04:00:45",
+              "name": "test"
+            }
+          }
+        ]
+      }
+    }
+    
+
+By given date range it must has no response beet 1st of December 2014 and 30th
+of December 2014, but it returns.
+
+Any help will be appreciated.
+
+Regards.
+
+Fatih.
+
+Your date formatting is incorrect. Please change your mapping call to use
+`yyyy-MM-dd HH:mm:ss` and you will get the expected results.
+
+`curl -XPUT 'http://localhost:9200/tt6/tweet/_mapping' -d '{"tweet" :
+{"properties" : {"date" : {"type" : "date", "format": "yyyy-MM-dd HH:mm:ss"
+}}}}'`
+
+See [Elasticsearch Date
+Range](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-daterange-aggregation.html) reference (specifically the
+date/format pattern section) for more details on the proper formatting values.
+

@@ -1,0 +1,4 @@
+31723713
+How to stop duplicate data
+<p>i am updating my documents in elasticsearch and adding new user, so just as an example suppose i am adding two new user to my field name "update_field". So now if i now add this two value in my field name "update_field", so if i try to insert that again it will not insert the data again or i mean it will not duplicate the data. How can i do that, can someone know how i can write a method to stop duplicate data for elasticsearch , i am working on PHP</p>&#xA;
+<p>Yes, simply change your script to this:</p>&#xA;&#xA;<pre><code>"script": "ctx._source.update_field = (ctx._source.update_field + new_value).unique();"&#xA;</code></pre>&#xA;&#xA;<p>We're basically concatenating two lists in groovy and then with <code>unique()</code> we can remove all duplicates. Another way would be to cast the list as a <code>Set</code>, that would have the same effect.</p>&#xA;

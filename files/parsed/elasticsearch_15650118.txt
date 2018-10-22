@@ -1,0 +1,58 @@
+15650118 Can you refer to and filter on a script field in a query expression,
+after defining it?
+
+I'm new to ElasticSearch and was wondering, once you define a script field
+with mvel syntax, can you subsequently filter on, or refer to it in the query
+body as if it was any other field?
+
+I can't find any examples of this while same time I don't see any mention of
+whether this is possible on the docs page
+
+<http://www.elasticsearch.org/guide/reference/modules/scripting/>
+<http://www.elasticsearch.org/guide/reference/api/search/script-fields/>
+
+The book ElasticSearch Server doesn't mention if this is possible or not
+either
+
+It's not possible for one simple reason: the script_fields are calculated
+during final stage of search (fetch phase) and only for the records that you
+retrieve (top 10 by default). The script filter is applied to all records that
+were not filtered out by preceding filters and it happens during query phase,
+which precedes the fetch phase. In other words, when filters are applied the
+script_fields don't exist yet.
+
+As for 2018 and Elastic 6.2 it is still not possible to filter by fields
+defined with `script_fields`, however, you can define custom [script
+filter](https://www.elastic.co/guide/en/elasticsearch/reference/6.2/query-dsl-
+script-query.html) for the same purpose. For example, lets assume that you've
+defined the following script field:
+
+    
+    
+    {
+      "script_fields" : {
+        "some_date_fld_year":"doc["some_date_fld"].empty ? null : doc["some_date_fld"].date.year"
+      }
+    }
+    
+
+you can filter by it with
+
+    
+    
+    {
+      "query": {
+        "bool" : {
+          "must" : {
+            "script" : {
+              "script" : {
+                "source": " (doc["some_date_fld"].empty ? null : doc["some_date_fld"].date.year) >= 2017",
+                "lang": "painless"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+

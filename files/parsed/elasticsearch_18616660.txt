@@ -1,0 +1,90 @@
+18616660 Query elastic search with many levels of "bool query"
+
+I am trying to implement a search system with ElasticSearch. My problem lies
+in the location of objects First, the searched objects can have different type
+of location:
+
+  * Country
+  * Country + State
+  * Country + State + District
+
+Here is an example:
+
+    
+    
+    Country = A
+    State = B
+    District = C
+    
+    Currently I get all the objects that have the location :
+    Country = A and State = B and District = C
+    
+    I want also find objects which have the location:
+    only Country = A
+    and
+    only Country = A and State = B
+    
+
+It's a bit complicated to explain but the principle is.
+
+So I created the following query ElasticSearch :
+
+    
+    
+    "query" : {
+            [{"bool":{
+                "should":[
+                    {"bool":{
+                         "must":[
+                             {"match":{"country":"-223"}},
+                             {"match":{"state":"-3760"}},
+                             {"match":{"district":"-8245"}}
+                         ]
+                    }},
+                    {"bool":{
+                         "must":[
+                             {"match":{"country":"-223"}},
+                             {"match":{"state":"-3760"}},
+                             {"match":{"district":""}}
+                          ]
+                    }},
+                    {"bool":{
+                         "must":[
+                             {"match":{"country":"-223"}},
+                             {"match":{"state":""}},
+                             {"match":{"district":""}}
+                          ]
+                    }}
+                ]
+            }}]
+      } 
+    
+
+But it does not work, I do not really know what I've done wrong. I read the
+documentation on this site:
+
+<http://www.elasticsearch.org/guide/reference/query-dsl/bool-query/>
+
+And I try all that seemed useful for my problem but without success Is someone
+can help me find what's wrong?
+
+Thank you F.
+
+I do this by indexing the data bit bit differently.
+
+For every document I index multiple values in the location field for each
+document namely:
+
+    
+    
+    country
+    country/state
+    country/state/district
+    
+
+That way if I want to find everything in a certain country i search for
+location:country and if I want everything in a certain state I search for
+location:country/state
+
+This has the side effect of being REALLY nice for nested faceting.
+

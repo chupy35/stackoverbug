@@ -1,0 +1,29 @@
+9997382 Wrong distance returned by ElasticSearch distanceInKm
+
+I've implemented a script field that returns distance like here [Return
+distance in elasticsearch
+results?](https://stackoverflow.com/questions/9295118/return-distance-in-
+elasticsearch-results)
+
+Ruby:
+
+    
+    
+    {
+      script_fields: {
+        distance: {
+          script: "doc['#{source_field}'].distanceInKm(#{lat}, #{lng})"
+        }
+      }
+    }
+    
+
+However the distance returned isn't correct. If the point is close, the
+distance is more correct but as it gets further away it gets more and more
+incorrect.
+
+Can't seem to figure out what I'm doing wrong.
+
+distanceInKm() calculates distance as points on a plane, which is fast but not
+very accurate. Try using arcDistanceInKm() instead.
+

@@ -1,0 +1,50 @@
+20643142 Keyword search in ElasticSearch with no regards to the schema
+
+Is it possible to use ElasticSearch to do keyword searches, exactly like in a
+search engine?
+
+Let me rephrase:
+
+As far as I understand, an ElasticSearch term query requires to specify in
+which field(s?) to search for keywords. Given the fact that ElasticSearch can
+be "schemaless", I wish I could declare a query than can search for keywords
+in any field.
+
+Is there a syntax for that?
+
+You're looking for the behavior provided by the `_all`-field, which happens to
+be on by default:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+all-field.html>
+
+Here's a runnable example:
+<https://www.found.no/play/gist/14688f48c75b9931272b>
+
+    
+    
+    export ELASTICSEARCH_ENDPOINT="http://localhost:9200"
+    
+    # Index documents
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_bulk?refresh=true" -d '
+    {"index":{"_index":"play","_type":"type"}}
+    {"foo":"bar"}
+    {"index":{"_index":"play","_type":"type"}}
+    {"something_else":"foo bar"}
+    '
+    
+    # Do searches
+    
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_search?pretty" -d '
+    {
+        "query": {
+            "match": {
+                "_all": {
+                    "query": "bar"
+                }
+            }
+        }
+    }
+    '
+    
+

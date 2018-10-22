@@ -1,0 +1,30 @@
+11870129 AngularJS not removing results within HTML
+
+Is there anyway to force angular to update/recompile the variables within a
+binding? I'm having an issue when I set my array (which is defined as a for
+loop within my HTML) equal to **[]** and it doesn't pick up on it. Any ideas?
+
+One workaround is to make sure you work with the same array reference. I've
+been doing it like this whenever I want to update all of the elements to a
+bound array:
+
+    
+    
+    myArray.length = 0;
+    angular.forEach(newArray, function(item){
+       myArray.push(item);
+    })
+    
+    // Note: try without this line first as it isn't always necessary
+    $scope.$digest();
+    
+
+Using `myArray.length = 0` clears out the array retaining the reference to the
+array see [this post](https://stackoverflow.com/questions/4804235/difference-
+between-array-length-0-and-array) for more info.
+
+You can also use the usual
+[splice](http://www.w3schools.com/jsref/jsref_splice.asp) and
+[unshift](http://www.w3schools.com/jsref/jsref_unshift.asp) to remove and add
+items to the beginning of the array respectively.
+

@@ -1,0 +1,4 @@
+28850343
+How to move shards around in a cluster
+<p>I have a 5 node cluster with 5 indices and 5 shards for each index.  Currently the shards of each index are evenly distributed accross the nodes. I need to move shards belonging to 2 different indices from a specific node to a different node on the same cluster</p>&#xA;
+<p>You can use the <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-reroute.html" rel="nofollow">shard reroute API</a>&#xA;A sample command look like below - </p>&#xA;&#xA;<pre><code>curl -XPOST 'localhost:9200/_cluster/reroute' -d '{&#xA;    "commands" : [ {&#xA;        "move" :&#xA;            {&#xA;              "index" : "test", "shard" : 0,&#xA;              "from_node" : "node1", "to_node" : "node2"&#xA;            }&#xA;        }&#xA;    ]&#xA;}'&#xA;</code></pre>&#xA;&#xA;<p>This moves shard 0 of index test from node1 to node2</p>&#xA;

@@ -1,0 +1,77 @@
+23617816 copy_to field referring parent field in elasticsearch
+
+Here is my mapping of Product document type. I have `"copy_to" :
+"product_all"` in mapping.  
+I am expecting value of label in brand should be copied in 'product_all' in
+product. Is it correct way of referring the field in outer object from inner
+object i.e. (`product_all` in type product from brand), below mapping doesn't
+work as I don't get results back for a query made on `product_all` field for
+the value of label in brand. Am I missing something?
+
+    
+    
+    {
+      "product": {
+        "_timestamp": {
+          "enabled": true,
+          "store": true
+        },
+        "_all": {
+          "enabled": false
+        },
+        "dynamic": "strict",
+        "properties": {
+          "brand": {
+            "properties": {
+              "id": {
+                "type": "long"
+              },
+              "label": {
+                "type": "multi_field",
+                "fields": {
+                  "label": {
+                    "type": "string",
+                    "index_analyzer": "productAnalyzer",
+                    "search_analyzer": "productAnalyzer"
+                  },
+                  "raw": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                },
+                "copy_to": "product_all"
+              }
+            }
+          },
+          "product_all": {
+            "type": "string",
+            "index_analyzer": "productAnalyzer",
+            "search_analyzer": "productAnalyzer"
+          }
+        }
+      }
+    }
+    
+
+I moved "copy_to":"product_all" inside label.label of mutifield. Now it works
+
+    
+    
+    "label": {
+                "type": "multi_field",
+                "fields": {
+                  "label": {
+                    "type": "string",
+                    "copy_to": "product_all"
+                    "index_analyzer": "productAnalyzer",
+                    "search_analyzer": "productAnalyzer"
+                  },
+                  "raw": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                  }
+                }
+    
+              }
+    
+

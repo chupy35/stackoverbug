@@ -1,0 +1,38 @@
+21157466 All shards failed
+
+I was working on elastic search and it was working perfectly. Today I just
+restarted my remote server (Ubuntu). Now I am searching in my indexes, it is
+giving me this error.
+
+    
+    
+    {"error":"SearchPhaseExecutionException[Failed to execute phase [query_fetch], all shards failed]","status":503}
+    
+
+I also checked the health. The status is red. Can anyone tell me what's the
+issue.
+
+It is possible on your restart some shards were not recovered, causing the
+cluster to stay red.  
+If you hit:  
+`http://<yourhost>:9200/_cluster/health/?level=shards` you can look for red
+shards.
+
+I have had issues on restart where shards end up in a non recoverable state.
+My solution was to simply delete that index completely. That is not an ideal
+solution for everyone.
+
+It is also nice to visualize issues like this with a plugin like:  
+[Elasticsearch Head](http://mobz.github.io/elasticsearch-head/)
+
+If you encounter this apparent index corruption in a running system, you can
+work around it by deleting all files called segments.gen. It is advisory only,
+and Lucene can recover correctly without it.
+
+From [ElasticSearch Blog](http://www.elasticsearch.org/blog/0-90-10-released/)
+
+this work for me.
+
+elasticsearch/config/elasticsearch.yml need add this line. `script.inline: on`
+`script.indexed: on`
+

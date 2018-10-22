@@ -1,0 +1,43 @@
+12370071 Ensuring settings and mapping are set on index in Elasticsearch
+
+In order to ensure that my Elasticsearch index has the right settings and
+mapping I have the following code:
+
+    
+    
+    if (client.admin().indices().prepareExists(Index).execute().actionGet().exists()) {            
+        client.admin().indices().prepareClose(Index).execute().actionGet();
+        client.admin().indices().prepareUpdateSettings(Index).setSettings(settings.string()).execute().actionGet();
+        client.admin().indices().prepareOpen(Index).execute().actionGet();
+        client.admin().indices().prepareDeleteMapping(Index).setType(Type).execute().actionGet();
+        client.admin().indices().preparePutMapping(Index).setType(Type).setSource(mapping).execute().actionGet();
+    } else {
+        client.admin().indices().prepareCreate(Index).addMapping(Type, mapping).setSettings(settings).execute().actionGet();
+    }
+    
+
+It seems a bit silly to update the settings and mapping even if they are
+already fine. I do not know how to do stuff in a more clever way though. Any
+suggestions?
+
+Thanks a lot,
+
+Stine
+
+You can retrieve current settings and mappings and make sure that they are
+correct before trying to update them.
+
+    
+    
+    ClusterStateResponse response = client.admin().cluster().prepareState()                
+        .setFilterAll()
+        .setFilterMetaData(false)
+        .setFilterIndices(index)
+        .execute().actionGet();
+    IndexMetaData indexMetaData = response.state().metaData().index(index);
+    Settings settings = indexMetaData.settings();
+    // Verify settings
+    MappingMetaData mapping = indexMetaData.mappings().get(type);
+    // Verify mapping
+    
+

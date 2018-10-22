@@ -1,0 +1,53 @@
+11277385 Text query against multiple fields
+
+How can I use `text_phrase` query against multiple fields?
+
+My case:  
+User types `hello world`. It title or content (or both) fields contain `hello
+(cool) world` -> return this document
+
+You an use the `boost` query to do so. You probably want to use the more
+advance form of the `text` query in order to providing boosting on the title
+(sometimes, it also makes sense to disable norms for the title doc, which
+makes the length of the field affect the scoring). Here is a full sample:
+
+    
+    
+    curl -XPUT localhost:9200/test -d '{
+        "index.number_of_shards" : 1,
+        "index.number_of_replicas" : 0
+    }'
+    
+    curl -XPUT localhost:9200/test/type/1 -d '{
+        "title" : "hello (cool) world",
+        "content" : "hello (cool) world"
+    }'
+    
+    curl -XPUT localhost:9200/test/type/2 -d '{
+        "title" : "hello (cool) world",
+        "content" : "xxx"
+    }'
+    
+    curl -XPUT localhost:9200/test/type/3 -d '{
+        "title" : "yyy",
+        "content" : "hello (cool) world"
+    }'
+    
+    curl -XPOST localhost:9200/test/_refresh
+    
+    curl -XGET localhost:9200/test/_search?pretty -d '{
+        "query" : {
+            "bool" : {
+                "should" : [
+                    {
+                        "text" : {"content" : {"query" : "hello world"}}
+                    },
+                    {
+                        "text" : {"title" : {"query" : "hello world", "boost" : 5}}
+                    }
+                ]
+            }
+        }
+    }'
+    
+

@@ -1,0 +1,185 @@
+20433591 Boosting ElasticSearch results based on field value
+
+I am an ElasticSearch noob and I am trying to figure out how to boost the
+relevancy of search results that contain search terms in the "title" field. So
+for example, if there are two documents:
+
+  1. `Title="Test Form" Description="This is a new form"`
+  2. `Title="New Form" Description="Test test test"`
+
+And the user searches for "test" across all fields, **document 1** should get
+boosted since the search term appears in the title field.
+
+I have attempted to follow the documentation
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+boost-field.html), but I am not sure about the context of where I should
+include that command. Is it applied to an index or a search or either? Does it
+need to be part of another element, or can it be issued as an individual
+command?
+
+Here is what I have done so far, 5 documents are indexed, then the boost is
+applied and finally, a search is performed for the string "test" across all
+fields.
+
+    
+    
+    PUT http://localhost:9200//global/Form/456
+    {
+      "KeyWords": "",
+      "OneLineDesc": "Test",
+      "Link": "",
+      "Title": "Test Form"
+    }
+    
+    PUT http://localhost:9200//global/Form/457 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "",
+      "Link": "",
+      "Title": "Another Form"
+    }
+    
+    PUT http://localhost:9200//global/Form/458 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "test form",
+      "Link": "",
+      "Title": "Ryans Form"
+    }
+    
+    PUT http://localhost:9200//global/Form/460 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "",
+      "Link": "",
+      "Title": "permissions test"
+    }
+    
+    PUT http://localhost:9200//global/Form/576 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "Test test test test test test test test",
+      "Link": "",
+      "Title": "My Test Form"
+    }
+    
+    POST http://localhost:9200//global/Form 
+    {
+      "_boost": {
+        "name": "Title",
+        "null_value": 20
+      }
+    }
+    
+    POST http://localhost:9200/_search?search_type=query_then_fetch 
+    {
+      "from": 0,
+      "size": 10,
+      "query": {
+        "match": {
+          "_all": {
+            "query": "test"
+          }
+        }
+      }
+    }
+    
+
+However, the scores in the results are identical whether or not the boost
+command is issued after indexing.
+
+I would prefer to perform this boosting operation during indexing because the
+title field will be considered more important than other fields across all
+documents. Also, in the example above the fields are constant for each
+document, but in general this will not be the case, though all documents will
+always have a title field. Each search needs to be should be performed over
+all available fields.
+
+A few things. First, index-time boosting must be specified _before_ you index
+the documents. The boost value is baked into the document as it is being
+indexed, which means you cannot boost documents after they have already been
+indexed.
+
+This makes index-time boosting very inflexible and generally hard to work
+with. It is not recommended to use index-time boosting at all, since you can
+accomplish the same thing with query-time boosting and still retain
+flexibility. In general, people want to tweak boosting and scoring without
+needing to re-index data.
+
+What I would do is use a multi-match query, which gives you several nice
+behaviors. Here is an example (note, you should use lowercase index and type
+names). First, index the data like you did before:
+
+    
+    
+    DELETE /global
+    
+    PUT /global/form/456 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "Test",
+      "Link": "",
+      "Title": "Test Form"
+    }
+    
+    PUT /global/form/457 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "",
+      "Link": "",
+      "Title": "Another Form"
+    }
+    
+    PUT /global/form/458 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "test form",
+      "Link": "",
+      "Title": "Ryans Form"
+    }
+    
+    PUT /global/form/460 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "",
+      "Link": "",
+      "Title": "permissions test"
+    }
+    
+    PUT /global/form/576 
+    {
+      "KeyWords": "",
+      "OneLineDesc": "Test test test test test test test test",
+      "Link": "",
+      "Title": "My Test Form"
+    }
+    
+
+And now use a multi-match to search and boost at the same time:
+
+    
+    
+    POST /global/form/_search
+    {
+        "query": {
+            "multi_match": {
+               "query": "test",
+               "fields": ["Title^5", "_all"]
+            }
+        }
+    }
+    
+
+The `multi_match` allows you to use the match query against multiple fields.
+In this example, we are searching `Title` and `_all`. The caret (`^5`) on the
+`Title` field adds a boost value of five to the title field, which means that
+matches on `Title` carry higher scores than matches on any other field. This
+will skew search results such that title-matches appear at the top.
+
+In addition, `multi_match` uses a `dis_max` query by default, which is the
+general behavior that you want. In general, a `dis_max` favors matches
+occurring in a single field, rather than spread across multiple fields.
+
+For example, a match of `quick fox` in the title field would score higher than
+a match of `quick` in the title and `fox` in the body.
+

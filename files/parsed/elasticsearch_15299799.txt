@@ -1,0 +1,84 @@
+15299799 ElasticSearch: Impact of setting a "not_analyzed" field as
+"store":"yes"?
+
+Suppose I have a string field specified as `not_analyzed` in the mapping. If I
+then add `"store":"yes"` to the mapping, will ElasticSearch duplicate the
+storage? My understanding of `not_analyzed` fields is that they are not run
+through an Analyzer, indexed _as is_ , but a client is able to match against
+it. So, if a field is both `not_analyzed` and `store:yes`, this could cause
+ElasticSearch to keep two copies of the string.
+
+My question:
+
+  * If a string field is stored as both `not_analyzed` and `store:yes`, will there be duplicate storage of the string?
+
+I hope that's clear enough. Thanks!
+
+You're mixing up the concept of indexed field and stored field in lucene, the
+library that elasticsearch is built on top of.
+
+A field is indexed when it goes within the inverted index, the data structure
+that lucene uses to provide its great and fast full text search capabilities.
+If you want to search on a field, you do have to index it. When you index a
+field you can decide whether you want to index it as it is, or you want to
+analyze it, which means deciding a tokenizer to apply to it, which will
+generate a list of tokens (words) and a list of token filters that can modify
+the generated tokens (even add or delete some). The way you index a field
+affects how you can search on it. If you index a field but don't analyze it,
+and its text is composed of multiple words, you'll be able to find that
+document only searching for that exact specific text, whitespaces included.
+
+A field is stored when you want to be able to retrieve it. Let's say Lucene
+provides some kind of storage too, which doesn't have anything to do with the
+inverted index itself. When you search using lucene you get back a list of
+document ids that match. Then you can retrieve some text from their stored
+fields, which is what you literally show as search results. If you don't store
+a field you'll never be able to get it back from lucene (this is not true for
+elasticsearch though, as I'm going to explain below).
+
+You can have fields that you only want to search on, and never show: indexed
+and not stored (default in lucene).  
+You can have fields that you want to search on and also retrieve: indexed and
+stored.  
+You can have fields that you don't want to search on, but you do want to
+retrieve to show them.
+
+Therefore the two data structures are not related to each other. If you both
+index and store a field in lucene, its content will not be present twice in
+the same form. Stored fields are stored as they are, as you send them to
+lucene, while indexed fields might be analyzed and will be part of the
+inverted index, which is something else. Stored fields are made to be
+retrieved for a specific document (by lucene document id), while indexed
+fields are made to search, in such a structure that literally inverts the text
+having as a result each term as key, together with a list of document ids that
+contain it (the postings list).
+
+When it comes to elasticsearch things change a little though. When you don't
+configure a field as stored in your mapping (default is `store:no`) you are
+able to retrieve it anyway by default. This happens because elasticsearch
+always stores in lucene the whole source document that you send to it (unless
+you disable this feature) within a special lucene field, called
+[_source](http://www.elasticsearch.org/guide/reference/mapping/source-
+field.html).
+
+When you search using elasticsearch you get back by default the whole source
+field, but you can also ask for specific fields. What happens in that case is
+that elasticsearch checks whether those specific fields are stored or not in
+lucene. If they are the content will be retrieved from lucene, otherwise the
+`_source` stored field will be retrieved from lucene, parsed as json (pull
+parsing) and those specific fields will be extracted. In the first case it
+might be a little faster, but not necessarily. If your source is really big
+and you only want to load a couple of fields, configuring them as stored in
+lucene would probably make the loading process faster; on the other hand, if
+your `_source` is not that big and you want to load many fields, then it's
+probably better to load only one stored field (the `_source`), which would
+lead to a single disk seek, parse it etc. In most of the cases using the
+`_source` field works just fine.
+
+To answer your question: inverted index and lucene storage are two completely
+different things. You end up having two copies of the same data in lucene only
+if you decide to store a field (`store:yes` in the mapping), since
+elasticsearch keeps that same content within the json `_source`, but this
+doesn't have anything to do with the fact that you're indexing or analyzing
+the field.
+

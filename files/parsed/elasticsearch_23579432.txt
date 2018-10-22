@@ -1,0 +1,65 @@
+23579432 Elastic Search in a complex document
+
+I have a document stated below. I would like to do a search but I could not do
+it as I lacked the knowledge. Please help. How can I do searches in
+ElasticSearch in complex aggregates?
+
+My Document
+
+    
+    
+    {
+        "_index": "vehicles",
+        "_type": "car",
+        "_id": "e16bd474-fa8e-4858-ab6c-3bbb3d0aa603",
+        "_version": 1,
+        "found": true,
+        "_source": {
+        "Type": {
+         "Name": "Mustang"
+      }
+    }
+    
+
+}
+
+My Search Query
+
+    
+    
+    GET _search 
+      {
+     "query":{
+        "filtered": {
+           "filter": {
+               "term": {
+                  "Name": "Mustang"
+               }
+                 }
+           }
+    
+         },
+     "from":0,
+     "size":10
+    }
+    
+
+If you only want the doc with "Name" : "Mustang" you can use
+
+`"query" : { "bool" : { "must" : { "term" : { "Name" : "Mustang" } } } }`
+
+The [Standard
+Analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html) is being applied to your `Name` field, so the term
+`Mustang` is being stored in the index as `mustang`. Change your query to use
+`"Name": "mustang"` and you should get a match.
+
+There are two issues:
+
+  1. You are using `term` filter which is searching for `Mustang` token in the index, however the standard analyzer is being used so it is actually indexed as `mustang`. 
+  2. You are searching in the wrong field. You should be using nested notation e.g. `Type.Name`
+
+This query should work as expected:
+
+`{"query":{ "filtered": { "filter": { "term": { "Type.Name": "mustang" } }}}}`
+

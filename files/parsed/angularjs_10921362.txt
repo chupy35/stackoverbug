@@ -1,0 +1,33 @@
+10921362 AngularJS linky filter throws an "Unknown Provider" error
+
+Here is the JSFiddle that shows what I'm doing, simply adding a filter to
+name.
+
+<http://jsfiddle.net/9Z5SJ/1/>
+
+    
+    
+    Error: Unknown provider: linkyFilterProvider <- linkyFilter
+        at Error (unknown source)
+        at http://code.angularjs.org/angular-1.0.0rc10.js:2530:15
+        at Object.getService [as get] (http://code.angularjs.org/angular-1.0.0rc10.js:2658:39)
+        at http://code.angularjs.org/angular-1.0.0rc10.js:2535:45
+        at Object.getService [as get] (http://code.angularjs.org/angular-1.0.0rc10.js:2658:39)
+        at http://code.angularjs.org/angular-1.0.0rc10.js:8956:24
+        at filter (http://code.angularjs.org/angular-1.0.0rc10.js:5744:14)
+        at _filterChain (http://code.angularjs.org/angular-1.0.0rc10.js:5735:41)
+        at statements (http://code.angularjs.org/angular-1.0.0rc10.js:5711:25)
+        at parser (http://code.angularjs.org/angular-1.0.0rc10.js:5644:13) 
+    
+
+Documentation on the _linky_ filter
+<http://docs.angularjs.org/api/angular.module.ngSanitize.filter.linky>
+
+You need to load and include the "sanitize" module to use "linky":
+
+Look for these two things: 1\. I added "<http://docs.angularjs.org/angular-
+sanitize-1.0.0rc10.min.js>" as a resource 2\. I linked it into my module by
+adding "ngSanitize" to angular.module('myApp',['ngSanitize']);
+
+See here: <http://jsfiddle.net/johnlindquist/y2eJL/>
+

@@ -1,0 +1,126 @@
+10756435 Limiting the number of results of should clauses in Elastic Search
+
+I'm writing a query to get results matching one of multiple phrases, like
+
+    
+    
+    {
+      'size': 10,
+      'from': 0,
+    
+      'query': {
+        'bool': {
+          'should': [
+            {'text': {'title': { 'query': 'some words' }}},
+            {'text': {'title': { 'query': 'other words' }}},
+            {'text': {'title': { 'query': 'some other words' }}},
+          ]
+        }
+      }
+    }
+    
+
+It works as expected, but I have a problem : the 10 scored results are all
+matching the same phrase.
+
+The solution I thought of was to limit the number of results from each
+`should` clause to 5 elements for example.
+
+The problem is that I don't see how to implement this using Elastic Search
+queries, and I don't know if it possible, or if it exists another way to do
+what I want.
+
+Any ideas ?
+
+Thanks !
+
+ElasticSearch is looking for the "most relevant" docs matching your query,
+while you are trying to achieve a union of 3 queries.
+
+The simplest (and fastest) way to do this would be to run three queries, using
+[multi search](http://www.elasticsearch.org/guide/reference/api/multi-
+search.html):
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/my_index/_msearch?pretty=1'  -d '
+    {}
+    {"query" : {"text" : {"title" : "some words"}}, "size" : 5}
+    {}
+    {"query" : {"text" : {"title" : "some other words"}}, "size" : 5}
+    {}
+    {"query" : {"text" : {"title" : "other words"}}, "size" : 5}
+    '
+    
+
+An alternative, depending on your requirements may be to use the [limit
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/limit-
+filter.html), but note that it limits the number of results PER SHARD, not per
+index. By default, an index has 5 primary shards, so if you specify a limit of
+5, you may well get 25 results back.
+
+So perhaps something like this:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/_all/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "bool" : {
+             "should" : [
+                {
+                   "filtered" : {
+                      "filter" : {
+                         "limit" : {
+                            "value" : 1
+                         }
+                      },
+                      "query" : {
+                         "text" : {
+                            "title" : "some words"
+                         }
+                      }
+                   }
+                },
+                {
+                   "filtered" : {
+                      "filter" : {
+                         "limit" : {
+                            "value" : 1
+                         }
+                      },
+                      "query" : {
+                         "text" : {
+                            "title" : "other words"
+                         }
+                      }
+                   }
+                },
+                {
+                   "filtered" : {
+                      "filter" : {
+                         "limit" : {
+                            "value" : 1
+                         }
+                      },
+                      "query" : {
+                         "text" : {
+                            "title" : "some other words"
+                         }
+                      }
+                   }
+                }
+             ]
+          }
+       }
+    }
+    '
+    
+
+This would give you the top scoring doc for each phrase on each shard (with 5
+shards, a maximum of 15 docs, which (because you haven't specified `size=15`)
+would be reduced to the top 10 docs).
+
+Your mileage may vary, depending on how your docs are distributed across your
+shards.
+

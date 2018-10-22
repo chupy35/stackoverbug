@@ -1,0 +1,122 @@
+15526844 How to search for a term and match a boolean condition
+
+I've had good success getting results for searches using the below syntax, but
+I'm having trouble adding a boolean condition.
+
+    
+    
+    http://localhost:9200/index_name/type_name/_search?q=test
+    
+
+My documents look like:
+
+    
+    
+    {
+        "isbn":"9780307414922",
+        "name":"Dark of the Night",
+        "adult":false
+    }
+    
+
+Here's my best guess as to how to achieve what I'm trying to do.
+
+    
+    
+    {
+        "query_string": {
+            "default_field": "_all",
+             "query": "test"
+        },
+        "from": 0,
+        "size": 20,
+        "terms": {
+            "adult": true
+        }
+    }
+    
+
+However this results in "Parse Failure [No parser for element
+[query_string]]]; }]"
+
+I'm using elastic search 0.20.5.
+
+**How can I match documents containing a search term the way "?q=test" does
+and filter by the document's adult property?**
+
+Thanks in advance.
+
+Your `adult == true` clause has to be part of the `query` \- you can't pass in
+a `term` clause as a top level parameter to `search`.
+
+So you could add it to the query as a _query clause_ , in which case you need
+to join both query clauses using a `bool` query, as follows:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/_all/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "bool" : {
+             "must" : [
+                {
+                   "query_string" : {
+                      "query" : "test"
+                   }
+                },
+                {
+                   "term" : {
+                      "adult" : true
+                   }
+                }
+             ]
+          }
+       },
+       "from" : 0,
+       "size" : 20
+    }
+    '
+    
+
+Really, though, query clauses should be used for:
+
+  * full text search
+  * clauses which affect the relevance score
+
+However, your `adult == true` clause is not being used to change the
+relevance, and it doesn't involve full text search. It's more of a yes/no
+response, in other words it is better applied as a filter clause.
+
+This means that you need to wrap your full text query (`_all` contains `test`)
+in a query clause which accepts both a query and a filter: the `filtered`
+query:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/_all/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "filtered" : {
+             "filter" : {
+                "term" : {
+                   "adult" : true
+                }
+             },
+             "query" : {
+                "query_string" : {
+                   "query" : "test"
+                }
+             }
+          }
+       },
+       "from" : 0,
+       "size" : 20
+    }
+    '
+    
+
+Filters are usually faster because:
+
+  * they don't have to score documents, just include or exclude them
+  * they can be cached and reused 
+

@@ -1,0 +1,42 @@
+18483358 Elasticsearch get position of phrase in document
+
+I'm working on a project where I need full-text search a book. I only need to
+search in one book at a time and I need to get offset of search term from
+beginning of the book. I need it for site that's powered by Django/python but
+I think that Elasticsearch is better and faster.
+
+So far I haven't used Elasticsearch directly only through abstraction layer
+django-haystack.
+
+Edit1: I need to display for users not only the text they are searching for
+but also link for them to get to that text. Basically it should work like
+search box in preview on Mac. Users see search results with surrounding text
+and if they click on it they are redirected by JS to part of the book, where
+the text is located.
+
+Will simple highlighting suffice? Even if not, a brute-force solution would be
+to set the highlighting pre_tags to a programmably-identifiable value and
+calculate the offset from that. Speed it up by setting term_vector to
+with_positions_offsets in the mapping to use lucene's fast-vector-highlighter:
+
+    
+    
+    {
+        "type_name" : {
+            "content" : {"term_vector" : "with_positions_offsets"}
+        }
+    }
+    
+
+If that's not acceptable, check out
+[this](https://stackoverflow.com/a/18246148/354311) answer for information on
+how the offsets are stored internally.
+
+EDIT: Based on your edit, I'm not sure how having the offset would help that
+much. I mean, unless you're displaying preformatted text or some other fixed
+layout, how would you know where on the rendered page the offset corresponds?
+
+I think the most elegant solution is to use pre_tags and post_tags to wrap
+matched text in elements. Then use JavaScript to assign each match an id,
+creating new fragment identifiers to which you can set the location.
+

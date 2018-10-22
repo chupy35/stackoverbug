@@ -1,0 +1,101 @@
+18217139 Elasticsearch exclude bool "term" from getting highlighted
+
+I have the following elastic search query with query string that should match
+all the fields and term query should match the respective fields given below.
+I want only the query_string to be part of the highlight. When i use
+required_field_match it highlights only the term "email" on the channel field.
+without required_field_match it matches "email" and query_string on all the
+fields which i dont want. Can you let me know how to exclude "channel" field
+from highlight ?
+
+    
+    
+     {
+       "query":{
+          "bool":{
+             "must":[
+                {
+                   "term":{
+                      "channel":"email"
+                   }
+                },
+                {
+                   "query_string":{
+                      "query":"\"payment type\"",
+                      "default_operator":"AND"
+                   }
+                }
+             ]
+          }
+       },
+       "highlight":{
+          "pre_tags":[
+             "<span class='highlight'>"
+          ],
+          "post_tags":[
+             "</span>"
+          ],
+          "require_field_match":false,
+          "fields":{
+             "requestSummary":{
+                "number_of_fragments":0
+             },
+             "emails.emailBody":{
+                "number_of_fragments":0
+             },
+             "chatTextArray.text":{
+                "number_of_fragments":0
+             },
+             "chatTextArray.name":{
+                "number_of_fragments":0
+             }
+          }
+       },
+       "facets":{
+          "channel":{
+             "terms":{
+                "field":"channel"
+             }
+          },
+          "siteId":{
+             "terms":{
+                "field":"siteId"
+             }
+          },
+          "closeDt":{
+             "terms":{
+                "field":"closeDt"
+             }
+          },
+          "srId":{
+             "terms":{
+                "field":"srId"
+             }
+          }
+       }
+    }
+    
+
+**Search results:**
+
+    
+    
+        {
+           "highlight":{
+              "emails.emailBody":[
+                 "helps keep your information safe, visit:  http://pages.half.ebay.com/help/policy/privacy.html#toc-02 
+    In this <span class='highlight'>email</span>"
+              ],
+              "requestSummary":[
+                 "Change <span class='highlight'>payment</span> <span class='highlight'>type</span>"
+              ]
+           }
+        }
+    
+
+This is the default behaviour of elastic highlighter. You can overwrite the
+highlighter query by using highlight_query property
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-highlighting.html#_highlight_query>
+

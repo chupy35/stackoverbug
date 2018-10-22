@@ -1,0 +1,21 @@
+22760395 haystack elasticsearch facet but disregard filters on this query
+
+Using haystack solr I can do this:
+
+    
+    
+    # facet by category but disregard any category filters on this query
+    squeryset = squeryset.facet('{!ex=category}category')  
+    
+
+which will give me facets for the category but ignore any category filters
+
+Now how do I do the same query using elasticsearch?
+
+It's for when someone queries for something with a specific category, I can
+show the counts for the other categories they did not select.
+
+I was looking for the same thing. See <http://demo.fullscale.co/multiselect/>
+for a working demo to do this in ES. It is however not supported by Haystack.
+I'm working on that to make it work. Paul
+

@@ -1,0 +1,91 @@
+8565441 Elasticsearch DSL query from an SQL statement
+
+I'm new to Elasticsearch. I don't think I fully understand the concept of
+query and filters. In my case I just want to use filters as I don't want to
+use advance feature like scoring.
+
+How would I convert the following SQL statement into elasticsearch query?
+
+    
+    
+    SELECT * FROM advertiser 
+    WHERE company like '%com%' 
+    AND sales_rep IN (1,2) 
+    
+
+What I have so far:
+
+    
+    
+    curl -XGET 'localhost:9200/advertisers/advertiser/_search?pretty=true' -d ' 
+     { 
+         "query" : { 
+             "bool" : { 
+                 "must" : { 
+                     "wildcard" : { "company" : "*com*" } 
+                 } 
+             } 
+         }, 
+         "size":1000000 
+    
+    }' 
+    
+
+How to I add the OR filters on sales_rep field?
+
+Thanks
+
+Add a "should" clause after your must clause. In a bool query, one or more
+should clauses must match by default. Actually, you can set the
+"minimum_number_should_match" to be any number, Check out the [bool query
+docs](http://www.elasticsearch.org/guide/reference/query-dsl/bool-query.html).
+
+For your case, this should work.
+
+    
+    
+        "should" : [
+            {
+                "term" : { "sales_rep_id" : "1" }
+            },
+            {
+                "term" : { "sales_rep_id" : "2" }
+            }
+        ],
+    
+
+The same concept works for bool filters. Just change "query" to "filter". The
+bool filter docs are
+[here](http://www.elasticsearch.org/guide/reference/query-dsl/bool-
+filter.html).
+
+I come across this post 4 years too late...
+
+Anyways, perhaps the following code could be useful...
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "wildcard": {
+              "company": "*com*"
+            }
+          },
+          "filter": {
+            "bool": {
+              "should": [
+                {
+                  "terms": {
+                    "sales_rep_id": [ "1", "2" ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+

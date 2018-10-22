@@ -1,0 +1,22 @@
+18338535 Elastic Search - Any way to set filter in CountRequestBuilder
+
+Is there any way to set filters in a CountRequestBuilder like we have
+setFilter() in SearchRequestBuilder. Because of this I am unable to use
+CountRequestBuilder and using as below
+
+    
+    
+    SearchRequestBuilder searchBuilder = client.prepareSearch(indexName).setTypes(typeName).setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setExplain(true);           
+    SearchResponse response = searchBuilder.execute().actionGet();
+    Long count = response.getHits().getTotalHits();
+    
+
+Any other ways to get count of search filters?
+
+Top level filter is special construct that should be used only in a few
+particular cases such as filtering results without filtering corresponding
+facets. So, the best way to solve this issue is by replacing top level filter
+with `QueryBuilders.filteredQuery(...)`. Alternatively, you can use
+`SearchType.COUNT` instead of `SearchType.DFS_QUERY_THEN_FETCH` to get back
+just counts.
+

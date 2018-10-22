@@ -1,0 +1,6 @@
+31332223 Spring boot with Spring framework 3.1.1
+
+Is Spring boot support spring framework 3.1.1?.The reason is I need to deploy
+external project JAR(which is developed in Spring3 and hibernate3 ) with
+Spring boot project.Please help me.Is it possible?
+

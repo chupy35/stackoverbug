@@ -1,0 +1,4 @@
+31834248
+make elasticsearch rebalance all data after adding nodes
+<p>So I've been working with a two node cluster for several days now and was able to acquire more hardware.  I've successfully added three more nodes to my cluster.  However I was tracking that when I added the nodes that my shards would balance across the cluster.  This is not happening.</p>&#xA;&#xA;<p>I added two cluster settings</p>&#xA;&#xA;<pre><code>cluster.routing.allocation.allow.rebalance:always&#xA;cluster.routing.allocation.enable:all&#xA;</code></pre>&#xA;&#xA;<p>does anyone have any ideas on how I get my data to balance across the cluster?</p>&#xA;
+<p>I had too much disk utilization on my new nodes (8% remaining).  I didn't figure this out until I tried to manually allocate a shard on one of the new nodes.  I never saw any errors anywhere else.</p>&#xA;

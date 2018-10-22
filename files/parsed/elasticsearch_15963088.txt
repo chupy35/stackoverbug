@@ -1,0 +1,133 @@
+15963088 Elasticsearch faceting query
+
+I was wondering if I can write a faceting query for something like this
+
+My document structure
+
+    
+    
+    UserID, AnswerID[] (int array)
+    1 , [9,10,11,56,78,99]
+    2 , [10,11,56,78,99]
+    3 , [8,10,12,56, 79,99]
+    4 , [9,10,11,56,78,99]
+    
+
+If I just want the count of users who answered 9,56 I can write a query. But I
+have two lists
+
+    
+    
+    List A - 9,10,11
+    ListB - 56,78,99
+    
+
+I want the permutation of the two lists.
+
+Count of users who answered [9,56], [9,78], [9,99], [10,56], [10,78], [10,99],
+[11,56]...
+
+How do I write a query to achieve something like this.
+
+Any help is appreciated,
+
+Thanks.
+
+It can work when not using lists:
+
+    
+    
+    # Print ES Version
+    curl 'http://localhost:9200/'
+    
+    # Delete the index `testindex`
+    curl -XDELETE 'http://localhost:9200/testindex'
+    
+    # Create the index `testindex`
+    curl -XPUT 'http://localhost:9200/testindex' -d '{
+        "settings" : {
+            "index" : {
+                "number_of_shards" : 1,
+                "number_of_replicas" : 0
+            }
+        }
+    }'
+    
+    # Wait for yellow
+    curl -XGET 'http://localhost:9200/_cluster/health?wait_for_status=yellow'
+    
+    # Index docs
+    curl -XPUT http://localhost:9200/testindex/type/1 -d '{ "listA":"value1", "listB":"value2" }'
+    curl -XPUT http://localhost:9200/testindex/type/2 -d '{ "listA":"value1", "listB":"value3" }'
+    curl -XPUT http://localhost:9200/testindex/type/3 -d '{ "listA":"value1", "listB":"value2" }'
+    
+    # Refresh docs
+    curl -XPOST 'http://localhost:9200/testindex/_refresh'
+    
+    # TermFacet
+    curl -XPOST 'http://localhost:9200/testindex/type/_search?pretty' -d '
+    {
+       "query": { "match_all" : {} },
+        "facets" : {
+            "tag" : {
+                "terms" : {
+                    "script_field" : "_source.listA + \" - \" + _source.listB"
+                }
+            }
+        }   
+    }'
+    
+
+Gives:
+
+    
+    
+    {
+      "took" : 1,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 3,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "testindex",
+          "_type" : "type",
+          "_id" : "1",
+          "_score" : 1.0, "_source" : { "listA":"value1", "listB":"value2" }
+        }, {
+          "_index" : "testindex",
+          "_type" : "type",
+          "_id" : "2",
+          "_score" : 1.0, "_source" : { "listA":"value1", "listB":"value3" }
+        }, {
+          "_index" : "testindex",
+          "_type" : "type",
+          "_id" : "3",
+          "_score" : 1.0, "_source" : { "listA":"value1", "listB":"value2" }
+        } ]
+      },
+      "facets" : {
+        "tag" : {
+          "_type" : "terms",
+          "missing" : 0,
+          "total" : 0,
+          "other" : -3,
+          "terms" : [ {
+            "term" : "value1 - value2",
+            "count" : 2
+          }, {
+            "term" : "value1 - value3",
+            "count" : 1
+          } ]
+        }
+      }
+    }
+    
+
+But I have no idea when using list... I would love to know if it can be
+done...
+

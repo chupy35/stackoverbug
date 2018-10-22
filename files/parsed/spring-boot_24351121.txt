@@ -1,0 +1,13 @@
+24351121 can @ConfigurationProperties annotated class auto refresh?
+
+Can `@ConfigurationProperties annotated class` be auto refreshed when a value
+is changed in `application.properties` ?
+
+Or do we have to restart to make the new value apply?
+
+Short answer: "no". There is no general way to know if a change in
+application.properties requires a restart (e.g. a TCP port change) or not. If
+you know that a change will not require a restart then you can rebind the
+configuration properties using the `PropertiesConfigurationFactory` (or the
+public API of `ConfigurationPropertiesBindingPostProcessor`).
+

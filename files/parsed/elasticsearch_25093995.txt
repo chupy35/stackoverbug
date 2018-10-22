@@ -1,0 +1,199 @@
+25093995 Elastic search date range aggregation
+
+I have a Json Data
+
+    
+    
+    "hits": [
+             {
+                "_index": "outboxprov1",
+                "_type": "deleted-connector",
+                "_id": "AHkuN5_iRGO-R5dtaOvz6w",
+                "_score": 1,
+                "_source": {
+                   "user_id": "1a9d05586a8dc3f29b4c8147997391f9",
+                   "deleted_date": "2014-08-02T04:55:04.509Z"
+                }
+             },
+             {
+                "_index": "outboxprov1",
+                "_type": "deleted-connector",
+                "_id": "Busk7MDFQ4emtL3x5AQyZA",
+                "_score": 1,
+                "_source": {
+                   "user_id": "1a9d05586a8dc3f29b4c8147997391f9",
+                   "deleted_date": "2014-08-02T04:58:31.440Z"
+                }
+             },
+             {
+                "_index": "outboxprov1",
+                "_type": "deleted-connector",
+                "_id": "4AN0zKe9SaSF1trz1IixfA",
+                "_score": 1,
+                "_source": {
+                   "user_id": "1a9d05586a8dc3f29b4c8147997391f9",
+                   "deleted_date": "2014-07-02T04:53:07.010Z"
+                }
+             }
+    ]
+    
+
+Am trying to write aggregation query which will find records in particular
+"deleted_date" range.  This is my query
+
+    
+    
+    {
+      "size": 0,
+      "query": {
+        "match_all": {}
+      },
+      "aggs": {
+        "daily_team": {
+          "date_range": {
+            "field": "deleted_date",
+             "format": "YYYY-MM-DD",
+            "ranges": [
+              {
+                "from": "2014-08-02"
+              },
+              {
+                "to": "2014-08-02"
+              }
+            ]
+          },
+          "aggs": {
+            "daily_team_count": {
+              "terms": {
+                "field": "user_id"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+My problem is am not getting correct number of records in particular date
+range. When i put any date am getting some doc_count number. Am new to elastic
+search. Am not sure is it the way to write range aggregation query. Please
+help me to solve this issue.
+
+I think problem is you are confused with "from" and "to" of date range
+aggregation, with range filter. Range filter includes both date (from and to )
+in default. But in date_range aggregation, includes the from value and
+excludes the to value for each range..
+
+In your query,
+
+    
+    
+    {
+      "size": 0,
+      "query": {
+        "match_all": {}
+      },
+      "aggs": {
+        "daily_team": {
+          "date_range": {
+            "field": "deleted_date",
+             "format": "YYYY-MM-DD",
+            "ranges": [
+              {
+                "from": "2014-08-02"
+              },
+              {
+                **"to": "2014-08-02"** -- > if you want to include 2014-08-02 date then do,
+                  "to" : "2014-08-03" (increase date by one, so 08-02 is included) 
+              }
+            ]
+          },
+          "aggs": {
+            "daily_team_count": {
+              "terms": {
+                "field": "user_id"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+This was also encountered by me, and I think your problem is also same.
+
+FYI, look at the
+[link](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-daterange-aggregation.html).
+
+What OP is looking for is `InternalDateRange` query. Try this instead:
+
+    
+    
+     {
+      "size": 0,
+      "query": {
+        "match_all": {}
+      },
+      "aggs": {
+        "daily_team": {
+          "date_range": {
+            "field": "deleted_date",
+            "format": "YYYY-MM-DD",
+            "ranges": [
+              {
+                "from": "2014-08-02||/d",   // /d rounds off to day
+                                            // from value -> 2014-08-02T00:00:00.000Z
+                "to": "2014-08-03||/d"      // to value -> 2014-08-03T00:00:00.000Z
+              }
+            ]
+          },
+          "aggs": {
+            "daily_team_count": {
+              "terms": {
+                "field": "user_id"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+This will return count of matching results in single bucket named
+`daily_team`.
+
+    
+    
+    "buckets": [
+               {
+                  "key": "2014-08-02T00:00:00.000Z-2014-08-03T00:00:00.000Z",
+                  "from": 1470096000000,    //test data value
+                  "from_as_string": "2014-08-02T00:00:00.000Z",
+                  "to": 1470182400000,      //test data value
+                  "to_as_string": "2014-08-03T00:00:00.000Z",
+                  "doc_count": 0
+               }
+            ]
+    
+
+This will return single bucket containing matching `doc_count`.
+
+    
+    
+    "ranges": [
+          {
+            "from": "2014-08-02"
+          },
+          {
+            "to": "2014-08-02"                
+          }
+    
+
+Using above ranges will return 2 buckets, one each for `from` and `to` date
+range.
+
+`from -> 2014-08-02-* to -> *-2014-08-02` as shown on [official documentation
+page](https://www.elastic.co/guide/en/elasticsearch/reference/2.4/search-
+aggregations-bucket-daterange-aggregation.html "official documentation page").
+

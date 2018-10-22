@@ -1,0 +1,4 @@
+34037215
+Which is Better when you use Java to query in Elastic Search, Java API or passing the JSON string to setQuery?
+<p>Others languages except Java use Restful API to talk to Elastic Search Server. In marvel it is easy to write JSON format query to do the test. But it seems that Java API for Elastic Search is not as straightfoward as JSON string. But Java also supports passing JSON string. Which one is better?</p>&#xA;
+<p>Other languages typically use some sort of client library that converts API calls to json rest calls to elastic. Java API works the same way, as it converts your api calls to json. It is more preferred to use API instead of doing json directly as it correctly handles responses/errors as well as creating json correctly.</p>&#xA;

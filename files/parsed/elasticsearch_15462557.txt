@@ -1,0 +1,43 @@
+15462557 Statistics/Facets on elasticsearch
+
+I have a little problem with facets in elasticsearch. I have a table videos, a
+table channels, 1 channel has many videos. I just want to show a donut with %
+of views_count per channel on the X lastest videos.
+
+In SQL:
+
+    
+    
+    SELECT SUM(views_count) FROM videos WHERE videos.channel_id = X ORDER BY published_at DESC LIMIT Y
+    
+
+I can do that on all videos but I don't arrive to do that with the LIMIT. Any
+Idea?? Thanks
+
+If I understand you correctly, you would like to limit your facet to the
+latest e.g 100 videos?
+
+I don't _think_ this is possible, so the limitation should have to be done at
+the query (or facet_filter), setting a range for the data to be considered:
+
+    
+    
+    {
+        "facets": {
+            "views_count": {
+                "terms": {
+                    "field": "videos.channel_id"
+                }
+            }
+        }, 
+        "from": 0, 
+        "query": {
+            "range" : {
+                "published_at" : { 
+                    "from" : <some_start_date>
+                }
+            }
+        }
+    }
+    
+

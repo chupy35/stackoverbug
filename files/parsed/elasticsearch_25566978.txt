@@ -1,0 +1,26 @@
+25566978 No search hits after moving Elasticsearch index
+
+I need to move an Elasticsearch index from a remote host to my local host. A
+bit of research had me find a tool called
+[elasticdump](https://github.com/taskrabbit/elasticsearch-dump) which seemed
+to be the right one for the job. As specified on its GitHub page, I ran the
+following command:
+
+    
+    
+    elasticdump --input=http://remote_host/index_name --ouput=http://localhost/index_name
+    
+
+After running it, the local index indeed contains the documents from the
+remote one. But when I pose a query to the local Elasticsearch's search API, I
+get no results while the same query returns several hits when posed to the
+remote Elasticsearch's API.
+
+What is necessary to make the local search API work?
+
+There's now a mapping import/export flag you can use with elasticdump, which
+may be the issue:
+
+  * `elasticdump --input=http://production.es.com:9200/my_index --output=http://staging.es.com:9200/my_index --type=mapping`
+  * `elasticdump --input=http://production.es.com:9200/my_index --output=http://staging.es.com:9200/my_index --type=data`
+

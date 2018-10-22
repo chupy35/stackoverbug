@@ -1,0 +1,66 @@
+26890887 React: avoid controlled component boilerplate
+
+So I'm just asking out of curiosity,
+
+Anyone found a clever way to handle 2-way data binding in controlled
+components (input, select, ...) without having to write all of the following:
+
+    
+    
+      getInitialState: function() {
+        return {value: 'Hello!'};
+      },
+      handleChange: function(event) {
+        this.setState({value: event.target.value});
+      },
+      render: function() {
+        var value = this.state.value;
+        return <input type="text" value={value} onChange={this.handleChange} />;
+      } 
+    
+
+You may want to read "Two-Way Binding Helpers" section of the documentation:
+<http://facebook.github.io/react/docs/two-way-binding-helpers.html>
+
+There is this `LinkedStateMixin`:
+
+    
+    
+    var NoLink = React.createClass({
+      getInitialState: function() {
+        return {message: 'Hello!'};
+      },
+      handleChange: function(event) {
+        this.setState({message: event.target.value});
+      },
+      render: function() {
+        var message = this.state.message;
+        return <input type="text" value={message} onChange={this.handleChange} />;
+      }
+    });
+    
+    
+    var WithLink = React.createClass({
+      mixins: [React.addons.LinkedStateMixin],
+      getInitialState: function() {
+        return {message: 'Hello!'};
+      },
+      render: function() {
+        return <input type="text" valueLink={this.linkState('message')} />;
+      }
+    });
+    
+
+A trick that's worth knowing - since the `onChange` event bubbles up, you can
+wrap form inputs in a container and register the `onChange` on that instead -
+`<form>` is perfect for this.
+
+Then you can write a generic `onChange` handler which pulls data from the
+event's `target` \- you will need to add some identifying info to the field,
+which is what the `name` attribute is for anyway.
+
+Here's a [Gist with an example
+implementation](https://gist.github.com/insin/082c0d88f6290a0ea4c7) and a
+[live demo](http://bl.ocks.org/insin/raw/082c0d88f6290a0ea4c7/) of it in
+action - form input state is displayed below the form.
+

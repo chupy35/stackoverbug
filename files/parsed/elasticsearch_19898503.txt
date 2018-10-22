@@ -1,0 +1,48 @@
+19898503 Elasticsearch not storing field, what am I doing wrong?
+
+I have something like the following template in my Elasticsearch. I just want
+certain part of the data returned, so I turn the source off, and explicitly
+stated store for the fields I want.
+
+    
+    
+    {
+      "template_1" : {
+        "order" : 20,
+        "template" : "test*",
+        "settings" : { },
+        "mappings" : {
+          "_default_" : {
+            "_source" : {
+              "enabled" : false
+            }
+          },
+          "type_1" : {
+            "mydata" :
+              "store" : "yes",
+              "type" : "string"
+            }
+          }
+        }
+      }
+    }
+    
+
+However, when I query the data, I don't get the fields back. The query works,
+however, if I enable the _source field. I am just starting with Elasticsearch,
+so I am not quite sure what I am doing wrong. Any help would be appreciated.
+
+Field definitions should be wrapped in `properties` section of your mapping:
+
+    
+    
+      "type_1" : {
+        "properties": {
+          "mydata" :
+            "store" : "yes",
+            "type" : "string"
+          }
+        }
+      }
+    
+

@@ -1,0 +1,40 @@
+11066231 eval on expression of ngrepeat
+
+I would like to access a scope expression, that is assigned to a variable,
+through a ng-repeat expression.
+
+So, what I wanna do is something like that:
+
+    
+    
+    ng-repeat="variable in eval(key)"
+    
+
+Unfortunately it is not valid. How can I workaround this?
+
+This would work:
+
+HTML:
+
+    
+    
+    <div ng-controller="MyCtrl">
+        <div ng-repeat="item in $eval(key)">{{item}}</div>
+    </div>
+    
+
+JS:
+
+    
+    
+    function MyCtrl($scope) {
+        $scope.key = "items";
+        $scope.items = [1,2,3];
+    }
+    ​
+    
+
+<http://jsfiddle.net/andytjoslin/n5h4U/>
+
+(edited, see comments)
+

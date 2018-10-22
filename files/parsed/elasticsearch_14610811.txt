@@ -1,0 +1,179 @@
+14610811 ElasticSerach - Statistical facets on length of the list
+
+I have the following sample mappipng:
+
+    
+    
+    {
+        "book" : {
+            "properties" : {
+                            "author" : { "type" : "string" },
+                            "title" : { "type" : "string" },
+                            "reviews" : {
+                                    "properties" : {
+                                            "url" : { "type" : "string" },
+                                            "score" : { "type" : "integer" }
+                                    }
+                            },
+                            "chapters" : {
+                                    "include_in_root" : 1,
+                                    "type" : "nested",
+                                    "properties" : {
+                                            "name" : { "type" : "string" }
+                                    }
+                            }
+                    }
+            }
+    }
+    
+
+I would like to get a facet on number of reviews - i.e. length of the
+"reviews" array. For instance, verbally spoken results I need are: "100
+documents with 10 reviews, 20 documents with 5 reviews, ..."
+
+I'm trying the following statistical facet:
+
+    
+    
+    {
+        "query" : {
+            "match_all" : {}
+        },
+        "facets" : {
+            "stat1" : {
+                "statistical" : {"script" : "doc['reviews.score'].values.size()"}
+            }
+        }
+    }
+    
+
+but it keeps failing with:
+
+    
+    
+    {
+      "error" : "SearchPhaseExecutionException[Failed to execute phase [query_fetch], total failure; shardFailures {[mDsNfjLhRIyPObaOcxQo2w][facettest][0]: QueryPhaseExecutionException[[facettest][0]: query[ConstantScore(NotDeleted(cache(org.elasticsearch.index.search.nested.NonNestedDocsFilter@a2a5984b)))],from[0],size[10]: Query Failed [Failed to execute main query]]; nested: PropertyAccessException[[Error: could not access: reviews; in class: org.elasticsearch.search.lookup.DocLookup]
+    [Near : {... doc[reviews.score].values.size() ....}]
+                     ^
+    [Line: 1, Column: 5]]; }]",
+      "status" : 500
+    }
+    
+
+**How can I achieve my goal?**
+
+ElasticSearch version is 0.19.9.
+
+Here is my sample data:
+
+    
+    
+    {
+            "author" : "Mark Twain",
+            "title" : "The Adventures of Tom Sawyer",
+            "reviews" : [
+                    {
+                            "url" : "amazon.com",
+                            "score" : 10
+                    },
+                    {
+                            "url" : "www.barnesandnoble.com",
+                            "score" : 9
+                    }
+            ],
+            "chapters" : [
+                    { "name" : "Chapter 1" }, { "name" : "Chapter 2" }
+            ]
+    }
+    
+    {
+            "author" : "Jack London",
+            "title" : "The Call of the Wild",
+            "reviews" : [
+                    {
+                            "url" : "amazon.com",
+                            "score" : 8
+                    },
+                    {
+                            "url" : "www.barnesandnoble.com",
+                            "score" : 9
+                    },
+                    {
+                            "url" : "www.books.com",
+                            "score" : 5
+                    }
+            ],
+            "chapters" : [
+                    { "name" : "Chapter 1" }, { "name" : "Chapter 2" }
+            ]
+    }
+    
+
+It looks like you are using curl to execute your query and this curl statement
+looks like this:  curl localhost:9200/my-index/book -d '{....}'
+
+The problem here is that because you are using apostrophes to wrap the body of
+the request, you need to escape all apostrophes that it contains. So, you
+script should become:
+
+    
+    
+    {"script" : "doc['\''reviews.score'\''].values.size()"}
+    
+
+or
+
+    
+    
+    {"script" : "doc[\"reviews.score"].values.size()"}
+    
+
+The second issue is that from your description it looks like your are looking
+for a [histogram
+facet](http://www.elasticsearch.org/guide/reference/api/search/facets/histogram-
+facet.html) or a [range
+facet](http://www.elasticsearch.org/guide/reference/api/search/facets/range-
+facet.html) but not for a statistical facet. So, I would suggest trying
+something like this:
+
+    
+    
+    curl "localhost:9200/test-idx/book/_search?search_type=count&pretty" -d '{
+        "query" : {
+            "match_all" : {}
+        },
+        "facets" : {
+            "histo1" : {
+                "histogram" : {
+                    "key_script" : "doc[\"reviews.score\"].values.size()",
+                    "value_script" : "doc[\"reviews.score\"].values.size()",
+                    "interval" : 1
+                }
+            }        
+        }
+    }'
+    
+
+The third problem is that the script in the facet will be called for every
+single record in the result list and if you have a lot of results it might
+take really long time. So, I would suggest indexing an additional field called
+`number_of_reviews` that should be populated with the number of reviews by
+your client. Then your query would simply become:
+
+    
+    
+    curl "localhost:9200/test-idx/book/_search?search_type=count&pretty" -d '{
+        "query" : {
+            "match_all" : {}
+        },
+        "facets" : {
+            "histo1" : {
+                "histogram" : {
+                    "field" : "number_of_reviews"
+                    "interval" : 1
+                }
+            }        
+        }
+    }'
+    
+

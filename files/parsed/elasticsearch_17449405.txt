@@ -1,0 +1,123 @@
+17449405 Searching in array by elasticsearch
+
+I want to search in elasticsearch but getting hit even though the condition
+does not match. For eg:-
+
+    
+    
+         {
+             tweet: [
+                  {
+                      firstname: Lav
+                      lastname: byebye
+                 }
+                 {
+                       firstname: pointto
+                       lastname: ihadcre
+                 }
+                 {
+                       firstname: letssearch
+                       lastname: sarabhai
+                 }
+              ]
+          }
+        }
+    
+
+Now there are following condition:-
+
+1) must:- firstname: Lav must:- lastname: byebye required:there should be hit
+
+getting: Hit
+
+2) must:- firstname: Lav must:- lastname: ihadcre required:there should not be
+hit
+
+getting: Hit
+
+I should not be getting hit in 2nd condition which is problem
+
+thanks for help
+
+To achieve the behavior that you are describing, tweets should be indexed as
+[nested objects](http://www.elasticsearch.org/guide/reference/mapping/nested-
+type/) and searched using [nested
+query](http://www.elasticsearch.org/guide/reference/query-dsl/nested-query/)
+or [filter](http://www.elasticsearch.org/guide/reference/query-dsl/nested-
+filter/). For example:
+
+    
+    
+    curl -XDELETE localhost:9200/test-idx
+    curl -XPUT localhost:9200/test-idx -d '{
+        "settings": {
+            "index.number_of_shards": 1,
+            "index.number_of_replicas": 0
+        },
+        "mappings": {
+            "doc": {
+                "properties": {
+                    "tweet": {"type": "nested"}
+                }
+            }
+        }
+    }'
+    curl -XPUT "localhost:9200/test-idx/doc/1" -d '{
+        "tweet": [{
+            "firstname": "Lav",
+            "lastname": "byebye"
+        }, {
+            "firstname": "pointto",
+            "lastname": "ihadcre"
+        }, {
+            "firstname": "letssearch",
+            "lastname": "sarabhai"
+        }]
+    }
+    '
+    echo
+    curl -XPOST "localhost:9200/test-idx/_refresh"
+    echo
+    curl "localhost:9200/test-idx/doc/_search?pretty=true" -d '{
+        "query": {
+            "nested" : {
+                "path" : "tweet",
+                "score_mode" : "avg",
+                "query" : {
+                    "bool" : {
+                        "must" : [
+                            {
+                                "match" : {"tweet.firstname" : "Lav"}
+                            },
+                            {
+                                "match" : {"tweet.lastname" : "byebye"}
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }'
+    echo
+    curl "localhost:9200/test-idx/doc/_search?pretty=true" -d '{
+        "query": {
+            "nested" : {
+                "path" : "tweet",
+                "score_mode" : "avg",
+                "query" : {
+                    "bool" : {
+                        "must" : [
+                            {
+                                "match" : {"tweet.firstname" : "Lav"}
+                            },
+                            {
+                                "match" : {"tweet.lastname" : "ihadcre"}
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }'
+    
+

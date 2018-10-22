@@ -1,0 +1,54 @@
+24330289 Does Elasticsearch stream results?
+
+Does Elasticsearch stream the query results as they are "calculated" or does
+it calculate everything and then return the final response back to the client?
+
+By default elasticsearch will only return a limited set of results for a
+query. (i.e. searching for * will only return the default count set regardless
+of the number of matches).
+
+Generally to implement "streaming" , you make an initial search to get total
+count of matching documents and then ask for documents in ranges ( i.e. first
+10, next 10, etc.. )
+
+See
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-from-size.html>
+
+for how to request the number of documents returned.
+
+Answer to the question in the comments:
+
+> So question would this be the right way to export large results for a
+"report" type system? I'm not talking about frond end? I'm talking about a
+back end application that will execute a custom query and build a file with
+300000 + result
+
+I'm sure there might be a valid reasons for doing this, but to me it sounds
+like you're using a hammer to drive screws. Much of the point of using
+elasticsearch is to use it's aggregations features to do more of the computing
+in the data store.
+
+[Aggregations
+Documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations.html "Aggregations Documentation")
+
+If you really need the raw data of 300000 records, then thats what you need.
+However, if it's a report, that implies you're doing some manipulation of the
+data into metrics. Much of the point of ES is that it allows you to build
+"custom reports" on the fly. I suspect it will be much faster to put as much
+logic as you can into the query, rather simply manipulating the raw data.
+
+Without knowing more about the requirements, I can't come up with any better
+answer than that.
+
+Have you tried scroll query?
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-scroll.html> much easier to deal with than pagination.
+
+> Scrolling is not intended for real time user requests, but rather for
+processing large amounts of data, e.g. in order to reindex the contents of one
+index into a new index with a different configuration.
+

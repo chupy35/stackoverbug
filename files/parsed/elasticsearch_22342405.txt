@@ -1,0 +1,51 @@
+22342405 Is there any analyzer that performs exact word matching in elastic
+search
+
+Is there any analyzer that performs exact word matching in elastic search
+
+Example if, i have words like "America" and "American" and "America's", if i
+searched for "America" i should get only first one.. With standard analyzer it
+gives all the three ones.
+
+I want to make sure this only at query time. I don't want to make changes to
+existing index. Please help me.
+
+Set your mapping to `not_analyzed`
+
+    
+    
+    curl -XPOST localhost:9200/test -d '{
+        "mappings" : {
+            "type1" : {
+                "properties" : {
+                    "field1" : { "type" : "string", "index" : "not_analyzed" }
+                }
+            }
+        }
+    }'
+    
+
+That will not do anything to your input string, but will still allow it to be
+searchable. Note, if you do this searching on "america" will not match
+"America" as there is a difference in case.
+
+If you want to be able to match those, then you should try the
+[keyword](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+keyword-analyzer.html) analyzer.
+
+    
+    
+    curl -XPOST localhost:9200/test -d '{
+            "mappings" : {
+                "type1" : {
+                    "properties" : {
+                        "field1" : { "type" : "string", "analyzer" : "keyword" }
+                    }
+                }
+            }
+        }'
+    
+
+You need not to worry about analyzer.. While querying use term and terms
+queries it Ll behave as you asked..
+

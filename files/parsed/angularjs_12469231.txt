@@ -1,0 +1,15 @@
+12469231 cloning fields with angularjs
+
+I'm trying to figure out how and the best elegant way of cloning fields
+between forms using multiple controllers in AngularJS. My goal is to have one
+object and be able to map obj[1] to obj[1] in another controller.
+
+Here is my fiddle:
+
+<http://jsfiddle.net/jorgecas99/fw9UA/3/>
+
+Thanks!
+
+Simply use more keys inside of the `item` service.
+<http://jsfiddle.net/fw9UA/4/>
+

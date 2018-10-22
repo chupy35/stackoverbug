@@ -1,0 +1,62 @@
+25397055 How do I do a inner query in ElasticSearch with an outer 'Sort'
+
+I'd like to achieve the following in ElasticSearch. I can mostly get the
+correct results, the problem is that I can't get the ordering of the final
+results list.
+
+    
+    
+    SELECT User, ScanDate, TotalSize FROM 
+        [SELECT User, ScanDate, TotalSize FROM ElasticSearch 
+            GROUP BY User ORDER BY ScanDate]
+    ORDER BY TotalSize LIMIT 10
+    
+
+Essentially, what I'm trying to do is to:
+
+  * Get the Top 10 Users based on the TotalSize from their most recent Scan.
+
+I can get the data (using aggregates and sub aggregates of Max). But, I'm then
+struggling to get the final ordering - and otherwise I'd have to do this the
+code that consumes this data, which I'd really not have to do.
+
+* * *
+
+Given the data:
+
+  * Rich
+    * ScanDate:1, TotalSize:27
+    * ScanDate:2, TotalSize:3
+    * ScanDate:3, TotalSize:9
+  * Steve
+    * ScanDate:2, TotalSize:2
+    * ScanDate:5, TotalSize:1
+  * John
+    * ScanDate:1, TotalSize:50
+
+I want an ordered result of:
+
+  1. John (ScanDate:1, TotalSize:50)
+  2. Rich (ScanDate:3, TotalSize:9)
+  3. Steve (ScanDate:5, TotalSize:1)
+
+* * *
+
+The events that are submitted to ElasticSearch look like this:
+
+    
+    
+    {"User":"Rich","ScanDate":1,"TotalSize":27,"Type":"ScanEvent"}
+    
+
+TotalSize is a LONG. ScanDate is actually a timestamp. User is a STRING
+(NOT_ANALYZED).
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-sort.html>
+
+<https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-
+sorting.html>
+
+I guess this might help in what you are looking..
+

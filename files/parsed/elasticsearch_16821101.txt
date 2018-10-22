@@ -1,0 +1,109 @@
+16821101 How to set up ES cluster?
+
+Assuming I have 5 machines I want to run an elasticsearch cluster on, and they
+are all connected to a shared drive. I put a single copy of elasticsearch onto
+that shared drive so all three can see it. Do I just start the elasticsearch
+on that shared drive on eall of my machines and the clustering would
+automatically work its magic? Or would I have to configure specific settings
+to get the elasticsearch to realize that its running on 5 machines? If so,
+what are the relevant settings? Should I worry about configuring for replicas
+or is it handled automatically?
+
+its super easy.
+
+You'll need each machine to have it's own copy of ElasticSearch (simply copy
+the one you have now) -- the reason is that each machine / node whatever is
+going to keep it's own files that are sharded accross the cluster.
+
+The only thing you really need to do is edit the config file to include the
+name of the cluster.
+
+If all machines have the same cluster name elasticsearch will do the rest
+automatically (as long as the machines are all on the same network)
+
+Read here to get you started:
+<https://www.elastic.co/guide/en/elasticsearch/guide/current/deploy.html>
+
+When you create indexes (where the data goes) you define at that time how many
+replicas you want (they'll be distributed around the cluster)
+
+It is usually handled automatically.
+
+If autodiscovery doesn't work. Edit the elastic search config file, by
+enabling unicast discovery
+
+Node 1:
+
+    
+    
+        cluster.name: mycluster
+        node.name: "node1"
+        node.master: true
+        node.data: true
+        discovery.zen.ping.multicast.enabled: false
+        discovery.zen.ping.unicast.hosts: ["node1.example.com"]
+    
+
+Node 2:
+
+    
+    
+        cluster.name: mycluster
+        node.name: "node2"
+        node.master: false
+        node.data: true
+        discovery.zen.ping.multicast.enabled: false
+        discovery.zen.ping.unicast.hosts: ["node1.example.com"]
+    
+
+and so on for node 3,4,5. Make node 1 master, and the rest only as data nodes.
+
+**Edit:** Please note that by ES rule, if you have `N` nodes, then by
+convention, `N/2+1` nodes should be masters for fail-over mechanisms They may
+or may not be data nodes, though.
+
+Also, in case auto-discovery doesn't work, most probable reason is because the
+network doesn't allow it (and therefore disabled). If too many auto-discovery
+pings take place across multiple servers, the resources to manage those pings
+will prevent other services from running correctly.
+
+For ex, think of a 10,000 node cluster and all 10,000 nodes doing the auto-
+pings.
+
+I tried the steps that @KannarKK suggested on ES 2.0.2, however, I could not
+bring the cluster up and running. Evidently, I figured out something, as I had
+set tcp port number on Master, on the Slave configuration
+discovery.zen.ping.unicast.hosts needs Master's port number along with IP
+address ( tcp port number ) for discovery. So when I try following
+configuration it works for me.
+
+Node 1
+
+    
+    
+    cluster.name: mycluster
+    node.name: "node1"
+    node.master: true
+    node.data: true
+    http.port : 9200
+    tcp.port : 9300
+    discovery.zen.ping.multicast.enabled: false
+    # I think unicast.host on master is redundant.
+    discovery.zen.ping.unicast.hosts: ["node1.example.com"]
+    
+
+Node 2
+
+    
+    
+    cluster.name: mycluster
+    node.name: "node2"
+    node.master: false
+    node.data: true
+    http.port : 9201
+    tcp.port : 9301
+    discovery.zen.ping.multicast.enabled: false
+    # The port number of Node 1
+    discovery.zen.ping.unicast.hosts: ["node1.example.com:9300"]
+    
+

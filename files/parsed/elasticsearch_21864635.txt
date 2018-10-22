@@ -1,0 +1,108 @@
+21864635 Issues mapping a document with ElasticSearch
+
+I have a document that I was hoping to store in ElasticSearch and be able to
+run queries against, but I think the document structure is possibly badly
+formed and as such I wont be able to do effective queries.
+
+The document is trying to be generic and as such, has a set of repeating
+structures.
+
+For example:
+
+    
+    
+      description : [
+        { type : "port", value : 1234 }.
+        { type : "ipaddress", value : "192.168.0.1" },
+        { type : "path", value : "/app/index.jsp app/hello.jsp" },
+        { type : "upsince", value : "2014-01-01 12:00:00" },
+        { type : "location", value : "-40, 70" }
+      ]
+    
+
+Note: Ive simplified the example, as in the real document the repeating
+structure has about 7 fields, of which 3 fields will explicitly identify the
+"type".
+
+From the above example I can't see how I can write a mapping, as the "value"
+could either be an:
+
+  * Integer 
+  * IP Address 
+  * A field that needs to be tokenized by only whitespace
+  * A datetime
+  * A GEO Point
+
+The only solution I can see is that the document needs to be converted into
+another format that would more easily map with ElasticSearch ?
+
+This case is somewhat described here:
+<http://www.found.no/foundation/beginner-troubleshooting/#keyvalue-woes>
+
+You can't have different kinds of values in the same field. What you can do is
+to have different fields like `location_value`, `timestamp_value`, and so on.
+
+Here's a runnable example:
+<https://www.found.no/play/gist/ad90fb9e5210d4aba0ee>
+
+    
+    
+    #!/bin/bash
+    
+    export ELASTICSEARCH_ENDPOINT="http://localhost:9200"
+    
+    # Create indexes
+    
+    curl -XPUT "$ELASTICSEARCH_ENDPOINT/play" -d '{
+        "mappings": {
+            "type": {
+                "properties": {
+                    "description": {
+                        "type": "nested",
+                        "properties": {
+                            "integer_value": {
+                                "type": "integer"
+                            },
+                            "type": {
+                                "type": "string",
+                                "index": "not_analyzed"
+                            },
+                            "timestamp_value": {
+                                "type": "date"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+    # Index documents
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_bulk?refresh=true" -d '
+    {"index":{"_index":"play","_type":"type"}}
+    {"description":[{"type":"port","integer_value":1234},{"type":"upsince","timestamp_value":"2014-01-01T12:00:00"}]}
+    '
+    
+
+You're doing to save yourself a lot of headaches if you convert them documents
+like this first
+
+    
+    
+    {
+      "port": 1234,
+      "ipaddress" : "192.168.0.1" ,
+      "path" : "/app/index.jsp app/hello.jsp",
+      "upsince" : "2014-01-01 12:00:00",
+      "location" : "-40, 70" 
+    }
+    
+
+Elasticsearch is designed to be flexible when it comes to fields and values,
+so it can already deal with pretty much any key/value combination you throw at
+it.
+
+Optionally you can include the original document in a field that's explicitly
+stored but not indexed in case you need the orginal document returned in your
+queries.
+

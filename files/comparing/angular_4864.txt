@@ -1,0 +1,2 @@
+b'docs.angularjs.org: DOM Nodes Leaking'
+b'At http://docs.angularjs.org, click back and forth between pages the DOM Node Count continues to go up and up. No dramtical drop when I click "collect garbage".\n![ngss](https://f.cloud.github.com/assets/886818/1508513/1d2690e6-4a02-11e3-8ec4-a52c7540f798.png)\n'

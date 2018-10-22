@@ -1,0 +1,25 @@
+12895554 $exceptionHandler to show error message on page
+
+What is the best solution to display error message on some element on HTML
+page?
+
+Currently I have overriden `$exceptionHandler` to store error message to
+`$rootScope.errorMessage` and then on HTML page I'm using `ng-show` on `div`
+to show the content of the variable.
+
+My div is located at top of the `ng-view` so it's not included to partials.
+
+When error occurs the `div` is updated correctly but how can I reset it when
+user does some action, example ng-click in some partial.
+
+I'm able to reset error message when navigating from page to another.
+
+I think that there is probably quite a number of ways of doing this. You could
+define a $on message to listen for and then $emit 'said message' throughout
+code. Alternatively, you could play with listening for clicks on the body
+element, presuming nothing down the stack stops propagating the events.
+
+For me it kinda depends on how big your app is.
+
+hope this helps
+

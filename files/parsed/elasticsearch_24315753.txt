@@ -1,0 +1,73 @@
+24315753 elasticsearch - querying multiple indexes is possible?
+
+I have an elasticsearch cluster with 3 indexes:
+
+    
+    
+    /users/user
+    /events/visit
+    /events/register
+    /pages/page
+    
+
+So, now I need to run queries processing multiple indexes.
+
+Eg: **Get gender of users registered in page X.** ( _To get this info, I need
+infos from multiple indexes._ )
+
+Is this possible? Maybe integrating hadoop?
+
+This is quite easy within Elasticsearch itself! Anytime you would specify an
+index, you can separate additional indices by comma.
+
+    
+    
+    curl -XGET 'http://localhost:9200/index1,index2/_search?q=yourQueryHere'
+    
+
+You can also search all indices with _all.
+
+    
+    
+    curl -XGET 'http://localhost:9200/_all/_search?q=yourQueryHere'
+    
+
+Here's some helpful documentation from elasticsearch's website. This site has
+TONS of info, but it is a bit difficult to find sometimes, IMO.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+search.html>
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/multi-
+index.html>
+
+By not limiting our search to a particular index or type, we have searched
+across all documents in the cluster. Elasticsearch forwarded the search
+request in parallel to a primary or replica of every shard in the cluster.
+
+    
+    
+           1)/users,events,pages/_search : Search all types in the users,events and pages
+    
+           2)/u*,e*,p*/_search : Search all types in any indices beginning with u,e or beginning with p
+    
+           3)/events/visit,register/_search : Search types visit and register in the events index
+    
+           4) /_all/user,visit,register,page/_search : Search types users,events and pages in specified indices
+    
+
+It is possible to do search query through multiple indices:
+
+for example:
+
+    
+    
+    curl -X POST \
+    'http://localhost:9200/test1,test2/_search?pretty=' \
+    -H 'Content-Type: application/json' -d '{
+        "query": {
+        ...
+        }
+    }
+    '
+    
+

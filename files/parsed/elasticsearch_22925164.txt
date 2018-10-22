@@ -1,0 +1,19 @@
+22925164 elasticsearch restart leave unassigned shards
+
+I have to restart elasticsearch cluster nodes because of some timeout
+exceptions  I did restart the nodes one by one there are 5 data nodes in
+cluster  But when I did that it leave some shards unassigned and I have no
+replicas There is nothing help full in logs. Can I get some help to know why
+these shards remain unassigned and any solution Thanks
+
+Run this against your cluster, should rerun the command once shards have
+relocated however change the false parameter to `true` \-
+
+    
+    
+    curl -XPUT 'localhost:9200/_settings' -d ' {"index.routing.allocation.disable_allocation": false}'
+    
+
+yeah, you will find some shards as unassigned. Give them some time to get
+allocated after the cluster gets restarted
+

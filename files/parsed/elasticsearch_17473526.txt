@@ -1,0 +1,49 @@
+17473526 ElasticSearch - index and store attributes of string field in
+explicit mapping
+
+I'm writting this post because i am new ES user and i am not sure if i
+understand correctly index and store attributes of string fields in explict
+mapping.
+
+I want to have an ES index which contans list of internet sites. The document
+type "site" has 3 fields: url, content, inner_note
+
+I will be searching documents which contains given phrases in "content" field.
+I will be retrieving single document which has particular url in "url" field.
+The field "inner_note" is only for my internal use and i will not use this
+field to searching/retrieving documents.
+
+I prepared following mapping:
+
+    
+    
+    "site" : {
+        "properties" : {
+            "url" : {"type" : "string","store" : "no", "index" : "not_analyzed"},
+            "content" : {"type" : "string", "store" : "yes", "index" : "analyzed"},
+            "inner_note" : {"type" : "string","store" : "no", "index" : "no"}
+        }
+    
+
+and i have following questions:
+
+  1. Have i choosed optimal "store" and "index" attributes for my scenario?
+
+  2. Is retrieving document by url field as fast as i would retrieve by ID? Comparing to traditional SQL version: if i want to retrieve single row in SQL table by WHERE url = ? i would create SQL index on url column.
+
+I would be grateful for any help!
+
+The mapping that you posted looks good for your usecase.
+
+You want to search on both url and content, thus they are indexed (default).
+Url is not analyzed while content is, so that you can run full-text queries on
+it.
+
+The third field is neither indexed nor stored, but you can still get it back
+as part of the `_source` field, which contains the whole document that you
+submitted.
+
+Retrieving a document by id is the same as retrieving it by url in your case,
+since the field is not analyzed. IN fact id is internally a non analyzed field
+in the lucene document, exactly like the url field.
+

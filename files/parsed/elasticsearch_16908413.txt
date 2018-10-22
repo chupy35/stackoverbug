@@ -1,0 +1,120 @@
+16908413 How to facet on one field then another in elasticsearch?
+
+I have an ES document with the following fields "buydatefield",
+"itemboughtfield" among others.
+
+How do I make an ES query such that I can get a facet on date, then item
+bought?
+
+    
+    
+    {
+    "query":{"match_all":{}
+    },
+    "facets": {
+      "buydateFacet": {
+        "terms": {
+          "field": "buydatefield",
+          "all_terms": true
+        }
+      },
+      "itemboughtFacet": {
+        "terms": {
+          "field": "itemboughtfield",
+          "all_terms": true
+        }
+    
+      }
+    }
+    
+    }
+    
+
+The above returns two separate facets for buyFacet and itemboughtFacet. What I
+want is to get "subfacets" where for each date, there is a nested count of all
+the "items bought" for that date. Is this possible? If so, how?
+
+I would like some output that is for example:
+
+    
+    
+    terms: [{
+      term: "Bannana",
+      // total: 11 bannanas
+      buydates:{
+         // 5/31/2013 bought 5 bannana
+         // 6/2/2013 bought 6 bannana
+      }
+    },
+    {
+      term: "Apple",
+      // total: 3 apples
+      buydates:{
+         // 5/30/2013 bought 2 apple
+         // 6/1/2013 bought 1 apple
+      }
+    },
+    
+    ]
+    
+
+ALso, is it possible to specify a date range for facet?
+
+On the first question -- the sub faceting:
+
+in Solr 4 it's called Facet Pivoting -- last I checked it didn't work in a
+clustered configuration though.
+
+I believe that it's part of the Lucene4 specification which ES just moved on
+to for 0.9.
+
+It's an often requested feature: example: <http://elasticsearch-
+users.115913.n3.nabble.com/Pivot-facets-td2981519.html>
+
+However pivot faceting tends to be pretty slow.
+
+For your use case you _could_ also add a field that is the two terms
+concatenated together with a character (pipe |) between and then facet on that
+field -- then in your front end parse the hirerarchy and display to users.
+
+However what you are doing is increasing the number of unique entires
+substancially and this will hurt performance.
+
+If `buydatefield` is indexed as a date field you could use the
+FacetedDateHistogram from
+[elasticfacets](https://github.com/bleskes/elasticfacets "ES faceting
+utilities") (disclosure: author is my former lead). It gives you a "two-level"
+facet: top-level is equivalent to the builtin date histogram, but within each
+bucket you get to put any other facet you like, which operates only on the
+values in that bucket (here you would term-facet on item bought).
+
+This won't give you quite what you specify in your example, but instead:
+
+    
+    
+    "buydatefacet": {
+      "_type": "faceted_date_histogram",
+      "entries": [
+        { 
+          "time": 1356994800000, // buy date 25/01/2013
+          "facet": {
+            "_type": "terms",
+            "terms": [
+               { "term": "apple", "count": 3 },
+               { "term": "banana", "count": 1 }
+            ],
+            "missing": 0,
+            "total": 4,
+            "other": 0
+          }
+        },
+        { ... more days here ... }
+      ]
+     }
+    
+
+When ES 1.0 hits there will be some kind of more general built-in support for
+nesting facets in this way, not limited to date histogram at top-level
+([they're renaming the notion to
+"Aggregations"](https://github.com/elasticsearch/elasticsearch/issues/3300)).
+

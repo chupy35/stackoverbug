@@ -1,0 +1,15 @@
+16799774 querying elasticsearch with just OR, AND, NOT leads to a 500 error
+
+I know those are reserved words in elasticsearch, but I want to know if
+there's a way around this problem. It would be nice if I were able to handle
+this a bit less heavy handedly.
+
+The query_string query is very restrictive. If you are using it with user's
+queries you should add logic to handle syntax error in your application. One
+of the simplest ways of handling this situation is to catch the error on the
+web server side (or whatever side is sitting between elasticsearch and user),
+place the failed user's query into the
+[match](http://www.elasticsearch.org/guide/reference/query-dsl/match-query/)
+query with `_all` field and rerun the query. It will provide a meaningful
+fallback mechanism for queries with syntax errors.
+

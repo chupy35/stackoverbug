@@ -1,0 +1,145 @@
+24610396 How to check for number range and if a string value in Elasticsearch?
+
+I have a case where an entity gives a directory size in case it is present,
+otherwise it gives a string saying "IATEMPDIR does not exist".
+
+Is there any way to identify whether the entity `client.tempsize` lt `65594`
+&& `client.tempsize` value is not a string (so when it has `IATEMPDIR does not
+exist` value it should also return this query). In this case how do I check
+both **number range** as well as **if a string**?
+
+i am using percolate
+
+    
+    
+    PUT /eg/.percolator/1
+    {   
+        "sort": {
+            "rule.step": { "order": "asc" }
+        },
+        "query": {
+            "filtered": {
+               "query": {
+                   "bool": {
+                       "must": [
+                          {
+                              "match": {
+                                 "client.name": "Athena"
+                              }
+                          },
+                          {
+                              "range": {
+                                 "client.tempsize": {
+                                        "lt": 65594
+                                 }
+                              }
+                          }
+                        ]                   
+                   }               
+               }
+            }
+        },
+        "rule": {
+            "ruledesc": "Client should be Athena & tempsize should have sufficient space (eg: > 65594) and should not be a string",
+            "step": 1
+        }    
+    }
+    
+
+my doc
+
+    
+    
+    GET /eg/message/_percolate
+    {
+        "doc": {
+            "client": {
+                "name": "Athena",
+                "tempsize": "IATEMPDIR does not exist"
+            }
+        }
+    }
+    
+
+Above doc gives me `...MapperParsingException[failed to parse
+[client.tempsize]]; nested: NumberFormatException...`, but when I use
+`"tempsize": 12` it gives back proper result.
+
+    
+    
+    {
+       "took": 3,
+       "_shards": {
+          "total": 5,
+          "successful": 5,
+          "failed": 0
+       },
+       "total": 1,
+       "matches": [
+          {
+             "_index": "eg",
+             "_id": "1"
+          }
+       ]
+    }
+    
+
+**Update**
+
+After going through **ppearcy** 's answer. I changed the mapping to
+
+    
+    
+    PUT /eg/message/_mapping
+    {
+       "properties": {
+          "client": {
+             "properties": {
+                "name": {
+                   "type": "string"
+                },
+                "tempsize": {
+                   "type": "long",
+                   "ignore_malformed" : "true"
+                }
+             }
+          }
+       }
+    }
+    
+
+and the below doc does not result in my query, and is ignoring string
+
+    
+    
+    GET /eg/message/_percolate
+    {
+        "doc": {
+            "client": {
+                "name": "Athena",
+                "tempsize": "IATEMPDIR does not exist"
+            }
+        }
+    }
+    
+
+So if I give `"tempsize": "65594"`, does that consider numbers inside double
+quotes (as giving numbers less than 65594 gives back my query) ? Or will it
+break somewhere?
+
+You should set the "ignore_malformed" : "true" on your mapping for the field.
+
+This will allow you to still index documents and non-numbers will just be
+ignored and can be queried with missing/exist query types.
+
+Using lucene query syntax to simplify, your end query would look like:
+
+    
+    
+    _missing_:client.tempsize OR client.tempsize:[0 TO 65594]
+    
+
+Check out the number section here for more info:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html>
+

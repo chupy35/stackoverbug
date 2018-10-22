@@ -1,0 +1,15 @@
+25339173 SpringBoot unable to read META-INF/spring.tld
+
+Anyone encounter this in springboot sample app ?
+
+I am using embedded tomcat in SpringBoot and hit the error below when going to
+the initial page.
+
+Servlet.service() for servlet [dispatcherServlet] in context with path []
+threw exception [/WEB-INF/jsp/welcome.jsp (line: 3, column: 68) Unable to read
+TLD "META-INF/spring.tld" from JAR file "jar:file:/Users/chyn/dev/poc/poc-
+springbootwebjsp/target/poc-springbootwebjsp-1.0-SNAPSHOT.jar!/lib/spring-
+webmvc-4.0.6.RELEASE.jar": java.io.IOException: Unable to open root Jar file
+'jar:file:/Users/chyn/dev/poc/poc-springbootwebjsp/target/poc-
+springbootwebjsp-1.0-SNAPSHOT.jar'] with root cause
+

@@ -1,0 +1,125 @@
+13215435 elasticsearch - How to reference multi-field when building query
+
+I am unable to access multi fields using the navigation notation
+
+My mapping:
+
+    
+    
+    {
+    "mappings":{
+        "document":{
+            "properties":{
+                "tags":{
+                    "type":"object",
+                    "properties":{
+                        "title":{
+                            "fields":{
+                                "partial":{
+                                    "search_analyzer":"main",
+                                    "index_analyzer":"partial",
+                                    "type":"string"
+                                },
+                                "title":{
+                                    "type":"string",
+                                    "analyzer":"main"
+                                },
+                                "title2":{
+                                    "type":"string",
+                                    "analyzer":"main"
+                                }
+                            },
+                            "type":"multi_field"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    
+    "settings":{
+        "analysis":{
+            "filter":{
+                "name_ngrams":{
+                    "side":"front",
+                    "max_gram":50,
+                    "min_gram":2,
+                    "type":"edgeNGram"
+                },
+                "name_ngrams_back":{
+                    "side":"back",
+                    "max_gram":50,
+                    "min_gram":2,
+                    "type":"edgeNGram"
+                },
+                "name_middle_ngrams":{
+                    "type":"nGram",
+                    "max_gram":50,
+                    "min_gram":2
+                }
+            },
+    
+            "analyzer":{
+                "main":{
+                    "filter": ["standard", "lowercase", "asciifolding"],
+                    "type": "custom",
+                    "tokenizer": "standard"
+                },
+                "partial":{
+                    "filter":["standard","lowercase","asciifolding","name_ngrams"],
+                    "type": "custom",
+                    "tokenizer": "standard"
+                }
+            }
+        }
+    }
+    
+
+}
+
+Test data:
+
+    
+    
+    curl -XPUT localhost:9200/testindex/document/1 -d '{"title": "Fight for your life"}'
+    curl -XPUT localhost:9200/testindex/document/2 -d '{"title": "Fighting for your life"}'
+    curl -XPUT localhost:9200/testindex/document/3 -d '{"title": "Will you just start the    fight"}'
+    
+
+Search:
+
+    
+    
+     curl -XGET 'localhost:9200/testindex/document/_search?q=title:life&pretty=1'                   // Ok
+     curl -XGET 'localhost:9200/testindex/document/_search?q=document.title:life&pretty=1'     // Ok
+    
+     // Return 0 hits.  I expect this to return same result as the above queries.
+     curl -XGET 'localhost:9200/testindex/document/_search?q=title.title2:life&pretty=1'
+     curl -XGET 'localhost:9200/testindex/document/_search? q=document.title.title2:life&pretty=1'
+    
+
+How do I reference multi fields when building queries?
+
+You have defined multi field mapping for the `tags.title` field, but you are
+indexing and searching `title` field. Try this test data:
+
+    
+    
+    curl -XPUT localhost:9200/testindex/document/1 -d '{"tags":{"title": "Fight for your life"}}'
+    curl -XPUT localhost:9200/testindex/document/2 -d '{"tags":{"title": "Fighting for your life"}}'
+    curl -XPUT localhost:9200/testindex/document/3 -d '{"tags":{"title": "Will you just start the    fight"}}'
+    
+
+with the following searches:
+
+    
+    
+    curl -XGET 'localhost:9200/testindex/document/_search?q=title:life&pretty=1'
+    curl -XGET 'localhost:9200/testindex/document/_search?q=tags.title:life&pretty=1'
+    curl -XGET 'localhost:9200/testindex/document/_search?q=document.tags.title:life&pretty=1'
+    
+    curl -XGET 'localhost:9200/testindex/document/_search?q=title2:life&pretty=1'
+    curl -XGET 'localhost:9200/testindex/document/_search?q=tags.title.title2:life&pretty=1'
+    curl -XGET 'localhost:9200/testindex/document/_search?q=document.tags.title.title2:life&pretty=1'
+    
+

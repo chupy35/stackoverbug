@@ -1,0 +1,126 @@
+25034605 Can I create a document with the update API if the document doesn't
+exist yet
+
+I have a very simple question :
+
+I want to update multiple documents to elasticsearch. Sometimes the document
+already exists but sometimes not. I don't want to use a get request to check
+the existence of the document (this is decreasing my performance). I want to
+use directly my update request to index the document directly if it doesn't
+exist yet.
+
+I know that we can use upsert to create a non existing field when updating a
+document, but this is not what I want. I want to index the document if it
+doesn't exist. I don't know if upsert can do this.
+
+Can you provide me some explaination ?
+
+Thanks in advance!
+
+AFAIK when you index the documents (with a PUT call), the existing version
+gets replaced with the newer version. If the document did not exist, it gets
+created. There is no need to make a distinction between INSERT and UPDATE in
+ElasticSearch.
+
+UPDATE: According to the
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html), if you use op_type=create, or a special _create version of the
+indexing call, then any call for a document which already exists will fail.
+
+Quote from the documentation:
+
+    
+    
+    Here is an example of using the op_type parameter:
+    
+    $ curl -XPUT 'http://localhost:9200/twitter/tweet/1?op_type=create' -d '{
+        "user" : "kimchy",
+        "post_date" : "2009-11-15T14:12:12",
+        "message" : "trying out Elasticsearch"
+    }'
+    Another option to specify create is to use the following uri:
+    
+    $ curl -XPUT 'http://localhost:9200/twitter/tweet/1/_create' -d '{
+        "user" : "kimchy",
+        "post_date" : "2009-11-15T14:12:12",
+        "message" : "trying out Elasticsearch"
+    }'
+    
+
+This is doable using the update api. It does require that you define the id of
+each document, since the update api requires the id of the document to
+determine its presence.
+
+Given an index created with the following documents:
+
+    
+    
+    PUT /cars/car/1 
+    { "color": "blue", "brand": "mercedes" }
+    PUT /cars/car/2
+    { "color": "blue", "brand": "toyota" }
+    
+
+We can get the upsert functionality you want using the update api with the
+following api call.
+
+    
+    
+    POST /cars/car/3/_update
+    {
+        "doc": {
+            "color" : "brown",
+            "brand" : "ford"
+        },
+        "doc_as_upsert" : true
+    }
+    
+
+This api call will add the document to the index since it does not exist.
+
+Running the call a second time after changing the color of the car, will
+update the document, instead of creating a new document.
+
+    
+    
+    POST /cars/car/3/_update
+    {
+        "doc": {
+            "color" : "black",
+            "brand" : "ford"
+        },
+        "doc_as_upsert" : true
+    }
+    
+
+As of [elasticsearch-model](https://github.com/elasticsearch/elasticsearch-
+rails/tree/master/elasticsearch-model#elasticsearchmodel) v0.1.4, upserts
+aren't supported. I was able to work around this by creating a [custom
+callback](https://github.com/elasticsearch/elasticsearch-
+rails/tree/master/elasticsearch-model#custom-callbacks).
+
+    
+    
+    after_commit on: :update do
+        begin
+            __elasticsearch__.update_document
+        rescue Elasticsearch::Transport::Transport::Errors::NotFound
+            __elasticsearch__.index_document
+        end
+    end
+    
+
+For bulk API use
+
+    
+    
+    bulks.push({
+           update: {
+                   _index: 'index',
+                   _type: 'type',
+                  _id: id
+                   }
+    });
+    bulks.push({"doc_as_upsert":true, "doc": your_doc});
+    
+

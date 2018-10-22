@@ -1,0 +1,34 @@
+13127284 angularjs: how to return to the calling view?
+
+I have a view that I use to create an item. In other views I have links to
+this item view. When the user dismisses the item view I need to return to the
+view that the item view has been invoked from. Is there support for that in
+angularjs?
+
+so far I have seen nothing more advanced than this:
+
+    
+    
+    function myController($scope, $location, ...) {
+        ...
+        $scope.submit = function () {
+            $scope.item.$save(function () {
+                $location.path("/my/url");
+            });
+        };
+    }
+    
+
+I am looking to replace `"/my/url"` with something that is not hard coded.
+
+One suggestion off the top of my head would be to have an array in your root
+scope (or some shared parent scope) that you can use as a stack. When you have
+a 'subflow' that you want to return from, you can push the current location to
+the stack before going to the subflow. When the subflow is done, it can pop
+the last location off the stack and return.
+
+`history.back();` should work just fine. The point of routing is to leverage
+URLs so the "back button" on your browser works to navigate "backwards"
+through your single page application. `history.back();` just goes back in your
+browser's history.
+

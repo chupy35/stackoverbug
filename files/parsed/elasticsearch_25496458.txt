@@ -1,0 +1,76 @@
+25496458 How to retrieve all the document ids from an elasticsearch index
+
+How to retrieve all the document ids (the internal document '_id') from an
+Elasticsearch index? if I have 20 million documents in that index, what is the
+best way to do that?
+
+First you can issue a request to get the full count of records in the index.
+
+    
+    
+    curl -X GET 'http://localhost:9200/documents/document/_count?pretty=true'
+    
+    {
+      "count" : 1408,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      }
+    }
+    
+
+Then you'll want to loop through the set using a combination of `size` and
+`from` parameters until you reach the total count. Passing an empty `field`
+parameter will return only the index and _id that you're interested in.
+
+Find a good `page` size that you can consume without running out of memory and
+increment the `from` each iteration.
+
+    
+    
+    curl -X GET 'http://localhost:9200/documents/document/_search?fields=&size=1000&from=5000'
+    
+
+Example item response:
+
+    
+    
+    {
+      "_index" : "documents",
+      "_type" : "document",
+      "_id" : "1341",
+      "_score" : 1.0
+    },
+    ...
+    
+
+For that amount of documents, you probably want to use the [scan and scroll
+API](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/scan-
+scroll.html).
+
+Many client libraries have ready helpers to use the interface. For example,
+with elasticsearch-py you can do:
+
+    
+    
+    es = elasticsearch.Elasticsearch(eshost)
+    scroll = elasticsearch.helpers.scan(es, query='{"fields": "_id"}', index=idxname, scroll='10s')
+    for res in scroll:
+            print res['_id']
+    
+
+I would just export the entire index and read off the file system. My
+experience with size/from and scan/scroll has been disaster when dealing with
+querying resultsets in the millions. Just takes too long.
+
+If you can use a tool like knapsack, you can export the index to the file
+system, and iterate through the directories. Each document is stored under
+it's own directory named after _id. No need to actually open files. Just
+iterate through the dir.
+
+link to knapsack: <https://github.com/jprante/elasticsearch-knapsack>
+
+edit: hopefully you are not doing this often... or this may not be a viable
+solution
+

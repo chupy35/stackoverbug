@@ -1,0 +1,40 @@
+14656317 Elasticsearch not starting
+
+I updated from elasticsearch 0.17.6 to 0.19.2 and everything seems fine, but I
+cannot connect to port 9200 locally.
+
+When I watch the es log I see that it's cycling furiously through all node
+names without actually connecting to any of them.
+
+The logs look like this -
+
+    
+    
+    [2013-02-01 22:39:41,950][INFO ][org.elasticsearch.node   ] [Hardcore] {0.19.2}[3212]: initializing ...
+    [2013-02-01 22:39:41,959][INFO ][org.elasticsearch.plugins] [Hardcore] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:42,559][INFO ][org.elasticsearch.node   ] [Royal Roy] {0.19.2}[3228]: initializing ...
+    [2013-02-01 22:39:42,567][INFO ][org.elasticsearch.plugins] [Royal Roy] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:43,182][INFO ][org.elasticsearch.node   ] [Mercury] {0.19.2}[3244]: initializing ...
+    [2013-02-01 22:39:43,190][INFO ][org.elasticsearch.plugins] [Mercury] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:43,788][INFO ][org.elasticsearch.node   ] [Raye, Frankie] {0.19.2}[3260]: initializing ...
+    [2013-02-01 22:39:43,796][INFO ][org.elasticsearch.plugins] [Raye, Frankie] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:44,362][INFO ][org.elasticsearch.node   ] [Tarantula] {0.19.2}[3276]: initializing ...
+    [2013-02-01 22:39:44,371][INFO ][org.elasticsearch.plugins] [Tarantula] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:44,967][INFO ][org.elasticsearch.node   ] [Atleza] {0.19.2}[3292]: initializing ...
+    [2013-02-01 22:39:44,975][INFO ][org.elasticsearch.plugins] [Atleza] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:45,529][INFO ][org.elasticsearch.node   ] [St. Croix, Claudette] {0.19.2}[3308]: initializing ...
+    [2013-02-01 22:39:45,538][INFO ][org.elasticsearch.plugins] [St. Croix, Claudette] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:46,096][INFO ][org.elasticsearch.node   ] [Nameless One] {0.19.2}[3324]: initializing ...
+    [2013-02-01 22:39:46,105][INFO ][org.elasticsearch.plugins] [Nameless One] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:46,680][INFO ][org.elasticsearch.node   ] [Donald Pierce] {0.19.2}[3340]: initializing ...
+    [2013-02-01 22:39:46,688][INFO ][org.elasticsearch.plugins] [Donald Pierce] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:47,264][INFO ][org.elasticsearch.node   ] [Lexington, Alexander] {0.19.2}[3356]: initializing ...
+    [2013-02-01 22:39:47,272][INFO ][org.elasticsearch.plugins] [Lexington, Alexander] loaded [], sites [cloud-aws]
+    [2013-02-01 22:39:47,881][INFO ][org.elasticsearch.node   ] [Nightside] {0.19.2}[3372]: initializing ...
+    [2013-02-01 22:39:47,890][INFO ][org.elasticsearch.plugins] [Nightside] loaded [], sites [cloud-aws]
+    
+
+and so on and so forth.
+
+I can't figure out what the problem is.
+

@@ -1,0 +1,154 @@
+23682507 Elasticsearch error - No query registered for [query]
+
+I hope someone can help, I'm getting the following error when I try to query
+Elasticsearch
+
+    
+    
+    No query registered for [query]
+    
+
+The query I'm using is:
+
+    
+    
+    {
+        "query": {
+            "bool": {
+                "must": {
+                    "terms": {
+                        "facet_1": [
+                            "1",
+                            "2"
+                        ]
+                    },
+                    "function_score": {
+                        "query": {
+                            "multi_match": {
+                                "query": "fat dog food",
+                                "fields": [
+                                    "family_name^20",
+                                    "parent_categories^2",
+                                    "description^0.2",
+                                    "product_suffixes^8",
+                                    "facet_values^10"
+                                ],
+                                "operator": "and",
+                                "type": "best_fields",
+                                "tie_breaker": 0.3
+                            }
+                        },
+                        "functions": [
+                            {
+                                "script_score": {
+                                    "script": "_score + ((_score * 0.3) + (log(1 + doc[\"popularity_score\"].value) * 2))"
+                                }
+                            }
+                        ],
+                        "score_mode": "sum"
+                    }
+                },
+                "must_not": {
+                    "terms": {
+                        "facet_1": [
+                            "8"
+                        ]
+                    }
+                }
+            }
+        },
+        "fields": [
+            "family_id",
+            "family_name",
+            "parent_categories",
+            "description",
+            "image",
+            "url",
+            "price_from",
+            "price_to",
+            "price_from_id",
+            "price_to_id",
+            "products_ids",
+            "popularity_score"
+        ],
+        "from": 0,
+        "size": 48,
+        "sort": {
+            "_score": "desc"
+        }
+    }
+    
+
+I've tried loads of variations on this but cannot quite seem to get there. I'd
+really appreciate some help.
+
+I've figured it out, to add extras to a `must`, `must_not` or `should`, they
+must be in an outer array like:
+
+    
+    
+    "query": {
+            "bool": {
+                "must": [
+                    {
+                        "terms": {
+                            "facet_1": [
+                                "1",
+                                "2"
+                            ]
+                        }
+                    },
+                    {
+                        "function_score": {
+                            "query": {
+                                "multi_match": {
+                                    "query": "fat food",
+                                    "fields": [
+                                        "family_name^20",
+                                        "parent_categories^2",
+                                        "description^0.2",
+                                        "product_suffixes^8",
+                                        "facet_values^10"
+                                    ],
+                                    "operator": "and",
+                                    "type": "best_fields",
+                                    "tie_breaker": 0.3
+                                }
+                            },
+                            "functions": [
+                                {
+                                    "script_score": {
+                                        "script": "_score + ((_score * 0.3) + (log(1 + doc[\"popularity_score\"].value) * 2))"
+                                    }
+                                }
+                            ],
+                            "score_mode": "sum"
+                        }
+                    }
+                ]
+            }
+        },
+        "fields": [
+            "family_id",
+            "family_name",
+            "parent_categories",
+            "description",
+            "image",
+            "url",
+            "price_from",
+            "price_to",
+            "price_from_id",
+            "price_to_id",
+            "products_ids",
+            "popularity_score"
+        ],
+        "from": 0,
+        "size": 48,
+        "sort": {
+            "_score": "desc"
+        }
+    }
+    
+
+Thanks for look anyway.
+

@@ -1,0 +1,93 @@
+21339925 spring boot loading jars (application dependencies and external file
+system jars)
+
+I am trying to figure out what is the best way to setup a spring boot
+application in such a way that its has its own jar dependencies but additional
+jars are added to classpath at runtime when its being run as java -jar
+command. What approach makes more sense
+
+  1. Use the original jar (without dependencies added to it) and place all jars (application and runtime) in a folder on file system and use PropertiesLauncher to specify the loader.path to jars folder.
+
+  2. Use the fat jar (with application jars) place the additional jars on the filesystem and somehow include those as additional jars that need to be added to classpath. Not sure how this can be done.
+
+  3. Is there another better way to do this
+
+The `PropertiesLauncher` was designed to work with fat jars, so you should be
+able to keep the fat jar and add as many additional dependencies as you like
+in an external location, e.g. with `loader.path=/opt/app/lib:lib`. I guess
+that's your option 2? If it doesn't work we can discuss in a github issue.
+
+I resolved this issue using the following [spring-boot-maven-
+plugin](http://docs.spring.io/spring-boot/docs/1.3.1.RELEASE/maven-plugin/)
+configuration, I had to build my Uber jar without excluded artifacts to create
+my external "lib" directory, then I added my excluded artifacts again and
+packaged my Uber jar with my application specific dependencies only.
+
+    
+    
+               <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>1.3.1.RELEASE</version>
+                    <configuration>
+                        <layout>ZIP</layout>
+                        <executable>true</executable>
+                        <excludeArtifactIds>
+                            <!-- My libs which will be packaged with my Uber jar-->
+                            <!-- core,data-feeder,engine,lightspeed-tcp-api,order-manager,store,strategies,utils,viewer -->
+                            <!-- Other libs -->
+                            antlr,aopalliance,aspectjrt,aspectjweaver,classmate,commons-lang,
+                            dom4j,h2,hibernate-commons-annotations,hibernate-core,hibernate-entitymanager,
+                            hibernate-jpa-2.1-api,hibernate-validator,jackson-annotations,jackson-core,jackson-databind,
+                            jandex,javassist,javax.transaction-api,jboss-logging,jboss-logging-annotations,jcl-over-slf4j,
+                            jul-to-slf4j,log4j-over-slf4j,logback-classic,logback-core,mysql-connector-java,slf4j-api,
+                            snakeyaml,spring-aop,spring-aspects,spring-beans,spring-boot,spring-boot-autoconfigure,
+                            spring-boot-starter,spring-boot-starter-aop,spring-boot-starter-data-jpa,spring-boot-starter-jdbc,
+                            spring-boot-starter-logging,spring-boot-starter-tomcat,spring-boot-starter-web,
+                            spring-boot-starter-websocket,spring-context,spring-core,spring-data-commons,spring-data-jpa,
+                            spring-expression,spring-jdbc,spring-messaging,spring-orm,spring-tx,spring-web,spring-webmvc,
+                            spring-websocket,tomcat-embed-core,tomcat-embed-el,tomcat-embed-logging-juli,tomcat-embed-websocket,
+                            tomcat-jdbc,tomcat-juli,validation-api,xml-apis
+                        </excludeArtifactIds>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+    
+
+Then, I added the following property to my "application.properties" which
+inside my jar "resources/" dir to specify my "lib" dir for [Spring
+PropertiesLauncher](http://docs.spring.io/spring-
+boot/docs/current/api/org/springframework/boot/loader/PropertiesLauncher.html)
+where I put "lib" dir along with my jar in the same dir.
+
+    
+    
+    loader.path=lib/
+    
+
+Finally, I did run my jar using the following command
+
+    
+    
+    java -jar back-tester-0.0.1-beta-01.jar
+    
+
+Also, you can add the "loader.path" property to your command line without
+putting it in your "application.properties" like the following command but
+this way didn't work with me as I packaged my jar as an executable one which
+I'm running as linux service.
+
+    
+    
+    java -Dloader.path="lib/" -jar back-tester-0.0.1-beta-01.jar
+    
+
+Now, I successfully reduced my jar size from 29 M to only 1 M jar which
+contains only my application specific libs and it works out of the box.
+

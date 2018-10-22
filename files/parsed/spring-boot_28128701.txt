@@ -1,0 +1,52 @@
+28128701 access JdbcTemplate in constructor of SpringBoot application
+
+I have a SpringBoot application and would like to access the provided
+JdbcTemplate in the constructor. I'm trying to cache some data from the
+database upon class instantiation. My Groovy code looks like this:
+
+    
+    
+    @Repository
+    class EarthquakeRepository {
+    
+    @Autowired
+    private final JdbcTemplate jdbcTemplate
+    
+    public EarthquakeRespository() {
+        //fails because jdbcTemplate is null
+        assert jdbcTemplate
+    }
+    ...
+    
+
+Even though the constructor is getting fired, the jdbcTemplate is null. Other
+methods in the repository do have access to the jdbcTemplate.
+
+Can someone please point out what I'm missing here?
+
+Thanks!
+
+\--john
+
+When you use field injection, as you have here, an instance of the class is
+created, and therefore the constructor is called, before the injection occurs.
+That's why jdbcTemplate is null when you try to use it in the constructor. It
+has to happen this way around as, without calling the constructor first,
+there's nothing for the dependency to be injected into.
+
+You could change your repostory to use constructor injection: declare
+JdbcTemplate as a parameter of the constructor and annotate the constructor
+with `@Autowired`. You can then use the JdbcTemplate in the constructor if you
+want to.
+
+You could also add a method annotated with `@PostConstruct` to your repository
+class. This method will be called after the instance has been created (so
+constructor injection's occurred) and also after field injection's been
+performed if you continue with that approach. You'd then use JdbcTemplate in
+this method to perform the caching.
+
+My recommendation would be to move to using constructor injection as it makes
+your classes easier to test (it's easy to pass a mock into a constructor) and
+to move your use of JdbcTemplate into a `@PostConstruct`-annotated method,
+thereby keeping the constructor as lightweight as possible.
+

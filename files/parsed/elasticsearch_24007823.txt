@@ -1,0 +1,72 @@
+24007823 mapping for Elasticsearch percolator
+
+By default, my percolator mapping is like below
+
+    
+    
+    {
+      "indexName" : {
+        "mappings" : {
+          ".percolator" : {
+            "_id" : {
+          "index" : "not_analyzed"
+        },
+        "properties" : {
+          "query" : {
+            "type" : "object",
+            "enabled" : false
+          }
+        }
+      }
+    }
+    
+
+Assume document that I will percolate contains 'name' field which contains
+underbar
+
+something like
+
+    
+    
+    {
+    name : "null_value"
+    }
+    
+
+and assume the query stored in percolator is like
+
+    
+    
+    {
+    "query":
+        {"query_string":
+            {"query":"name:\"null\"","defaultOperator":"AND"}
+    }
+    
+
+percolator returns this query, meaning this document matches this query.
+
+but I want percolator to check if the field has exact value of coming
+document.
+
+so if name:"null_value" then it should not match but name:"null" then it
+should match.
+
+in this case, do I have to put mapping property to percolator? or do I have to
+use different query?
+
+If you want to have exact token match semantics you need to choose the proper
+analyzer for the "name" field. If you are not specifying a mapping, you are
+getting the default analyzer. Instead you should use not_analyzed.
+
+Then on the search side you would want to use a term query. query_string is
+problematic as it get passed to the query parser before going through the text
+analysis pipeline.
+
+Note, the method above is case sensitive. If you want to ignore case create a
+custom analyzer with a keyword tokenizer and lowercase token filter. Then on
+the query side use a term query, but lowercase beforehand, as term query is
+not analyzed.
+
+Best Regards
+

@@ -1,0 +1,41 @@
+24202702 Elasticsearch: Alias pointing to an alias
+
+I am using ES aliases for decoupling index names with the application using ES
+
+    
+    
+    ALIAS NAME      INDEX NAME
+    
+    user_index    - user
+    project_index - project
+    org_index     - org
+    
+
+Now I need another alias pointing to all the three aliases, to maintain one
+single point of search (for supporting existing APIs)
+
+Can I have another alias pointing to all the three aliases here? Something
+like.
+
+    
+    
+    main_index __ user_index
+               \__ project_index 
+                \__ org_index
+    
+
+No, unfortunately, this capability does not yet exist in Elasticsearch.
+
+There is an outstanding issue requesting this capability. Please see
+[Elasticsearch Issue
+#3138](https://github.com/elasticsearch/elasticsearch/issues/3138) for more
+details related to the requested functionality. Please note that this
+particular issue has been open for over a year, but there has not been any
+comment from anyone on the Elasticsearch development team. Therefore, I am not
+sure how long it will be until this capability is implemented within
+Elasticsearch.
+
+No, but you can have as many aliases as you want on your index. So, you can
+set an other alias "main_index" directly on your three index.  Wouldn't that
+be enough to suit your needs?
+

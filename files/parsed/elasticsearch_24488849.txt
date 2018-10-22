@@ -1,0 +1,31 @@
+24488849 Elasticsearch Change Node Name via REST API
+
+Is there a way to update the node name (node.name) via the REST API?
+
+I have tried to do it like so with no luck.
+
+    
+    
+    curl -XPUT localhost:9200/_nodes/CTOdAAalSQ2ZOI6-VsuO0w/settings -d '{
+        "persistent" : {
+            "node.name" : "nodeX"
+        }
+    }'
+    
+
+You can do it by editing config file elasticsearch.yml.
+
+or
+
+Use cluster reroute
+
+    
+    
+    curl -XPOST 'localhost:9200/_cluster/reroute' -d '{
+    "commands":[{"allocate": {"index":"","shard":0,"node":"node_name", "allow_primary" : 1}}]
+    }'
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+reroute.html>
+

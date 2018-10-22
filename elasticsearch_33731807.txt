@@ -1,0 +1,4 @@
+33731807
+Score based on string in elasticsearch
+<p>I have a field say "testField", where in there can be numerous string values like. I need to boost the score whenever the value in the field is a particular string,say for example "testValue". How can I do this in elasticsearch?</p>&#xA;
+<p>You can try using <code>function_score</code>:</p>&#xA;&#xA;<pre><code>{&#xA;  "query": {&#xA;    "function_score": {&#xA;      "query": {&#xA;        "match_all": {}&#xA;      },&#xA;      "functions": [&#xA;        {&#xA;          "filter": {&#xA;            "term": {&#xA;              "testField": "testValue"&#xA;            }&#xA;          },&#xA;          "boost_factor": 15&#xA;        }&#xA;      ]&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;

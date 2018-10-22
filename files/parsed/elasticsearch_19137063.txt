@@ -1,0 +1,72 @@
+19137063 ElasticSearch what analyzer should be used for searching for both url
+fragment and exact url path
+
+I want to store uri in a mapping and I want to make it searchable the
+following way:
+
+  * Exact match (i.e. if I stored: `http://stackoverflow.com/questions` then looking for the term `http://stackoverflow.com/questions` retrieves the item.
+
+  * Bit like letter tokenizer all "words" should be searchable. So searching for either `questions`, `stackoverflow` or maybe `com` will bring back `http://stackoverflow.com/questions` as a hit.
+
+  * Looking for '.' or '/' separated url fragments should be still searchable. So searching for `stackoverflow.com` will bring back `http://stackoverflow.com/questions` as a hit.
+
+  * should be case insensitive. (like lowercase)
+
+  * The `html://`, `htmls://`, `www.` etc. is optional for searching. So searching for either `http://stackoverflow.com` or `stackoverflow.com` will bring back `http://stackoverflow.com/questions` as a hit.
+
+Maybe a solution should be something like chaining tokenizers or something
+like that. I'm quite new to ES so this is maybe a trivial question. So what
+kind of analyzer should I use/build to achieve this functionality?
+
+Any help would be greatly apprechiated.
+
+You are absolutely, correct. You will want to set your field type as
+[multi_field](http://www.elasticsearch.org/guide/reference/mapping/multi-
+field-type/) and then create analyzers for each scenario. At the core, you can
+then do a [multi_match](http://www.elasticsearch.org/guide/reference/query-
+dsl/multi-match-query/) query:
+
+    
+    
+    =============type properties===============
+    {
+        "fun_documents": {
+            "properties": {
+                "url": {
+                    "type": "multi_field",
+                    "fields": {
+                        "keyword": {
+                            "type": "string",
+                            "analyzer": "keyword"
+                        },
+                        "alphanum_only": {
+                            "type": "string",
+                            "analyzer": "my_custom_alpha_num_analyzer"
+                        },
+                        {
+                            "etc": "etc"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    ==================query=====================
+    {
+        "query": {
+            "multi_match": {
+                "query": "stackoverflow",
+                "fields": [
+                    "url.keyword",
+                    "url.alphanum_only",
+                    "url.optional_fun"
+                ]
+            }
+        }
+    }
+    
+
+Note that you can get fancy with multi_field aliases and reusing the same
+name, but this is the simple demonstration.
+

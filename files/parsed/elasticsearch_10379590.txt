@@ -1,0 +1,83 @@
+10379590 best setup for live data in elasticsearch
+
+I am trying to use elasticsearch for live data filtering. Right now I use a
+single machine which gets constantly pushed new data (every 3 seconds via
+_bulk). Even so I did set up a ttl the index gets quite big after a day or so
+and then elasticsearch hangs. My current mapping:
+
+    
+    
+    curl -XPOST localhost:9200/live -d '{
+      "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0,
+        "analysis": {
+          "analyzer": {
+            "lowercase_keyword": {
+              "type": "custom",
+              "tokenizer": "whitespace",
+              "filter": [
+                "lowercase"
+              ]
+            },
+            "no_keyword": {
+              "type": "custom",
+              "tokenizer": "whitespace",
+              "filter": []
+            }
+          }
+        }
+      },
+      "mappings": {
+        "log": {
+          "_timestamp": {
+            "enabled": true,
+            "path": "datetime"
+          },
+          "_ttl":{
+            "enabled":true,
+            "default":"8h"
+          },
+          "properties": {
+            "url": {
+              "type": "string",
+              "search_analyzer": "lowercase_keyword",
+              "index_analyzer": "lowercase_keyword"
+            },
+            "q": {
+              "type": "string",
+              "search_analyzer": "no_keyword",
+              "index_analyzer": "no_keyword"
+            },
+            "datetime" : {
+              "type" : "date"
+            }
+          }
+        }
+      }
+    }'
+    
+
+I think a problem is purging the old documents but I could be wrong. Any ideas
+on how to optimize my setup?
+
+To avoid elasticsearch hanging, you might want to increase amount of memory
+available to java process.
+
+If all your documents have the same 8 hour life span, it might be more
+efficient to use rolling
+[aliases](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+aliases.html) instead of ttl. The basic idea is to create a new index
+periodically (every hour, for example) and use aliases to keep track of
+current indices. As time goes, you can update the list of indices in the alias
+that you search and simply delete indices that are more than 8 hour long.
+Deleting an index is much quicker than removing indices using ttl. A sample
+code that demonstrates how to create rolling aliases setup can be found
+[here](https://github.com/elasticsearch/elasticsearch/issues/1500).
+
+I am not quite sure how much live data you are trying to keep, but if you are
+just testing incoming data against a set of queries, you might also consider
+using [Percolate
+API](http://www.elasticsearch.org/guide/reference/api/percolate.html) instead
+of indexing data.
+

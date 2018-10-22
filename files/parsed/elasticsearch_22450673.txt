@@ -1,0 +1,40 @@
+22450673 Elasticsearch sync database recommended / standard strategy
+
+I'm pondering a strategy to maintain an index for Elasticsearch, I've found a
+[plugin](https://github.com/jprante/elasticsearch-river-jdbc) which may handle
+maintenance quite well however I would like to get a little more intimate with
+Elasticsearch since I really like her and the plugin would make playtime a
+little less intimate if you know what I mean.
+
+So anyway, if I have a data set that would have fairly frequent updates (say ~
+1 update / 10s), would I run into performance problems with Elasticsearch? Can
+partial index updates be done when a single row changes or is a full re-
+rebuild of the index necessary? The strategy I plan on implementing involves
+modifying the index whenever I do CRUD with my application (python postgre) so
+there will be some overhead with the code which I'm not overly concerned
+about, just the performance. Is my strategy common?
+
+I've used Sphinx which did have partial re-indexing which was run with a cron
+job to keep in sync, it had mapping between indexes and MySQL tables defined
+in the config. This was the recommended approach for Sphinx. Is there a
+recommended approach with Elasticsearch?
+
+There are a number of different strategies for handling this, there's no
+simple one size fits all solution.
+
+To answer some of your questions, first, there is no such thing as a partial
+update in Elasticsearch/Lucene. If you update a single field in a document the
+whole document is rewritten. Be aware of the performance implications of this
+when designing your schema. If you update a single document however, it should
+be available near instantly. Elasticsearch is a near-realtime search engine,
+you don't have to worry about regenerating the index constantly.
+
+For your write load one update / 10s the default performance settings should
+be fine. That's a very low write load for ES in fact, it can scale much
+higher. Netflix, for instance, performs 7 millions updates / minute in one of
+their clusters.
+
+As far as syncing strategies go, I've written an in-depth article on this
+["Keeping Elasticsearch in Sync"](https://www.found.no/foundation/keeping-
+elasticsearch-in-sync/)
+

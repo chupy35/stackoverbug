@@ -1,0 +1,138 @@
+25401040 Elasticsearch multiple fields search (AND OR)
+
+I'm trying to figure out Elasticsearch. I looked all over the internet and all
+I found was basic examples.
+
+First I need to search in two fields (field_A, field_B) and to return results
+where
+
+  * field_A has the value equal to valueA or valueB or valueC
+  * AND
+  * field_B has the value equal to valueD
+
+I manage to do that like this:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "filter": {
+            "bool": {
+              "must": [
+                {
+                  "terms": {
+                    "field_A": [
+                      "valueA",
+                      "valueB",
+                      "valueC"
+                    ]
+                  }
+                }
+              ],
+              "should": [
+                {
+                  "term": {
+                    "field_B": "valueD"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+
+Now I need to search in three fields (exact match)
+
+  * (field_A = valueA AND field_B = valueB AND field_C = valueC) OR (field_A = valueA1 AND field_B = valueB1 AND field_C = valueC1) OR ...
+
+Or something like this:
+
+  * field_A = valueA AND ( (field_B = valueB AND field_C = valueC) OR (field_B = valueB1 AND field_C = valueC1) OR ... )
+
+How can I do that ?
+
+You can use boolean(and / or ) filters of elasticsearch.
+
+Here is a simple use-case for your first requirement, you can model the
+filters for your other requirement.
+
+    
+    
+    POST /_search 
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "or": {
+                   "filters": [
+                      {
+                         "and": {
+                            "filters": [
+                               {
+                                  "term": {
+                                     "fieldA": "value_a"
+                                  }
+                               },
+                               {
+                                  "term": {
+                                     "fieldB": "value_b"
+                                  }
+                               },
+                               {
+                                  "term": {
+                                     "fieldC": "value_c"
+                                  }
+                               }
+                            ]
+                         }
+                      },
+                      {
+                         "and": {
+                            "filters": [
+                               {
+                                  "term": {
+                                     "fieldA": "value_a1"
+                                  }
+                               },
+                               {
+                                  "term": {
+                                     "fieldB": "value_b1"
+                                  }
+                               },
+                               {
+                                  "term": {
+                                     "fieldC": "value_c1"
+                                  }
+                               }
+                            ]
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    }
+    
+
+For your type of requirement using and filter and or filter seems good, but
+always prefer bool filter (as you did) if you can use that.
+
+References;
+
+[And
+Filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-and-filter.html)
+
+[Or
+Filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-or-filter.html)
+
+Hope this helps!! Thanks
+

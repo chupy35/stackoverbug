@@ -1,0 +1,86 @@
+22844716 Elasticsearch stats by groups return inconsistent values
+
+Environment:
+
+  * Elasticsearch version 0.90.2
+  * 14 nodes
+  * 3 indices
+  * 15 mil documents
+  * ~70 queries/s
+
+I'm querying Elasticsearch search stats by groups using
+
+`curl http://127.0.0.1:9200/_all/_stats/search?groups=_all`
+
+I take the `query_total` values for each index and group out of the results,
+however I see that I get different results on every 1 in 4 queries I do.
+
+Example:
+
+I run the stats query and get:
+
+    
+    
+    {
+      "indices": {
+        "example_index_name": {
+          "total": {
+            "search": {
+              "groups": {
+                "group1": {
+                  "query_total": 50000
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+I run the stats query again after 5 seconds and get:
+
+    
+    
+    {
+      "indices": {
+        "example_index_name": {
+          "total": {
+            "search": {
+              "groups": {
+                "group1": {
+                  "query_total": 123
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+and 5 seconds after that one:
+
+    
+    
+    {
+      "indices": {
+        "example_index_name": {
+          "total": {
+            "search": {
+              "groups": {
+                "group1": {
+                  "query_total": 50200
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+I'm guessing the reason for this could be that it's only getting metrics from
+a few nodes instead of all of them. But if that's the case, can I wait in some
+way and make sure I have data from all the nodes?
+

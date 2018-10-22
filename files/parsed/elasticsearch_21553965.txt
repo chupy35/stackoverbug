@@ -1,0 +1,100 @@
+21553965 Looking for best practice to filter suggestions from Completion
+Suggester
+
+I’m currently evaluating the Completion Suggester functionality in
+ElasticSearch to realize auto complete. It does look very decent so far.
+However I’m struggling a little bit with permissions.
+
+Let’s assume I have an index with hotels like the example on the ElesticSearch
+website. Besides getting the hotels that match with the given phrase I also
+wanna check whether the user is allowed to see the "suggestion" or not.
+Something like hotels which are for a certain clientele only. I added a new
+field for saving the group/permission just as a simple string for testing
+purpose. What I want to accomplish is to filter by the groups.
+
+The mapping would look something like that:
+
+    
+    
+    {
+      "mappings": {
+        "hotel" : {
+          "properties" : {
+            "name" : { "type" : "string" },
+            "city" : { "type" : "string" },
+            "group" : { "type" : "string" },
+            "name_suggest" : {
+              "type" : "completion",
+              "payloads" : true
+            }
+          }
+        }
+      }
+    }'
+    
+
+And with the following documents:
+
+    
+    
+    {
+      "name" :         "Mercure Hotel Munich",
+      "city" :         "Munich",
+      "group "   :     "1",
+      "name_suggest" : "Mercure Hotel Munich"
+    }'
+    
+    {
+      "name" :         "Monaco Hotel",
+      "city" :         "Munich",
+      "group"    :     "2",
+      "name_suggest" : "Monaco Hotel"
+    }'
+    
+
+So, if a user with the group “1” is entering “M” he should only get "Mercure
+Hotel Munich". Vice versa, a user with group “2” is typing in “M” he should
+only get "Monaco Hotel ".
+
+I’ve seen some similar posts on Stackoverflow regarding to Completion
+Suggester + filter and that it doesn’t work together.
+
+In my honest opinion it’s not an unusual use case that some documents are for
+certain users. Therefore I don’t want to suggest anything which the user is
+not allowed to access.
+
+So my question is: What is the best practice to accomplish this? I mean
+considering performance and maintainability regarding to upcoming ES versions.
+
+Shall we stick with the edgeNGram solution until
+<https://github.com/elasticsearch/elasticsearch/pull/4044> is integrated? Or
+is there another solution by using completion suggester?
+
+TIA
+
+The completion suggester doesn't use traditional search at all, so you can't
+automatically post-filter your suggestions. You have a few options:
+
+  1. You've specified `payloads: true` but you don't seem to be using them. If you only have a few `groups` then you could include them in the payload and filter out invalid suggestions in your application.
+
+  2. Again, with only a few `groups` you could wait for the [ContextSuggester](https://github.com/elasticsearch/elasticsearch/pull/4044) to be merged.
+
+  3. Retrieve more suggestions than you need, then run a search which will filter out invalid results.
+
+  4. Use the edge-ngrams approach
+
+As per version 1.2.0, you can add context to your suggester and obtain
+filtered suggestions.
+
+[Introductory blog
+post](http://www.elasticsearch.org/blog/elasticsearch-1-2-adding-context-
+suggestions)
+
+[Full
+Docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/suggester-
+context.html)
+
+Also see [How can I add filter to Completion Suggester in
+ElasticSearch?](https://stackoverflow.com/questions/19434811/how-can-i-add-
+filter-to-completion-suggester-in-elasticsearch)
+

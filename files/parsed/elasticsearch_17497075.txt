@@ -1,0 +1,197 @@
+17497075 Efficient way to retrieve all _ids in ElasticSearch
+
+What is the fastest way to get all _ids of a certain index from ElasticSearch?
+Is it possible by using a simple query? One of my index has around 20,000
+documents.
+
+_Edit: Please read @Aleck Landgraf's Answer, too_
+
+You just want the elasticsearch-internal `_id` field? Or an `id` field from
+within your documents?
+
+For the former, try
+
+    
+    
+    curl http://localhost:9200/index/type/_search?pretty=true -d '
+    { 
+        "query" : { 
+            "match_all" : {} 
+        },
+        "stored_fields": []
+    }
+    '
+    
+
+**Note 2017 Update:** The post originally included `"fields": []` but since
+then the name has changed and `stored_fields` is the new value.
+
+The result will contain only the "metadata" of your documents
+
+    
+    
+    {
+      "took" : 7,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 4,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "index",
+          "_type" : "type",
+          "_id" : "36",
+          "_score" : 1.0
+        }, {
+          "_index" : "index",
+          "_type" : "type",
+          "_id" : "38",
+          "_score" : 1.0
+        }, {
+          "_index" : "index",
+          "_type" : "type",
+          "_id" : "39",
+          "_score" : 1.0
+        }, {
+          "_index" : "index",
+          "_type" : "type",
+          "_id" : "34",
+          "_score" : 1.0
+        } ]
+      }
+    }
+    
+
+For the latter, if you want to include a field from your document, simply add
+it to the `fields` array
+
+    
+    
+    curl http://localhost:9200/index/type/_search?pretty=true -d '
+    { 
+        "query" : { 
+            "match_all" : {} 
+        },
+        "fields": ["document_field_to_be_returned"]
+    }
+    '
+    
+
+Another option
+
+    
+    
+    curl 'http://localhost:9200/index/type/_search?pretty=true&fields='
+    
+
+will return _index, _type, _id and _score.
+
+you can also do it in python, which gives you a proper list:
+
+    
+    
+    import elasticsearch
+    es = elasticsearch.Elasticsearch()
+    
+    res = es.search(
+        index=your_index, 
+        body={"query": {"match_all": {}}, "size": 30000, "fields": ["_id"]})
+    
+    ids = [d['_id'] for d in res['hits']['hits']]
+    
+
+Better to use [scroll and
+scan](https://www.elastic.co/guide/en/elasticsearch/reference/2.0/search-
+request-scroll.html#scroll-scan) to get the result list so elasticsearch
+doesn't have to rank and sort the results.
+
+With the `elasticsearch-dsl` python lib this can be accomplished by:
+
+    
+    
+    from elasticsearch import Elasticsearch
+    from elasticsearch_dsl import Search
+    
+    es = Elasticsearch()
+    s = Search(using=es, index=ES_INDEX, doc_type=DOC_TYPE)
+    
+    s = s.fields([])  # only get ids, otherwise `fields` takes a list of field names
+    ids = [h.meta.id for h in s.scan()]
+    
+
+Console log:
+
+    
+    
+    GET http://localhost:9200/my_index/my_doc/_search?search_type=scan&scroll=5m [status:200 request:0.003s]
+    GET http://localhost:9200/_search/scroll?scroll=5m [status:200 request:0.005s]
+    GET http://localhost:9200/_search/scroll?scroll=5m [status:200 request:0.005s]
+    GET http://localhost:9200/_search/scroll?scroll=5m [status:200 request:0.003s]
+    GET http://localhost:9200/_search/scroll?scroll=5m [status:200 request:0.005s]
+    ...
+    
+
+_Note_ : **scroll** pulls batches of results from a query and keeps the cursor
+open for a given amount of time (1 minute, 2 minutes, which you can update);
+**scan** disables sorting. The `scan` helper function returns a python
+generator which can be safely iterated through.
+
+Inspired by @Aleck-Landgraf answer, for me it worked by using directly
+[scan](http://elasticsearch-
+py.readthedocs.org/en/master/helpers.html?highlight=scan#elasticsearch.helpers.scan)
+function in standard elasticsearch python API:
+
+    
+    
+    from elasticsearch import Elasticsearch
+    from elasticsearch.helpers import scan
+    es = Elasticsearch()
+    for dobj in scan(es, 
+                     query={"query": {"match_all": {}}, "fields" : []},  
+                     index="your-index-name", doc_type="your-doc-type"): 
+            print dobj["_id"],
+    
+
+Elaborating on the 2 answers by @Robert-Lujo and @Aleck-Landgraf (someone with
+the permissions can gladly move this to a comment): if you do not want to
+print but get everything inside a list from the returned generator, here is
+what I use:
+
+    
+    
+    from elasticsearch import Elasticsearch,helpers
+    es = Elasticsearch(hosts=[YOUR_ES_HOST])
+    a=helpers.scan(es,query={"query":{"match_all": {}}},scroll='1m',index=INDEX_NAME)#like others so far
+    
+    IDs=[aa['_id'] for aa in a]
+    
+    
+    
+    Url -> http://localhost:9200/<index>/<type>/_query
+    http method -> DELETE
+    Query -> {"query": {"match_all": {}}, "size": 30000, "fields": ["_id"]})
+    
+
+For elasticsearch 5.x, you can use the
+"[_source](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-source-filtering.html)" field.
+
+    
+    
+    GET /_search
+    {
+        "_source": false,
+        "query" : {
+            "term" : { "user" : "kimchy" }
+        }
+    }
+    
+
+`"fields"` has been deprecated. (Error: "The field [fields] is no longer
+supported, please use [stored_fields] to retrieve stored fields or _source
+filtering if the field is not stored")
+

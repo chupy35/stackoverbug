@@ -1,0 +1,57 @@
+19211245 Wrong count for nested facets
+
+I'm building search for products and variants. One product can have many
+nested variants. Example: 1 T-shirt can be in 2 variants, white for 50 euros
+and green for 60 euros. It's still the same product and should be displayed
+once on the results page.
+
+This is my mapping:
+
+    
+    
+    {"product" => { "properties" => {"vendor_variants" => {"type" => "nested"}}}}
+    
+
+And this is the query that I'm doing:
+
+    
+    
+    "query" => {
+        "filtered" => {
+          "query" => {
+            "match_all" => {}
+          },
+          "filter" => {
+            "bool" => {
+              "must" => [
+                {
+                  "terms" => {
+                    "categories" => [122]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "facets" => {
+        "brand" => { "terms" => {"field" => "filter_brand"} },
+        "price_range" => {
+          "nested" => "vendor_variants",
+          "range" => { "field" => "price", "ranges" => [ {"to" => 2000}, {"from" => 2000, "to" => 5000} ]
+          }
+        }
+      }
+    
+
+This query produces 172 results. But the facets for price ranges are
+completely wrong. For example it returns that for 20-50 euro range there are
+422 results. I believe it's because it counts every single nested
+vendor_variants document. But it's not what I need, I need it to count only
+the main product documents.
+
+What is wrong with my query?
+
+Figured it out. In mapping for the nested document, I had to add
+`"include_in_parent" => true`
+

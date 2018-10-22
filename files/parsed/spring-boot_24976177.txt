@@ -1,0 +1,11 @@
+24976177 Externalizing logging in Spring Boot apps
+
+I'm trying to externalize logging configuration. However, any configuration I
+establish (e.g. `-Dlogback.configurationFile=...`) is wiped out the moment I
+call `SpringApplication.run()`. Is there a way to prevent this?
+
+Try 'logging.config' (or use one of the the conventional locations, e.g.
+'classpath:/logback.xml'). Docs here: <http://docs.spring.io/spring-
+boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-custom-log-
+configuration>.
+

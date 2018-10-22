@@ -1,0 +1,64 @@
+11777890 Equivalence of window.onbeforeunload in AngularJS for routes
+
+Regular JavaScript has window.onbeforeunload. How do I emulate the same in
+AngularJS with HTML5 routes?
+
+There is $beforeRouteChange, but it doesn't allow you to cancel the event as
+far as I can tell.
+
+To clarify: window.onbeforeunload would work for navigating away from the
+page, but not for intra page navigation, e.g. going from one controller to
+another just through the HTML5 history API.
+
+There is a `$locationChangeStart` event which can be canceled.
+
+Since it hasn't been documented yet, here is the unit test describing how it
+affects the `$route` service.
+<https://github.com/angular/angular.js/blob/v1.0.1/test/ng/routeSpec.js#L63>
+
+This doesn't provide a confirmation for the user like `window.onbeforeunload`
+does. You need to bring your own dialog service and restart the location
+change process to get the same effect (or you could just use the synchronous
+`$window.confirm`).
+
+Add this :
+
+    
+    
+    $scope.$on('$destroy', function() {
+       window.onbeforeunload = undefined;
+    });
+    $scope.$on('$locationChangeStart', function(event, next, current) {
+       if(!confirm("Are you sure you want to leave this page?")) {
+          event.preventDefault();
+       }
+    });
+    
+
+If you are using angular-ui-router you need to use `$stateChangeStart` instead
+of `$locationChangeStart`.
+
+When using **UI-Router version 1.0.0+** , use `$transitions.onStart` instead
+of `$stateChangeStart`. See the [transition hooks](https://ui-
+router.github.io/guide/transitionhooks) documentation.
+
+The `$stateChange*` events are deprecated as of version 1.0.0
+([source](https://ui-router.github.io/guide/ng1/migrate-to-1_0#state-change-
+events)):
+
+> All state events, (i.e. `$stateChange*` and friends) are now deprecated and
+disabled by default. Instead of listening for events, use the Transition Hook
+API.
+
+Example code to abort a transition ([source](https://ui-
+router.github.io/guide/transitionhooks#aborting-a-transition)):
+
+    
+    
+    $transitions.onStart({}, function(transition) {
+      if (transition.to().name === 'unreachable') {
+        return false;
+      }
+    }
+    
+

@@ -1,0 +1,99 @@
+25287267 Array input in Elasticsearch Completion Suggester
+
+I am trying to figure out why a scenario in ES doesn't seem to work for me. I
+have a pretty straightforward suggest mapping setup:
+
+    
+    
+    {
+      "ding" : {
+         "properties" : {
+            "name" : { "type" : "string" },
+            "title" : { "type" : "string" },
+            "test" : { "type" : "string" },
+            "suggest": {
+                "type": "completion",
+                "analyzer": "simple",
+                "payloads": true,
+                "max_input_length": 50
+                }
+    
+            }
+         }
+    }
+    
+
+And indexed the documents as such:
+
+    
+    
+    {
+       "title": "Title",
+       "name": "Name",
+       "test": "Test",
+       "suggest": {
+          "input": [
+             "Koolmees 21, Breda",
+             "4822PP 21"
+          ]
+       }
+    }
+    
+
+The completion suggest works fine on:
+
+    
+    
+    {
+        "ding" : {
+          "text" : "Koo",
+            "completion" : {
+                "field" : "suggest"
+            }
+        }
+    }
+    
+
+But not on:
+
+    
+    
+    {
+        "ding" : {
+          "text" : "482",
+            "completion" : {
+                "field" : "suggest"
+            }
+        }
+    }
+    
+
+Is it because the input starts with a numeric character? I can't seem to
+figure it out :S
+
+The completion suggester uses the `simple` analyzer by default. If you use the
+`Analyze` API you can see it removes the numbers:
+
+    
+    
+    curl -XGET 'localhost:9200/_analyze?analyzer=simple&pretty=true' -d '4822PP 21'
+    
+
+returns
+
+    
+    
+    {
+        "tokens" : [ {
+            "token" : "pp",
+            "start_offset" : 4,
+            "end_offset" : 6,
+            "type" : "word",
+            "position" : 1
+       } ]
+    
+
+}
+
+You may want to switch the auto completions to use the `Standard` analyzer.
+

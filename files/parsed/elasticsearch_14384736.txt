@@ -1,0 +1,201 @@
+14384736 Elasticsearch- get all values for a given field?
+
+I've been looking around the Elasticsearch Documentation and I can't find
+exactly what I'm looking for.
+
+Is it possible to query for all of the values a specific field? Say I have
+"articles" and each article has an author, is there a query I can perform to
+find a list of all authors?
+
+Thanks!
+
+I think what you want is a faceted search. Have a look at this example from
+the documenation:
+
+<http://www.elasticsearch.org/guide/reference/api/search/facets/index.html>
+
+    
+    
+    curl -X POST "http://localhost:9200/articles/_search?pretty=true" -d '
+      {
+        "query" : { "query_string" : {"query" : "*"} },
+        "facets" : {
+          "tags" : { "terms" : {"field" : "author"} }
+        }
+      }
+    '
+    
+
+See if you can tailor this to work for you.
+
+Hope this helps, Matt
+
+another example
+
+request
+
+    
+    
+    curl -X POST "http://localhost:9200/_search?pretty=true" -d '
+    {
+      "facets" : {
+        "tags" : { "terms" : {"field" : "network.platform"} },
+        "size" : 60
+      },
+      "size" : 0
+    }
+    '
+    
+
+response
+
+    
+    
+    {
+      "took" : 266,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 650,
+        "successful" : 650,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 41,
+        "max_score" : 0.0,
+        "hits" : [ ]
+      },
+      "facets" : {
+        "tags" : {
+          "_type" : "terms",
+          "missing" : 15,
+          "total" : 26,
+          "other" : 0,
+          "terms" : [ {
+            "term" : "platform name 1",
+            "count" : 20
+          }, {
+            "term" : "platform name 2",
+            "count" : 6
+          } ]
+        }
+      }
+    }
+    
+
+You don't mention the Elasticsearch Version, but for ES 1.6, the preferred
+method is using aggregations. Here is an example of what I use.
+
+\--Get all the STATUS values, which is a nested query.
+
+    
+    
+    GET path for data/_search?size=200
+    {
+      "aggs": {
+        "something": {
+          "nested": {
+            "path": "NESTED_PATH"
+          },
+          "aggs": {
+            "somethingCodes": {
+              "terms": {
+                "field": "NESTED_PATH.STATUS",
+                "size": 50
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+and an example Response:
+
+    
+    
+    "aggregations": {
+          "panels": {
+             "doc_count": 5029693,
+             "panelCodes": {
+                "doc_count_error_upper_bound": 0,
+                "sum_other_doc_count": 0,
+                "buckets": [
+                   {
+                      "key": "M",
+                      "doc_count": 1943107
+                   },
+                   {
+                      "key": "W",
+                      "doc_count": 137904
+                   },
+                   {
+                      "key": "E",
+                      "doc_count": 69080
+                   },
+                   {
+                      "key": "Y",
+                      "doc_count": 4081
+                   },
+                   {
+                      "key": "N",
+                      "doc_count": 1063
+                   },
+                   {
+                      "key": "T",
+                      "doc_count": 483
+                   },
+                   {
+                      "key": "",
+                      "doc_count": 1
+                   }
+                ]
+             }
+          }
+       }
+    
+
+> # **How to get all possible values for field`author`?**
+
+    
+    
+    curl -XGET  http://localhost:9200/articles/_search?pretty -d '
+    {
+        "aggs" : {
+            "whatever_you_like_here" : {
+                "terms" : { "field" : "author", "size":10000 }
+            }
+        },
+        "size" : 0
+    }'
+    
+
+Note
+
+  * `"size":10000` Get at most 10000 unique values. Default is 10.
+
+  * `"size":0` By default, `"hits"` contains 10 documents. We don't need them.
+
+  * By default, the buckets are ordered by the `doc_count` in decreasing order.
+
+* * *
+
+Reference: [bucket terms
+aggregation](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html)
+
+Also note, according to [this
+page](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+facets.html), facets have been replaced by aggregations in Elasticsearch 1.0,
+which are a superset of facets.
+
+Fastest way of checking existing field values:
+
+    
+    
+    GET myindex/mytype/<id>/_termvectors?fields=Product.Material.Code
+    
+
+  * `myindex` = index
+  * `mytype` = type
+  * `<id>` = document id
+

@@ -1,0 +1,80 @@
+20401331 How to define dynamically / override the _default_ mapping in
+elasticsearch?
+
+Use case :
+
+  1. The index/indices will be built dynamically from a template, so that it will pick some custom settings (number of shards/replicas/ etc).
+  2. Generate dynamically the types and their mappings, enabling for them all the timestamp & ttl fields. Also define the same parent type for all types, except the parent type itself (I know its name).
+    
+        {
+       "template": "*",
+    
+       "settings": {
+          ...................
+       },
+    
+       "mappings": {
+    
+          "_default_": {
+             "_parent": {
+                "type": "ParentType"
+             },
+             "_timestamp": {
+                "enabled": true,
+                "store": true
+             },
+             "_ttl": {
+                "enabled": true
+             }
+          }
+    
+       }
+    }
+    
+
+How could I disable the _parent field for the ParentType type itself ?
+
+After a little big of digging on the docs, I found out that you can override
+`__default__` mappings using this work around.
+
+    
+    
+    {
+       "mappings": {
+          "_default_": {
+             "_parent": {
+                 "type": "my_parent_type" # 1
+             }
+          },
+          "my_parent_type": {
+              "_parent": {
+                  "type": "_dummy" # 2
+              }
+          }
+       }
+    }
+    
+
+**1)** This mapping configuration will be inherited by all your types
+including `my_parent_type`type. Step 2 explains how to override your parent
+type `_parent` meta-field.
+
+**2)** I found here
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/default-
+mapping.html> that you can override any of the mappings from `__default__`
+when you provide a specific mapping for the type in question.
+
+In this case we are assigning the `_parent` mapping of `my_parent_type` to a
+`_dummy` parent type that does not have to exists in your index.
+
+**Note** : ElasticSearch 2.x documentation states:
+
+> The `_parent.type` setting can only point to a type that doesn’t exist yet.
+This means that a type cannot become a parent type after it is has been
+created.
+
+For this reason, you have to make sure you index **first** , a document that
+is not `my_parent_type` type, otherwise you'll get an at indexing time.
+
+I hope this helps.
+

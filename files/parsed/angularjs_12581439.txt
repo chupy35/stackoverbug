@@ -1,0 +1,581 @@
+12581439 How to add custom validation to an AngularJS form?
+
+I have a form with input fields and validation setup by adding the `required`
+attributes and such. But for some fields I need to do some extra validation.
+How would I "tap in" to the validation that `FormController` controls?
+
+Custom validation could be something like "if these 3 fields are filled in,
+then this field is required and needs to be formatted in a particular way".
+
+There's a method in `FormController.$setValidity` but that doesn't look like a
+public API so I rather not use it. Creating a custom directive and using
+`NgModelController` looks like another option, but would basically require me
+to create a directive for each custom validation rule, which I do not want.
+
+Actually, marking a field from the controller as invalid (while also keeping
+`FormController` in sync) might be the thing that I need in the simplest
+scenario to get the job done, but I don't know how to do that.
+
+Angular-UI's project includes a ui-validate directive, which will probably
+help you with this. It let's you specify a function to call to do the
+validation.
+
+Have a look at the demo page: <http://angular-ui.github.com/>, search down to
+the Validate heading.
+
+From the demo page:
+
+    
+    
+    <input ng-model="email" ui-validate='{blacklist : notBlackListed}'>
+    <span ng-show='form.email.$error.blacklist'>This e-mail is black-listed!</span>
+    
+
+then in your controller:
+
+    
+    
+    function ValidateCtrl($scope) {
+      $scope.blackList = ['bad@domain.com','verybad@domain.com'];
+      $scope.notBlackListed = function(value) {
+        return $scope.blackList.indexOf(value) === -1;
+      };
+    }
+    
+
+**Edit: added information about ngMessages (>= 1.3.X) below.**
+
+## Standard form validation messages (1.0.X and above)
+
+Since this is one of the top results if you Google "Angular Form Validation",
+currently, I want to add another answer to this for anyone coming in from
+there.
+
+> There's a method in FormController.$setValidity but that doesn't look like a
+public API so I rather not use it.
+
+It's "public", no worries. Use it. That's what it's for. If it weren't meant
+to be used, the Angular devs would have privatized it in a closure.
+
+To do custom validation, if you don't want to use Angular-UI as the other
+answer suggested, you can simply roll your own validation directive.
+
+    
+    
+    app.directive('blacklist', function (){ 
+       return {
+          require: 'ngModel',
+          link: function(scope, elem, attr, ngModel) {
+              var blacklist = attr.blacklist.split(',');
+    
+              //For DOM -> model validation
+              ngModel.$parsers.unshift(function(value) {
+                 var valid = blacklist.indexOf(value) === -1;
+                 ngModel.$setValidity('blacklist', valid);
+                 return valid ? value : undefined;
+              });
+    
+              //For model -> DOM validation
+              ngModel.$formatters.unshift(function(value) {
+                 ngModel.$setValidity('blacklist', blacklist.indexOf(value) === -1);
+                 return value;
+              });
+          }
+       };
+    });
+    
+
+And here's some example usage:
+
+    
+    
+    <form name="myForm" ng-submit="doSomething()">
+       <input type="text" name="fruitName" ng-model="data.fruitName" blacklist="coconuts,bananas,pears" required/>
+       <span ng-show="myForm.fruitName.$error.blacklist">
+          The phrase "{{data.fruitName}}" is blacklisted</span>
+       <span ng-show="myForm.fruitName.$error.required">required</span>
+       <button type="submit" ng-disabled="myForm.$invalid">Submit</button>
+    </form>
+    
+
+**Note: in 1.2.X it's probably preferrable to substitute`ng-if` for `ng-show`
+above**
+
+Here is an obligatory [plunker
+link](http://plnkr.co/edit/4u8FV869aD33WozdqdQ2?p=preview)
+
+Also, I've written a few blog entries about just this subject that goes into a
+little more detail:
+
+[Angular Form Validation](http://www.benlesh.com/2012/11/angular-js-form-
+validation.html)
+
+[Custom Validation Directives](http://www.benlesh.com/2012/12/angular-js-
+custom-validation-via.html)
+
+## Edit: using ngMessages in 1.3.X
+
+You can now use the ngMessages module instead of ngShow to show your error
+messages. It will actually work with anything, it doesn't have to be an error
+message, but here's the basics:
+
+  1. Include `<script src="angular-messages.js"></script>`
+  2. Reference `ngMessages` in your module declaration:
+    
+        var app = angular.module('myApp', ['ngMessages']);
+    
+
+  3. Add the appropriate markup:
+    
+        <form name="personForm">
+      <input type="email" name="email" ng-model="person.email" required/>
+    
+      <div ng-messages="personForm.email.$error">
+        <div ng-message="required">required</div>
+        <div ng-message="email">invalid email</div>
+      </div>
+    </form>
+    
+
+In the above markup, `ng-message="personForm.email.$error"` basically
+specifies a context for the `ng-message` child directives. Then `ng-
+message="required"` and `ng-message="email"` specify properties on that
+context to watch. **Most importantly, they also specify an order to check them
+in**. The first one it finds in the list that is "truthy" wins, and it will
+show that message and none of the others.
+
+And a [plunker for the ngMessages
+example](http://plnkr.co/edit/ucbkRcZxaSvWSLBC5v2z?p=preview)
+
+You can use ng-required for your validation scenario ("if these 3 fields are
+filled in, then this field is required":
+
+    
+    
+    <div ng-app>
+        <input type="text" ng-model="field1" placeholder="Field1">
+        <input type="text" ng-model="field2" placeholder="Field2">
+        <input type="text" ng-model="field3" placeholder="Field3">
+        <input type="text" ng-model="dependentField" placeholder="Custom validation"
+            ng-required="field1 && field2 && field3">
+    </div>
+    
+
+@synergetic I think @blesh suppose to put function validate as below
+
+    
+    
+    function validate(value) {
+        var valid = blacklist.indexOf(value) === -1;
+        ngModel.$setValidity('blacklist', valid);
+        return valid ? value : undefined;
+    }
+    
+    ngModel.$formatters.unshift(validate);
+    ngModel.$parsers.unshift(validate);
+    
+
+Here's a cool way to do custom wildcard expression validations in a form
+(from: [Advanced form validation with AngularJS and
+filters](http://blog.bennybottema.com/2014/01/05/advanced-form-validation-
+with-angularjs-and-filters/)):
+
+    
+    
+    <form novalidate="">  
+       <input type="text" id="name" name="name" ng-model="newPerson.name"
+          ensure-expression="(persons | filter:{name: newPerson.name}:true).length !== 1">
+       <!-- or in your case:-->
+       <input type="text" id="fruitName" name="fruitName" ng-model="data.fruitName"
+          ensure-expression="(blacklist | filter:{fruitName: data.fruitName}:true).length !== 1">
+    </form>
+    
+    
+    
+    app.directive('ensureExpression', ['$http', '$parse', function($http, $parse) {
+        return {
+            require: 'ngModel',
+            link: function(scope, ele, attrs, ngModelController) {
+                scope.$watch(attrs.ngModel, function(value) {
+                    var booleanResult = $parse(attrs.ensureExpression)(scope);
+                    ngModelController.$setValidity('expression', booleanResult);
+                });
+            }
+        };
+    }]);
+    
+
+[jsFiddle demo](http://jsfiddle.net/plantface/LS8rt/) (supports expression
+naming and multiple expressions)
+
+It's similar to `ui-validate`, but you don't need a scope specific validation
+function (this works generically) and ofcourse you don't need _ui.utils_ this
+way.
+
+You can use [Angular-Validator](https://github.com/turinggroup/angular-
+validator).
+
+**Example: using a function to validate a field**
+
+    
+    
+    <input  type = "text"
+        name = "firstName"
+        ng-model = "person.firstName"
+        validator = "myCustomValidationFunction(form.firstName)">
+    
+
+Then in your controller you would have something like
+
+    
+    
+    $scope.myCustomValidationFunction = function(firstName){ 
+       if ( firstName === "John") {
+           return true;
+        }
+    
+
+**You can also do something like this:**
+
+    
+    
+    <input  type = "text"
+            name = "firstName"
+            ng-model = "person.firstName"
+            validator = "'!(field1 && field2 && field3)'"
+            invalid-message = "'This field is required'">
+    
+
+(where field1 field2, and field3 are scope variables. You might also want to
+check if the fields do not equal the empty string)
+
+If the field does not pass the `validator` then the field will be marked as
+invalid and the user will not be able to submit the form.
+
+For more use cases and examples see: <https://github.com/turinggroup/angular-
+validator>
+
+_Disclaimer: I am the author of Angular-Validator_
+
+**Update:**
+
+Improved and simplified version of previous directive (one instead of two)
+with same functionality:
+
+    
+    
+    .directive('myTestExpression', ['$parse', function ($parse) {
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            link: function (scope, element, attrs, ctrl) {
+                var expr = attrs.myTestExpression;
+                var watches = attrs.myTestExpressionWatch;
+    
+                ctrl.$validators.mytestexpression = function (modelValue, viewValue) {
+                    return expr == undefined || (angular.isString(expr) && expr.length < 1) || $parse(expr)(scope, { $model: modelValue, $view: viewValue }) === true;
+                };
+    
+                if (angular.isString(watches)) {
+                    angular.forEach(watches.split(",").filter(function (n) { return !!n; }), function (n) {
+                        scope.$watch(n, function () {
+                            ctrl.$validate();
+                        });
+                    });
+                }
+            }
+        };
+    }])
+    
+
+Example usage:
+
+    
+    
+    <input ng-model="price1" 
+           my-test-expression="$model > 0" 
+           my-test-expression-watch="price2,someOtherWatchedPrice" />
+    <input ng-model="price2" 
+           my-test-expression="$model > 10" 
+           my-test-expression-watch="price1" 
+           required />
+    
+
+Result: Mutually dependent test expressions where validators are executed on
+change of other's directive model and current model.
+
+Test expression has local `$model` variable which you should use to compare it
+to other variables.
+
+**Previously:**
+
+I've made an attempt to improve @Plantface code by adding extra directive.
+This extra directive very useful if our expression needs to be executed when
+changes are made in more than one ngModel variables.
+
+    
+    
+    .directive('ensureExpression', ['$parse', function($parse) {
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            controller: function () { },
+            scope: true,
+            link: function (scope, element, attrs, ngModelCtrl) {
+                scope.validate = function () {
+                    var booleanResult = $parse(attrs.ensureExpression)(scope);
+                    ngModelCtrl.$setValidity('expression', booleanResult);
+                };
+    
+                scope.$watch(attrs.ngModel, function(value) {
+                    scope.validate();
+                });
+            }
+        };
+    }])
+    
+    .directive('ensureWatch', ['$parse', function ($parse) {
+        return {
+            restrict: 'A',
+            require: 'ensureExpression',
+            link: function (scope, element, attrs, ctrl) {
+                angular.forEach(attrs.ensureWatch.split(",").filter(function (n) { return !!n; }), function (n) {
+                    scope.$watch(n, function () {
+                        scope.validate();
+                    });
+                });
+            }
+        };
+    }])
+    
+
+Example how to use it to make cross validated fields:
+
+    
+    
+    <input name="price1"
+           ng-model="price1" 
+           ensure-expression="price1 > price2" 
+           ensure-watch="price2" />
+    <input name="price2" 
+           ng-model="price2" 
+           ensure-expression="price2 > price3" 
+           ensure-watch="price3" />
+    <input name="price3" 
+           ng-model="price3" 
+           ensure-expression="price3 > price1 && price3 > price2" 
+           ensure-watch="price1,price2" />
+    
+
+`ensure-expression` is executed to validate model when `ng-model` or any of
+`ensure-watch` variables is changed.
+
+I recently created a directive to allow for expression-based invalidation of
+angular form inputs. Any valid angular expression can be used, and it supports
+custom validation keys using object notation. Tested with angular v1.3.8
+
+    
+    
+            .directive('invalidIf', [function () {
+            return {
+                require: 'ngModel',
+                link: function (scope, elm, attrs, ctrl) {
+    
+                    var argsObject = scope.$eval(attrs.invalidIf);
+    
+                    if (!angular.isObject(argsObject)) {
+                        argsObject = { invalidIf: attrs.invalidIf };
+                    }
+    
+                    for (var validationKey in argsObject) {
+                        scope.$watch(argsObject[validationKey], function (newVal) {
+                            ctrl.$setValidity(validationKey, !newVal);
+                        });
+                    }
+                }
+            };
+        }]);
+    
+
+You can use it like this:
+
+    
+    
+    <input ng-model="foo" invalid-if="{fooIsGreaterThanBar: 'foo > bar',
+                                       fooEqualsSomeFuncResult: 'foo == someFuncResult()'}/>
+    
+
+Or by just passing in an expression (it will be given the default
+validationKey of "invalidIf")
+
+    
+    
+    <input ng-model="foo" invalid-if="foo > bar"/>
+    
+
+In AngularJS the best place to define Custom Validation is Cutsom directive.
+AngularJS provide a ngMessages module.
+
+> ngMessages is a directive that is designed to show and hide messages based
+on the state of a key/value object that it listens on. The directive itself
+complements error message reporting with the ngModel $error object (which
+stores a key/value state of validation errors).
+
+For custom form validation One should use ngMessages Modules with custom
+directive.Here i have a simple validation which will check if number length is
+less then 6 display an error on screen
+
+    
+    
+     <form name="myform" novalidate>
+                    <table>
+                        <tr>
+                            <td><input name='test' type='text' required  ng-model='test' custom-validation></td>
+                            <td ng-messages="myform.test.$error"><span ng-message="invalidshrt">Too Short</span></td>
+                        </tr>
+                    </table>
+                </form>
+    
+
+Here is how to create custom validation directive
+
+    
+    
+    angular.module('myApp',['ngMessages']);
+            angular.module('myApp',['ngMessages']).directive('customValidation',function(){
+                return{
+                restrict:'A',
+                require: 'ngModel',
+                link:function (scope, element, attr, ctrl) {// 4th argument contain model information 
+    
+                function validationError(value) // you can use any function and parameter name 
+                    {
+                     if (value.length > 6) // if model length is greater then 6 it is valide state
+                     {
+                     ctrl.$setValidity('invalidshrt',true);
+                     }
+                     else
+                     {
+                     ctrl.$setValidity('invalidshrt',false) //if less then 6 is invalide
+                     }
+    
+                     return value; //return to display  error 
+                    }
+                    ctrl.$parsers.push(validationError); //parsers change how view values will be saved in the model
+                }
+                };
+            });
+    
+
+`$setValidity` is inbuilt function to set model state to valid/invalid
+
+I extended @Ben Lesh's answer with an ability to specify whether the
+validation is case sensitive or not (default)
+
+use:
+
+    
+    
+    <input type="text" name="fruitName" ng-model="data.fruitName" blacklist="Coconuts,Bananas,Pears" caseSensitive="true" required/>
+    
+
+code:
+
+    
+    
+    angular.module('crm.directives', []).
+    directive('blacklist', [
+        function () {
+            return {
+                restrict: 'A',
+                require: 'ngModel',
+                scope: {
+                    'blacklist': '=',
+                },
+                link: function ($scope, $elem, $attrs, modelCtrl) {
+    
+                    var check = function (value) {
+                        if (!$attrs.casesensitive) {
+                            value = (value && value.toUpperCase) ? value.toUpperCase() : value;
+    
+                            $scope.blacklist = _.map($scope.blacklist, function (item) {
+                                return (item.toUpperCase) ? item.toUpperCase() : item
+                            })
+                        }
+    
+                        return !_.isArray($scope.blacklist) || $scope.blacklist.indexOf(value) === -1;
+                    }
+    
+                    //For DOM -> model validation
+                    modelCtrl.$parsers.unshift(function (value) {
+                        var valid = check(value);
+                        modelCtrl.$setValidity('blacklist', valid);
+    
+                        return value;
+                    });
+                    //For model -> DOM validation
+                    modelCtrl.$formatters.unshift(function (value) {
+                        modelCtrl.$setValidity('blacklist', check(value));
+                        return value;
+                    });
+                }
+            };
+        }
+    ]);
+    
+
+Some great examples and libs presented in this thread, but they didn't quite
+have what I was looking for. My approach: [angular-
+validity](https://github.com/2Toad/Angular-Validity) \-- a promise based
+validation lib for asynchronous validation, with optional Bootstrap styling
+baked-in.
+
+An angular-validity solution for the OP's use case might look something like
+this:
+
+    
+    
+    <input  type="text" name="field4" ng-model="field4"
+            validity="eval"
+            validity-eval="!(field1 && field2 && field3 && !field4)"
+            validity-message-eval="This field is required">
+    
+
+Here's a [Fiddle](https://jsfiddle.net/zze8yste/), if you want to take it for
+a spin. The lib is available on [GitHub](https://github.com/2Toad/Angular-
+Validity), has detailed documentation, and plenty of live demos.
+
+# Custom Validations that call a Server
+
+Use the [ngModelController `$asyncValidators`
+API](https://docs.angularjs.org/api/ng/type/ngModel.NgModelController#$asyncValidators)
+which handles asynchronous validation, such as making an `$http` request to
+the backend. Functions added to the object must return a promise that must be
+resolved when valid or rejected when invalid. In-progress async validations
+are stored by key in `ngModelController.$pending`. For more information, see
+[AngularJS Developer Guide - Forms (Custom
+Validation)](https://docs.angularjs.org/guide/forms#custom-validation).
+
+    
+    
+    ngModel.$asyncValidators.uniqueUsername = function(modelValue, viewValue) {
+      var value = modelValue || viewValue;
+    
+      // Lookup user by username
+      return $http.get('/api/users/' + value).
+         then(function resolved() {
+           //username exists, this means validation fails
+           return $q.reject('exists');
+         }, function rejected() {
+           //username does not exist, therefore this validation passes
+           return true;
+         });
+    };
+    
+
+For more information, see
+
+  * [ngModelController `$asyncValidators` API](https://docs.angularjs.org/api/ng/type/ngModel.NgModelController#$asyncValidators)
+
+  * [AngularJS Developer Guide - Forms (Custom Validation)](https://docs.angularjs.org/guide/forms#custom-validation).
+

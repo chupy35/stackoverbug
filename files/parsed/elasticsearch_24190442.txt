@@ -1,0 +1,93 @@
+24190442 ElasticSearch query for filter a single value and a list of values at
+once
+
+I want to make an ElasticSearch query that, gets a parameter in it's filter,
+sometimes this parameter is a single value and sometimes it is a list of
+values, I know that when it is a single value I should use "term" and when it
+is a list I should use "terms". but I want one query that can handle these two
+things, and I pass it a single value or a list and it returns the results.
+[all by one query], do you have any idea about how to do this?
+
+    
+    
+    query for single value:    
+    {'filter': {
+              'and': [
+                      {'term': {'first': 1}},
+                      {'term': {'second': 1}},
+                     ]
+            },
+     }
+    
+
+query for lists:
+
+    
+    
+    {'filter': {
+              'and': [
+                      {'terms': {'first':  [1,2,3]}},
+                      {'terms': {'second': [1,2,3]}},
+                     ]
+            },
+     }
+    
+
+but I want one query to handle both.
+
+Using a boolean query with a key of "should" will cause documents to be
+returned that match either clause.
+
+    
+    
+    {
+      "filter": {
+        "bool": {
+          "should": [
+            {
+             "terms": {
+               "first": "[1, 2]"
+              }
+            },
+            {
+              "terms": {
+               "second": "[2, 3]"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+For more examples check out <https://github.com/rcullito/elasticSearchQueries>
+
+You can use a terms query to handle both because you can have a list with a
+single value in it.
+
+For example:
+
+    
+    
+    {
+        "query" : {
+            "filtered" : {
+                "filter" : {
+                    "bool" : {
+                        "must" : [
+                            { "terms" : { "field1" : ["a"] } },
+                            { "terms" : { "field2" : ["b", "c"] } }
+                         ]
+                     }
+                 }
+            }
+        }
+    }
+    
+
+Note that the `bool` does not extend to the individual values in any lists.
+The only way I've figured out to stretch the AND logic there is to use the
+`term query` for each individual value. (This may seem like it would take a
+lot of time at first, but `bool` caches filters so it will just mark `True` or
+`False` later.
+

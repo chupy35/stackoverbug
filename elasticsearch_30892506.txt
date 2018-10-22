@@ -1,0 +1,4 @@
+30892506
+How can I get last arrived document ElasticSearch?
+<p>I have a cluster with documents that contains timestamp field.</p>&#xA;&#xA;<p>How can i request for the last arrived of them?</p>&#xA;
+<p>A query like the one below should do the trick. It'll get you the one document with the latest date in the <code>timestamp</code> field. </p>&#xA;&#xA;<pre><code>{&#xA;  "size": 1,&#xA;  "query": {&#xA;    "match_all": {}&#xA;  },&#xA;  "sort": {&#xA;    "timestamp": "desc"&#xA;  }&#xA;}&#xA;</code></pre>&#xA;

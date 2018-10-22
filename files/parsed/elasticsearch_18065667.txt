@@ -1,0 +1,41 @@
+18065667 ElasticSearch won't sort
+
+My ElasticSearch query with sort doesn't sort:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "sort": [
+        {
+          "id": {
+            "order": "desc"
+          }
+        }
+      ]
+    }
+    
+
+Adding the "sort" doesn't have any effect except that every result now has an
+additional attribute
+
+    
+    
+    sort: [0]
+    
+
+It looks like the "sort" attribute is 0, therefore the order of the results
+doesn't change.
+
+"id" is an actual attribute of the documents in my index. Changing it to
+"idFOOBAR" throws "[No mapping found for [idFOOBAR] in order to sort on]", so
+it seems to recognize the attribute. Also tried other attributes like "userId"
+etc., same outcome.
+
+Am I missing something?
+
+Changing the attribute mapping from `index="no"` to `index="not_analyzed"`
+fixed it.
+

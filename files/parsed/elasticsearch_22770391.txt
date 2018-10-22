@@ -1,0 +1,86 @@
+22770391 Error on creation of a mapping for an index
+
+I am trying to change the mapping of an index, but getting an error. Here are
+the steps I am taking to create the index
+
+  * create the index by populating it through a python script
+  * set the mapping with this code:
+    
+        PUT /myidx/orderrow/_mapping
+    {
+        "orderrow": {
+            "properties": {
+                "item_code": {
+                    "type": "string", 
+                    "index": "not_analyzed"
+                }
+            }
+        }
+    }
+    
+
+Here's the error message I get:
+
+    
+    
+    {
+       "error": "MergeMappingException[Merge failed with failures {[mapper [item_code] has different index values, mapper [item_code] has different `norms.enabled` values, mapper [item_code] has different tokenize values, mapper [item_code] has different index_analyzer]}]",
+       "status": 400
+    }
+    
+
+Any ideas?
+
+Because you are indexing data first into the index, Elasticsearch is auto-
+detecting the field type/mapping for your `item_code` field based on the data
+being loaded. Then when you attempt to update the mapping, you are getting the
+error shown above.
+
+I would recommend creating the index and applying the mapping prior to running
+your Python script to populate the index.
+
+    
+    
+    PUT /myproj/
+    
+    PUT /myproj/orderrow/_mapping
+     {
+        "orderrow": {
+            "properties": {
+                "item_code": {
+                    "type": "string", 
+                     "index": "not_analyzed"
+                }
+             }
+         }
+      }
+    
+
+Alternately, you can force the conflicting mapping into your index, using the
+`ignore_conflicts` option as defined in the [merging & conflicts section of
+the Put Mapping API
+Documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+put-mapping.html#merging-conflicts). However, I am not sure how that will
+impact the already indexed documents.
+
+I had the same problem and resolved it deleting the mapping and creating it
+(Warning: Deleting a mapping will **delete all documents (rows)** with that
+mapping)
+
+    
+    
+    DELETE /myidx/orderrow/_mapping
+    
+    PUT /myidx/orderrow/_mapping -d '
+    ...
+    '
+    
+
+After that, I had to close and open the index:
+
+    
+    
+    POST /myidx/_close
+    POST /myidx/_open
+    
+

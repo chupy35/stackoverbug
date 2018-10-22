@@ -1,0 +1,45 @@
+16913073 define analyzer globally (ES)
+
+I need/want to define my custom analyzers globally. therefore I edited the
+configuration file of ES (elasticsearch.yml) according to this answer: [Can I
+customize Elastic Search to use my own Stop Word
+list?](https://stackoverflow.com/questions/4927629/can-i-customize-elastic-
+search-to-use-my-own-stop-word-list/13012458#13012458) the relevant entries
+are
+
+    
+    
+    index.analysis.analyzer.angram:
+      type: custom
+      tokenizer: standard
+      filter: standard, lowercase, fngram
+    index.analysis.filter.fngram:
+      type: nGram
+      min_gram: 2
+      max_gram: 10
+    
+
+but when I try to invoke `curl -XGET 'localhost:9200/_analyze?analyzer=angram'
+-d 'this is a test'` I get an `ElasticSearchIllegalARgumentException[failed to
+find analyzer [angram]]`.
+
+is the configuration wrong? (although I'd expect ES to not start-up when
+encountered an error when reading the configuration during start-up)
+
+how do I correctly define an analyzer globally?
+
+**EDIT:** I'm using version 0.90.0
+
+The problem was with the URL in the `curl` statement. credit goes to Ivan (
+<https://groups.google.com/forum/#!topic/elasticsearch/5XlUoghKURg> )
+
+I'm quoting his answer from the group:
+
+> You cannot use a custom analyzer until it is referenced by an index. You
+would need to create a mapping that uses the analyzer and then use that index
+in the analyzer call. There is no need to index any documents to that index.
+
+>
+
+> `curl -XGET 'localhost:9200/SOMEINDEX/_analyze?analyzer=angram'`
+

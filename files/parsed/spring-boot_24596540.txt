@@ -1,0 +1,10 @@
+24596540 Use of spring boot to create single executable jar containing all
+direct and transitively dependent jar files
+
+How to use spring boot maven plug in to create an application which will have
+a single executable jar with all direct and transitively dependent jar files
+packaged into it and can be a standalone runnable.
+
+Use the spring-boot-starter-parent (or copy the spring-boot plugin config from
+there) and then "mvn package".
+

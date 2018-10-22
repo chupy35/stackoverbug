@@ -1,0 +1,36 @@
+21968297 Removing commas when using whitespace tokenizer
+
+When using the whitespace tokenizer a text like "there, he is." would be split
+to  "there," "he" and "is.". Naturally I would want to remove those
+punctuation that the standard tokenizer would had removed automatically.
+
+My questions are:
+
+  1. How to trim those punctuation marks? (in elasticsearch setting, like adding another token filter or charfilter)
+  2. I need to use the whitespace tokenizer mainly because I don't want hyphenated words to be splited. Is there a way I can achieve this while still using the standard tokenizer?
+
+you can use split() to remove all punctuation marks
+
+    
+    
+    String str ="there, he is.";
+    String[] ss = str.split("[ ,.]");   
+    for (String string : ss) {
+    System.out.println(string);
+    }
+    
+
+try this this will help u
+
+You can use the char filter to remove the the ",". [Char
+Filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+mapping-charfilter.html)
+
+You can use:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+word-delimiter-tokenfilter.html>
+
+I̶ ̶h̶a̶v̶e̶ ̶s̶e̶t̶u̶p̶ ̶a̶ ̶s̶n̶i̶p̶p̶e̶t̶ ̶=̶>̶
+̶h̶t̶t̶p̶:̶/̶/̶e̶s̶.̶s̶u̶b̶i̶t̶o̶l̶a̶b̶s̶.̶c̶o̶m̶/̶#̶/̶t̶e̶s̶t̶r̶/̶m̶6̶m̶f̶b̶4̶a̶h̶i̶m̶8̶6̶w̶2̶9̶
+

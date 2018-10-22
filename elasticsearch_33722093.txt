@@ -1,0 +1,4 @@
+33722093
+What is UpdateProcessor(solr) equivalent in elasticsearch?
+<p>I am using elasticsearch. I want to do some processing of text content during indexing and store in different fields. I used to do this in Solr by using UpdateProcessors(Python,Java or Javascript). </p>&#xA;&#xA;<p>I am new to elasticsearch.&#xA;I could see some posts saying elastic search doesnt support such operations during indexing. &#xA;But, I do not want to do this outside indexing to avoid additional layers. </p>&#xA;&#xA;<p>Can someone help me with some pointers or samples?</p>&#xA;
+<p>There is none. Some of the things that Solr does with UpdateRequestProcessors (such as id generation, dynamic schema, etc) Elasticsearch has built in and - mostly - automatic.</p>&#xA;&#xA;<p>But there is no way to specify a pipeline of components to apply to the incoming documents.</p>&#xA;&#xA;<p>According to Shay Banon (Elasticsearch creator), such functionality belong to the client.</p>&#xA;

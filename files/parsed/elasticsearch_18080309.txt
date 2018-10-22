@@ -1,0 +1,89 @@
+18080309 How to build a query with the AND operator?
+
+I cannot execute queries with the operator "AND" either with filters or the
+query.
+
+I've read:
+
+  * <http://www.elasticsearch.org/guide/reference/query-dsl/bool-query/>
+  * <http://www.elasticsearch.org/guide/reference/query-dsl/and-filter/>
+
+I have tried:
+
+    
+    
+    'curl -XGET url_local:9200/chasseur_de_tete/cv/_search -d ' { 
+    "filtered" : { 
+      "query" : { 
+        "match_all" : {} },
+          "filter" : { 
+            "and" : { 
+              "filters" : [
+                {"term" : {"active" : true }},
+                { "term" : { "deleted" : false }}
+              ]
+            }
+          }
+        }
+    } ' 
+    
+
+That produces the following error:
+
+    
+    
+    {
+        "error": "SearchPhaseExecutionException[Failed to execute phase [query], total failure; shardFailures {[9Fx2f7-MSNyYATEMPgemLw][chasseur_de_tete][4]: SearchParseException[[chasseur_de_tete][4]: from[-1],size[-1]: Parse Failure [Failed to parse source [ { \"filtered\" : { \"query\" : { \"match_all\" : {} }, \"filter\" : { \"and\" : { \"filters\" : [{ \"term\" : { \"active\" : \"true\" }},{ \"term\" : { \"deleted\" : \"false\" }}] } }}} ]]]; nested: SearchParseException[[chasseur_de_tete][4]: from[-1],size[-1]: Parse Failure [No parser for element [filtered]]]; }{[9Fx2f7-MSNyYATEMPgemLw][chasseur_de_tete][3]: SearchParseException[[chasseur_de_tete][3]: from[-1],size[-1]: Parse Failure [Failed to parse source [ { \"filtered\" : { \"query\" : { \"match_all\" : {} }, \"filter\" : { \"and\" : { \"filters\" : [{ \"term\" : { \"active\" : \"true\" }},{ \"term\" : { \"deleted\" : \"false\" }}] } }}} ]]]; nested: SearchParseException[[chasseur_de_tete][3]: from[-1],size[-1]: Parse Failure [No parser for element [filtered]]]; }]",
+        "status": 500
+    }
+    
+
+I have also tried:
+
+    
+    
+    `curl url_local:9200/chasseur_de_tete/joboffer/_search -d '{
+      "query" : {
+        "bool" : {
+          "must" : [
+             {"term":{"active":"false"}},
+             {"term":{"deleted":"true"}}
+          ] 
+        } 
+      }
+    } '
+    
+
+This query does not return an error message, but it returns all records of my
+collection.
+
+Try:
+
+    
+    
+    {
+        "query": {
+            "constant_score": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "active": false
+                                }
+                            },
+                            {
+                                "term": {
+                                    "deleted": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    
+
+You need to POST it in the request body.
+

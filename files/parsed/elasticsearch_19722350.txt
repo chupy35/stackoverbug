@@ -1,0 +1,19 @@
+19722350 Elasticsearch: Disable the Versioning of index document
+
+I could see the ElasticSearch versioning the index documents for every update.
+I would like to know if there is a way to disable these versions? I understand
+its a good to have functionality, but its just for exploring the tool. Also is
+there is any performance concerns with large number of versions?
+
+Thanks
+
+Versioning doesn't mean that elasticsearch keeps every version of the
+document. It keeps only the latest one. Every document has by default an
+implicit `_version` field, that gets incremented whenever the document
+changes. That allows for optimistic locking if you need it. You can also have
+your own external versioning system if you want. Have a look at [this
+article](http://www.elasticsearch.org/blog/elasticsearch-versioning-support/)
+that is all about versioning with elasticsearch.
+
+This doesn't hurt performance at all, I wouldn't look into disabling it.
+

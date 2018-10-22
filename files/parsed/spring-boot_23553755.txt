@@ -1,0 +1,35 @@
+23553755 Run Spring Boot Headless
+
+I have a spring boot application and I would like to run it headless. When I
+run from the terminal this is the command I'm using:
+
+java -jar myapp.jar --spring.main.headless=true
+
+Is this correct? Any help is well appreciated.
+
+The `spring.main.*` properties are injected into the `SpringApplication`. It
+doesn't know anything about heads or headlessness. Maybe you need `java
+-Djava.awt.headless=true ...`?
+
+Actually `SpringApplication` does support a headless mode [1], what you've got
+should work but is unnecessary as `true` is already the default.
+
+[1] <https://github.com/spring-projects/spring-
+boot/blob/v1.0.2.RELEASE/spring-
+boot/src/main/java/org/springframework/boot/SpringApplication.java#L691-L998>
+
+I've faced with same problem and solved it using `SpringApplicationBuilder`
+class. You should set `headless` false (which is true by default). See
+[javadoc](http://docs.spring.io/spring-
+boot/docs/current/api/org/springframework/boot/builder/SpringApplicationBuilder.html#headless%28boolean%29).
+
+My main method looks like this:
+
+    
+    
+      public static void main(String[] args) {
+        SpringApplicationBuilder builder = new SpringApplicationBuilder(App.class);
+        builder.headless(false).run(args);
+      }
+    
+

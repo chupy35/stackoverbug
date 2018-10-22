@@ -1,0 +1,15 @@
+25357504 Elasticsearch multi term query rewrite
+
+I'm trying to understand how to use Elasticsearch properly and stumbled at the
+concept of [multi term query
+rewrite](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-multi-term-rewrite.html).
+
+My question is what does it do exactly? Does it simply affect score
+calculation or it changes the whole query being parsed? Or does it do
+something else? Any light would be appreciated!
+
+PS: Looking at [this](http://elasticsearch-users.115913.n3.nabble.com/fuzzy-
+matching-and-direct-hit-ranking-td3988602.html) thread sort of suggests me
+that it has something to do with fuzzy score calculation.
+

@@ -1,0 +1,82 @@
+12944474 inline editing with angularjs
+
+I'm trying to do inline editing in a form with an Angular directive,
+unfortunately I ran into two issues and I can't get around them, so a second
+opinion will be very much appreciated.
+
+here is the fiddle: <http://jsfiddle.net/jorgecas99/bc65N/>
+
+Question 1: As you can see I added a section that is suppose to listen to key
+strokes (in this case the esc key) and exit the edit mode, unfortunately it is
+not working. I tried listening for key 13 which is 'enter' and that worked ok,
+so I don't understand.
+
+Question 2: I will like to change the second field to a dropdown when you
+click to edit it without having to create a new directive, is that even
+possible? I certainly care about number of lines of code so if this can be
+achieve with one directive, then that would be my preferred option.
+
+Thank you!
+
+for first question, you can see a revised version of your fiddle which
+incorporate the technique described in  <http://css-
+tricks.com/snippets/javascript/saving-contenteditable-content-changes-as-json-
+with-ajax/> here <http://jsfiddle.net/bonamico/cAHz7/>
+
+    
+    
+    var myApp = angular.module('myApp', []);
+    
+
+please note that var myApp = was missing, and so the following declaration did
+not execute
+
+    
+    
+    myApp.directive('contenteditable', function() {
+    return {
+        require: 'ngModel',
+        link: function(scope, elm, attrs, ctrl) {
+            // view -> model
+            elm.bind('blur', function() {
+                scope.$apply(function() {
+                    ctrl.$setViewValue(elm.html());
+                });
+            });
+    
+            // model -> view
+            ctrl.render = function(value) {
+                elm.html(value);
+            };
+    
+            // load init value from DOM
+            ctrl.$setViewValue(elm.html());
+    
+            elm.bind('keydown', function(event) {
+                console.log("keydown " + event.which);
+                var esc = event.which == 27,
+                    el = event.target;
+    
+                if (esc) {
+                        console.log("esc");
+                        ctrl.$setViewValue(elm.html());
+                        el.blur();
+                        event.preventDefault();                        
+                    }
+    
+            });
+    
+        }
+    };
+    
+
+});
+
+See also <http://api.jquery.com/keydown/>
+
+For the second question, I would suggest that minimizing numer of lines of
+code is not normally a main concern, while making code modular and
+maintainable is. So it would be definitely better to create two directives,
+and possibly a common javascript function for the commonm parts between the
+two, if any.
+

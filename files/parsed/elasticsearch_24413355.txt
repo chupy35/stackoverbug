@@ -1,0 +1,22 @@
+24413355 how to start elastic search in non cluster mode
+
+I have two different machines running elastic search server instances. They
+automatically create a cluster and changes made on one instance reflect on
+other instance on different machine. I have changed the cluster.name property
+in elasticsearch.yml file in config folder and the issue is resolved. I wanted
+to know if i can start elastic search server instance in non-cluster mode ?
+
+You can't start the es server in non-cluster mode.  But if you want the two
+servers to run independently (in its own cluster), there are 2 options that I
+can think of:
+
+  1. Disable multicast and don't set the hosts for them in unicast
+  2. Change the cluster.name to make them have different names
+
+The easiest is to set node.local: true
+
+This prevents elasticsearch from trying to connect to other nodes.
+
+Using a custom name is also a good idea in any case just to prevent unintended
+exchange of data. Use something else for production, testing, and development.
+

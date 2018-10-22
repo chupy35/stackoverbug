@@ -1,0 +1,13 @@
+17049518 defining the a path for the _parent field
+
+Can I use a "path" for the _parent field?
+
+It is mentioned that the _routing field can do that at:
+<http://www.elasticsearch.org/guide/reference/mapping/routing-field/>
+
+But at <http://www.elasticsearch.org/guide/reference/mapping/parent-field/>
+it's not.
+
+It is not possible. Refer to the issue
+<https://github.com/elasticsearch/elasticsearch/issues/3405>
+

@@ -1,0 +1,35 @@
+12235947 GeoDistance filter ElasticSearch
+
+I am using the [Geo Distance
+Filter](http://www.elasticsearch.org/guide/reference/query-dsl/geo-distance-
+filter.html) with [ElasticSearch](http://www.elasticsearch.org). The queries
+work fine, but I am wondering if it is possible to obtain the distance
+calculated for each document. For example, if I set a distance threshold at
+100km, I'd like to obtain the distance for each document:
+
+**doc1** : `24 km` << 100km
+
+**doc2** : `12 km` << 100km
+
+...
+
+**Is this possible and how?**
+
+Yes, I believe it's possible, but when I tried, I couldn't make it work (I'm
+using Tire, a RoR gem, so you might have better luck with just ElasticSearch).
+
+Take a look at this issue: <https://github.com/karmi/tire/issues/169>
+
+I, `niuage`, is asking the same question there.
+
+First, I think that you have to sort by distance. Then the distance should be
+in the `_score` field, but for some reason, it wasn't for me.
+
+I looked at the doc and found `track_scores`:
+
+`When sorting on a field, scores are not computed. By setting track_scores to
+true, scores will still be computed and tracked.`
+
+So you might want to try to set `track_scores` to true, and look at your
+`_score` field.
+

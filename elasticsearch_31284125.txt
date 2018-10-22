@@ -1,0 +1,4 @@
+31284125
+How to do "group by / max" query?
+<p>I need to group all records by a value of Field1, and calculate max value of Field2 for every group. So, is there any way to make max aggregation work over multiple groups within the same query?</p>&#xA;
+<pre><code>GET /yourindex/_search?search_type=count&#xA;{&#xA;  "aggs": {&#xA;    "yourGroup": {&#xA;      "terms": {&#xA;        "field": "field1",&#xA;        "size": 10&#xA;      },&#xA;      "aggs": {&#xA;        "theMax": {&#xA;          "max": {&#xA;            "field": "field2"&#xA;          }&#xA;        }&#xA;      }&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;

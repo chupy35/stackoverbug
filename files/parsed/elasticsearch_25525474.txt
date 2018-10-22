@@ -1,0 +1,31 @@
+25525474 Elasticsearch: Found the deleted document?
+
+I am facing a problem: I can find the deleted document right after I deleted
+it.
+
+But when I wait for seconds, the deleted document is just gone and I cannot
+find the document by using the same command.
+
+In fact, I knew there is something similar when post a new document, you need
+to wait a while to be able to find it. I think it's acceptable for me. But
+about this case, any ideas?
+
+Here is the reproducible gist:
+<https://gist.github.com/hxuanji/89813ffe0979f12dba66>
+
+In the gist, after I deleted the document, I try to XHEAD the document, I
+received 404 which means it had been deleted. So far so good.
+
+But next I try to query it, I actually can find the deleted document. Here is
+the problem. And then I sleep 2 sec, query the same search command again, the
+deleted document is just gone.
+
+It seems there are some contradictions between HEAD and _search.
+
+Any suggestions of this situation ? Is this situation normal?
+
+It if is important to be reproduceable,
+[refresh](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+refresh.html) after the `DELETE`. This makes the change at once (no need to
+wait for it so ES flushes/refreshes the changes)
+

@@ -1,0 +1,178 @@
+14792942 ElasticSearch Bool Filter with a Phrase (instead of a single
+word/tag)
+
+In elastic search, this filter
+
+    
+    
+    {
+      "bool": {
+        "must": {
+          "term": {
+            "article.title": "google"
+          }
+        }
+      }
+    }
+    
+
+Properly returns articles with "google" in the title.
+
+However,
+
+    
+    
+    {
+      "bool": {
+        "must": {
+          "term": {
+            "article.title": "google earth"
+          }
+        }
+      }
+    }
+    
+
+Does not return any results, despite the fact that there are articles with the
+exact words "google earth" in the title. I would like it to do so.
+
+The full query:
+
+    
+    
+    {
+      "size": 200,
+      "filter": {
+        "bool": {
+          "must": {
+            "term": {
+              "article.title": "google maps"
+            }
+          }
+        }
+      },
+      {
+        "range": {
+          "created_date": {
+            "from": "2013-01-11T02:14:03.352Z"
+          }
+        }
+      }]
+    }
+    }
+    
+
+As you can see, I don't have a "query" -- just a filter, size, and range. So I
+take it that ElasticSearch is using the default analyzer...?
+
+What am I misunderstanding?
+
+* * *
+
+**EDIT:** For those looking for the solution, here is my filter:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": {
+            "must_match": {
+              "article.title": "google earth"
+            }
+          }
+        }
+      }
+    }
+    
+
+Node that (1) we wrapped the bool filter with "query" and (2) the "term"
+changed to a "must_match", which causes the entire phrase to be matched (as
+opposed to "match" which would search the article.title with a standard
+analyzer on google earth).
+
+The full query looks like this:
+
+    
+    
+    {
+      "size": 200,
+      "filter": {
+        "query": {
+          "bool": {
+            "must": {
+              "must_match": {
+                "article.title": "google earth"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+FWIW, the reason I have this condition within the "filter" field (as opposed
+to using a standard query) is that sometimes I want to use a "must_not"
+instead of a "must_not", and sometimes I also add other elements to the query.
+
+Elasticsearch isn't using an analyzer at all, because you have used the
+[`term` query](http://www.elasticsearch.org/guide/reference/query-dsl/term-
+query.html), which looks for exact terms.
+
+Your `title` field IS analyzed (unless you have specified otherwise), so
+`"google earth"` will have been indexed as the two terms `["google","earth"]`.
+That's why the `term` query for `"google"` works, but the `term` query for
+`"google earth"` doesn't - that EXACT term does not exist.
+
+If you use a [`match`
+query](http://www.elasticsearch.org/guide/reference/query-dsl/match-
+query.html) instead, then your query terms will be analyzed before searching.
+
+For those stumbling upon this more recently, be advised that a more concise
+way to represent
+
+    
+    
+    {"query":{"bool":{"must":{"must_match":{"article.title":"google earth"}}}}}
+    
+
+is with
+
+    
+    
+    {"query":{"match_phrase":{"article.title":"google earth"}}}
+    
+
+I solved this by exploding the passed phrase, so just changing.
+
+    
+    
+    {"bool":{"must":{"term":{"article.title":"google earth"}}}}
+    
+
+to
+
+    
+    
+    {"bool":{"must":{"term":{"article.title":["google", "earth"]}}}}
+    
+
+It's not pretty and might be too slow if you have a lot of queries going on,
+but it works.
+
+**NOTE, I just found out this will also return any results with either
+"google" or "earth".**
+
+Using Elasticsearch 5.4.2., my solution evolved to be the following one:
+
+    
+    
+    {"query": {
+         "bool": {
+             "must": {
+                 "match_phrase": {
+                     "article.title": "google earth"}}}}}
+    
+
+Hope this helps someone.
+

@@ -1,0 +1,83 @@
+17526736 Elasticsearch search fo words having '#' character
+
+For example, I am right now searching like this:
+
+    
+    
+    http://localhost:9200/posts/post/_search?q=content:%23sachin
+    
+
+But, I am getting all the results with 'sachin' and not '#sachin'. Also, I am
+writing a regular expression for getting the count of terms. The facet looks
+like this:
+
+    
+    
+    "facets": {
+      "content": {
+          "terms": {
+            "field": "content",
+            "size": 1000,
+            "all_terms": false,
+            "regex": "#sachin",
+            "regex_flags": [
+              "DOTALL",
+              "CASE_INSENSITIVE"
+            ]
+          }
+        }
+    }
+    
+
+This is not returning any values. I think it has something to do with escaping
+the '#' inside the regular expression, but I am not sure how to do it. I have
+tried to escape it `\` and `\\`, but it did not work. Can anyone help me in
+this regard?
+
+This article gives information on how save # and @ using custom analyzers:
+<http://www.fullscale.co/blog/2013/03/04/preserving_specific_characters_during_tokenizing_in_elasticsearch.html>
+
+    
+    
+    curl -XPUT 'http://localhost:9200/twitter' -d '{
+        "settings" : {
+            "index" : {
+                "number_of_shards" : 1,
+                "number_of_replicas" : 1
+            },  
+            "analysis" : {
+                "filter" : {
+                    "tweet_filter" : {
+                        "type" : "word_delimiter",
+                        "type_table": ["# => ALPHA", "@ => ALPHA"]
+                    }   
+                },
+                "analyzer" : {
+                    "tweet_analyzer" : {
+                        "type" : "custom",
+                        "tokenizer" : "whitespace",
+                        "filter" : ["lowercase", "tweet_filter"]
+                    }
+                }
+            }
+        },
+        "mappings" : {
+            "tweet" : {
+                "properties" : {
+                    "msg" : {
+                        "type" : "string",
+                        "analyzer" : "tweet_analyzer"
+                    }
+                }
+            }
+        }
+    }'
+    
+
+This isn't dealing with facets, but the redefining of the type of those
+special characters in the analyzer could help.
+
+Another approach that worth to consider is to index a special (e.g.
+"reserved") word instead of hash symbol. For example: HASHSYMBOLCHAR. Make
+sure that you will replace '#' chars in query as well.
+

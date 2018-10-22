@@ -1,0 +1,189 @@
+12633904 AngularJS - $resource different URL for Get and Post
+
+$resource is awesome providing very convenient way to handle web services.
+What if GET and POST have to be performed on different URLs?
+
+For example, GET URL is `http://localhost/pleaseGethere/:id` and POST URL is
+`http://localhost/pleasePosthere` without any parameter
+
+You should be able to expose the URL as a parameter. I was able to do this:
+
+    
+    
+    $provide.factory('twitterResource', [
+        '$resource',
+        function($resource) {
+            return $resource(
+                'https://:url/:action',
+                {
+                    url: 'search.twitter.com',
+                    action: 'search.json',
+                    q: '#ThingsYouSayToYourBestFriend',
+                    callback: 'JSON_CALLBACK'
+                },
+                {
+                    get: {
+                        method: 'JSONP'
+                    }
+                }
+            );
+        }
+    ]);
+    
+
+Then you can overwrite the URL on your `GET` call.
+
+The one caveat I found during my REALLY brief testing was that if I included
+`http://` in the URL string, it didn't work. I didn't get an error message. It
+just did nothing.
+
+If you add the hash with param names into the $resource call:
+
+    
+    
+    $resource('localhost/pleaseGethere/:id', {id: '@id'});
+    
+
+Then the :id will be mapped to _id_ param when invoking the function (this
+will call _GET localhost/pleaseGethere/123_ ):
+
+    
+    
+    Resource.get({id: 123});
+    
+
+For POST, you simply don't assign the _id_ param:
+
+    
+    
+    Resource.post({}, {name: "Joe"});
+    
+
+The proper URL will be called, which is in this case _POST
+localhost/pleaseGethere_ (the trailing slash is stripped by ngResource).
+
+See
+[http://docs.angularjs.org/api/ngResource.$resource](http://docs.angularjs.org/api/ngResource.%24resource)
+-> Examples -> Credit card resource for more details.
+
+Use 'url' property of [actions] to override the default url.
+
+    
+    
+    $resource(url, [paramDefaults], [actions], options);
+    
+
+for example:
+
+    
+    
+    $resource('http://localhost/pleaseGethere/:id',{},{
+        getMethod:{
+            method:'GET',
+            isArray:true
+        }
+        postMethod:{
+            url:'http://localhost/pleasePosthere',
+            method:'POST',
+            isArray:false
+        }
+    }
+    
+
+Usage of Angular $resource:
+<http://docs.angularjs.org/api/ngResource/service/$resource>
+
+Follow this way:
+
+    
+    
+    (function () {
+        'use strict';
+    
+        angular
+            .module("app")
+            .factory("SomeFactory", SomeFactory);
+    
+        function SomeFactory($resource) {
+            var provider = "http://stackoverflow.com/:action/:id";
+            var params = {"id":"@id"};
+            var actions = {
+                "create":   {"method": "POST",  "params": {"action": "CreateAwesomePost"}},
+                "read":     {"method": "POST",  "params": {"action": "ReadSomethingInteresting"}},
+                "update":   {"method": "POST",  "params": {"action": "UpdateSomePost"}},
+                "delete":   {"method": "GET",   "params": {"action": "DeleteJustForFun"}}
+            };
+    
+            return $resource(provider, params, actions);
+        }
+    })();
+    
+
+I hope it help! Enjoy!
+
+In addition to Iris Wong's answer, I wanted to give an example of having
+multiple params with multiple methods and actions:
+
+    
+    
+    angular
+      .module('thingApp')
+      .factory('ThingResource', ['$resource', '$state',  returnThing]);
+    
+
+And the resource:
+
+    
+    
+    function returnThing($resource, $state) {
+      var mainUrl = '/api/stuffs/:stuffId/thing'
+      var params = {stuffId: '@_id', thingMongoId: '@_id', thingNumber: '@_id'}
+      return $resource(mainUrl, params, {
+        'save': {
+          url: '/api/stuffs/:stuffId/thing/:thingMongoId',
+          method: 'POST',
+          interceptor: {
+            responseError: function(e) {
+              console.warn('Problem making request to backend: ', e)
+              $state.go('oops')
+            }
+          }
+        },
+        'get': {
+          url: '/api/stuffs/:stuffId/thing/:thingMongoId',
+          method: 'GET',
+          interceptor: {
+            responseError: function(e) {
+              console.warn('Problem making request to backend: ', e)
+              $state.go('oops')
+            }
+          }
+        },
+        'assignThing':{
+          method: 'POST',
+          url: '/api/stuffs/:stuffId/thing/assign/:thingNumber'
+        }
+      });
+    }
+    
+
+Which gives 3 separate methods:
+
+    
+    
+    // POST to http://currnt_base_url/api/stuffs/:stuffId/thing/:thingMongoId
+    ThingResource.save({
+        stuffId:'56c3d1c47fe68be29e0f7652', 
+        thingMongoId: '56c3d1c47fe6agwbe29e0f11111'})
+    
+    // GET to current http://currnt_base_url/api/stuffs/:stuffId/thing/:thingMongoId
+    ThingResource.get({
+        stuffId:'56c3d1c47fe68be29e0f7652', 
+        thingMongoId: '56c3d1c47fe6agwbe29e0f11111'})
+    
+    // POST to http://currnt_base_url/api/stuffs/:stuffId/thing/assign/:thingNumber
+    ThingResource.assignThing({
+        stuffId:'56c3d1c47fe68be29e0f7652', 
+        thingNumber: '999998'})
+    
+

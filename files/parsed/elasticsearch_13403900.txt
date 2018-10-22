@@ -1,0 +1,96 @@
+13403900 Elasticsearch ignore words breakers
+
+i'm new to Elasticsearch and i've got a problem regarding querying.
+
+I indexed strings like that:
+
+    
+    
+    my-super-string
+    my-other-string
+    my-little-string
+    
+
+This strings are slugs.  So, they are no spaces, only alphanumeric characters.
+Mapping for the related field is only "type=string".
+
+I'm using a query like this:
+
+    
+    
+    { "query":{ "query_string":{ "query": "*"+<MY_QUERY>+"*", "rewrite": "top_terms_10" } }}
+    
+
+Where "MY_QUERY" is also a slug. Something like "my-super" for example.
+
+When searching for "my" i get results.
+
+When searching for "my-super" i get no results and i'd like to have "my-super-
+string".
+
+Can someone help me on this? Thanks!
+
+I would suggest using match_phrase instead of using query string with leading
+and trailing wildcards. Even standard analyzer should be able to split slug
+into tokens correctly, so there is not need for wildcards.
+
+    
+    
+    curl -XPUT "localhost:9200/slugs/doc/1" -d '{"slug": "my-super-string"}'
+    echo
+    curl -XPUT "localhost:9200/slugs/doc/2" -d '{"slug": "my-other-string"}'
+    echo
+    curl -XPUT "localhost:9200/slugs/doc/3" -d '{"slug": "my-little-string"}'
+    echo
+    curl -XPOST "localhost:9200/slugs/_refresh"
+    echo
+    echo "Searching for my"
+    curl "localhost:9200/slugs/doc/_search?pretty=true&fields=slug" -d '{"query" : { "match_phrase": {"slug": "my"} } }'
+    echo
+    echo "Searching for my-super"
+    curl "localhost:9200/slugs/doc/_search?pretty=true&fields=slug" -d '{"query" : { "match_phrase": {"slug": "my-super"} } }'
+    echo
+    echo "Searching for my-other"
+    curl "localhost:9200/slugs/doc/_search?pretty=true&fields=slug" -d '{"query" : { "match_phrase": {"slug": "my-other"} } }'
+    echo
+    echo "Searching for string"
+    curl "localhost:9200/slugs/doc/_search?pretty=true&fields=slug" -d '{"query" : { "match_phrase": {"slug": "string"} } }'
+    
+
+Alternatively, you can create your own analyzer that will split slugs into
+tokens only on "-"
+
+    
+    
+    curl -XDELETE localhost:9200/slugs
+    curl -XPUT localhost:9200/slugs -d '{
+        "settings": {
+            "index": {
+                "number_of_shards": 1,
+                "number_of_replicas": 0,
+                "analysis": {
+                    "analyzer" : {
+                        "slug_analyzer" : {
+                            "tokenizer": "slug_tokenizer",
+                            "filter" : ["lowercase"]
+                        }
+                    },
+                    "tokenizer" :{
+                        "slug_tokenizer" : {
+                            "type": "pattern",
+                            "pattern": "-"
+                        }
+                    }
+                }
+            }
+        },
+        "mappings" :{
+            "doc" : {
+                "properties" : {
+                    "slug" : {"type": "string", "analyzer" : "slug_analyzer"}
+                }
+            }
+        }
+    }'
+    
+

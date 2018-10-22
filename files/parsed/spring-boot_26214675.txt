@@ -1,0 +1,110 @@
+26214675 Spring boot custom error page for 404
+
+i wish to have custom 404 error page .I have velocity in my classpath but I
+don't want to use velocity view resolver Below is my code
+
+    
+    
+    @EnableAutoConfiguration(exclude={VelocityAutoConfiguration.class})
+    @ComponentScan
+    public class Application {
+    Properties props = new Properties();
+    
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+    }
+    
+
+i am not able to redirect all the 404 to my some html in resource directory.
+
+Please assist
+
+P.S It work if i am use velocityresolver and have error.vm in template
+directory.
+
+Thanks ans regards
+
+You can provide a `EmbeddedServletContainerCustomizer` and add your (e.g.
+static) error pages there. See [Error Handling](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#boot-features-error-handling) in the
+spring boot docs. E.g:
+
+    
+    
+    @Bean
+    public EmbeddedServletContainerCustomizer containerCustomizer() {
+            return new EmbeddedServletContainerCustomizer() {
+                @Override
+                public void customize(ConfigurableEmbeddedServletContainer container) {
+                    container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404.html"));
+                }
+            };
+    }
+    
+
+As of Spring Boot `1.4.x`:
+
+> If you want to display a custom HTML error page for a given status code, you
+can add a file to an `/error` folder. Error pages can either be static HTML
+(i.e. added under any of the static resource folders) or built using
+templates. The name of the file should be the exact status code (e.g. `404`)
+or a series mask (e.g. `5xx`).
+
+>
+
+> For example, to map `404` to a static HTML file, your folder structure would
+look like this:
+
+>  
+>  
+>     src/
+
+>      +- main/
+
+>          +- java/
+
+>          |   + <source code>
+
+>          +- resources/
+
+>              +- public/
+
+>                  +- error/
+
+>                  |   +- 404.html
+
+>                  +- <other public assets>
+
+>  
+>
+
+> To map all `5xx` errors using a freemarker template, you’d have a structure
+like this:
+
+>  
+>  
+>     src/
+
+>      +- main/
+
+>          +- java/
+
+>          |   + <source code>
+
+>          +- resources/
+
+>              +- template/
+
+>                  +- error/
+
+>                  |   +- 5xx.ftl
+
+>                  +- <other templates>
+
+>  
+
+Checkout the [Spring Boot documentation](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#boot-features-error-handling-custom-
+error-pages) for more detailed discussion.
+

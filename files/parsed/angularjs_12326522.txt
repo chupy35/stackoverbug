@@ -1,0 +1,112 @@
+12326522 AngularJS - Setting model property not updating input text (number
+validation)
+
+Check out this fiddle: <http://jsfiddle.net/bwjbz/6/>
+
+I'm trying to strictly enforce positive whole numbers. I have tried several
+avenues, and I can't seem to get what I'm looking for. (If you try a couple of
+times you can end up getting a non-number or negative number to stick in the
+input).
+
+In addition to the above fiddle, I have also tried using the number filter and
+also tried creating my own directive.
+
+Number filter:
+
+    
+    
+    <input type="number" min="0" max="1000" value="{{itm.qty | number:0}}" required data-ng-model="itm.qty" data-ng-change="setQty()" data-whole-number>
+    
+
+You'll notice the data-whole-number directive. I'm not fully comfortable with
+directives yet, but this is it:
+
+    
+    
+    app.directive('wholeNumber', function() {
+      return function(scope, elem, attrs) {
+        elem.on("blur", function() {
+          var num;
+          num = parseInt(elem.val(), 10);
+          num = Math.abs(num);
+          scope.$apply(elem.val(num));
+        });
+      };
+    });
+    
+
+The directive itself does the correct DOM manipulation, but the model doesn't
+update with the new value.
+
+So there are two aspects to this questions:
+
+  1. The fiddle works to set the correct value on the model, but the model text doesn't update. However, in another method, I set the qty of the model itm to 1 and it changes both the model and the visible value. You'll notice it does in fact change the model correctly (notice the bindings, number of footballs = 1, when value is set to 1.56, for example).
+
+  2. Why isn't the directive propagating the changes to the model?
+
+Thanks so much in advance, -Brian
+
+**Update** : Working fiddle using a directive:
+<http://jsfiddle.net/mrajcok/U7Je2/>
+
+Salient points:
+
+    
+    
+    <input type="number" min="0" max="{{maxValue}}" data-ng-model="itm.qty" whole-number>
+    
+    link: function(scope, elem, attrs) {
+            elem.on("blur", function() {
+                var num = Math.abs(parseInt(elem.val(), 10));
+                num = num > scope.maxValue ? 0 : num;
+                scope.itm.qty = num
+                scope.$apply();
+    
+                // or, the above two lines can be rewritten as
+                scope.$apply(scope.itm.qty = num);
+    
+            // or, the blur function can be rewritten as
+            elem.on("blur", function() {
+                scope.$apply(function() {
+                    var num = Math.abs(parseInt(elem.val(), 10));
+                    num = num > scope.maxValue ? 0 : num;
+                    scope.itm.qty = num;
+                });
+            });
+    
+
+Original "answer":
+
+Regarding your first fiddle, a similar issue came up on SO recently, see
+[AngularJS - reset of $scope.value doesn't change value in template (random
+behavior)](https://stackoverflow.com/q/12176925/215945)
+
+If we apply the $timeout solution from that post to your issue, wrap the
+setQty() logic in a $timeout function, and it will work, sort of. See [this
+fiddle](http://jsfiddle.net/mrajcok/uMwgF/). I say "sort of" because a
+"number" like "2-2-3-4" can be entered, as can "abc". Those bogus values do
+clear when you change focus. It seems like Angular is not calling setQty() for
+these bogus entries... I don't know why.
+
+Mark,
+
+The problem with your solution is that the directive needs to know the name of
+the bound variable. A more useful solution is to update it anonymously (and
+call any events associated) so that the directive can be used on any partial
+html bound to any controller:
+
+    
+    
+    // update the bound scope variable and if exists call the change function
+    var evalStr = attrs.ngModel + '=' + num.toString();
+    if (typeof attrs.ngChange != 'undefined')
+    {
+      evalStr += ';'+attrs.ngChange;
+    }
+    scope.$apply(evalStr);
+    
+
+Note that the advantage of evaluating 'evalStr' as an argument of scope.$apply
+means that AngularJS reports any exceptions to the console and the application
+can continue.
+

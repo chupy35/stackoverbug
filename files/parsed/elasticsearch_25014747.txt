@@ -1,0 +1,88 @@
+25014747 elasticsearch - how to query relations
+
+I have the currenct structure:
+
+    
+    
+    localhost:9200/objects/content
+    {
+        id:1,
+        author:{
+            name:"john"
+        },
+        body:"abc"
+    }
+    
+    localhost:9200/objects/reaction
+    {
+        content_id:1
+        message:'I like it'
+    }
+    
+
+How can I query to get all reactions of contents writed by "john"? This means
+a query on reactions, checking the content specified by id, if author is
+"someone".
+
+This [Elasticsearch blog post](http://www.elasticsearch.org/blog/managing-
+relations-inside-elasticsearch/) describes how to manage relationships inside
+Elasticsearch.
+
+You will need to [set a parent
+mapping](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+parent-field.html) between your reactions and your content.
+
+    
+    
+    {
+        "reaction" : {
+            "_parent" : {
+                "type" : "content"
+            }
+        }
+    }
+    
+
+You will then index your reaction as a child of content id 1:
+
+    
+    
+    curl -XPOST localhost:9200/test/homes?parent=1 -d'
+    {
+        message:'I like it'
+    }
+    
+
+You can then use a [Has Parent
+Query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-has-child-query.html) to retrieve all reactions to authors named john:
+
+    
+    
+    {
+        "has_parent" : {
+            "parent_type" : "content",
+            "query" : {
+                "term" : {
+                    "author.name" : "john"
+                }
+            }
+        }
+    }
+    
+
+I would recommend you to add some redundancy to your model:
+
+    
+    
+    localhost:9200/objects/reaction
+    {
+        content_id:1
+        message:'I like it'
+        author_name:'john'
+    }
+    
+
+This will increase the index, of course. On the other hand the query to get
+all `reactions of contents writed by "john"` will be simple and fast.
+

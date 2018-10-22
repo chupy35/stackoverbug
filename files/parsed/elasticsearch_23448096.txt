@@ -1,0 +1,31 @@
+23448096 elasticsearch - how to store social network connections
+
+I'm indexing social network data on elasticsearch.
+
+It is amazing for content and profiles, but with connections I'm getting some
+trouble...
+
+**option 1)** index connections nested in profile document?
+
+**option 2)** each connection is an independent document in a separated index?
+
+What are advantages for each option?
+
+What I will need:
+
+  * Update connections list comparing to check who is new
+  * Update connections list comparing to check who stopped following
+
+There are three options when modeling relations. The most basic one is inner
+objects. Everything in one document. Problem is that you cannot query the
+inner objects on multiple properties. You will have a match if one property of
+inner object a matches and another of object b. this can be overcome using
+nested objects. Disadvantage of nested objects is when doing a lot of them and
+changing them often. Everything is stored in one document. Adding a nested
+object means updating the complete document. This problem can be overcome
+using parent child relationships. These are separate documents, so cheaper to
+add or remove children. Disadvantage is that you cannot obtain the parents and
+it's children in one query.
+
+Hope it helps.
+

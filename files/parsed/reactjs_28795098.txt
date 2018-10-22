@@ -1,0 +1,92 @@
+28795098 React Unable To Find img Element
+
+When rendering a react component from the server, I keep seeing the 'Unable to
+find element' error after the component renders on the client.
+
+    
+    
+    Uncaught Error: Invariant Violation: 
+    findComponentRoot(..., .1ea0t0y2j9c.$img): Unable to find element. 
+    
+
+If I check the page source, I can see the id of the component that's given in
+the error.
+
+Here's my setup; I've got an express server with a controller rendering the
+component to a string and sending it to the browser. Once the browser renders
+the component a second time, I receive the error. I'm only seeing this error
+for images. I've tried other DOM components, but those seem to work fine. I'm
+sure there's something changing on the second rendering on the client, but
+I've compared the server output to the client output and I can't find any
+differences.
+
+Why would the `React.DOM.img` component get mutated to cause this error? Is
+there some difference between the `React.renderToString` and `React.render`
+that's causing the difference in the rendering of the image tag?
+
+Here's the server code **app.js**
+
+    
+    
+        'use strict';
+        var express = require('express');
+        var React = require('react');
+        var path = require('path');
+        var main = React.createElement(require('./main'), {key:'main'});
+    
+    
+        var app = express();
+        app.use('/js', express.static(path.join(__dirname, '/js/')));
+        app.get('/', function(req, res){
+          var str = React.renderToString(main);
+          res.set('Content-Type', 'text/html');
+          res.send(str);
+          res.end();
+        });
+    
+        var server = require('http').createServer(app);
+        server.listen(9999, function () {
+          console.log('Express server listening');
+        });
+    
+
+Here's the component code. **main.js**
+
+I'm using webpack to package up the main.js script.
+
+    
+    
+    'use strict';
+    var React = require('react');
+    
+    var Main = React.createClass({displayName: 'Main',
+        render: function(){
+            return React.createElement('div',null,
+                React.createElement('script',{src: "/js/main.js"}),
+                React.createElement('img',{src: "https://www.google.com/images/nav_logo195.png"}));
+        }
+    });
+    
+    if (typeof window !== "undefined") {
+      React.render(React.createElement(Main, {key:'main'}), document.body);
+    } else {
+      module.exports = Main;
+    }
+    
+
+Edit: updated to reflect @ssorallen's suggestions
+
+After some digging into the react source, I found out why the img tag was
+getting this error when first rendering the page.
+
+`img`, `form` and `input` components make a call to `getDOMnode()` in the
+`componentDidMount` event. Since the page hasn't rendered from the server, the
+img tag isn't in the cache and can't be found when the script executes.
+
+The solution is to place the server generated script after the img tag to give
+the browser a chance to render the first time.
+
+It's kind of a hacky solution, and I'm wondering if that's a misunderstanding
+on my part or if this is just the way server side rendering works for these
+tags.
+

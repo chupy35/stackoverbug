@@ -1,0 +1,96 @@
+24118826 "bool" filtering in Elasticsearch when searching in an array
+
+I have a problem with the understanding of the filter in Elasticsearch.I'm
+trying to build a filter to search the index, which has nested arrays.
+
+    
+    
+         "bParams": {
+                     "bParamList": [
+                        {
+                           "bParamId": 298,
+                           "year": 2008,
+                           "quarter": 4,
+                           "value": 239698
+                        },
+                        {
+                           "bParamId": 298,
+                           "year": 2009,
+                           "quarter": 4,
+                           "value": 453
+                        },
+                        {
+                           "bParamId": 298,
+                           "year": 2007,
+                           "quarter": 4,
+                           "value": 190000
+                        },
+                        {
+                           "bParamId": 304,
+                           "year": 2009,
+                           "quarter": 4,
+                           "value": 7000
+                        }
+                     ]
+                 }
+    
+
+The request is:
+
+    
+    
+     {
+        "query": {
+          "filtered": {
+             "filter": {
+                "bool": {
+                    "must": [
+                        {
+                            "term": {
+                                "bParams.bParamList.year": [ 2007 ]
+                            }
+                        },
+                        {
+                            "range": {
+                                "bParams.bParamList.value": {
+                                    "from": 1,
+                                    "to": 453
+                                }
+                            }
+                        },
+                        {
+                            "term": {
+                                "bParams.bParamList.bParamId": [ 304 ]
+                            }
+                        }
+                    ]
+                  }
+              }
+           }
+        }
+     }
+    
+
+I expect that the query will not return any results, but the result is
+returned. I understand that there are elements with appropriate values​​. I
+need to take into account simultaneously all the request parameters.
+
+You will need to use the `nested`-mapping, and you'll have to reindex to add
+it.
+
+Without `nested`, what's indexed is essentially equivalent to this:
+
+    
+    
+    {
+        "bParams": {
+            "bParamList": {
+                "bParamId": [298, 298, ...],
+                "year": [2008, 2009, ...],
+                "quarter": [4, 4, ...],
+                "value", [239698, 453, ...],
+        }
+      }
+    }
+    
+

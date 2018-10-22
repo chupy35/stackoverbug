@@ -1,0 +1,266 @@
+13750330 Elasticsearch highlighting on ngram filter is weird if min_gram is
+set to 1
+
+So I have this index
+
+    
+    
+    {
+      "settings":{
+        "index":{
+          "number_of_replicas":0,
+          "analysis":{
+            "analyzer":{
+              "default":{
+                "type":"custom",
+                "tokenizer":"keyword",
+                "filter":[
+                  "lowercase",
+                  "my_ngram"
+                ]
+              }
+            },
+            "filter":{
+              "my_ngram":{
+                "type":"nGram",
+                "min_gram":2,
+                "max_gram":20
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+and I'm performing this search through the tire gem
+
+    
+    
+    {
+       "query":{
+          "query_string":{
+             "query":"xyz",
+             "default_operator":"AND"
+          }
+       },
+       "sort":[
+          {
+             "count":"desc"
+          }
+       ],
+       "filter":{
+          "term":{
+             "active":true,
+             "_type":null
+          }
+       },
+       "highlight":{
+          "fields":{
+             "name":{
+    
+             }
+          },
+          "pre_tags":[
+             "<strong>"
+          ],
+          "post_tags":[
+             "</strong>"
+          ]
+       }
+    }
+    
+
+and I have two posts that should match named 'xyz post' and 'xyz question'
+When I perform this search, I get the highlighted fields back properly
+
+    
+    
+    <strong>xyz</strong> question
+    <strong>xyz</strong> post
+    
+
+Now here's the thing ... as soon as I change min_gram to 1 in my index and
+reindex. the highlighted fields start coming back as this
+
+    
+    
+    <strong>x</strong><strong>y</strong><strong>z</strong> pos<strong>xyz</strong>t
+    <strong>x</strong><strong>y</strong><strong>z</strong> questio<strong>xyz</strong>n
+    
+
+I simply cannot understand why.
+
+## Short Answer
+
+You need to check your **mapping** and see if you use `fast-vector-
+highlighter`. But still you need to be quite careful about your queries.
+
+## Detailed Answer
+
+Assume using fresh instance of ES `0.20.4` on `localhost`.
+
+Building on top of your example, let's add explicit mappings. Note I setup two
+different analysis for the `code` field. The only difference is
+`"term_vector":"with_positions_offsets"`.
+
+    
+    
+    curl -X PUT localhost:9200/myindex -d '
+    {
+      "settings" : {
+        "index":{
+          "number_of_replicas":0,
+          "number_of_shards":1,
+          "analysis":{
+            "analyzer":{
+              "default":{
+                "type":"custom",
+                "tokenizer":"keyword",
+                "filter":[
+                  "lowercase",
+                  "my_ngram"
+                ]
+              }
+            },
+            "filter":{
+              "my_ngram":{
+                "type":"nGram",
+                "min_gram":1,
+                "max_gram":20
+              }
+            }
+          }
+        }
+      },
+      "mappings" : {
+        "product" : {
+          "properties" : {
+            "code" : {
+              "type" : "multi_field",
+              "fields" : {
+                "code" : {
+                  "type" : "string",
+                  "analyzer" : "default",
+                  "store" : "yes"
+                },
+                "code.ngram" : {
+                  "type" : "string",
+                  "analyzer" : "default",
+                  "store" : "yes",
+                  "term_vector":"with_positions_offsets"
+                }
+              }
+            }
+          }
+        }
+      }
+    }'
+    
+
+Index some data.
+
+    
+    
+    curl -X POST 'localhost:9200/myindex/product' -d '{
+      "code" : "Samsung Galaxy i7500"
+    }'
+    
+    curl -X POST 'localhost:9200/myindex/product' -d '{
+      "code" : "Samsung Galaxy 5 Europa"
+    }'
+    
+    curl -X POST 'localhost:9200/myindex/product' -d '{
+      "code" : "Samsung Galaxy Mini"
+    }'
+    
+
+And now we can run queries.
+
+### 1) Search for 'i' to see one character search works with highlighting
+
+    
+    
+    curl -X GET 'localhost:9200/myindex/product/_search?pretty' -d '{
+      "fields" : [ "code" ],
+      "query" : {
+        "term" : {
+          "code" : "i"
+        }
+      },
+      "highlight" : {
+        "number_of_fragments" : 0,
+        "fields" : {
+          "code":{},
+          "code.ngram":{}
+        }
+      }
+    }'
+    
+
+This yields two search hits:
+
+    
+    
+    # 1
+    ...
+    "fields" : {
+      "code" : "Samsung Galaxy Mini"
+    },
+    "highlight" : {
+      "code.ngram" : [ "Samsung Galaxy M<em>i</em>n<em>i</em>" ],
+      "code" : [ "Samsung Galaxy M<em>i</em>n<em>i</em>" ]
+    }
+    # 2
+    ...
+    "fields" : {
+      "code" : "Samsung Galaxy i7500"
+    },
+    "highlight" : {
+      "code.ngram" : [ "Samsung Galaxy <em>i</em>7500" ],
+      "code" : [ "Samsung Galaxy <em>i</em>7500" ]
+    }
+    
+
+Both the `code` and `code.ngem` fields were correctly highlighted this time.
+But things change quickly when longer query is used:
+
+### 2) Search for 'y m'
+
+    
+    
+    curl -X GET 'localhost:9200/myindex/product/_search?pretty' -d '{
+      "fields" : [ "code" ],
+      "query" : {
+        "term" : {
+          "code" : "y m"
+        }
+      },
+      "highlight" : {
+        "number_of_fragments" : 0,
+        "fields" : {
+          "code":{},
+          "code.ngram":{}
+        }
+      }
+    }'
+    
+
+This yields:
+
+    
+    
+    "fields" : {
+      "code" : "Samsung Galaxy Mini"
+    },
+    "highlight" : {
+      "code.ngram" : [ "Samsung Galax<em>y M</em>ini" ],
+      "code" : [ "Samsung Galaxy Min<em>y M</em>i" ]
+    }
+    
+
+The `code` fields is not highlighted correctly (similar to your case).
+
+One important thing is that **term query** is used instead of
+**query_string**.
+

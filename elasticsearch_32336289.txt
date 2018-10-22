@@ -1,0 +1,4 @@
+32336289
+Duplicate an elasticsearch index from local network to production server
+<p>I index thousands of pdfs in an elasticsearch index inside my local network and I want to replicate it on a production server with a public IP.</p>&#xA;&#xA;<p>I don't store pdfs inside elasticsearch index.</p>&#xA;&#xA;<p>What is the best solution ?  </p>&#xA;
+<p>My best bet would be <a href="http://blog.qbox.io/topic/snapshot" rel="nofollow">snapshot restore</a>.&#xA;As both of them are incremental , it fits the bill.</p>&#xA;&#xA;<p>Personally ,  i would go for a AWS repository , take snapshot on it on a periodic interval or whenever i am done indexing a bunch of documents and then restore it from the production side.</p>&#xA;&#xA;<p>You can read more about it <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/master/modules-snapshots.html" rel="nofollow">here</a>.</p>&#xA;

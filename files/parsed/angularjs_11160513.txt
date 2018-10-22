@@ -1,0 +1,217 @@
+11160513 AngularJS ng-options create range
+
+I am trying to create a select element that has a list of numbers 1 to pages
+where pages is a variable that is the number of pages I have. What i don't
+know how to do is to structure the ng-options expression so that it will give
+me the numbers I need. Here is what I have so far
+
+    
+    
+    <select ng-model="page" ng-options="???"></select>
+    
+
+what do I need to put in the ng-options expression in order for it to create
+my select like
+
+    
+    
+    <select>
+        <option value="1">1</option>
+        ...
+        <option value="35">35</option>
+    </select>
+    
+
+do I need to create a function that returns an array of numbers and use it in
+there somehow or is there an easier way to do this?
+
+any help would be greatly appreciated.
+
+Thanks
+
+**EDIT**
+
+After posting my question i figured out one way to do it by creating a
+function called Range in my controller that takes two numbers and returns an
+array with all the values in that range.
+
+    
+    
+    $scope.Range = function(start, end) {
+        var result = [];
+        for (var i = start; i <= end; i++) {
+            result.push(i);
+        }
+        return result;
+    };
+    
+
+then in the HTML I did
+
+    
+    
+    <select ng-name="page" ng-options="page for page in Range(1, pages)"></select> 
+    
+
+Is this the simplest way to do this or is there a better way?
+
+Your way works fine. Another option that came to my head is to use a filter,
+so you don't have to pollute your controller with Range.
+
+JS:
+
+    
+    
+    var myApp = angular.module('myApp', []);
+    myApp.filter('range', function() {
+      return function(input, min, max) {
+        min = parseInt(min); //Make string input int
+        max = parseInt(max);
+        for (var i=min; i<max; i++)
+          input.push(i);
+        return input;
+      };
+    });
+    
+
+HTML:
+
+    
+    
+    <select ng-model="page" ng-options="n for n in [] | range:1:30"></select>
+    
+
+Example: <http://jsfiddle.net/N3ZVp/1/>
+
+P.S. in your example in your main post, you didn't put `var` in front of `i`.
+So `i` is declared as a global variable in your example.
+
+Please add ng-model, like below
+
+    
+    
+    <select ng-model="test" ng-options="n for n in [] | range:1:30"></select>
+    
+
+After this your example will work in jsfiddle
+
+another approach without a for loop is this:
+
+controller:
+
+    
+    
+     $scope.arr = [];
+     $scope.arr.length = count;
+    
+
+view binding:
+
+    
+    
+     ng-options="arr.indexof(i) for i in arr"
+    
+
+Andy's solution is great, however the range cannot go backwards. Here's the
+improved version:
+
+    
+    
+    /* 
+     * Creates a range
+     * Usage example: <option ng-repeat="y in [] | range:1998:1900">{{y}}</option>
+     */
+    myApp.filter('range', function() {
+      return function(input, start, end) {    
+        start = parseInt(start);
+        end = parseInt(end);
+        var direction = (start <= end) ? 1 : -1;
+        while (start != end) {
+            input.push(start);
+            start += direction;
+        }
+        return input;
+      };
+    });
+    
+
+In CoffeeScript:
+
+    
+    
+    app.filter 'range', ->
+      (input, min, max) ->
+        input.push(i) for i in [parseInt(min)..parseInt(max)]
+    
+
+And the HTML:
+
+    
+    
+    <select ng-options="n for n in [] | range:1:30"></select>
+    
+
+Here is the [gist with the
+Javascript](https://gist.github.com/Dorian/311c7563fe6af6563d6f)
+
+Piggybacking on martynas' answer. I modified it to include the last value in
+the range:
+
+    
+    
+    /*
+     * Creates a range
+     * Usage example: <option ng-repeat="y in [] | range:1998:1900">{{y}}</option>
+     */
+    
+    .filter('range', function () {
+        return function (input, start, end) {
+            var direction;
+    
+            start = parseInt(start);
+            end = parseInt(end);
+    
+            if (start === end) { return [start]; }
+    
+            direction = (start <= end) ? 1 : -1;
+    
+            while (start != end) {
+                input.push(start);
+    
+                if (direction < 0 && start === end + 1) {
+                    input.push(end);
+                }
+    
+                if (direction > 0 && start === end - 1) {
+                    input.push(end);
+                }
+    
+                start += direction;
+            }
+    
+            return input;
+        };
+    });
+    
+
+If you want to add a placeholder in select, then use below given solution. You
+need to first define the filter [like
+this](https://stackoverflow.com/a/11161353/1230188).
+
+    
+    
+    <select>
+        <option value="">-- Birth Year --</option>
+        <option ng-repeat="n in [] | range:1900:2000">{{n}}</option>
+    </select>
+    
+
+Another solution to keep it all in your template:
+
+    
+    
+    <select>
+      <option ng-repeat="n in [].constructor(10) track by $index+1">{{$index+1}}</option>
+    </select>
+    
+

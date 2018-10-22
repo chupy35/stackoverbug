@@ -1,0 +1,16 @@
+12738689 Re-index an existing ElasticSearch index to updated templates
+
+Is there a way to make an existing index or a set of indices re-index to match
+the most recent version of matching templates? By re-index I mean change their
+mappings and settings to match what is in the template.
+
+IMHO, you can't do it easily. That said, there's a feature request that can
+help in the future but only if you didn't disable _source.
+
+<https://github.com/elasticsearch/elasticsearch/issues/1077>
+
+What you can do in the meantime is to use a script to scan and scroll your
+index and reindex it in another index.
+
+HTH
+

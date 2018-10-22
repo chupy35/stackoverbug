@@ -1,0 +1,50 @@
+19864051 Bool query over child and parent fields
+
+Just started to play with Elasticsearch.  I am trying to do a search on some
+child documents by querying on both child and parent fields.
+
+    
+    
+    {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "has_child": {
+                            "type": "mychildtype",
+                            "query": {
+                                "match": {
+                                    "child_field": "value1"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "parent_field": "value2"
+                    }
+                ]
+            }
+        },
+        "fields": [
+            "_type",
+            "_id",
+            "parent_field1",
+            "parent_field2"
+        ]
+    }
+    
+
+I get the error:
+
+    
+    
+    {
+      "error" : "SearchPhaseExecutionException[Failed to execute phase [query_fetch], all shards failed; shardFailures {[PfjRtoQKRZeIxkokAo_vmA][*INDEX_NAME*][0]: SearchParseException[[*INDEX_NAME*][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [*ESCAPED QUERY*]; nested: QueryParsingException[[*INDEX_NAME*] [_na] query malformed, no field after start_object]; }]",
+      "status" : 400
+    }
+    
+
+What am I doing wrong here?
+
+I was missing a "match":{ } around my parent field criteria.
+

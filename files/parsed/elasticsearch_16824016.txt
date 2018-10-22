@@ -1,0 +1,146 @@
+16824016 Elastic Search, is it possible to get the index of a specific
+document in a search result set?
+
+I know the id of a specific document I want to show in my result set, but I
+don't know which page of the results it will be on. Is it possible with
+elastic search to tell it to return the page that a specific document is on?
+
+My guess is this is not possible. My current approach is to run the query once
+loading just the documents ids and return a very large (all) result set for
+the query. I find the id in this list, then I run the query again loading all
+of the data I want to show on the page. I'd prefer not to run the query twice
+if I can avoid it.
+
+I am using JAVA API and I am getting the index, type, id and source as
+follows.
+
+    
+    
+    SearchResponse response = client.prepareSearch().execute().actionGet();
+    SearchHit[] documents = response.getHits().getHits();
+    for(SearchHit document : documents)
+    {
+        System.out.println("document index :: " + document.getIndex());
+        System.out.println("document type :: " + document.getType());
+        System.out.println("document id :: " + document.getId());
+        System.out.println("document source JSON :: " + document.getSourceAsString());      
+    }
+    
+
+I've faced quite similar challenge. We have to figure out what's the clip
+position in some list.
+
+It works with assumption that we sort by `score` and by document `id`. Without
+sorting by `id` or anything else as second sorting rule it would not work this
+way.
+
+Here's a PHP code overview of our's solution:
+
+    
+    
+    $clipScore = $this->getScore($clip);
+    $lowestPossibleHigherScore = $this->getLowestPossibleHigherScore($clipScore);
+    
+    $countHigherScore = $this->countClipsWithMinScore($lowestPossibleHigherScore);
+    $countSameScoreAndHigherId = $this->countClipsWithMinScore($clipScore, $clip->getId());
+    $countHigherScoreAndHigherId = $countHigherScore;
+    if ($countHigherScore > 0) {
+        $countHigherScoreAndHigherId = $this->countClipsWithMinScore($lowestPossibleHigherScore, $clip->getId());
+    }
+    
+    $position = $countHigherScore + ($countSameScoreAndHigherId - $countHigherScoreAndHigherId);
+    
+    return $position;
+    
+
+And here are some notes why this works ;)
+
+    
+    
+    /**
+     * Considered test cases =D
+     * 
+     * | Position   | Score  | ID   |
+     * | 0          | 4.0    | 3    | 
+     * | 1          | 3.2    | 1    | 
+     * | 2          | 3.1    | 6    | 
+     * | 3          | 2.5    | 5    | 
+     * | 4          | 2.5    | 4    | 
+     * | 5          | 2.5    | 2    | 
+     * | 6          | 1.2    | 7    | 
+     * 
+     * findPosition(ID = 4)
+     * 
+     * countAllMinScore(2.501) = 3 (A) // so it's best position is 3 (4th place)
+     * countAllMinScoreAndBiggerId(2.5, 4) = 2 (C) // "two" of same score and higher ID
+     * countAllMinScoreAndBiggerId(2.501, 4) = 1 (D) // "one" of higher score and higher ID
+     * 
+     * $position (how to get "4"?) = 3 (A) + 1 (C - D) ???  YES !!!!
+     * 
+     * // next case
+     * findPosition(ID = 5)
+     *
+     * countAllMinScore(2.501) = 3 (A) 
+     * countAllMinScoreAndBiggerId(2.5, 5) = 1 (C) 
+     * countAllMinScoreAndBiggerId(2.501, 5) = 1 (D) 
+     *
+     * $position (how to get "3"?) = 3 (A) + 0 (C - D) = 3 ??? YES !!!!
+     * 
+     * // next case
+     * findPosition(ID = 2)
+     *
+     * countAllMinScore(2.501) = 3 (A)
+     * countAllMinScoreAndBiggerId(2.5, 2) = 5 (C)
+     * countAllMinScoreAndBiggerId(2.501, 2) = 3 (D)
+     *
+     * $position (how to get "5"?) = 3 (A) + 2 (C - D) = 5 ??? YES !!!!
+     *
+     * /// next case
+     * findPosition(ID = 3)
+     *
+     * countAllMinScore(4.001) = 0 (A)
+     * countAllMinScoreAndBiggerId(4.0, 3) = 0 (C)
+     * countAllMinScoreAndBiggerId(4.001, 3) = 0 (D)
+     *
+     * $position (how to get "0"?) = 0 (A) + 0 (C - D) = 0 ??? YES !!!!
+     * 
+     * /// next case
+     * findPosition(ID = 7)
+     *
+     * countAllMinScore(1.201) = 6 (A)
+     * countAllMinScoreAndBiggerId(1.2, 7) = 0 (C)
+     * countAllMinScoreAndBiggerId(1.201, 7) = 0 (D)
+     *
+     * $position (how to get "6"?) = 6 (A) + 0 (C - D) = 6 ??? YES !!!!
+     *
+     *
+     * /// next case
+     *
+     * | Position   | Score  | ID   |
+     * | 0          | 4.0    | 3    |
+     * | 1          | 4.0    | 1    |
+     * | 2          | 3.1    | 6    |
+     * | 3          | 2.5    | 5    |
+     * | 4          | 2.5    | 4    |
+     * | 5          | 2.5    | 2    |
+     * | 6          | 1.2    | 7    |
+     *
+     * findPosition(ID = 3)
+     *
+     * countAllMinScore(4.001) = 0 (A)
+     * countAllMinScoreAndBiggerId(4.0, 3) = 0 (C)
+     * countAllMinScoreAndBiggerId(4.001, 3) = 0 (D)
+     *
+     * $position (how to get "0"?) = 0 (A) + 0 (C - D) = 0 ??? YES !!!!
+     *
+     * /// next case
+     * findPosition(ID = 1)
+     *
+     * countAllMinScore(4.001) = 0 (A)
+     * countAllMinScoreAndBiggerId(4.0, 1) = 1 (C)
+     * countAllMinScoreAndBiggerId(4.001, 1) = 0 (D)
+     *
+     * $position (how to get "1"?) = 0 (A) + 1 (C - D) = 1 ??? YES !!!!
+     */
+    
+

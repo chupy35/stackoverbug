@@ -1,0 +1,64 @@
+13053142 POST data using $resource
+
+DEMO: <http://jsfiddle.net/rob_balfre/7QUUf/>
+
+How do you POST data (across domain) using $resource?
+
+For example this curl writes to the API with no problem:
+
+    
+    
+    curl --dump-header - -H "Content-Type: application/json" -X POST --data '{"name": "Wobbly"}' http://192.168.91.20/api/food/
+    
+
+and the header response is:
+
+    
+    
+    HTTP/1.0 201 CREATED
+    Date: Thu, 25 Oct 2012 08:19:42 GMT
+    Server: WSGIServer/0.1 Python/2.6.1
+    Access-Control-Allow-Headers: Content-Type,*
+    Location: http://localhost/api/food/15/
+    Access-Control-Allow-Credentials: true
+    Access-Control-Allow-Origin: *
+    Access-Control-Allow-Methods: POST,GET,OPTIONS,PUT,DELETE
+    Content-Type: text/html; charset=utf-8
+    
+
+I'm totally stuck on how to get angular to POST the same way. This is my
+$resource, it's worth noting that 'get' works just fine:
+
+    
+    
+    angular.module('tastypieModule', ['ngResource']).
+    factory('FoodOptions', function($resource, $timeout) {
+       var FoodOptions = $resource('http://testurl/api/:type',
+            {type: 'food'},
+            {
+                get: {method: 'JSONP', params: {format: 'jsonp', callback:'JSON_CALLBACK'}},
+                update: {method: 'POST', headers: {'Content-Type': 'application/json'}}
+            }
+        );
+    
+     return FoodOptions;
+    })
+    
+
+When I call update it just fails and I see this is the console network tab:
+
+    
+    
+    METHOD: OPTIONS 
+    STATUS: (canceled) Load cancelled
+    
+
+On the server you need to implement a Cross Origin Resource Sharing.
+<http://www.html5rocks.com/en/tutorials/cors/> and <http://omarrr.com/cors-
+html5-approach-to-crossdomain-policies/> both have good articles about the
+topic. The HEAD request is coming from the browser to your server to check for
+the headers that contain (or in your case, don't contain) the CORS
+permissions. If you implement CORS on the server then you'll see the browser
+first make a HEAD request once to the server then after confirming the correct
+permissions it will make the POST.
+

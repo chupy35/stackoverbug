@@ -1,0 +1,31 @@
+24034715 Search price between two values with elasticsearch
+
+I would like to send a curl request in order to display my result. I try this
+URl on my localhost:
+
+>
+localhost:9200/book/book/_search?q=title:wizard&price["10"TO"24"]&pretty=true
+
+My request work, but in my result I see more book with a higher price to $24
+
+if anyone can help me. Thanks in advance.
+
+the `AND` operation is different from `&` which is a query string key-value
+separator.
+
+Try this instead:
+
+    
+    
+    localhost:9200/book/book/_search?q=title:wizard AND price:[10 TO 24]&pretty=true
+    
+
+use like this
+
+    
+    
+    localhost:9200/book/book/_search?q=title:wizard AND price:[10 to 24]&pretty=true
+    
+
+HOpe it helps..!
+

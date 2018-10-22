@@ -1,0 +1,47 @@
+13125899 How to set up attributes in angularjs directive restricted to
+comments
+
+I've found nice feature in angularjs. Directives can be set to work on
+comments.
+
+    
+    
+    {
+        ...
+        restrict: 'M'
+        ...
+    }
+    
+
+This does the trick as it is spoken in the documentation. Usage of this
+directive is as follows:
+
+    
+    
+    <!-- directive: my-directive-name -->
+    
+
+And it works just fine as long as I don't need to pass arguments to this
+directive. Is it possible to set arguments on directive restricted to comment?
+What's the syntax?
+
+    
+    
+    <!-- directive: my-directive-name this is all an argument -->
+    
+
+Where everything after the directive name is the value passed into the
+directive.
+
+    
+    
+    app.directive('myDirectiveName', function(){
+       return {
+          restrict: 'M',
+          link: function(scope, elem, attr) {
+              alert(attr.myDirectiveName); //alerts "this is all an argument"
+          }
+       };
+    });
+    
+

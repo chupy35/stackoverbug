@@ -1,0 +1,86 @@
+24387578 ElasticSearch Script Score Using Field Value
+
+**ElasticSearch 1.2.1**
+
+I am trying to query documents using weighted tags.
+
+    
+    
+    curl -X PUT 'http://localhost:9200/test'
+    
+    curl -X PUT 'http://localhost:9200/test/thing/_mapping' - '{
+        "thing": {
+            "properties": {
+                "tags": {
+                    "type": "nested",
+                    "properties": {
+                            "name": { "type": "string" },
+                            "weight": { "type": "integer" }
+                    }
+                }
+            }
+        }}'
+    
+
+Adding a document:
+
+    
+    
+    curl -X PUT 'http://localhost:9200/test/thing/1', -d '{
+        "tags": [
+            { "name": "a", "weight": 2 }
+        ]
+    }'
+    
+
+Now I am searching for documents having a tag `a` and boost the score based on
+the `weight`.
+
+_Note:_ to run these examples you have to enable dynamic scripting in
+ElasticSearch: add `script.disable_dynamic: false` to `elasticsearch.yml`
+
+    
+    
+    curl -X GET 'http://localhost:9200/test/thing/_search?pretty' -d '{
+        "query": {
+            "function_score": {
+              "boost_mode": "replace",
+              "query": {
+                "match_all": {}
+              },
+              "functions": [
+                {
+                  "filter": {
+                    "nested": {
+                      "path": "tags",
+                      "filter": {
+                        "term": {
+                          "tags.name": "a"
+                        }
+                      }
+                    }
+                  },
+                  "script_score": {
+                    "script": "doc.weight.value"
+                  }
+                }
+              ]
+            }
+        }
+    }'
+    
+
+The document is found, as expected, however the score is `0`. It seems as if
+the property `doc.weight` was empty.
+
+Let's test this by replacing the script with `doc.weight.empty ? 50 : 100`.
+The hit now has a score of `50` indicating that the field `doc.weight` is
+empty. It is _found_ though, because using a non-existant field name (e.g.
+`doc.foobar`) gives an error.
+
+Background: The `match_all` part would be replaced by a real query. I want to
+use the tags to boost results matching the tags before the ones not matching
+the tags.
+
+What am I missing?
+

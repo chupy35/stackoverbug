@@ -1,0 +1,97 @@
+16094112 Elasticsearch Popular Keywords
+
+Does elasticsearch provide a way to keep track of popular keywords? For
+example, at a given time period, I would like to know the keywords that appear
+the mostly frequently in queries.
+
+If elasticsearch does not have such a feature, what would be a good way to
+implement it using elasticsearch?
+
+Thanks!
+
+I don't think there is a build-in way for that, but it should be quite easy to
+achieve via a [terms
+facet](http://www.elasticsearch.org/guide/reference/api/search/facets/terms-
+facet/)
+
+What you'd have to do is:
+
+  1. Save all query keywords along with a timestamp in an elasticsearch index
+  2. Run a match_all query filtered by the time interval you are interested in and apply a term facet onto it
+
+~~Unfortunately I don't have the time to write you an example, but that should
+lead you to the solution.~~
+
+Here is an example:
+
+    
+    
+    // Demo index
+    curl -XDELETE 'http://localhost:9200/queries/'
+    curl -XPUT 'http://localhost:9200/queries/'
+    
+    // Add some data
+    curl -XPUT 'http://localhost:9200/queries/query/1' -d '
+    { 
+        "date": "2013-02-19T12:57:23", 
+        "query": "Trying out ElasticSearch, so far so good?"
+    }'
+    
+    curl -XPUT 'http://localhost:9200/queries/query/2' -d '
+    { 
+        "date": "2013-03-02T11:27:23", 
+        "query": "Lets give ElasticSearch another try"
+    }'
+    
+    curl -XPUT 'http://localhost:9200/queries/query/3' -d '
+    { 
+        "date": "2013-04-02T08:27:23", 
+        "query": "OK, why dont we stick to SOLR?"
+    }'
+    
+    curl -XPUT 'http://localhost:9200/queries/query/4' -d '
+    { 
+        "date": "2013-04-19T11:27:23", 
+        "query": "Couse ElasticSearch is so much cooler, its bonsai cool"
+    }'
+    
+    // Query it
+    curl -XGET 'http://localhost:9200/queries/query/_search?pretty=true' -d '
+    {
+        "query" : {
+            "filtered" : {
+                "filter" : {
+                    "range" : {
+                        "date" : {
+                            "gte" : "2013-01-01T00:00:00",
+                            "lt" : "2013-04-01T00:00:00"
+                        }
+                    }
+                },
+                "query" : {
+                    "match_all" : {}
+                }
+            }
+        },
+        "facets": {
+            "keywords": {
+                "terms": {
+                    "field": "query"
+                }
+            }
+        }
+    }
+    '
+    
+
+Adjust the date range in the query to see the changes of the output
+
+ES doesn't have this built-in, but there is a free Search Analytics service
+run by Sematext (disclaimer: I work there) you can use for that - see
+<http://sematext.com/search-analytics/index.html>
+
+The Approved answer not working anymore because Facets have been removed and
+replaced with [terms aggregation](http://nocf-
+www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-
+bucket-terms-aggregation.html) instead.
+

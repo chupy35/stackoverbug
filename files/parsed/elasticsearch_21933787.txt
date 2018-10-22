@@ -1,0 +1,148 @@
+21933787 ElasticSearch not returning results for terms query against string
+property
+
+I have the following indexed document:
+
+    
+    
+    {
+        "visitor": {
+            "id": <SOME STRING VALUE>
+        }
+    }
+    
+
+The mapping for the document is:
+
+    
+    
+    "visitor": {
+        "properties": {
+            "id": {
+                "type": "string"
+             }
+         }
+     }
+    
+
+When I run the following query I get results:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                 }
+            },
+            "filter": {
+                "term": { "visitor.id": "123" }
+            }
+        }
+    }
+    
+
+However this does not:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                 }
+            },
+            "filter": {
+                "term": { "visitor.id": "ABC" }
+            }
+        }
+    }
+    
+
+I've been thinking this is related to analyzers and have been chasing that
+down. I've also been wondering if I was wrong to use dot notation to get to
+the nested visitor property.
+
+**Can anyone tell me why I can't filter for the visitor with the id of "ABC"
+but can for visitor 123**
+
+You need to understand how elasticsearch's analyzers work. Analyzers perform a
+tokenization (split an input into a bunch of tokens, such as on whitespace),
+and a set of token filters (filter out tokens you don't want, like [stop
+words](http://www.ranks.nl/resources/stopwords.html), or modify tokens, like
+the [lowercase token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+lowercase-tokenfilter.html) which converts everything to lower case).
+
+Analysis is performed at two very specific times - during indexing (when you
+put stuff into elasticsearch) and, depending on your query, during searching
+(on the string you're searching for).
+
+That said, the default analyzer is the [standard
+analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html) which consists of a [standard
+tokenizer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-tokenizer.html), [standard token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-tokenfilter.html) (to clean up tokens from the standard tokenizer),
+[lowercase token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+lowercase-tokenfilter.html), and [stop words token
+filter](http://www.ranks.nl/resources/stopwords.html).
+
+To put this to an example, when you save the string "I love Vincent's pie!"
+into elasticsearch, and you're using the default standard analyzer, you're
+actually storing "i", "love", "vincent", "s", "pie". Then, when you attempt to
+search for "Vincent's" with a `term` query (which is **not analyzed** ), you
+will not find anything because "Vincent's" is not one of those tokens!
+However, if you search for "Vincent's" using a `match` query (which is
+**analyzed** ), you will find "I love Vincent's pie!" because "vincent" and
+"s" both find matches.
+
+The bottom line, either:
+
+  1. Use an analyzed query, such as `match`, when searching natural language strings.
+  2. Set up the analyzers to match your needs. You could set up set up a custom analyzer that performs a whitespace tokenizer or a letter tokenizer or a pattern tokenizer if you want to get complicated, as well as whatever filters your heart desires. It depends on your use case, but if you're dealing with natural language sentences I don't recommend this because the standard tokenizer was built for natural language searching.
+  3. You can set the field up to not use an analyzer with the following mapping, which should suit your needs:
+    
+        "visitor": {
+        "properties": {
+            "id": {
+                "type": "string"
+                "index": "not_analyzed"
+            }
+        }
+    }
+    
+
+See
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis.html>
+for further reading.
+
+Unless you specify the visitor.id field NOT to be analyzed, every fields are
+analyzed by default.
+
+It means that **"ABC"** will be indexed as **"abc"** ( **lower case** ).
+
+You have to use term query or term filter with string in **LOWER CASE**.
+
+I hope the query below will work. ^^
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                 }
+            },
+            "filter": {
+                "term": { "visitor.id": "abc" }
+            }
+        }
+    }
+    
+

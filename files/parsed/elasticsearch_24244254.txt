@@ -1,0 +1,57 @@
+24244254 Dynamic mapping for suggest field in Elastic Search
+
+I have the following dynamic mapping:
+
+    
+    
+        "mappings": {
+            "_default_": {
+                "dynamic_templates": [
+                    {
+                        "suggest_template": {
+                            "mapping": {
+                                "suggest": {
+                                    "type": "completion",
+                                    "index_analyzer": "simple",
+                                    "search_analyzer": "simple",
+                                    "payloads": true
+                                }
+                            },
+                            "match": "suggest"
+                        }
+                    }
+                ],
+                "properties": {}
+            }    
+    }
+    
+
+This mapping should, as far as I understand, map all fields called suggest to
+the completion type.
+
+However when I index documents all of the fields named suggest are indexed as
+type string:
+
+    
+    
+    "properties": {
+    
+                    "suggest": {
+                        "type": "string"
+                    }
+     }
+    
+
+**Does anyone know why this mapping isn't working?**
+
+p.s. To set this into a scope. The end use case for this is to use the
+completion suggester. As this mapping doesn't work I get the following error:
+
+    
+    
+    ElasticsearchException[Field [suggest] is not a completion suggest field]
+    
+
+Just found the problem with the mapping. The "suggest_template": and brackets
+should be removed.
+

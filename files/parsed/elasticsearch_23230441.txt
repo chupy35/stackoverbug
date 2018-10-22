@@ -1,0 +1,34 @@
+23230441 ElasticSearch: facet for price dependent on date range
+
+I have a database of services with prices and I want to search on service name
+and show facet with price ranges and counts. Searching on such database would
+be simple, nevertheless the price is dependent on date and thus can fluctuate.
+
+* * *
+
+Service 1 | 1.1.-15.2. $50 | 16.2.-10.5. $80 | 11.5.-20.7. $90
+
+Service 2 | 1.1.-14.2. $60 | 15.2.-11.5. $90 | 12.5.-21.7. $80
+
+Service 3 | 1.1.-18.2. $70 | 19.2.-17.5. $50 | 18.5.-25.7. $70
+
+* * *
+
+I would like to provide a search based on **name** and **date range** when
+user is looking for a service:
+
+_Filter example:_ 'car washing' between 1.2. - 15.3.
+
+**RESULT**
+
+_Display_ : services with given text that are provided in the given date range
+
+_Facet Price group_ : $0-$50 (23), $50-$100 (14), $100-$150 (5) \- number of
+services within price bucket
+
+**REMARKS** I believe this is easy when price would be static, but I find it
+hard when it is dependent on provided date range. For example how to deal when
+user defines a date range that overlaps 2 different prices of a matched
+service? Can ElasticSearch take the lowest price for example? How to deal with
+such case in ES?
+

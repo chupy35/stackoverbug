@@ -1,0 +1,41 @@
+26451321 Spring boot - @ConditionalOnProperty or @ConditionalOnExpression
+
+I'm using Spring-Boot-1.1.7. My intention is to add a bean to my context
+according to a value of a property of type string.
+
+I mean, I can see a lot of examples of boolean values such as this:
+
+    
+    
+    @ConditionalOnExpression("${xxx.enabled:true}")
+    
+
+But I want an expression based on a value of a property, for example:
+
+    
+    
+    @ConditionalOnExpression("${server.host==localhost} or ${server.port==8080} ")
+    
+
+or something like that.
+
+Can someone show me an example how to do it?
+
+If the value you want to compare with is a literal, you need to quote it, and
+the placeholder would go round the property name (not the whole expression),
+e.g. `${server.host}=='localhost'`
+
+Eventually , this one worked for me:
+
+    
+    
+    @ConditionalOnExpression("'${server.host}'=='localhost'")
+    
+
+For property value conditional I used:
+
+    
+    
+    @ConditionalOnProperty(name="server.host", havingValue="localhost")
+    
+

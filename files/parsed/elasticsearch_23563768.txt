@@ -1,0 +1,49 @@
+23563768 Boost a document based on the existence of a field
+
+Is it possible to boost a document's relevance based on the presence of a
+field? I've read about [function score
+queries](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+boost-field.html#function-score-instead-of-boost) but I'm wondering how
+existence is taken into account - from my understanding, the
+`field_value_factor` applies to the content of the field, not on its presence.
+
+Use a [function score
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html#_using_function_score) with an [exists-
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-exists-filter.html#query-dsl-exists-filter) as a boosting filter.
+
+Function score query is a possibility, however a score function is
+computationally expensive and not necessary (keep in mind `exists` query used
+below may not have been available in 2014).
+
+Can do the following:
+
+    
+    
+    POST _search
+    {
+      "query": {
+        "bool" : {
+          "should" : [
+            { 
+              match_all: {
+                "boost": 10
+              } 
+            },
+            {
+             "exists": {
+               "field": "some_field_that_should_exist"
+              }
+            }           
+          ],
+          "minimum_should_match" : 2,
+        }
+      }
+    }
+    
+
+With a minimum should match of 2 we say that both clauses must match in order
+for the should clause to match. This prevents the boost from being applied to
+documents that do not have the field.
+

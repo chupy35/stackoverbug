@@ -1,0 +1,83 @@
+28103852 Spring Boot session timeout
+
+`server.session-timeout` seems to be working only for embedded tomcat.
+
+I put a log statement to check the session max interval time. After deploying
+the war file manually to tomcat, I realized that default session timeout value
+(30 min) was being used still.
+
+How can I set session timeout value with spring-boot (not for embedded tomcat,
+but for a stand-alone application server)?
+
+When you deploy a Spring Boot app to a standalone server, configuring the
+session timeout is done in the same way as it would be in any other war
+deployment.
+
+In the case of Tomcat you can set the session timeout by configuring the
+`maxInactiveInterval` attribute on the manager element in `server.xml` or
+using the `session-timeout` element in web.xml. Note that the first option
+will affect every app that's deployed to the Tomcat instance.
+
+You've discovered, as I have, that there is no direct call in the Servlet API
+nor the Spring APIs for setting the session timeout. The need for it is
+discussed here and there, but it hasn't been addressed yet.
+
+There's kind of a round-a-bout way to do what you want. You can configure a
+session listener that sets the timeout on the session. I came across an
+article with code examples at: <http://fruzenshtein.com/spring-java-
+configuration-session-timeout>
+
+I hope that helps.
+
+_Just in case someone finds this useful:_  
+if you're using Spring Security you can extend the
+[_SimpleUrlAuthenticationSuccessHandler_](http://docs.spring.io/spring-
+security/site/docs/current/apidocs/org/springframework/security/web/authentication/SimpleUrlAuthenticationSuccessHandler.html)
+class and set the session timeout in the authentication success handler:
+
+    
+    
+    public class NoRedirectSavedRequestAwareAuthenticationSuccessHandler
+           extends SimpleUrlAuthenticationSuccessHandler {
+    
+        public final Integer SESSION_TIMEOUT_IN_SECONDS = 60 * 30;
+    
+        @Override
+        public void onAuthenticationSuccess(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            Authentication authentication)
+                                            throws ServletException, IOException {
+    
+            request.getSession().setMaxInactiveInterval(SESSION_TIMEOUT_IN_SECONDS);
+    
+            // ...
+        }
+    
+    
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http.authorizeRequests()
+                .anyRequest()
+                .authenticated()
+                .and()
+                .formLogin()
+                .loginProcessingUrl("/login")
+                .successHandler(new NoRedirectSavedRequestAwareAuthenticationSuccessHandler())
+                .failureHandler(new SimpleUrlAuthenticationFailureHandler())
+                .and().httpBasic();
+        }
+    
+    }
+    
+
+In your application.properties
+
+    
+    
+    #session timeout (in secs for spring, in minutes for tomcat server/container)
+    server.session.timeout=1
+    
+
+I tested it and is working! It turns out that tomcat take the property in
+minutes
+

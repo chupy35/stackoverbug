@@ -1,0 +1,4 @@
+30900984
+Elastic Search Terms filter. Max terms?
+<p>Is there any limit on number of terms for terms filter?</p>&#xA;&#xA;<p>For example - </p>&#xA;&#xA;<pre><code>{&#xA;  "filtered": {&#xA;    "query": {&#xA;      "match": { "ObjectType": "Invoice" }&#xA;    },&#xA;    "filter": {          &#xA;        "terms" : {&#xA;          "InvoiceID" : ["Invoice_101_V1", " Invoice_102_V3", " Invoice_103_V3"]&#xA;        }&#xA;      }&#xA;&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>I have added terms filter which lists the InvoiceID's. So is there any limit on adding terms in terms filter?</p>&#xA;&#xA;<p>Thanks in advance.</p>&#xA;&#xA;<p>Sameer</p>&#xA;
+<p>The max number of terms able to be filtered on is 1024, at least for the Java API. Any amount beyond will throw an Exception.</p>&#xA;

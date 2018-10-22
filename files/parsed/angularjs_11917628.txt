@@ -1,0 +1,45 @@
+11917628 AngularJS evaluate an interpolation expression without printing to
+screen
+
+I have an expensive function call that gets called once per loop, but I would
+like to set the return value of that to be a temporary variable that can be
+used directly within the loop.
+
+This works by setting `{{ val=fn(...) }}`, but it also prints to the screen.
+Is it possible to do this without printing the value?
+
+I've tried using one set of curly braces `{}` but it doesn't work.
+
+Any ideas on how to do this?
+
+Have you looked into "filters" or possibly doing the work in your JS code
+instead of the view?
+
+Instead of a temporary variable, call a method when you need the value, and in
+this method, use a cached version of the result, or call your expensive method
+if the cached version is null/undefined. It will only call your expensive
+function once per iteration, and it won't call it if it's not needed. It won't
+print it unless you want to. Because each iteration of a ng-repeat spawns a
+new scope, each iteration will start with an empty cache.
+
+e.g.:
+
+    
+    
+    $scope.cache = null
+    $scope.getValue = function() {
+      if (!this.cache) { // use typeof if 0 or false or empty string is valid!
+        this.cache = myExpensiveFunc()
+      }
+      return this.cache
+    }
+    
+
+Not 100% sure $scope.cache = null will be initialized for each scope of the
+iteration, you may need to check if 'this' hasOwnProperty 'cache' in getValue.
+So in your view, you only reference getValue() when you need to.
+
+HTH!
+
+edit: cache on scope, not in controller.
+

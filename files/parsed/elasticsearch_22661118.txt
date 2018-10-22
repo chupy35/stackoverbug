@@ -1,0 +1,32 @@
+22661118 Elasticsearch: get total of GROUP BY and COUNT
+
+I'm using the elasticsearch java client and I want to work out how many
+distinct items items there are matching a combination. I'm currently using
+facets like this:
+
+    
+    
+    client.prepareSearch(indexName)
+          .addFacet(Efb.termsFacet("hotels")
+            .field("hotel.specialCode")
+            .script("term + ';;;' + _source.hotel.name + ';;;' + _source.offer.destinationId")
+            .facetFilter(filter)
+            .size(50))
+    
+
+I then get the total using:
+
+    
+    
+    case tf: TermsFacet =>
+            val entries = tf.getEntries
+            val totalHotels = entries.size()
+    
+
+This is wrong because I am asking for the total returned, which in my query I
+limited to 50 - so this number will never exceed 50.
+
+How can I get the total number of facets, without having to pull them all back
+into memory? Or is there a better way to do the equivalent of a SQL GROUP BY
+and COUNT in elasticsearch?
+

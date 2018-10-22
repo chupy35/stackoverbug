@@ -1,0 +1,91 @@
+16379253 How to read the JSON output of a faceted search query?
+
+I am having Movies that belong to a genre and have multiple ratings. With
+ElasticSearch, I want to do a faceted search on Genres first, and then
+Ratings.
+
+I was reading about the idea here:
+<http://www.elasticsearch.org/guide/reference/api/search/facets/>
+
+But I am confused how to understand the output of this Curl query:
+
+    
+    
+    curl -X POST "http://localhost:9200/movies/_search?pretty=true" -d '
+     {
+        "query" : { "query_string" : {"query" : "T*"} },
+        "facets" : {
+          "categories" : { "terms" : {"field" : "categories"} }
+        }
+      }
+    '
+    {
+      "took" : 35,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 3,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "movies",
+          "_type" : "movie",
+          "_id" : "13",
+          "_score" : 1.0, "_source" : {"category_id":2,"created_at":"2013-05-03T16:40:21Z","description":null,"title":"Tiny Plastic Men","updated_at":"2013-05-03T16:40:21Z","user_id":null}
+        }, {
+          "_index" : "movies",
+          "_type" : "movie",
+          "_id" : "32",
+          "_score" : 1.0, "_source" : {"category_id":14,"created_at":"2013-05-03T16:55:02Z","description":null,"title":"The Extreme Truth","updated_at":"2013-05-03T16:55:02Z","user_id":null}
+        }, {
+          "_index" : "movies",
+          "_type" : "movie",
+          "_id" : "39",
+          "_score" : 1.0, "_source" : {"category_id":7,"created_at":"2013-05-03T16:55:02Z","description":null,"title":"A Time of Day","updated_at":"2013-05-03T16:55:02Z","user_id":null}
+        } ]
+      },
+      "facets" : {
+        "categories" : {
+          "_type" : "terms",
+          "missing" : 3,
+          "total" : 0,
+          "other" : 0,
+          "terms" : [ ]
+        }
+      }
+    
+
+I am having some movies that start with a 'T', but additionally I would expect
+movies from the Genre/Category 'Thriller'.
+
+Therefore, what can I read from the JSON above?
+
+It seems like your facet does not match any fields in your document you should
+probably use:
+
+    
+    
+    curl -X POST "http://localhost:9200/movies/_search?pretty=true" -d '
+     {
+        "query" : { "query_string" : {"query" : "T*"} },
+        "facets" : {
+          "categories" : { "terms" : {"field" : "category_id"} }
+        }
+      }
+    '
+    
+
+then you sould get a list of category_id and a count of documents in each
+category_id
+
+Facets are deprecated. See
+<https://www.elastic.co/guide/en/elasticsearch/reference/1.6/search-
+facets.html>
+
+Better alternative is to use aggregations:
+<https://www.elastic.co/guide/en/elasticsearch/reference/1.6/search-
+aggregations.html>
+

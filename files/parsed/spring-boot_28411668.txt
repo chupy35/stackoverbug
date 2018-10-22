@@ -1,0 +1,34 @@
+28411668 Spring Boot and Jboss wildfly setting the context root
+
+I am trying to set the context root of my spring boot application. I'm
+deploying my application as a war file to Jboss.  i've tried to set the
+contextPath of what I'd like my root URL to be when deploying it to
+JBoss/Wildfly but it seems to get ignored. Unless I add a jboss-web.xml file
+setting a contex-root variable, my deployment url is always based on teh war
+file name:
+
+e.g. : myapp.war always deploys as : localhost:8080/myapp unless I use jboss-
+web. I've tried setting the contextPath in the server.properties file and it
+doesn't seem to work.
+
+My question is should I be able to? I'm using the latest Spring Boot.
+
+All of the `server.*` properties that Spring Boot supports only apply to the
+configuration of the embedded servlet container (Tomcat, Jetty, or Undertow).
+If you're deploying your Spring Boot app to a standalone server then you'll
+need to configure that server using whatever mechanisms it provides.
+
+In other words, add your `jboss-web.xml`
+
+file in this directory : `/src/main/webapp/WEB-INF`
+
+Content of your jboss-web.xml
+
+    
+    
+    <?xml version="1.0" encoding="UTF-8"?>
+    <jboss-web>
+            <context-root>/</context-root>
+    </jboss-web>
+    
+

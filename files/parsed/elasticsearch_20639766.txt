@@ -1,0 +1,65 @@
+20639766 Selectively turn off stop words in Elastic Search
+
+So I would like to turn off stop word filtering on the `username`, `title`,
+and `tags` fields but not the `description` field.
+
+As you can imagine I do not want to filter out a result called `the best` but
+I do want to stop `the` from affecting the score if it is in the `description`
+field (search `the` on GitHub if you want an example).
+
+Now @Javanna says ( [Is there a way to "escape" ElasticSearch stop
+words?](https://stackoverflow.com/questions/17883936/is-there-a-way-to-escape-
+elasticsearch-stop-words) ):
+
+> In your case I would disable stopwords for that specific field rather than
+modifying the stopword list, but you could do the latter too if you wish to.
+
+Failing to provide an example so I searched around and tried the `common`
+query: <http://www.elasticsearch.org/blog/stop-stopping-stop-words-a-look-at-
+common-terms-query/> which didn't work for me either.
+
+So I searched for specifically stopping the filtering stop words however the
+closest I have come to is stopping it index wide: [Can I customize Elastic
+Search to use my own Stop Word
+list?](https://stackoverflow.com/questions/4927629/can-i-customize-elastic-
+search-to-use-my-own-stop-word-list) by attacking the analyzer directly, or
+failing that the documentation hints at making my own analyzer `:/`.
+
+What is the best way selectively disable stop words on certain fields?
+
+I think you already know what to do, which would be to customize your
+analyzers for certain fields. From what I understand you did not manage to
+create a valid syntax example for that. This is what we used in a project, I
+hope that this example points you in the right direction:
+
+    
+    
+      {
+        :settings => {
+          :analysis => {
+            :analyzer => {
+              :analyzer_umlauts => {
+                :tokenizer    => "standard",
+                :char_filter  => ["filter_umlaut_mapping"],
+                :filter       => ["standard", "lowercase"],
+              }
+            },
+            :char_filter => {
+              :filter_umlaut_mapping => {
+                :type => 'mapping',
+                :mappings_path => es_config_file("char_mapping")
+              }
+            }
+          }
+        },
+        :mappings => {
+          :company => {
+            :properties => {
+              [...]
+              :postal_city => { :type => "string",  :analyzer => "analyzer_umlauts", :omit_norms => true, :omit_term_freq_and_positions => true, :include_in_all => false },
+            }
+          }
+        }
+      }
+    
+

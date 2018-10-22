@@ -1,0 +1,187 @@
+20434161 Is it possible to rank span_near queries with unique results higher
+than duplicate results?
+
+Assume I have two documents that have a "catField" containing the following
+information:
+
+Document one:
+
+    
+    
+    happy cat
+    sad cat
+    meh cat
+    
+
+Document two:
+
+    
+    
+    happy cat
+    happy cat
+    happy cat
+    
+
+I am attempting to write a query that fulfils two requirements:
+
+  1. Find any word with a length of at least three followed by the word "cat".
+  2. The query should also rank documents with more unique types of cats (document one) higher than those that have the same types of cats (document two).
+
+Here is my initial solution that uses
+[`span_near`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-span-near-query.html) with regexp that fulfils the first requirement:
+
+    
+    
+    "span_near": {
+       "clauses": [
+           {
+                "span_multi": { 
+                    "match": { 
+                        "regexp": {
+                            "catField": "[a-z]{3,}"
+                        }
+                    }
+                }
+            },
+            {
+                "span_multi": { 
+                    "match": { 
+                        "regexp": {
+                            "catField": "cat"
+                        }
+                    }
+                }
+            }
+       ],
+       "slop": 0,
+       "in_order": true
+    }
+    
+
+This works great for finding documents with lists of cats, but it will rank
+Document one, and Document two (above) the same. How can I fulfil that second
+requirement of ranking unique cat lists higher than non-unique ones?
+
+So here is an approach using some indexing magic to get what you want. I'm not
+entirely certain of your requirements (since you are probably working with
+data more complicated than just "happy cat"), but it should get you started in
+the index-time direction.
+
+This may or may not be the right approach for your setup. Depending on index
+size and query load, phrase queries/span queries/bool combinations may work
+better. Your requirements are tricky though, since they depend on order, size
+of preceding token, and number of variations.
+
+The advantage of this is that much of your complex logic is baked into the
+index, gaining speed at query time. It does make your data a bit more rigid
+however.
+
+    
+    
+    curl -XDELETE localhost:9200/cats
+    curl -XPUT localhost:9200/cats -d '
+    {
+        "settings" : {
+            "number_of_shards" : 1,
+            "number_of_replicas" : 0,
+            "index" : {
+                "analysis" : {
+                    "analyzer" : {
+                        "catalyzer" : {
+                            "type" : "custom",
+                            "tokenizer" : "keyword",
+                            "filter" : ["cat_pattern", "unique", "cat_replace"]
+                        }   
+                    },
+                    "filter" : {
+                        "cat_pattern" : {
+                         "type" : "pattern_capture",
+                           "preserve_original" : false,
+                           "patterns" : [
+                              "([a-z]{3,} cat)"
+                           ]   
+                        },
+                        "cat_replace" : {
+                         "type" : "pattern_replace",
+                           "preserve_original" : false,
+                           "pattern" : "([a-z]{3,} cat)",
+                           "replacement" : "cat"
+                        }
+                    }
+                }
+            }
+        },
+        "mappings" : {
+            "cats" : {
+                "properties" : {
+                    "catField" : { 
+                        "type" : "multi_field",
+                        "fields": {
+                            "catField" : {
+                                "type": "string",
+                                "analyzer": "standard"
+                            },
+                            "catalyzed" : {
+                                "type": "string",
+                                "index_analyzer": "catalyzer",
+                                "search_analyzer" : "whitespace"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+
+First we are creating an index with a bunch of custom analysis. First we
+tokenize with a keyword analyzer (which doesn't actually tokenize, just emits
+a single token). Then we use a `pattern_capture` filter to find all "cats"
+that are preceded with a word longer than three characters. We then use a
+`unique` filter to get rid of duplicates (e.g. "happy cat" three times in a
+row). Finally we use a `pattern_replace` to change our "happy cat" into just
+"cat".
+
+The final tokens for a field will just be "cat", but there will be more
+occurrences of "cat" if there are multiple types of cats.
+
+At search time, we can simply search for "cat" and the docs that mention "cat"
+more often are boosted higher. More mentions means more unique types due to
+our analysis, so we get the boosting behavior "for free".
+
+I used a multi-field, so you can still query the original field (e.g if you
+want to search for "happy cat").
+
+Demonstration using the above mappings:
+
+    
+    
+    curl -XPOST localhost:9200/cats/cats/1 -d '
+    {
+        "catField" : ["sad cat", "happy cat", "meh cat"]
+    }'
+    
+    curl -XPOST localhost:9200/cats/cats/2 -d '
+    {
+        "catField" : ["happy cat", "happy cat", "happy cat"]
+    }'
+    
+    curl -XPOST localhost:9200/cats/cats/3 -d '
+    {
+        "catField" : ["a cat", "x cat", "y cat"]
+    }'
+    
+    curl -XPOST localhost:9200/cats/cats/_search -d '
+    {
+        "query" : {
+            "match": {
+               "catField.catalyzed": "cat"
+            }   
+        }
+    }'
+    
+
+Notice that the third document isn't returned by the search, since it doesn't
+have a cat that is preceeded by a type longer than three characters.
+

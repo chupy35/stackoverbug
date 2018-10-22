@@ -1,0 +1,19 @@
+12461783 Elasticsearch, filter for accents
+
+So, while [asciifolding](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/asciifolding-tokenfilter.html) would turn `è` into `e` it
+won't filter out a single accent like ```, right? So how can I get rid of
+them? For example I want to index `O`Learys` and be able to search for any
+variation of `olearys`, `O learys`, `o`learys`.
+
+I don't think it's possible to make `O`Learys` to match both `olearys` and `O
+learys` at the same time using analyzers, tokenizers or filters that come with
+elasticsearch. It would require to detect presence of ``` and indexing
+`O`Learys` twice: first as one token `olearys` and then as two tokens `o`
+`learys`. It can be done by writing only with a custom token filter though.
+
+As a workaround, you can make both `olearys` and `o`learys` to match
+`O`Learys` by removing character ``` from the input using [Mapping Char
+Filter](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/mapping-charfilter.html).
+

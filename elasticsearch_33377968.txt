@@ -1,0 +1,4 @@
+33377968
+Elasticsearch get field mapping for all fields without using asterisk (*)
+<p>To get mapping for <strong>all</strong> fields in an index, I do this:</p>&#xA;&#xA;<p>GET <code>http://localhost:9200/some_awesome_index/_mapping/field/*</code></p>&#xA;&#xA;<p>But I don't want to use the *.  Is there another way to get the same result without using a * ?  I have dynamic fields, so I can't use a comma-separated list of every single field I need (without having to use the *).</p>&#xA;
+<p>If you want to the get the mapping for all the fields of all the types in an index, use</p>&#xA;&#xA;<blockquote>&#xA;  <p>GET /index name/_mapping</p>&#xA;</blockquote>&#xA;&#xA;<p>If you want to get the mapping for all the fields of a single type in an index, use</p>&#xA;&#xA;<blockquote>&#xA;  <p>GET/index name/type name/_mapping</p>&#xA;</blockquote>&#xA;

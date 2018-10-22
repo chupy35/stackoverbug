@@ -1,0 +1,101 @@
+25520968 Array of locations in elasticserach spatial query
+
+I am new to this elastic search concept i can't find a solution for my
+problem. suppose consider the following query.
+
+    
+    
+    GET banknew/_search/
+    {
+      "query": {
+        "match_all": {}
+      },
+      "filter": {
+        "geo_distance": {
+          "location": {
+            "lat": 8.722479,
+            "lon": 78.13047
+          },
+          "distance": "5km"
+        }
+      }
+    }
+    
+
+This will gave me the result. The above query is for 1 location(means 1 lat,
+lng). But i have to get the result for multiple locations(means for 2 or more
+lat, lng). What i tried is
+
+    
+    
+    GET banknew/_search/
+    {
+      "query": {
+        "match_all": {}
+      },
+      "filter": {
+        "geo_distance": {
+          "location": [{
+            "lat": 8.722479,
+            "lon": 78.13047
+          },{
+            "lat": 8.722479,
+            "lon": 78.13047
+          }      ],
+          "distance": "5km"
+        }
+      }
+    }
+    
+
+I have to get the result of points within 5km for 1st location and also 2nd
+location.
+
+But i am receiving error `"error": "SearchPhaseExecutionException[Failed to
+execute phase [query], all shards failed". Whether its possible. Please guide
+me. Thanks in advance
+
+You could use another geo_distance filter and wrap it up in a [bool
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-filter.html#query-dsl-bool-filter).
+
+If you are searching result at 5km from first location OR second location, add
+it in the `should` clause.
+
+Try something like this :
+
+    
+    
+    GET banknew/_search/
+    {
+      "query": {
+        "match_all": {}
+      },
+      "filter": {
+        "bool": {
+          "should": [
+            {
+              "geo_distance": {
+                "distance": "5km",
+                "location": {
+                  "lat": lat1,
+                  "lon": lon1
+                }
+              }
+            },
+            {
+              "geo_distance": {
+                "distance": "5km",
+                "location": {
+                  "lat": lat2,
+                  "lon": lon2
+                }
+              }
+            }
+          ],
+          "minimum_should_match": 1
+        }
+      }
+    }
+    
+

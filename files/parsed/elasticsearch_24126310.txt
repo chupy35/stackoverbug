@@ -1,0 +1,59 @@
+24126310 What is the best way to implement parent-child in Elastic Search?
+
+I wonder how for example the questions and answers in Stack Overflow are
+mapped in Elastic Search. You could implement answers as a child of questions,
+but in that case, how are then for example the lists rendered that give an
+overview of all answers that you have given ?
+
+Such a list contains the question title, the number of answers and the date of
+your last answer. It is thus a mix of question data and answer data.
+
+When using parent-child in Elastic Search, I can retrieve only data from
+questions OR from answers, but not from both. So if I would like to create a
+view like Stack Overflow has, I would need to store the question title also in
+the answer. But that then again gives overhead if the question title is
+changed. In that case, both the question and all answers must be updated.
+
+Please, checkout [nested
+type](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+nested-type.html) where you can store in index both question and answers and
+query them.
+
+Here is example of index:
+
+    
+    
+    {
+       "_index": "questions-development",
+       "_type": "question",
+       "_id": "8",
+       "_score": 1,
+       "_source": {
+          "id": 8,
+          "title": "Question title",               
+          "answers": [
+             {
+                "answer_id": 42,                     
+                "text": "Answer text"
+             },
+             {
+                "answer_id": 88,                    
+                "text": "Answer text"
+             },
+             {
+                "answer_id": 79,                     
+                "text": "Answer text"
+             },
+             {
+                "answer_id": 80,                    
+                "text": "Answer text"
+             },
+             {
+                "answer_id": 8,                      
+                "text": "Answer text"
+             }
+          ]
+       }
+    }
+    
+

@@ -1,0 +1,3 @@
+30571113
+Elasticsearch crashes without error message
+<p>I am facing a problem with elastic-search. After some minutes of starting elastic-search, it crashes without any error message.</p>&#xA;&#xA;<pre><code>Java Version: jdk1.8.0_45&#xA;Elastic-search Version: 1.4.5&#xA;</code></pre>&#xA;&#xA;<p>I'll attach my java crash log (<a href="http://pastebin.com/NN9PHWU4" rel="nofollow">http://pastebin.com/NN9PHWU4</a>). </p>&#xA;&#xA;<p>Does anybody has an idea what the issue is, and how I can fix it?</p>&#xA;&#xA;<p>Thanks,&#xA;Marcel</p>&#xA;

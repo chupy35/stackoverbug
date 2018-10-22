@@ -1,0 +1,37 @@
+21496984 Trouble installing elasticsearch
+
+while doing $sudo dpkg -i elasticsearch-0.90.10.deb
+
+it gives the following error :
+
+Processing triggers for man-db ... Setting up elasticsearch (0.90.10) ...
+chown: cannot access `/etc/elasticsearch/*': No such file or directory dpkg:
+error processing elasticsearch (--install): subprocess installed post-
+installation script returned error exit status 1 Processing triggers for
+ureadahead ... Errors were encountered while processing: elasticsearch
+
+directory /etc/elasticsearch exists and I am not able to gather proper reason
+for it.
+
+the call in the installation script, which seems to fail, is actually
+
+` chown -Rh root:root /etc/elasticsearch/* `
+
+which is extremely strange. The only thing I can imagine right now, is that
+you were not having proper privileges (can you show the permissions of
+`/etc/elasticsearch` \- do you have any subdirectories inside it? If so, are
+those allowed to be accessed (is the executable flag set)? The output of `find
+/etc/elasticsearch -ls` might be interesting
+
+Does this also happen with newer versions of the debian package (0.90.11 or
+1.0.0)? Also, which distribution are you using?
+
+I didn't have any files in /etc/elasticsearch didn't have any files in it and
+thus caused an error. Just put a file in the directory and it will do the
+update or install file;
+
+    
+    
+    sudo touch /etc/elasticsearch/tmp
+    
+

@@ -1,0 +1,87 @@
+6764553 How should I query Elastic Search given my mapping and using keywords?
+
+I have a very simple mapping which looks like this (I streamlined the example
+a bit):
+
+    
+    
+    {
+        "location" : {
+            "properties": {
+                "name": { "type": "string", "boost": 2.0, "analyzer": "snowball" },
+                "description": { "type": "string", "analyzer": "snowball" }
+            }
+        }
+    }
+    
+
+Now I index a lot of locations using some random values which are based on
+real English words.
+
+I'd like to be able to search for locations that match any of the given
+**keywords in either the name or the description field** (name is more
+important, hence the boost I gave it). I tried a few different queries and
+they don't return any results.
+
+    
+    
+    {
+        "fields" : ["name", "description"],
+        "query" : {
+            "terms" : {
+                "name" : ["savage"],
+                "description" : ["savage"]
+            },
+            "from" : 0,
+            "size" : 500
+        }
+    }
+    
+
+Considering there are locations which have the word _savaged_ in the
+description it should get me some results ( _savage_ is the stem of _savaged_
+). It yields 0 results using the above query. I've been using curl to query
+ES:
+
+    
+    
+    curl -XGET -d @query.json http://localhost:9200/myindex/locations/_search
+    
+
+If I use query string instead:
+
+    
+    
+    curl -XGET http://localhost:9200/fieldtripfinder/locations/_search?q=description:savage
+    
+
+I actually get one result (of course now it would be searching the description
+field only).
+
+Basically I am looking for a query that will do a OR kind of search using
+multiple keywords and compare them to the values in both the name and the
+description field.
+
+Snowball stems "savage" into "savag" that’s why term "savage" didn't return
+any results. However, when you specify "savage" on URL, it’s getting analyzed
+and you get results. Depending on what your intention is, you can either use
+correct stem ("savag") or analyze your terms by using "match" query instead of
+"terms":
+
+    
+    
+    {
+      "fields" : ["name", "description"],
+      "query" : {
+        "bool" : {
+          "should" : [
+            {"match" : {"name" : "savage"}},
+            {"match" : {"description" : "savage"}}
+          ]
+        },
+        "from" : 0,
+        "size" : 500
+      }
+    }
+    
+

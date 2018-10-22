@@ -1,0 +1,37 @@
+20900759 Elasticsearch _query vs _search
+
+I have a question which is not quite clear for me when reading the
+documentation. What exactly is the difference between the `_search` and the
+`_query` Endpoint?
+
+Thanks a lot! Matthias
+
+The `_search` API endpoint allows you to execute a search query and get back
+search hits that match the query. The query can either be provided using a
+simple query string as a parameter, or using a request body.
+
+    
+    
+    curl -XGET 'http://localhost:9200/twitter/tweet,user/_search?q=user:kimchy'
+    
+    
+    curl -XGET 'http://localhost:9200/twitter/tweet/_search' -d '{
+        "query" : {
+            "term" : { "user" : "kimchy" }
+        }
+    }
+    '
+    
+
+The `_query` endpoint, is for delete by query only (I think it only has
+handlers for DELETE, not POST, or GET).
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/twitter/tweet/_query?q=user:kimchy'
+    
+
+You can learn more here: [Elasticsearch
+Doco](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+search.html)
+

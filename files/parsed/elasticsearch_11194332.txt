@@ -1,0 +1,10 @@
+11194332 update non-existing document in elasticsearch
+
+Is it possible to create a new document instead of getting an error when
+trying to update a non-existing document in elasticsearch? I know I could
+check first but I would love to save that one additional call per document.
+
+Kimchy has implemented upsert(update-insert) in latest release 0.19.5  Please
+refer to [this](https://github.com/elasticsearch/elasticsearch/issues/2008)
+for more details
+

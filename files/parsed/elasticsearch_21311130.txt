@@ -1,0 +1,107 @@
+21311130 How does elasticsearch work?
+
+How does Elasticsearch handle indices? I have a field called `Coordinates`
+which has subfields `lat` and `lng` in a collection called `users`. I want to
+search inside this collection but by indexing the coordinate field. In my
+MongoDB configuration the `coordinate` field is already a 2D index. How can I
+try to tell ElasticSearch to search indexing that field? Does it know that
+coordinates is an index ? or should I tell it by this script?
+
+    
+    
+    curl -XPUT "localhost:9200/_river/artist/_meta" -d'
+    {
+      "type": "mongodb",
+        "mongodb": {
+          "db": "mydb", 
+          "collection": "users"
+        },
+        "index": {
+          "name": "coordin", 
+          "type": "coordinates"
+        }
+    }'
+    
+
+I assume that here by "index" you mean like the ones at MongoDB and SQL
+server. At [elasticsearch](https://www.elastic.co/blog/what-is-an-
+elasticsearch-index) context it is a collection of `types` and `documents`,
+more like a database is a collection of `tables` and `rows`. By default all
+fields in elasticsearch are stored into a
+[Lucene](https://en.wikipedia.org/wiki/Lucene) data structure from which it
+can be efficiently be queried.
+
+Elasticsearch does support indexed geospatial data, documentation can be found
+from
+[here](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-
+geo-shape-type.html).
+
+Elasticsearch works by your index configuration, assuming that you already
+configured everything and you are ready to receive some files you need to edit
+the file locate in `/etc/elasticsearch/templates/` in my example below is a
+`log4net` and I added the geospatial configuration that I found
+[here](https://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-
+geo-point-type.html):
+
+    
+    
+    {
+      "log4net": {
+        "template": "log4net*",
+        "mappings": {
+          "fluentd": {
+            "_ttl": {
+              "enabled": true,
+              "default": "62d"
+            },
+            "properties": {
+              "hostname": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "level": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "enviroment": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "site": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "username": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "logger": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "thread": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "systemname": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "message": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "location": {
+                "type": "geo_point",
+                "fielddata": {
+                  "format": "compressed",
+                  "precision": "1cm"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+

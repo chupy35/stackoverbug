@@ -1,0 +1,91 @@
+14939146 Filters with AND on nested resources
+
+My problem is : Elasticsearch count is not the same than my database.
+
+I indexed "users" table, each user can have one or many apps_events :
+
+    
+    
+    curl localhost:9200/users/_count
+    {"count":190291,"_shards":{"total":5,"successful":5,"failed":0}}
+    
+    SELECT COUNT(*) FROM users
+    count : 190291
+    
+
+=> Same count, everything is ok !
+
+But, when I do a search on 2 filters, one term and one terms one the nested
+resource :
+
+    
+    
+    curl -X GET 'http://localhost:9200/users/user/_search?load=&size=10&pretty' -d '
+    {
+    "query": {
+      "match_all": {
+      }
+    },
+    "filter": {
+      "and": [
+        {
+          "terms": {
+            "apps_events.type": [
+              "sale"
+            ]
+          }
+        },
+        {
+          "term": {
+            "apps_events.status": "active"
+          }
+        }
+      ]
+    },
+    "size": 10
+    }
+    
+    total : 63756
+    
+
+And in my database :
+
+    
+    
+    SELECT
+      COUNT(DISTINCT(users_id))
+    FROM
+      apps_event
+    WHERE
+      apps_event_state_id = 1 AND apps_event_project_id = 2;
+    
+    count : 63340
+    
+
+Because in fact, elasticsearch SQL equivalent query is:
+
+    
+    
+    SELECT
+      COUNT(DISTINCT(users_id))
+    FROM apps_event
+    WHERE apps_event_state_id = 1
+    AND users_id IN
+      (SELECT DISTINCT(users_id) FROM apps_event WHERE apps_event_project_id = 2)
+    
+    count : 63756
+    
+
+===> How I can do a simple "AND" for each resource ?
+
+Thanks
+
+You've probably checked this, but is `apps_event_project_id` the right
+corollary to `apps_events.type`? They don't seem the same on the surface, but
+you would know that for sure. Also, does `users_id` map directly to ES `_id`?
+It could be that you've got duplicates in your index which inflate its count.
+
+Best resource ever for "nested resource" :
+<http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-children-and-
+nested-documents/>
+

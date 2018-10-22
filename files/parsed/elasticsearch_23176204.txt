@@ -1,0 +1,87 @@
+23176204 ElasticSearch index topology - field overrides
+
+I'm curious as to whether it is possible to set an index structure and query
+within ElasticSearch so that the following operation can be achieved in as few
+queries as possible.
+
+Let's define a few things present in the system.
+
+  * A **document** has a bunch of info related to its source, data type, etc. For simplification, we'll give them three fields: `id`, `tone`, `date`. There are some fulltext elements to it but they've all been dealt with already
+  * A **report** has a bunch of info related to search queries. For our purposes, they're stored separately. They also have an id, which we refer to as `idReport`
+  * A **clip** is the link between a **report** and a **document**. It is represented as an `id`-`idReport` mapping, which can have an optional third field: an override for `tone`
+
+The key snag in our system is that the `tone` present in the associative link
+needs to override the `tone` present on the document for all facets, but
+cannot replace it. Some reports may see a document as positive, while others
+see it as neutral, or even positive.
+
+I was thinking of storing the report link as a nested field within document.
+Effectively, a document would then be as follows:
+
+    
+    
+     {
+       id: integer,
+       tone: integer,
+       reports: [
+          { id: integer,
+            tone: integer
+          }
+       ]
+     }
+    
+
+The key issue with this is whether it is possible, _in one query_ to
+seamlessly override the tone with anything present in the nested field. If
+not, what would be the best way forward?
+
+it's possible using [script
+fields](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-script-fields.html) in 1 query.
+
+What I'd do is restructure nested reports as an object like so:
+
+    
+    
+      {
+         id: integer,
+         tone: integer,
+         reports: {
+           idA: {
+             tone: integer
+           } ,
+           idB: {
+             tone: integer
+           } 
+         }
+       }
+    
+
+And then have a query like so, which returns 'toneWithFallback' as a field
+with the content you want:
+
+    
+    
+        {
+            "query" : {
+               ...
+            },
+            "script_fields" : {
+                "toneWithFallback" : {
+                    "script" : "_source.reports[reportId].empty || _source.reports[reportId].tone.empty ? _source.reports[reportId].tone: _source.tone ",
+                    "params" : {
+                        "reportId"  : "<theIdAsAString>"
+                    }
+                }
+            }
+       }
+    
+
+You can also
+[filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-script-filter.html),
+[sort](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-sort.html#_script_based_sorting) , or
+[facet](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets-terms-facet.html#_term_scripts) by a script.
+

@@ -1,0 +1,77 @@
+12912074 Infinite redirection when using $routeProvider
+
+I have faced some problem trying to setup angular routing. I have an
+application that is bootstrapped by hand (I need this feature, because I
+already have html5 navigation throughout whole site, and want angular to work
+only on certain page - it works fine). But when I run my code I got some
+issues:
+
+  * if `.otherwise` provided, I got infinite loop calling my controller and dying with Range error in Chrome
+  * and I always got url redirection from hash version to non hash, even if I call `$locationProvider.html5Mode(false);`
+
+Guess issues may be caused by fact that I am already using history.js and
+event handlers for statechange events, but for now I'm stuck with no clues.
+Need your help to got some answer.
+
+Thanks for your time.
+
+And code.
+
+**HTML**
+
+    
+    
+    <script>
+        if (typeof angular === 'undefined')
+        {
+            Modernizr.load({
+                load: [
+                    '/static/css/angular.css',
+                    '/static/js/libs/angular/angular.min.js',
+                    '/static/js/files/angular/app.js',
+                    '/static/js/files/angular/controllers.js',
+                    '/static/js/files/angular/filters.js',
+                    '/static/js/files/angular/services.js',
+                    '/static/js/libs/angular/angular-resource.min.js',
+                ],
+                complete: function () {
+                    angular.bootstrap(document.getElementById('manager'), ['manager']);
+                }
+            });
+        } else {
+            angular.element(document).ready(function() {
+                angular.bootstrap(document.getElementById('manager'), ['manager']);
+            });
+        }
+    </script>
+    
+
+**app.js**
+
+    
+    
+    /* App Module */
+    
+    var FM = angular.module('manager', ['managerFilters'])
+        .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
+            $routeProvider
+                .when('/home', { controller: FilesListCtrl, templateUrl: '/static/partials/1.html' })
+                .otherwise({ redirectTo: '/home' });
+            }]);
+    
+
+**controllers.js**
+
+    
+    
+    function FilesListCtrl($scope, $filter, $routeParams) {
+        app.log('FilesListCtrl')
+    }
+    
+
+@blesh @Flek thank you.
+
+It was history.js to blame. When you try to use angular routing with it you'll
+have no option to set `$locationProvider.html5Mode` to `false`. And other bugs
+occur like infinite redirection with default route provided.
+

@@ -1,0 +1,98 @@
+12183066 Angular JS - How to handle duplicated HTML code like headers/footers?
+
+I just read the [introduction to Angular JS](http://angularjs.org/) but I
+didn't see anything about a way to code up your HTML header code and footer
+code just once and have it included in all of your pages.
+
+Is there an official/reccomended way to do this?
+
+The official way to do it is to use
+[ngInclude](http://docs.angularjs.org/api/ng.directive:ngInclude) directive,
+which `"fetches, compiles and includes an external HTML fragment".`
+
+    
+    
+    <html ng-app>
+    
+    <head>
+      <script src="http://code.angularjs.org/angular-1.0.1.min.js"></script>
+    </head>
+    
+    <body>
+      <div ng-include src="'header.url'"></div>
+      ...
+      <div ng-include src="'footer.url'"></div>
+    </body>
+    
+    </html>
+
+With this you can reuse the same `header.url` and `footer.url` in all your
+pages.
+
+If you are creating a single-page web application (say, with bookmarkable
+views/pages using $routeProvider), you can put your header and footer directly
+into index.html (or use ng-include) and then use [ng-
+view](http://docs.angularjs.org/api/ng.directive:ngView) to switch between
+views/pages:
+
+    
+    
+    <html ng-app>
+    <head>
+       <script src="http://code.angularjs.org/angular-1.0.1.min.js"></script>
+    </head>
+    <body>
+       ... header here, or use ng-include ...
+       <div ng-view></div>
+       ... footer here, or use ng-include ...
+    </body>
+    </html>
+    
+
+I suggest you move your tag to the end of the page to improve app load times
+since the html loading is not blocked by angular
+
+    
+    
+    </head>
+    <body>
+       <div ng-include src="header.url"></div>
+       ...
+       <div ng-include src="footer.url"></div>
+    
+       <script src="http://code.angularjs.org/angular-1.0.1.min.js"></script>
+    
+    </body>
+    
+
+I just found another way to include the same piece of code in multiples views
+:  
+=> create and use your own Angular 'directives'
+
+1) define a directive :
+
+    
+    
+    angular.module('myApp')
+      .directive('appfooter', function() {
+        return {
+          templateUrl: 'widgets/footer.html'
+        };
+      });
+    
+
+2) create your template called here 'widgets/footer.html'.  
+3) use your new directive :
+
+    
+    
+    <div appfooter></div>
+    
+
+References used :
+
+  * [AngularJS 'directives' doc](https://docs.angularjs.org/guide/directive)
+  * [Directives usage example](http://www.objectpartners.com/2013/08/13/angular-js-create-reusable-html-widgets-with-directives/)
+
+hope this helps
+

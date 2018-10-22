@@ -1,0 +1,95 @@
+27628126 CharacterEncodingFilter not set with spring-boot 1.2.0 and spring-
+boot-legacy
+
+I am running a traditional spring boot war in tomcat (servlet 2.5). The
+requests do not have any encoding set, though the CharacterEncodingFilter is
+configured by default with spring-boot 1.2.0. I can see it configured in the
+autoconfig and logs. Perhaps this is not being configured by spring-boot-
+legacy (1.0.1)? I added the filter to the web.xml and my requests now have the
+utf-8 encoding. However, this is not applied to the request parameter. I
+presume this is because it is not the first filter to access the request
+(though it is the first filter in my web.xml, which is based on the spring-
+boot-legacy sample). In the stack trace for my failing request, I do see
+OncePerRequestFilter as the first filter. Is there any way to get around this?
+
+    
+    
+    org.springframework.boot.actuate.autoconfigure.MetricFilterAutoConfiguration$MetricsFilter.doFilterInternal(MetricFilterAutoConfiguration.java:90) [spring-boot-actuator-1.2.0.RELEASE.jar:1.2.0.RELEASE]
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107) [spring-web-4.1.3.RELEASE.jar:4.1.3.RELEASE]
+    at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:344) [spring-web-4.1.3.RELEASE.jar:4.1.3.RELEASE]
+    at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:261) [spring-web-4.1.3.RELEASE.jar:4.1.3.RELEASE]
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:241) [catalina.jar:7.0.53]
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208) [catalina.jar:7.0.53]
+    at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:88) [spring-web-4.1.3.RELEASE.jar:4.1.3.RELEASE]
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107) [spring-web-4.1.3.RELEASE.jar:4.1.3.RELEASE]
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:241) [catalina.jar:7.0.53]
+    
+
+web.xml:
+
+    
+    
+    <?xml version="1.0" encoding="UTF-8"?>
+    <web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+    
+        <context-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>com.myproject.Application</param-value>
+        </context-param>
+    
+        <listener>
+            <listener-class>org.springframework.boot.legacy.context.web.SpringBootContextLoaderListener</listener-class>
+        </listener>
+    
+        <filter>
+          <filter-name>characterEncodingFilter</filter-name>
+          <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+          <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+          </init-param>
+          <init-param>
+            <param-name>forceEncoding</param-name>
+            <param-value>true</param-value>
+          </init-param>
+        </filter>
+        <filter-mapping>
+          <filter-name>characterEncodingFilter</filter-name>
+          <url-pattern>/*</url-pattern>
+        </filter-mapping>
+    
+        <filter>
+            <filter-name>metricFilter</filter-name>
+            <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        </filter>
+        <filter-mapping>
+            <filter-name>metricFilter</filter-name>
+            <url-pattern>/*</url-pattern>
+        </filter-mapping>
+    
+        <servlet>
+            <servlet-name>appServlet</servlet-name>
+            <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+            <init-param>
+                <param-name>contextAttribute</param-name>
+                <param-value>org.springframework.web.context.WebApplicationContext.ROOT</param-value>
+            </init-param>
+            <load-on-startup>1</load-on-startup>
+        </servlet>
+        <servlet-mapping>
+            <servlet-name>appServlet</servlet-name>
+            <url-pattern>/</url-pattern>
+        </servlet-mapping>
+    </web-app>
+    
+
+Thanks, Hari.
+
+2 suggestions:
+
+  1. Use a `DelegatingFilterProxy` for the character encoding (the bean name is "characterEncodingFilter").
+
+  2. You have to set the URI encoding in the container as well to get request parameters decoded (e.g. in an embedded container [like this](https://github.com/spring-projects/spring-boot/blob/2818b20baaa8abb33158cd60d427d42949b2aa37/spring-boot/src/main/java/org/springframework/boot/context/embedded/tomcat/TomcatEmbeddedServletContainerFactory.java#L213), but for a non-embedded container it's up to you to find the setting).
+

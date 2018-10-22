@@ -1,0 +1,43 @@
+11935208 AngularJS: how can I get $location.path to template
+
+I need current path from url in template (content of $location.path). But not
+via controller, because I have a lot of controllers (and I do not want to
+duplicate declaration of `$scope.currentUrl = $location.path;`). Thanks for
+the advice.
+
+AngularJS template can only see what is available in a scope so you will need
+somehow to put $location service in a scope. There is one scope that is always
+available in AngularJS application called $rootScope so it could be use for
+your use-case.
+
+What you could do is to use run() method of a module to expose $location in
+the $rootScope:
+
+    
+    
+    var myApp = angular.module('myApp', []).run(function($rootScope, $location) {
+        $rootScope.location = $location;
+    });
+    
+
+this would make 'location' available in all templates so later on you could do
+in your template:
+
+    
+    
+    Current path: {{location.path()}}
+    
+
+An alternative is to use the more semantic and versatile [ui-
+router](http://angular-ui.github.io/ui-router/), then in the controller,
+[retrieve the current state](https://github.com/angular-ui/ui-
+router/issues/1482), and store it on the `$scope`:
+
+    
+    
+    app.controller('MyCtrl', ['$scope', '$state', function MyCtrl($scope, $state) {
+      $scope.state = $state.current.name;
+      ...
+    }
+    
+

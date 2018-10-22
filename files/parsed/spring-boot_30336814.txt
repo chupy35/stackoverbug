@@ -1,0 +1,41 @@
+30336814 "mvn spring-boot:run": "/health" endpoint with project version
+
+I'd like to use Spring Boot's actuator endpoint `/info` to show project
+metadata such as the Maven-provided project version.
+
+To do so, I followed the [appropriate part in Spring Boot's
+documentation](http://docs.spring.io/spring-
+boot/docs/1.2.3.RELEASE/reference/htmlsingle/#production-ready-application-
+info-automatic-expansion-maven).
+
+The shown solution works for me when my Spring Boot application starts up with
+`java -jar [...]`.
+
+Just as the documentation says, it doesn't work when the application starts up
+with `mvn spring-boot:run` -- in that case, my `/info` endpoint reports
+`"version":"@project.version@"`.
+
+The documentation mentions that one has to properly configure Spring Boot's
+Maven plugin, but I could not find any information about doing so.
+
+How can I configure my Maven project in order to have a `mvn spring-
+boot:run`-started Spring Boot application to show project metadata?
+
+Configure the `spring-boot-maven-plugin` with
+`<addResources>false</addResources>`.
+
+    
+    
+    <plugin>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-maven-plugin</artifactId>
+      <version>1.3.0.BUILD-SNAPSHOT</version>
+      <configuration>
+        <addResources>false</addResources>
+      </configuration>
+    </plugin>
+    
+
+[Source](http://docs.spring.io/spring-boot/docs/1.2.3.RELEASE/maven-
+plugin/usage.html#Running_the_application)
+

@@ -1,0 +1,71 @@
+15163819 how to find partial match in elasticsearch
+
+I am looking to find all the users who have some kind of email in a database:
+
+    
+    
+    'user' :
+                {         
+                 'properties': 
+                    {
+                        'user_name': { 'type': 'string', 'index' : 'not_analyzed' }, 
+                        'about': { 'type': 'object' },
+                    }
+                }
+    
+
+The about field is a JSON object, which might look like:
+
+    
+    
+    {"nickname":"bobby McBob", "contact":"bobmcbob@gmail.com", "hobbies":"tennis"}
+    
+
+but has no predetermined structure.
+
+I would like to find all the users who have a string, in a manner that would
+fit the pattern _@_.com, hoping this will return all those that have email.
+
+How do I go about doing that?
+
+even a simple query, meant to find gmails, such as
+
+    
+    
+    curl -X GET 'http://localhost:9200/index_name/user/_search' -d '{"query":{"match":{"_all":"gmail.com"}}}'
+    
+
+does not work. Maybe I should have analyzed the object "about" with a
+different analyzer upon indexing? to separate/tokenize it?
+
+should I use a different query maybe?
+
+How do I go about doing that?
+
+You can use `pattern tokenizer` to capture the pattern `abc.com` and use it in
+your analyzer for field `about` (`analyzer_emaildomain`). E.g:
+
+    
+    
+    "analysis":{
+            "analyzer":{
+              "analyzer_emaildomain": {
+                        "tokenizer": "emaildomain_tokenizer"
+               }
+            },
+             "tokenizer" : {
+                "emaildomain_tokenizer" : {
+                    "type": "pattern",
+                    "pattern" : "\\b[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\\.com)\\b",
+                    "group":1
+                }
+            }
+    }
+    
+
+You can see in the settings, I captured group #1, which is any alphabetic
+chars that after `@` and end with `.com`, and will capture `gmail.com` for
+your case. More info about pattern tokenizer can be found at
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+pattern-tokenizer.html>
+

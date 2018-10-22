@@ -1,0 +1,52 @@
+12224883 Angular.JS: How should I organize a service that uses both resources
+and scope?
+
+OK, here's the deal. I've got a service that deals with both `$resource` and
+`$scope`, and I'm not familiar enough with Angular.JS to trust myself to
+organize it properly. The service can associate resources with WebSockets that
+maintain active connections to the backend. Whenever the backend notifies the
+service of a change to a given resource, the resource's attributes are changed
+to match, and thus the web page is updated automatically in real time with new
+values.
+
+This Websockety goodness is called "Frisch", and the way I have it currently
+organized is thusly:
+
+The `Frisch` class is traditional and completely independent of the Angular.JS
+module system. It has an `angularize` method that sets up Angular.JS resource
+bindings:
+
+    
+    
+    var Frisch = function(url) {
+      ... create a websocket ...
+    
+      this.angularize = function(scope, record) {
+        this.websocketCallback = function(attributes) {
+          ... update `record` with the new values ...
+          scope.$apply(); scope.$digest();
+        }
+      };
+    };
+    
+
+Meanwhile, my controller looks like this:
+
+    
+    
+    var MyController = function(MyModel, $scope) {
+      $scope.myModel = MyModel.get(... stuff ...);
+      new Frisch('/some/websocket/url').angularize($scope, $scope.myModel);
+    };
+    MyController.$inject = ['MyModel', '$scope'];
+    
+
+So this is my first Angular.JS project, and I feel like things could
+definitely be organized better. Specifically, it feels weird that both
+`$scope` and the resource must be passed to `angularize`.
+
+I'm guessing there's a much more Angular-y way of doing this, like with
+services or providers or something. Maybe some way of "mixing in" Frisch-ness
+into a model factory (in this case, `MyModel`). But I can't quite wrap my head
+around how to do it...
+

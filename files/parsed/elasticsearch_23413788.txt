@@ -1,0 +1,30 @@
+23413788 How do I figure out the new master node when my master node fails in
+ElasticSearch?
+
+Let's say I have 3 nodes. 1 of which is the master.
+
+I have an API (running on another machine) which hits the master and gets my
+search result. This is through a subdomain, say s1.mydomain.com:9200 (assume
+the others are pointed to by s2.mydomain.com and s3.mydomain.com).
+
+Now my master fails for whatever reason. How would my API recover from such a
+situation? Can I hit either S2 or S3 instead? How can I figure out what the
+new master is? Is there a predictable way to know which one would be picked as
+the new master should the master go down?
+
+I've googled this and it's given me enough information about how when a master
+goes down, a failover is picked as the new master but I haven't seen anything
+clarify how I would need to handle this from the outside looking in.
+
+The master in ElasticSearch is really only for internal coordination. There
+are no actions required when a node goes down, other than trying to get it
+back up to get your full cluster performance back.
+
+You can read/write to any of the remaining nodes and the data replication will
+keep going. When the old master node comes back up, it will re-join the
+cluster once it has received the updated data. In fact, you never need to
+worry if the node you are writing on is the master node.
+
+There are some advanced configurations to alter these behaviors, but
+ElasticSearch comes with suitable defaults.
+

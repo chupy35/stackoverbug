@@ -1,0 +1,178 @@
+23798433 JSON Bulk import to Elasticstearch
+
+Elasticsearch Bulk import.
+
+I need to import the Products as individual items.
+
+I have a json file that looks similar to the following:
+
+    
+    
+    {
+       "Products":[
+          {
+             "Title":"Product 1",
+             "Description":"Product 1 Description",
+             "Size":"Small",
+             "Location":[
+                {
+                   "url":"website.com",
+                   "price":"9.99",
+                   "anchor":"Prodcut 1"
+                }
+             ],
+             "Images":[
+                {
+                   "url":"product1.jpg"
+                }
+             ],
+             "Slug":"prodcut1"
+          },
+          {
+             "Title":"Product 2",
+             "Description":"Prodcut 2 Desctiption",
+             "Size":"large",
+             "Location":[
+                {
+                   "url":"website2.com",
+                   "price":"99.94",
+                   "anchor":"Product 2"
+                },
+                {
+                   "url":"website3.com",
+                   "price":"79.95",
+                   "anchor":"discount product 2"
+                }
+             ],
+             "Images":[
+                {
+                   "url":"image.jpg"
+                },
+                {
+                   "url":"image2.jpg"
+                }
+             ],
+             "Slug":"product2"
+          }
+       ]
+    }
+    
+
+I've tried the following (I'm a novice at this):
+
+    
+    
+    curl -s -XPOST 'http://localhost:9200/_bulk' --data-binary @products.json
+    curl -s -XPOST 'http://localhost:9200/_bulk' -d @products.json
+    curl -XPOST http://localhost:9200/cp/products -d "@products.json"
+    curl -XPOST http://localhost:9200/products -d "@products.json"
+    
+
+Some gave an error others didn't. What do I need to do?
+
+Following the [Bulk API
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html). You need to supply the bulk operation with a file formatted very
+specifically:
+
+> NOTE: the final line of data must end with a newline character \n.
+
+>
+
+> The possible actions are index, create, delete and update. index and create
+expect a source on the next line, and have the same semantics as the op_type
+parameter to the standard index API (i.e. create will fail if a document with
+the same index and type exists already, whereas index will add or replace a
+document as necessary). delete does not expect a source on the following line,
+and has the same semantics as the standard delete API. update expects that the
+partial doc, upsert and script and its options are specified on the next line.
+
+>
+
+> If you’re providing text file input to curl, you must use the --data-binary
+flag instead of plain -d. The latter doesn’t preserve newlines.
+
+So you will need to change the contents of your products.json file to the
+following:
+
+    
+    
+     {"index":{"_index":"cp", "_type":"products", "_id": "1"}}
+     { "Title":"Product 1", "Description":"Product 1 Description", "Size":"Small", "Location":[{"url":"website.com", "price":"9.99", "anchor":"Prodcut 1"}],"Images":[{ "url":"product1.jpg"}],"Slug":"prodcut1"}
+     {"index":{"_index":"cp", "_type":"products", "_id":"2"}}
+     {"Title":"Product 2", "Description":"Prodcut 2 Desctiption", "Size":"large","Location":[{"url":"website2.com", "price":"99.94","anchor":"Product 2"},{"url":"website3.com","price":"79.95","anchor":"discount product 2"}],"Images":[{"url":"image.jpg"},{"url":"image2.jpg"}],"Slug":"product2"}
+    
+
+And be sure to use `--data-binary` in your curl command (like your first
+command). Also note the `index` and `type` can be omitted if you use the index
+and type specific endpoint. Yours is `/cp/products` like your 3rd curl
+command.
+
+I ended up writing a bash script that is "not at all optimized" to do this for
+me. The dataset is relatively small so this will work for my needs.
+
+    
+    
+    #!/bin/bash
+    COUNTER=0
+    CURLURL="http://127.0.0.1:9200/cp/products"
+    COUNT=$(less products.json | jq '.Products | length')    
+    while [  $COUNTER -lt $COUNT ]; do
+      echo $COUNTER
+      CURLDATA=$(less products.json | jq '.Products['$COUNTER']')
+      RESPONSE=$(curl -XPOST "$CURLURL"  -d "$CURLDATA" -vn)
+      let COUNTER=COUNTER+1
+    done
+    
+
+I was able to add the necessary headers with the following `sed` script:
+
+    
+    
+    sed -e 's/^/{ "index" : {} }\n/' -i products.json
+    
+
+This will add an empty index above each line in the file. An empty index is
+allowed as long as the index and type are specified in the URL. After that,
+the proper call would be
+
+    
+    
+    curl -s -XPOST http://localhost:9200/cp/products/_bulk --data-binary @products.json
+    
+
+This was fast and worked for me on an array of JSON objects.
+
+    
+    
+    cat data.json | \
+    jq -c '.[]  | .id = ._id | del (._id) | {"index": {"_index": "profiles", "_type": "gps", "_id": .id}}, .' |\
+    curl  -XPOST 127.0.0.1:9200/_bulk --data-binary @-
+    
+
+I had to do the copy and delete of the `_id` field as the import threw an
+error ( _Field [_id] is a metadata field and cannot be added inside a
+document. Use the index API request parameters._ ) if it was not renamed. Most
+data is unlikely to have an `_id` field in which case this part should be
+omitted.
+
+Credit for this to [Kevin Marsh](http://kevinmarsh.com/2014/10/23/using-jq-to-
+import-json-into-elasticsearch.html)
+
+Another option is to use [json-to-es-
+bulk](https://github.com/mradamlacey/json-to-es-bulk) tool.
+
+Run the following to convert your JSON file to NDJSON:
+
+    
+    
+    node ./index.js -f file.json --index index_name --type type_name
+    
+
+It will create the `request-data.txt` file, which can be imported with bulk:
+
+    
+    
+    curl -H "Content-Type: application/json" -XPOST "http://localhost:9200/my_index/my_type/_bulk?pretty" --data-binary "@request-data.txt"
+    
+

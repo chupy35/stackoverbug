@@ -1,0 +1,103 @@
+23067983 Term aggregation consider only the prefix to aggregate
+
+In my elastic search documents I have users and some sort of representation of
+his place in the organization, for instance: The CEO is position 1 The ones
+directly under the CEO will be 1/1, 1/2, 1/3, and so on The ones under 1/1
+will be 1/1/1, 1/1/2, 1/2/3, etc
+
+I have an aggregration in which I want to aggregate by VP, so I want everybody
+under 1/1, 1/2, 1/3.
+
+To do that I created a query like this one:
+
+    
+    
+    "aggs": {
+                "information": {
+                    "terms":{
+                        "field": "position",
+                        "script": "_value.replaceAll('(1/1/[0/]*[1-9]).+', '$1')"
+                    } 
+    
+
+This would get the prefix and replace by the group in the regex, so everyone
+would have the same position, then I could make the aggregation. This has a
+poor performance.
+
+I was thinking about using something like this
+
+    
+    
+    "aggs": {
+                "information": {
+                    "terms":{
+                        "field": "position",
+                        "prefix": "1/1/.*'
+                    } 
+    
+
+So I would group by everyone that starts with 1/1 (1/1/1/1, 1/1/1/2, 1/1/1/3
+would be one group, 1/1/2/1, 1/1/2/2, 1/1/2/3 would be a second group and so
+on).
+
+Is it possible?
+
+If you know beforehand that on how deep level you want to run this
+aggregation, you could simply store these levels at different fields:
+
+    
+    
+    {
+        "name": "Jack",
+        "own_level": 4,
+        "level_1": "1",
+        "level_2": "3",
+        "level_3": "2",
+        "level_4": null
+    }
+    
+
+But this would require many nested terms aggregations to reproduce the
+hierarchy. This version would make one such aggregation sufficient:
+
+    
+    
+    {
+        "name": "Jack",
+        "own_level": 4,
+        "level_1": "1",
+        "level_2": "1/3",
+        "level_3": "1/3/2",
+        "level_4": null
+    }
+    
+
+It also has simpler query filter if you want to focus on people under for
+example `1/1` by having a filter on field `level_2` and terms aggregation on
+field `level_3`.
+
+If you don't know the maximum level of the hierarchy you can use nested
+documents like this, but then queries and aggregations get a bit more complex:
+
+    
+    
+    {
+        "name": "Jack",
+        "own_level": 4,
+        "bosses": [
+            {
+                "level": 1,
+                "id": "1"
+            },
+            {
+                "level": 2,
+                "id": "1/3"
+            },
+            {
+                "level": 3,
+                "id": "1/3/2"
+            }
+        ]
+    }
+    
+

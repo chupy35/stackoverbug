@@ -1,0 +1,73 @@
+17268347 boost the score relative to term location in field elasticsearch
+
+Query
+
+`{"query":{"query_string":{"query":"name:pi*"}}}`
+
+Out put
+
+    
+    
+    hits: [
+    {
+        _score: 1
+        _source: {
+            handle: PIXIES
+            name: Pixies
+        }
+    }
+    {
+        _score: 1
+        _source: {
+            handle: twentyonepilots
+            name: twenty one pilots
+        }
+    }
+    {
+        _score: 1
+        _source: {
+            handle: Antonio_Pinto
+            name: Antonio Pinto
+        }
+    }
+    {
+        _score: 1
+        _source: {
+            handle: null
+            name: Piano Tribute Players
+        }
+    }
+    {
+        _score: 1
+        _source: {
+            handle: null
+            name: Los Pinguos
+        }
+    }
+    {
+        _score: 1
+        _source: {
+            handle: null
+            name: Piyush Mishra & Bhupesh Singh
+        }
+    }
+    {
+        _score: 1
+        _source: {
+            handle: pinkfloyd
+            name: Pink Floyd
+        }
+    }]
+    
+
+If you look at the results it matches the terms in name with pi*, which is
+what I expect from the above query.
+
+But how to write a query to sort results with term location(position index) in
+the field. The results of that query should make `Piano Tribute Players`,
+`Pink Floyd` to pop up on the top of list. Since they begin with pi*
+
+similar question on solr: [SOLR: Boosting based on location of search term in
+field](https://stackoverflow.com/questions/5739104/solr-boosting-based-on-
+location-of-search-term-in-field)
+

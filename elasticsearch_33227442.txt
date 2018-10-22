@@ -1,0 +1,3 @@
+33227442
+Elasticsearch:Search with specific index type is 3 time slower than no index type specified
+<p>Version 2.0rc1&#xA;Hardware; Core I5 ,8GB of Ram and SSD</p>&#xA;&#xA;<p>Here I have index:user and type:test with 40m documents index.</p>&#xA;&#xA;<pre><code>query1: /user/test/_search?q=title:how to install window10 &#xA;</code></pre>&#xA;&#xA;<p>take around 2300ms to 2500ms</p>&#xA;&#xA;<pre><code> query2: /user/_search?q=title:how to install window10 &#xA;</code></pre>&#xA;&#xA;<p>take around 700ms to 800ms</p>&#xA;&#xA;<p>This is normal behavior of elasticsearch? or bug on 2.0 version?</p>&#xA;

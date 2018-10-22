@@ -1,0 +1,148 @@
+23221499 With html_strip as search query analyzer, searches are still
+performed in HTML markup
+
+In short: can `html_strip` be used with analyzer which is used only in
+queries?
+
+I have a very simple test indice with the following settings:
+
+    
+    
+    POST test
+    {
+      "settings": {
+        "analysis": {
+          "filter": {
+            "synonym": {
+              "synonyms_path": "/usr/share/wordnet-prolog/wn_s.pl",
+              "ignore_case": "true",
+              "type": "synonym",
+              "format": "wordnet"
+            }
+          },
+          "analyzer": {
+            "synonym_analyzer": {
+              "char_filter": "html_strip",
+              "filter": [
+                "asciifolding",
+                "snowball",
+                "synonym"
+              ],
+              "type": "custom",
+              "tokenizer": "lowercase"
+            }
+          }
+        }
+      },
+      "mappings": {
+        "child": {
+          "_parent": {
+            "type": "parent"
+          }
+        }
+      }
+    }
+    
+
+And some sample data:
+
+    
+    
+    PUT test/parent/1
+    {
+      "type": "flying stuff"
+    }
+    
+    PUT test/child/1?parent=1
+    {
+      "name": "butterfly"
+    }
+    
+    PUT test/child/2?parent=1
+    {
+      "name": "<strong>tire</strong>"
+    }
+    
+
+On corresponding child/parent searches I get results with the tag name
+"strong", for example:
+
+    
+    
+    GET test/parent/_search
+    {
+      "query": {
+        "has_child": {
+          "type": "child",
+          "query": {
+            "match": {
+              "name": {
+                "query": "strong",
+                "analyzer": "synonym_analyzer"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    GET test/child/_search
+    {
+      "query": {
+        "match": {
+          "name": {
+            "query": "strong",
+            "analyzer": "synonym_analyzer"
+          }
+        }
+      }
+    }
+    
+
+What is interesting, when I test tokenizer with
+`http://localhost:9200/test/_analyze?text=%3Cstrong%3Edemo%3C/strong%3E&analyzer=synonym_analyzer&pretty=true`
+data is interpreted correctly (no "strong" and related synonyms):
+
+    
+    
+    {
+      "tokens" : [ {
+        "token" : "demonstration",
+        "start_offset" : 8,
+        "end_offset" : 21,
+        "type" : "SYNONYM",
+        "position" : 1
+      }, {
+        "token" : "demo",
+        "start_offset" : 8,
+        "end_offset" : 21,
+        "type" : "SYNONYM",
+        "position" : 1
+      }, {
+        "token" : "show",
+        "start_offset" : 8,
+        "end_offset" : 21,
+        "type" : "SYNONYM",
+        "position" : 1
+      }, {
+        "token" : "exhibit",
+        "start_offset" : 8,
+        "end_offset" : 21,
+        "type" : "SYNONYM",
+        "position" : 1
+      }, {
+        "token" : "present",
+        "start_offset" : 8,
+        "end_offset" : 21,
+        "type" : "SYNONYM",
+        "position" : 1
+      }, {
+        "token" : "demonstrate",
+        "start_offset" : 8,
+        "end_offset" : 21,
+        "type" : "SYNONYM",
+        "position" : 1
+      } ]
+    }
+    
+

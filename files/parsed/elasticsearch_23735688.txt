@@ -1,0 +1,23 @@
+23735688 Optional Parent Relation in Elasticsearch
+
+**Example:** Some items belong to specific users. The User is the parent, the
+item is the child. Indexing those items and users can be done by routing the
+items to the shards of the users.
+
+**Problem:** The majority of items does not belong to a specific user since
+they have been posted anonymously. I could have those items routed to a
+parent-id:"anonymous", but that would lead to the majority of items being
+stored in one single shard.
+
+**Question:** How can I introduce optional parent-child-relations so that
+items belonging to a registered user route to the users shard, while anonymous
+items get distributed randomly?
+
+Store them in two different indexes and search both.
+
+Here's a video and article that has more on sharding/index partitioning
+strategies:
+
+  * [Sizing Elasticsearch](https://www.found.no/foundation/sizing-elasticsearch/)
+  * [ElasticSearch: Big Data, Search, and Analytics](https://vimeo.com/44716955)
+

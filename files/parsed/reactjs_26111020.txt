@@ -1,0 +1,35 @@
+26111020 Use React with a non-browser JS environment
+
+Very open ended, apologies in advance.
+
+I've been going through the docs and searching google incessantly, but I'm
+wondering what steps I would need to take to use react with a non-browser
+JavaScript environment.
+
+Some context on the environment:
+
+The environment uses JavaScript to run a UI, it has http capabilities. There
+is no html, css, document, window, HTMLElement, etc.
+
+The environment does have the notion of a hierarchy, changes to the object
+hierarchy in JS cross the bridge and trigger a render through a graphics
+platform like OpenGL for instance. The environment does get input via keys and
+or a mouse.
+
+If there's a roadmap to do this or something like an architecture diagram to
+refer to, that'd be fantastic.
+
+Any help/advice is appreciated.
+
+thanks in advance,
+
+-dylan
+
+ReactJS work with DOM, so environment need to have DOM structure, that means
+no HTML no DOM. Or you can use server render of React component, but you will
+get a string as result.
+
+Read more here:
+[React.renderComponentToString](http://facebook.github.io/react/docs/top-
+level-api.html#react.rendercomponenttostring)
+

@@ -1,0 +1,33 @@
+20403624 Moving an elasticsearch index of one node in a machine to another
+drive of the same machine
+
+I have an elasticsearch node in a machine with a 150gb ssd and a 3 tb hdd.
+Since I am running out of space in the ssd, I would like to move one index
+from the ssd to the hdd. Is this possible? If so how?
+
+I could create another node on the hdd, but I'd rather have one node in the
+machine...
+
+Thanks!
+
+You can safely move the data directory (and individual indexes and even
+shards) around. We've scp'd entire indexes around in this manner.
+
+You probably should not actively index or delete when you are doing this
+though, or unpredictable things could happen.
+
+Once you do the move, you just need to tell elasticsearch where to find data
+directory. You set this in the elasticsearch config file found in
+/etc/elasticsearch
+
+Just add this setting:
+
+    
+    
+    path:
+      logs: /path/to/log/files
+      data: /path/to/data/directory
+    
+
+You might want to cp and not mv, just in case things don't go as planed.
+

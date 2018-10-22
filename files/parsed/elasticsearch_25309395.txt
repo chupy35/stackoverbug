@@ -1,0 +1,488 @@
+25309395 Elasticsearch filter to show only documents with values from list
+
+With the following script I setup elasticsearch to index articles. Each
+article can have a list of authors:
+
+    
+    
+    #!/usr/bin/env bash 
+    HOST='http://localhost:9200/articles'
+    
+    curl -XPUT ${HOST} 
+    curl -XPUT "${HOST}/article/_mapping" -d '{
+        "article" : {
+            "properties" : {
+                "authors" : {"type":"string", "index_name":"author", "index": "not_analyzed"}
+            }
+        } 
+    }' 
+    curl -XPOST  "${HOST}/article/1"  -d '{
+        "authors" : ["Albert","Wolfgang","Richard","Murray"],
+        "message" : "Blabla" }' 
+    curl -XPOST  "${HOST}/article/2"  -d '{
+        "authors" : ["Albert","Richard"],
+        "message" : "Blublu" }' 
+    curl -XPOST  "${HOST}/article/3"  -d '{
+        "authors" : ["Albert"],
+        "message" : "Bleble" }'
+    
+
+What I want to do is to filter out all the articles with authors which are not
+in a given list. I tried the following query:
+
+    
+    
+    curl -XGET  "${HOST}/_search?pretty=true" -d '{
+        "query": {
+            "constant_score": {
+                "filter": {
+                    "terms": { 
+                        "authors": ["Albert","Richard","Erwin"],
+                        "execution": "or" 
+                    }            
+                }
+            }
+        } 
+    }'
+    
+
+However this will return all three articles as hits. But I do want to filter
+out article 1, because it has some authors `["Wolfgang", "Murray"]`, which are
+not in the list of given authors `["Albert", "Richard","Erwin"]`. Can this
+somehow be achieved with elasticsearch?
+
+Tricky one. If I understand well, your need is to find documents where the
+**author** field too contain **only** one (or more) of these 3 values
+
+According to the elasticsearch definitive guide
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/_finding_multiple_exact_values.html#_contains_but_does_not_equal),
+checking that a field contains **only** some values is quite expensive.
+
+There is an ugly solution inspired by the [equality
+paragraph](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/_finding_multiple_exact_values.html#_equals_exactly),
+which would use combinations of bool filters and the adding of a author_count
+field.
+
+You would have to check if :
+
+  * author contains one of Albert/Richard/Erwin and has author_count equal of 1
+  * author contains one of the possible combinations of 2 authors (Albert & Richard, Erwin & Albert etc...) and has author_count of 2
+  * author contains the 3 authors and has author_count of 3
+
+This is not viable to me.
+
+As suggested by Tom83 and in the elasticsearch definitive guide linked this
+can be done by adding a `authors_counts` property at index time. Like so:
+
+    
+    
+    curl -XPOST  "${HOST}/article/1"  -d '{
+      "authors": [
+        "Albert",
+        "Wolfgang",
+        "Richard",
+        "Murray"
+      ],
+      "authors_counts": 4,
+      "message": "Blabla"
+    }'
+    
+    curl -XPOST  "${HOST}/article/2"  -d '{
+      "authors": [
+        "Albert",
+        "Richard"
+      ],
+      "authors_counts": 2,
+      "message": "Blublu"
+    }'
+    
+    curl -XPOST  "${HOST}/article/3"  -d '{
+      "authors": [
+        "Albert"
+      ],
+      "authors_counts": 1,
+      "message": "Bleble"
+    }'
+    
+
+You can then create the query as suggested in the guide. It is pretty verbose,
+so I decided to generate it.
+
+    
+    
+    (ns query-gen 
+      (:require [clojure.data.json :as json]
+                [clojure.math.combinatorics :refer [subsets]]))
+    
+    (defn gen-filter [items]
+      (let [terms (map (fn [term] { "term" { "authors" term } }) items)
+            terms_count { "term" { "authors_counts" (count items) }}] 
+          { "bool" { "must" (cons terms_count terms)}}))
+    
+    (defn gen-query [names]
+      (let [subsets (rest (subsets names))
+            filters (map gen-filter subsets)]
+        {"query" { "filtered" { "filter" { "or" filters }}}}))
+    
+    (defn -main [& args]
+      (let [ query (gen-query ["Albert" "Richard" "Erwin"])
+             json (json/write-str query)]
+          (println json)))
+    
+
+That produces a query that looks like this:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "filter": {
+            "or": [
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 1
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Albert"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 1
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Richard"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 1
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Erwin"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 2
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Albert"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Richard"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 2
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Albert"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Erwin"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 2
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Richard"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Erwin"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 3
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Albert"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Richard"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Erwin"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+And if used like:
+
+    
+    
+    curl -XGET  "${HOST}/_search?pretty=true" -d '{
+      "query": {
+        "filtered": {
+          "filter": {
+            "or": [
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 1
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Albert"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 1
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Richard"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 1
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Erwin"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 2
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Albert"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Richard"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 2
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Albert"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Erwin"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 2
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Richard"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Erwin"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "authors_counts": 3
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Albert"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Richard"
+                      }
+                    },
+                    {
+                      "term": {
+                        "authors": "Erwin"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }'
+    
+
+It returns the results I think you expect:
+
+    
+    
+    {
+      "took": 5,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 2,
+        "max_score": 1.0,
+        "hits": [
+          {
+            "_index": "articles",
+            "_type": "article",
+            "_id": "3",
+            "_score": 1.0,
+            "_source": {
+              "authors": [
+                "Albert"
+              ],
+              "authors_counts": 1,
+              "message": "Bleble"
+            }
+          },
+          {
+            "_index": "articles",
+            "_type": "article",
+            "_id": "2",
+            "_score": 1.0,
+            "_source": {
+              "authors": [
+                "Albert",
+                "Richard"
+              ],
+              "authors_counts": 2,
+              "message": "Blublu"
+            }
+          }
+        ]
+      }
+    }
+    
+
+I'm not sure if this is a good idea, but was quite fun. Hope it helps!
+

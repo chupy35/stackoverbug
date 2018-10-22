@@ -1,0 +1,74 @@
+23259631 Spring boot does not load beans from groovy bean builder
+
+I have been trying to create a simple springboot program that uses Groovy bean
+builder, but im missing something:
+
+    
+    
+    @EnableAutoConfiguration
+    class MyApplication {
+    
+        public static void main(String[] args) {
+            logger.info "Starting MyApplication..."
+    
+            Object[] sources = [MyApplication.class, new ClassPathResource("bb.groovy")]
+            SpringApplication.run(sources, args)
+        }
+    }
+    
+    //MyController.groovy
+    @RestController
+    class MyController {
+        ConfigObject configObject
+        MyService myService
+    
+        @RequestMapping("/home")
+        String home() {
+            return myService.getSomeData()
+        }
+    
+    }
+    
+    //src/main/resources/bb.groovy
+    beans = {
+        myService(MyService) {
+            url = "http://www.spring.io"
+        }
+    
+        configObject(ConfigObject) {
+            new ConfigSlurper().parse("Config.groovy")
+        }
+    
+        myController(MyController) {
+            configObject = ref('configObject')
+            myService = ref('myService')
+        }
+    }
+    
+
+SpringBoot starts up fine, but I get a 404 at /home. I also dont see any
+attempt (sys out) in the startup to load the beans from bb.groovy
+
+I know this is possible from the answer to [Where to put Groovy bean
+definitions in a Spring Boot
+webapp?](https://stackoverflow.com/questions/23060995/where-to-put-groovy-
+bean-definitions-in-a-spring-boot-webapp) but i must be missing something...
+
+Answering my own question. This is not an issue with spring boot, but with the
+bean dsl syntax.
+
+It must be beans { }. Not beans = { }
+
+Removing the equals sign loads the configuration fine. I was using the Grails
+way of resources.groovy, where the syntax is beans = {}
+
+Also, in order to inject the Config.groovy, I had to use
+
+new ConfigSlurper().parse(Config) instead of new
+ConfigSlurper().parse("Config.groovy")
+
+where Config.groovy is a file in the same directory as bb.groovy.
+
+(Ref: <http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#cli-groovy-beans-dsl>)
+

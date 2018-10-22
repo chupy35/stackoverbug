@@ -1,0 +1,39 @@
+17473736 How do I backup hosted elasticsearch locally?
+
+I have hosted my elasticsearch on [qbox](https://qbox.io/) free account. It
+does not allow me to backup my index however I have complete access to data.
+So I was thinking of backing it up locally. How can I do it?
+
+Is there a tool that can allow me do this easily? Something like `couchDb-
+futon` where backing up is as simple as providing a url to the remote
+database.
+
+Since you don't have access to the filesystem where your data is stored, your
+best bet is iterating through all your documents and indexing them locally
+through a script.
+
+First, you'd obviously need to recreate the index locally with whatever
+mappings you've defined on [qbox.io](http://qbox.io). Then, you could use
+ElasticSearch's scroll feature
+(<http://www.elasticsearch.org/guide/reference/api/search/scroll/>) to iterate
+through your documents with a match_all query. The reason for using scroll is
+for performance, as normal search requests must aggregate the appropriate
+resources on each request, whereas scroll allows nodes to persist the
+resources needed for the ongoing search (per the scroll parameter, which sets
+the amount of time the nodes will hold on to the relevant resources).
+
+The initial ES operation to fetch the remote documents would look something
+like this:
+
+    
+    
+    curl 'http://api_token.api.qbox.io/index_name/_search?scroll=5m' -d '{
+      "query": {
+        "match_all" : {}
+      }
+    }'
+    
+
+There's quite a bit more information on the scroll feature here:
+<http://www.elasticsearch.org/guide/reference/api/search/search-type/>.
+

@@ -1,0 +1,31 @@
+16453033 Upgrading elasticsearch from 0.20.5 to 0.90.0
+
+I have a 5 node 0.20.5 Elasticsearch cluster, with replicas set to 2, shards
+set to 5 and around 70 Million documents that I would like to upgrade to
+0.90.0
+
+I can't seem to find definitive instructions for upgrading, I was thinking
+something along these lines:
+
+  1. Issue cluster shutdown:
+
+`curl -XPOST 'http://localhost:9200/_cluster/nodes/_local/_shutdown'`
+
+  2. Upgrade each of the nodes using the 0.90.0 deb package
+
+`dpkg -i elasticsearch-0.20.5.deb`
+
+  3. Start elasticsearch on each of the nodes: 
+
+`/etc/init.d/elasticsearch start`
+
+Should I look at changing any of these settings prior?
+
+`gateway.recover_after_nodes`
+
+`gateway.recover_after_time`
+
+`gateway.expected_nodes`
+
+Cheers!
+

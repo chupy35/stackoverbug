@@ -1,0 +1,318 @@
+9605292 Make elasticsearch only return certain fields?
+
+I'm using elasticsearch to index my documents.
+
+Is it possible to instruct it to only return particular fields instead of the
+entire json document it has stored?
+
+Yep! Use a [source
+filter](https://www.elastic.co/guide/en/elasticsearch/reference/2.4/search-
+request-source-filtering.html). If you're searching with JSON it'll look
+something like this:
+
+    
+    
+    {
+        "_source": ["user", "message", ...],
+        "query": ...,
+        "size": ...
+    }
+    
+
+In ES 2.4 and earlier, you could also use the [fields option to the search
+API](https://www.elastic.co/guide/en/elasticsearch/reference/2.4/search-
+request-fields.html):
+
+    
+    
+    {
+        "fields": ["user", "message", ...],
+        "query": ...,
+        "size": ...
+    }
+    
+
+This is deprecated in ES 5+. And source filters are more powerful anyway!
+
+I found the docs for the `get api` to be helpful - especially the two
+sections, **Source filtering** and **Fields** :
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+get.html>
+
+They state about source filtering:
+
+> If you only need one or two fields from the complete _source, you can use
+the _source_include & _source_exclude parameters to include or filter out that
+parts you need. This can be especially helpful with large documents where
+partial retrieval can save on network overhead
+
+Which fitted my use case perfectly. I ended up simply filtering the source
+like so (using the shorthand):
+
+    
+    
+    {
+        "_source": ["field_x", ..., "field_y"],
+        "query": {      
+            ...
+        }
+    }
+    
+
+FYI, they state in the docs about the **fields** parameter:
+
+> The get operation allows specifying a set of stored fields that will be
+returned by passing the fields parameter.
+
+It seems to cater for fields that have been specifically stored, where it
+places each field in an array. If the specified fields haven't been stored it
+will fetch each one from the _source, which could result in 'slower'
+retrievals. I also had trouble trying to get it to return fields of type
+object.
+
+So in summary, you have two options, either though source filtering or
+[stored] fields.
+
+[response_filtering](https://www.elastic.co/guide/en/elasticsearch/reference/master/common-
+options.html#_response_filtering)
+
+> All REST APIs accept a filter_path parameter that can be used to reduce the
+response returned by elasticsearch. This parameter takes a comma separated
+list of filters expressed with the dot notation.
+
+<https://stackoverflow.com/a/35647027/844700>
+
+In Elasticsearch 5.x the above mentioned approach is deprecated. You can use
+the _source approach, but but in certain situations it can make sense to store
+a field. For instance, if you have a document with a title, a date, and a very
+large content field, you may want to retrieve just the title and the date
+without having to extract those fields from a large _source field:
+
+In this case, you'd use:
+
+    
+    
+    {  
+       "size": $INT_NUM_OF_DOCS_TO_RETURN,
+       "stored_fields":[  
+          "doc.headline",
+          "doc.text",
+          "doc.timestamp_utc"
+       ],
+       "query":{  
+          "bool":{  
+             "must":{  
+                "term":{  
+                   "doc.topic":"news_on_things"
+                }
+             },
+             "filter":{  
+                "range":{  
+                   "doc.timestamp_utc":{  
+                      "gte":1451606400000,
+                      "lt":1483228800000,
+                      "format":"epoch_millis"
+                   }
+                }
+             }
+          }
+       },
+       "aggs":{  
+    
+       }
+    }
+    
+
+See the documentation on how to index stored fields. Always happy for an
+Upvote!
+
+In java you can use setFetchSource like this :
+
+    
+    
+    client.prepareSearch(index).setTypes(type)
+                .setFetchSource(new String[] { "field1", "field2" }, null)
+    
+    
+    
+    For the ES versions 5.X and above you can a ES query something like this
+    
+        GET /.../...
+        {
+          "_source": {
+            "includes": [ "FIELD1", "FIELD2", "FIELD3" ... " ]
+          },
+          .
+          .
+          .
+          .
+        }
+    
+
+A REST API GET request could be made with '_source' parameter.
+
+Example Request
+
+    
+    
+    http://localhost:9200/opt_pr/_search?q=SYMBOL:ITC AND OPTION_TYPE=CE AND TRADE_DATE=2017-02-10 AND EXPIRY_DATE=2017-02-23&_source=STRIKE_PRICE
+    
+
+Response
+
+    
+    
+    {
+    "took": 59,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+    },
+    "hits": {
+        "total": 104,
+        "max_score": 7.3908954,
+        "hits": [
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLc",
+                "_score": 7.3908954,
+                "_source": {
+                    "STRIKE_PRICE": 160
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLh",
+                "_score": 7.3908954,
+                "_source": {
+                    "STRIKE_PRICE": 185
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLi",
+                "_score": 7.3908954,
+                "_source": {
+                    "STRIKE_PRICE": 190
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLm",
+                "_score": 7.3908954,
+                "_source": {
+                    "STRIKE_PRICE": 210
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLp",
+                "_score": 7.3908954,
+                "_source": {
+                    "STRIKE_PRICE": 225
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLr",
+                "_score": 7.3908954,
+                "_source": {
+                    "STRIKE_PRICE": 235
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLw",
+                "_score": 7.3908954,
+                "_source": {
+                    "STRIKE_PRICE": 260
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uL5",
+                "_score": 7.3908954,
+                "_source": {
+                    "STRIKE_PRICE": 305
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLd",
+                "_score": 7.381078,
+                "_source": {
+                    "STRIKE_PRICE": 165
+                }
+            },
+            {
+                "_index": "opt_pr",
+                "_type": "opt_pr_r",
+                "_id": "AV3K4QTgNHl15Mv30uLy",
+                "_score": 7.381078,
+                "_source": {
+                    "STRIKE_PRICE": 270
+                }
+            }
+        ]
+    }
+    
+
+}
+
+> Here another solution, now using a **match** expression
+
+[Source filtering  
+Allows to control how the _source field is returned with every
+hit.](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-source-filtering.html)
+
+> Tested with Elastiscsearch version 5.5
+
+The keyword **"includes"** defines the specifics fields.
+
+    
+    
+    GET /my_indice/my_indice_type/_search
+    {
+        "_source": {
+            "includes": [ "my_especific_field"]
+            },
+            "query": {
+            "bool": {
+                    "must": [
+                    {"match": {
+                        "_id": "%my_id_here_without_percent%"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+    
+    
+    here you can specify whichever field you want in your output and also which you don't.
+    
+      POST index_name/_search
+        {
+            "_source": {
+                "includes": [ "field_name", "field_name" ],
+                "excludes": [ "field_name" ]
+            },
+            "query" : {
+                "match" : { "field_name" : "value" }
+            }
+        }
+    
+

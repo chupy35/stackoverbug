@@ -1,0 +1,145 @@
+11784656 AngularJS $location not changing the path
+
+I'm having an issue with changing the URL of the page after a form has been
+submitted.
+
+Here's the flow of my app:
+
+  1. Routes are set, URL is recognized to some form page.
+  2. Page loads, controller sets variables, directives are fired.
+  3. A special form directive is fired which performs a special form submission using AJAX.
+  4. After the AJAX is performed (Angular doesn't take care of the AJAX) then a callback is fired and the directive calls the `$scope.onAfterSubmit` function which sets the location.
+
+The problem is that after setting the location the nothing happens. I've tried
+setting the location param to `/` as well... Nope. I've also tried not
+submitting the form. Nothing works.
+
+I've tested to see if the code reaches the `onAfterSubmit` function (which it
+does).
+
+My only thought is that somehow the scope of the function is changed (since
+its called from a directive), but then again how can it call `onAfterSubmit`
+if the scope changed?
+
+Here's my code
+
+    
+    
+    var Ctrl = function($scope, $location, $http) {
+      $http.get('/resources/' + $params.id + '/edit.json').success(function(data) {
+        $scope.resource = data;
+      });
+    
+      $scope.onAfterSubmit = function() {
+        $location.path('/').replace();
+      };
+    }
+    Ctrl.$inject = ['$scope','$location','$http'];
+    
+
+Can someone help me out please?
+
+I had a similar problem some days ago. In my case the problem was that I
+changed things with a 3rd party library (jQuery to be precise) and in this
+case even though calling functions and setting variable works Angular doesn't
+always recognize that there are changes thus it never digests.
+
+> $apply() is used to execute an expression in angular from outside of the
+angular framework. (For example from browser DOM events, setTimeout, XHR or
+third party libraries).
+
+Try to use `$scope.$apply()` right after you have changed the location and
+called `replace()` to let Angular know that things have changed.
+
+I had this same problem, but my call to $location was ALREADY within a digest.
+Calling $apply() just gave a $digest already in process error.
+
+This trick worked (and be sure to inject `$location` into your controller):
+
+    
+    
+    $timeout(function(){ 
+       $location...
+    },1);
+    
+
+Though no idea why this was necessary...
+
+    
+    
+    setTimeout(function() { $location.path("/abc"); },0);
+    
+
+it should solve your problem.
+
+Instead of $location.path(...) to change or refresh the page I used the
+service [`$window`](https://docs.angularjs.org/api/ng/service/$window), in
+Angular this service is used as interface to the `window` object, and the
+`window` object contains a property
+[`location`](https://developer.mozilla.org/en-US/docs/Web/API/Window.location)
+which enables you to handle operations related to the location or URL stuff.
+
+For example, with `window.location` you can assign a new page, like this:
+
+    
+    
+    $window.location.assign('/');
+    
+
+Or refresh it, like this:
+
+    
+    
+    $window.location.reload();
+    
+
+It worked for me. It's a little bit different from you expect but works for
+the given goal.
+
+I had to embed my `$location.path()` statement like this because my digest was
+still running:
+
+    
+    
+           function routeMe(data) {                
+                var waitForRender = function () {
+                    if ($http.pendingRequests.length > 0) {
+                        $timeout(waitForRender);
+                    } else {
+                        $location.path(data);
+                    }
+                };
+                $timeout(waitForRender);
+            }
+    
+
+In my case, the problem was the optional parameter indicator('?') missing in
+my template configuration.
+
+For example:
+
+    
+    
+    .when('/abc/:id?', {
+        templateUrl: 'views/abc.html',
+        controller: 'abcControl'
+    })
+    
+    
+    $location.path('/abc');
+    
+
+Without the interrogation character the route obviously would not change
+suppressing the route parameter.
+
+If any of you is using the Angular-ui / ui-router,
+use:`$state.go('yourstate')` instead of `$location`. It did the trick for me.
+
+This wroks for me(in CoffeeScript)
+
+    
+    
+     $location.path '/url/path'
+     $scope.$apply() if (!$scope.$$phase)
+    
+

@@ -1,0 +1,62 @@
+25353564 elasticsearch exclude results with value
+
+How can i perform a search excluding results where a field has a specific
+value?
+
+I have a database of Reddit comments and i want to find Bitcoin mentions, but
+exclude the bitcoin subreddit.
+
+    
+    
+    curl -s -XGET 'http://localhost:9200/_search?pretty=true&size=100' -d '
+    {
+        "filtered": {
+            "query" : {
+                "match": {
+                    "body": "bitcoin"
+                }
+            },
+            "filter": {
+                "not": {
+                    "term": {
+                        "subreddit": "bitcoin"
+                    }
+                }
+            }
+    
+        }
+    }'
+    
+
+The error is to long to post here.
+<https://gist.github.com/kylelk/feca416156712eebad3e>
+
+It is silly error,
+
+You have to include filtered query inside query . Here is modification
+
+    
+    
+    POST _search
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match": {
+                   "body": "bitcoin"
+                }
+             },
+             "filter": {
+                "not": {
+                   "term": {
+                      "subreddit": "bitcoin"
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+Hope this helps!!
+

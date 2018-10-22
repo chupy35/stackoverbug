@@ -1,0 +1,17 @@
+11488062 Proper name of AngularJS project
+
+What is the proper name of the [AngularJS](http://angularjs.org/) project? Its
+homepage uses "AngularJS", in other places it is referred to as "Angular"
+(capital A) and in a lot of places it is spelled "angular" (in lowercase
+form).
+
+For instance, in [Getting Started](http://docs.angularjs.org/misc/started):
+"The **angular** compiler is fully extensible, meaning that with **angular**
+you can build your own declarative language on top of HTML!"
+
+I'm specially interested to know if the lowercase form is the "official" one,
+since it seems to be the most used in the documentation.
+
+The official name is "AngularJS." It's often referred to as just "angular" for
+brevity.
+

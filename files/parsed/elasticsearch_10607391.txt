@@ -1,0 +1,33 @@
+10607391 Create Index - Elastic Search - Java API
+
+I am trying to create an index using Elastic Search Java API.
+
+My code is similar to this:
+
+    
+    
+    String indexName = "clients";
+    Node node =  new NodeBuilder().clusterName(this.clusterName).client(true).node();
+    Client client = node.client();
+    
+    client.admin().indices().prepareCreate(indexName).execute().actionGet(); // It fails here
+    
+    if (client != null) client.close();
+    if (node != null) node.close();
+    
+
+But every time, I execute that I get this error:
+<http://screencast.com/t/MfnTccwho>
+
+What am I doing wrong?
+
+It looks like mismatch between elasticsearch client version and elasticsearch
+server version.
+
+You should also check that jvm versions of the elasticsearch cluster and your
+client match, it happened to me that my client was 1.7 and elasticsearch was
+running under openjdk 1.6, throwing that exception.
+
+Once both elasticsearch & java versions match you'll get the "real" exception
+:)
+

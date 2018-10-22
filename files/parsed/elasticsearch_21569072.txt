@@ -1,0 +1,17 @@
+21569072 Distributed behaviour of elasticsearch
+
+I have 5 shards and 2 replicas and 3 nodes on same cluster.
+
+Now the replicas are distributed in each node. i indexed bulk docs in that
+node.
+
+    
+    
+     Now i _search in node 1. will it search in only 5 shards on node1 (or) will it 
+     hit all 15 shards(including 10 replica shards) to retrieve doc i queried .
+    
+
+Thanks in advance..!
+
+It will hit 5 shards but those shards can be primary or replicas.
+

@@ -1,0 +1,24 @@
+11250343 How does AngularJS talk with server side Java EE code?
+
+Just found AngularJS and would like to try out a simple example CRUD app on
+GAE.
+
+Idea is to save the records on the mysql db.
+
+In a traditional webapp, my layering would have been
+`client->controller->service->dao->db`.
+
+Any reference to a simple tutorial or article would be good.
+
+The easiest way to do this would be to build the server side of the
+application as a REST server, serve the AngularJS application as a static
+page, and then have the AngularJS application make calls to the server with
+the `$http` service.
+
+I'm not particularly familiar with Google App Engine, but there appear to be
+some useful resources for REST:
+
+  * <http://code.google.com/p/appengine-rest-server/>
+  * <http://code.google.com/p/gae-json-rest/>
+  * <http://answers.oreilly.com/topic/2727-deploy-java-restful-application-on-the-google-app-engine/>
+

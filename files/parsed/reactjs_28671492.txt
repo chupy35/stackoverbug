@@ -1,0 +1,21 @@
+28671492 How to access an element that's a child of owned component and
+doesn't have a ref="..." attribute
+
+Example:
+
+    
+    
+    var Top = React.createClass({
+      render: function() {
+        return (
+          <A>
+            <B>child</B>
+          </A>
+        );
+      }
+    });
+    
+
+Is there a way to access all `Top`'s child components that don't have a `ref`
+attribute (e.g. `B`) and loop over them?
+

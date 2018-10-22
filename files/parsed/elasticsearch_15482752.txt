@@ -1,0 +1,16 @@
+15482752 What do these numbers mean in ElasticSearch head?
+
+In the Overview tab of my ElasticSearch head it shows the following:
+
+stock size: 2.2gb (2.2gb) docs: 1062049 (1598589)
+
+Can someone tell me what the 2 docs numbers 1062049 and 1598589 mean?
+
+The first number is `num_docs`, the second number is `max_docs`. Both are
+provided by the [Index Status
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+status.html)
+
+  * `num_docs` is simple: it is the number of documents living inside your index at this moment
+  * `max_docs` is a bit more nebulous, I believe it is the max docs your index has seen before a merge removed the deleted docs. It also includes nested documents, which internally are a new doc but appear as a single doc to the end-user
+

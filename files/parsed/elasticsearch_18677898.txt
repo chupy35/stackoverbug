@@ -1,0 +1,416 @@
+18677898 ElasticSearch partial search matching
+
+I am trying to get some features like nGrams and synonyms working but I am not
+having any luck.
+
+I am following [this blog post](http://euphonious-intuition.com/2012/08/more-
+complicated-mapping-in-elasticsearch/). I have tried adapting the mappings and
+queries to my data, and it will only match exact terms. I also tried using the
+exact data from the article from [this
+gist](https://gist.github.com/polyfractal/bce8e9ce47a96a24e693) with the same
+result.
+
+Here is the mapping:
+
+    
+    
+    {
+       "mappings": {
+          "item": {
+             "properties": {
+                "productName": {
+                   "fields": {
+                      "partial": {
+                         "search_analyzer":"full_name",
+                         "index_analyzer":"partial_name",
+                         "type":"string"
+                      },
+                      "partial_back": {
+                         "search_analyzer":"full_name",
+                         "index_analyzer":"partial_name_back",
+                         "type":"string"
+                      },
+                      "partial_middle": {
+                         "search_analyzer":"full_name",
+                         "index_analyzer":"partial_middle_name",
+                         "type":"string"
+                      },
+                      "productName": {
+                         "type":"string",
+                         "analyzer":"full_name"
+                      }
+                   },
+                   "type":"multi_field"
+                },
+                "productID": {
+                   "type":"string",
+                   "analyzer":"simple"
+                },
+                "warehouse": {
+                   "type":"string",
+                   "analyzer":"simple"
+                },
+                "vendor": {
+                   "type":"string",
+                   "analyzer":"simple"
+                },
+                "productDescription": {
+                   "type":"string",
+                   "analyzer":"full_name"
+                },
+                "categories": {
+                   "type":"string",
+                   "analyzer":"simple"
+                },
+                "stockLevel": {
+                   "type":"integer",
+                   "index":"not_analyzed"
+                },
+                "cost": {
+                   "type":"float",
+                   "index":"not_analyzed"
+                }
+             }
+          },
+          "settings": {
+             "analysis": {
+                "filter": {
+                   "name_ngrams": {
+                      "side":"front",
+                      "max_gram":50,
+                      "min_gram":2,
+                      "type":"edgeNGram"
+                   },
+                   "name_ngrams_back": {
+                      "side":"back",
+                      "max_gram":50,
+                      "min_gram":2,
+                      "type":"edgeNGram"
+                   },
+                   "name_middle_ngrams": {
+                      "type":"nGram",
+                      "max_gram":50,
+                      "min_gram":2
+                   }
+                },
+                "analyzer": {
+                   "full_name": {
+                      "filter":[
+                         "standard",
+                         "lowercase",
+                         "asciifolding"
+                      ],
+                      "type":"custom",
+                      "tokenizer":"standard"
+                   },
+                   "partial_name": {
+                      "filter":[
+                         "standard",
+                         "lowercase",
+                         "asciifolding",
+                         "name_ngrams"
+                      ],
+                      "type":"custom",
+                      "tokenizer":"standard"
+                   },
+                   "partial_name_back": {
+                      "filter":[
+                         "standard",
+                         "lowercase",
+                         "asciifolding",
+                         "name_ngrams_back"
+                      ],
+                      "type":"custom",
+                      "tokenizer":"standard"
+                   },
+                   "partial_middle_name": {
+                      "filter":[
+                         "standard",
+                         "lowercase",
+                         "asciifolding",
+                         "name_middle_ngrams"
+                      ],
+                      "type":"custom",
+                      "tokenizer":"standard"
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+And the search query (I removed the filter to try to return more results):
+
+    
+    
+    {
+       "size":20,
+       "from":0,
+       "sort":[
+          "_score"
+       ],
+       "query": {
+          "bool": {
+             "should":[
+                {
+                   "text": {
+                      "productName": {
+                         "boost":5,
+                         "query":"test query",
+                         "type":"phrase"
+                      }
+                   }
+                },
+                {
+                   "text": {
+                      "productName.partial": {
+                         "boost":1,
+                         "query":"test query"
+                      }
+                   }
+                },
+                {
+                   "text": {
+                      "productName.partial_middle": {
+                         "boost":1,
+                         "query":"test query"
+                      }
+                   }
+                },
+                {
+                   "text": {
+                      "productName.partial_back": {
+                         "boost":1,
+                         "query":"test query"
+                      }
+                   }
+                }
+             ]
+          }
+       }
+    }
+    
+
+Using the query above from the gist, if I remove the following code from the
+first bool query
+
+    
+    
+    "text":{
+        "productName":{
+            "boost":5,
+            "query":"test query",
+            "type":"phrase"
+        }
+    } 
+    
+
+so it will not return direct matches, no matter what my search term, I still
+return no results.
+
+I assume I am missing something glaringly obvious, and don't really know what
+other information is relevant, so please take it easy on me.
+
+Looks like I figured out the answer to my problem, blindly copy and pasting.
+The blog article I linked to seems to be out of date, and the JSON for the
+commands no longer works correctly (but didn't throw errors when sending the
+commands).
+
+Here is the code to create the index I used:
+
+    
+    
+    {
+       "settings": {
+          "analysis": {
+             "filter": {
+                "name_ngrams": {
+                   "side":"front",
+                   "max_gram":50,
+                   "min_gram":2,
+                   "type":"edgeNGram"
+                },
+                "name_ngrams_back": {
+                   "side":"back",
+                   "max_gram":50,
+                   "min_gram":2,
+                   "type":"edgeNGram"
+                },
+                "name_middle_ngrams": {
+                   "type":"nGram",
+                   "max_gram":50,
+                   "min_gram":2
+                }
+             },
+             "analyzer": {
+                "full_name": {
+                   "filter":[
+                      "standard",
+                      "lowercase",
+                      "asciifolding"
+                   ],
+                   "type":"custom",
+                   "tokenizer":"standard"
+                },
+                "partial_name": {
+                   "filter":[
+                      "standard",
+                      "lowercase",
+                      "asciifolding",
+                      "name_ngrams"
+                   ],
+                   "type":"custom",
+                   "tokenizer":"standard"
+                },
+                "partial_name_back": {
+                   "filter":[
+                      "standard",
+                      "lowercase",
+                      "asciifolding",
+                      "name_ngrams_back"
+                   ],
+                   "type":"custom",
+                   "tokenizer":"standard"
+                },
+                "partial_middle_name": {
+                   "filter":[
+                      "standard",
+                      "lowercase",
+                      "asciifolding",
+                      "name_middle_ngrams"
+                   ],
+                   "type":"custom",
+                   "tokenizer":"standard"
+                }
+             }
+          }
+       },
+       "mappings" : {
+          "product": {
+             "properties": {
+                "productName": {
+                   "fields": {
+                      "partial": {
+                         "search_analyzer":"full_name",
+                         "index_analyzer":"partial_name",
+                         "type":"string"
+                      },
+                      "partial_back": {
+                         "search_analyzer":"full_name",
+                         "index_analyzer":"partial_name_back",
+                         "type":"string"
+                      },
+                      "partial_middle": {
+                         "search_analyzer":"full_name",
+                         "index_analyzer":"partial_middle_name",
+                         "type":"string"
+                      },
+                      "productName": {
+                         "type":"string",
+                         "analyzer":"full_name"
+                      }
+                   },
+                   "type":"multi_field"
+                },
+                "productID": {
+                   "type":"string",
+                   "analyzer":"simple"
+                },
+                "warehouse": {
+                   "type":"string",
+                   "analyzer":"simple"
+                },
+                "vendor": {
+                   "type":"string",
+                   "analyzer":"simple"
+                },
+                "productDescription": {
+                   "type":"string",
+                   "analyzer":"full_name"
+                },
+                "categories": {
+                   "type":"string",
+                   "analyzer":"simple"
+                },
+                "stockLevel": {
+                   "type":"integer",
+                   "index":"not_analyzed"
+                },
+                "cost": {
+                   "type":"float",
+                   "index":"not_analyzed"
+                }
+             }
+          }
+       }
+    }
+    
+
+Here is the code I used to insert a test record (I used this 3 times with
+slightly changed data)
+
+    
+    
+    {
+        "productName": "Thingey",
+        "productID": "asdfasef9816",
+        "warehouse": "usa",
+        "vendor": "Cool Things Inc",
+        "productDescription": "This is a cool gizmo",
+        "categories": "Cool Things",
+        "stockLevel": 6,
+        "cost": 15.31
+    }
+    
+
+And finally the JSON for the search query.
+
+    
+    
+    {
+       "size":20,
+       "from":0,
+       "sort":[
+          "_score"
+       ],
+       "query": {
+          "bool": {
+             "should":[
+                {
+                   "text": {
+                      "productName.partial": {
+                         "boost":1,
+                         "query":"ing"
+                      }
+                   }
+                },
+                {
+                   "text": {
+                      "productName.partial_middle": {
+                         "boost":1,
+                         "query":"ing"
+                      }
+                   }
+                },
+                {
+                   "text": {
+                      "productName.partial_back": {
+                         "boost":1,
+                         "query":"ing"
+                      }
+                   }
+                }
+             ]
+          }
+       }
+    }
+    
+
+The key changes I had to make would be to move the setting from the mappings
+PUT to the index creation. I also moved the initial mapping definition here,
+but it could have been created using the regular /index/item/_mapping PUT.
+
+If any of the ElasticSearch pros want to expand this for future readers of
+this issue please do.
+

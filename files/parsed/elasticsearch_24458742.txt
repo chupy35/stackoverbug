@@ -1,0 +1,97 @@
+24458742 Elasticsearch _validate API fails queries that _search API allows
+
+I’m trying to use the _validate API and it rejects as invalid queries where
+the exact body submitted works when sent to the _search API. Does _validate
+request body need to be different in some way?
+
+For the “explain” result I get things like “no query registered for [fields]".
+Removing return fields list, it complains about filter.
+
+Here is an example:
+
+    
+    
+    curl -s -XGET 'http://localhost:9200/4af9aae4-7ec1-458d-8c50-692ddb0f2c6d/msg,file,file-info/_validate/query?explain=true' -d '{"fields":["id"],"filter":{"not":{"and":[{"numeric_range":{"msg-size":{"gte":1000}}},{"query":{"prefix":{"content-type.verbatim":"application/"}}}]}}}' | python -mjson.tool
+    {
+        "_shards": {
+            "failed": 0, 
+            "successful": 1, 
+            "total": 1
+        }, 
+        "explanations": [
+            {
+                "error": "org.elasticsearch.index.query.QueryParsingException: [4af9aae4-7ec1-458d-8c50-692ddb0f2c6d-0] request does not support [fields]", 
+                "index": "4af9aae4-7ec1-458d-8c50-692ddb0f2c6d-0", 
+                "valid": false
+            }
+        ], 
+        "valid": false
+    }
+    
+
+Removing fields, it reports that query does not support filter
+
+    
+    
+    curl -s -XGET 'http://localhost:9200/4af9aae4-7ec1-458d-8c50-692ddb0f2c6d/msg,file,file-info/_validate/query?explain=true' -d '{"filter":{"not":{"and":[{"numeric_range":{"msg-size":{"gte":1000}}},{"query":{"prefix":{"content-type.verbatim":"application/"}}}]}}}' | python -mjson.tool
+    {
+        "_shards": {
+            "failed": 0, 
+            "successful": 1, 
+            "total": 1
+        }, 
+        "explanations": [
+            {
+                "error": "org.elasticsearch.index.query.QueryParsingException: [4af9aae4-7ec1-458d-8c50-692ddb0f2c6d-0] request does not support [filter]", 
+                "index": "4af9aae4-7ec1-458d-8c50-692ddb0f2c6d-0", 
+                "valid": false
+            }
+        ], 
+        "valid": false
+    }
+    
+
+Some queries do work with validate API, so it's not an across-the-board
+failure.
+
+    
+    
+    curl -s -XGET 'http://localhost:9200/4af9aae4-7ec1-458d-8c50-692ddb0f2c6d/msg,file,file-info/_validate/query?explain=true' -d '{"query": { "match": { "file-name": "PLEASE READ: something not important" }}}' | python -mjson.tool
+    {                                                                                                                                                                                                                                             
+        "_shards": {                                                                                                                                                                                                                              
+            "failed": 0,                                                                                                                                                                                                                          
+            "successful": 1,                                                                                                                                                                                                                      
+            "total": 1                                                                                                                                                                                                                            
+        },                                                                                                                                                                                                                                        
+        "explanations": [                                                                                                                                                                                                                         
+            {                                                                                                                                                                                                                                     
+                "explanation": "filtered(file-name:PLEASE READ: something not important)->cache(_type:file _type:file-info _type:msg)",                                                                                                       
+                "index": "4af9aae4-7ec1-458d-8c50-692ddb0f2c6d-0",                                                                                                                                                                                
+                "valid": true                                                                                                                                                                                                                     
+            }                                                                                                                                                                                                                                     
+        ],                                                                                                                                                                                                                                        
+        "valid": true                                                                                                                                                                                                                             
+    }  
+    
+
+My understanding is _validate runs the same syntax checks etc as when you
+actually actually execute a query, so I am not sure what is going on.
+
+Other details:
+
+Elasticsearch v 1.2.1 Ubuntu Linux Precise 64
+
+You need to wrap your query in a query key to use the _validate endpoint -
+that's why your last example is working but your first two do not.
+
+> Note
+
+>
+
+> The query being sent in the body must be nested in a query key, same as the
+search api works [1.0.0.RC1] Added in 1.0.0.RC1. The query was previously the
+top-level object..
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+validate.html>
+

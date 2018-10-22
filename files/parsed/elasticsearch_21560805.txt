@@ -1,0 +1,16 @@
+21560805 source filtering not working in elasticsearch 1.0.0.beta
+
+according to the docs, it is possible to do source filtering on the returned
+document beginning with elasticseach 1.0.0beta
+
+I tried all the examples from the url below, but the source is always
+completely returned. Also, when sending _source:false, the whole document is
+still returned as well.
+
+Is this a known issue?
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/master/search-
+request-source-filtering.html>
+
+found the solution. Needed to use POST instead of PUT
+

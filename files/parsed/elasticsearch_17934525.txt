@@ -1,0 +1,152 @@
+17934525 How to remove elasticsearch?
+
+I am trying to make logstash work with elasticsearch and Kibana. I had all the
+latest versions, but after I faced a few problems, I realized that I needed to
+install an older version, i.e., 0.20.6, of elasticsearch in order for it to
+work correctly with the latest version of logstash. So, I downloaded the older
+version, did an `rm -rf` of the older (v.0.90.x) one and installed the new
+(v.0.20.6) one. I tried to start it up. It starts, but then gives me repeating
+errors like:
+
+    
+    
+    [2013-07-29 14:24:04,718][WARN ][indices.cluster          ] [Dansen Macabre] [blog][2] failed to start shard
+    org.elasticsearch.indices.recovery.RecoveryFailedException: [blog][2]: Recovery failed from [Blob][UCFJzrBxQHOYOohF6scQMw][inet[/10.1.10.52:9300]] into [Dansen Macabre][-GzBNHLJSc2Do5DNTsn1jw][inet[/10.1.10.52:9301]]
+        at org.elasticsearch.indices.recovery.RecoveryTarget.doRecovery(RecoveryTarget.java:293)
+        at org.elasticsearch.indices.recovery.RecoveryTarget.access$300(RecoveryTarget.java:62)
+        at org.elasticsearch.indices.recovery.RecoveryTarget$2.run(RecoveryTarget.java:163)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:724)
+    Caused by: org.elasticsearch.transport.RemoteTransportException: [Blob][inet[/10.1.10.52:9300]][index/shard/recovery/startRecovery]
+    Caused by: org.elasticsearch.index.engine.RecoveryEngineException: [blog][2] Phase[1] Execution failed
+        at org.elasticsearch.index.engine.robin.RobinEngine.recover(RobinEngine.java:1123)
+        at org.elasticsearch.index.shard.service.InternalIndexShard.recover(InternalIndexShard.java:526)
+        at org.elasticsearch.indices.recovery.RecoverySource.recover(RecoverySource.java:116)
+        at org.elasticsearch.indices.recovery.RecoverySource.access$1600(RecoverySource.java:60)
+        at org.elasticsearch.indices.recovery.RecoverySource$StartRecoveryTransportRequestHandler.messageReceived(RecoverySource.java:328)
+        at org.elasticsearch.indices.recovery.RecoverySource$StartRecoveryTransportRequestHandler.messageReceived(RecoverySource.java:314)
+        at org.elasticsearch.transport.netty.MessageChannelHandler$RequestHandler.run(MessageChannelHandler.java:265)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:724)
+    Caused by: org.elasticsearch.indices.recovery.RecoverFilesRecoveryException: [blog][2] Failed to transfer [25] files with total size of [3.7kb]
+        at org.elasticsearch.indices.recovery.RecoverySource$1.phase1(RecoverySource.java:226)
+        at org.elasticsearch.index.engine.robin.RobinEngine.recover(RobinEngine.java:1116)
+        ... 9 more
+    Caused by: java.io.FileNotFoundException: /Users/CiC/BigData/elasticsearch-0.90.2/data/elasticsearch/nodes/0/indices/blog/2/index/_1_es090_0.doc (No such file or directory)
+        at java.io.RandomAccessFile.open(Native Method)
+        at java.io.RandomAccessFile.<init>(RandomAccessFile.java:233)
+        at org.apache.lucene.store.FSDirectory$FSIndexInput.<init>(FSDirectory.java:410)
+        at org.apache.lucene.store.NIOFSDirectory$NIOFSIndexInput.<init>(NIOFSDirectory.java:123)
+        at org.apache.lucene.store.NIOFSDirectory.openInput(NIOFSDirectory.java:80)
+        at org.apache.lucene.store.RateLimitedFSDirectory.openInput(RateLimitedFSDirectory.java:99)
+        at org.elasticsearch.index.store.Store.openInputRaw(Store.java:271)
+        at org.elasticsearch.indices.recovery.RecoverySource$1$1.run(RecoverySource.java:171)
+        ... 3 more
+    
+
+As you can see, it is still trying to look for the v.0.90.x installation. My
+`localhost:9200` shows the following output:
+
+    
+    
+    {
+      "ok" : true,
+      "status" : 200,
+      "name" : "Blob",
+      "version" : {
+        "number" : "0.90.2",
+        "snapshot_build" : false,
+        "lucene_version" : "4.3.1"
+      },
+      "tagline" : "You Know, for Search"
+    }
+    
+
+How do I solve this to use v.0.20.6?
+
+It looks like you still have 0.90 running. You need to shutdown it before you
+can switch to 0.20. The simplest way to do it is by running
+
+    
+    
+    curl -XPOST 10.1.10.52:9200/_shutdown
+    
+
+If this doesn't work, find the java process that elasticsearch is running in
+and kill it.
+
+After 0.90 is down you might need to clean the directory again.
+
+    
+    
+            In windows stop all the services. I mean Elastic search ,Kibana ,Logstash and beats if any.
+    
+            I installed them following http://robwillis.info/2016/05/installing-elasticsearch-logstash-and-kibana-elk-on-windows-server-2012-r2/ . Here  he has explained  the instaling steps very beautifully. Thanks A Lot.
+    I downloaded the zip and extracted them in a single folder as the below image
+    
+    [![enter image description here][1]][1]
+    
+    Installation steps are as below.
+    
+    PS C:\windows\system32> Invoke-Expression -command "C:\ELKStack\elasticsearch-5.6.3\bin\elasticsearch-service install"
+    Installing service      :  "elasticsearch-service-x64"
+    Using JAVA_HOME (64-bit):  "C:\Program Files\Java\jdk1.8.0_65"
+    The service 'elasticsearch-service-x64' has been installed.
+    
+    PS C:\windows\system32> Invoke-Expression -command "C:\ELKStack\elasticsearch-5.6.3\bin\elasticsearch-service  manager"
+    Successfully started service manager for 'elasticsearch-service-x64'.
+    
+    PS C:\windows\system32> Invoke-Expression -command "C:\ELKStack\nssm-2.24\win64\nssm install Logstash"
+    Service "Logstash" installed successfully!
+    PS C:\windows\system32> Invoke-Expression -command "C:\ELKStack\nssm-2.24\win64\nssm install kibana"
+    Service "kibana" installed successfully!
+    PS C:\windows\system32> PowerShell.exe -ExecutionPolicy UnRestricted -File C:\ELKStack\filebeat-5.6.3-windows-x86_64\.\i
+    nstall-service-filebeat.ps1
+    
+    Security Warning
+    Run only scripts that you trust. While scripts from the Internet can be useful, this script can potentially harm your
+    computer. Do you want to run C:\ELKStack\filebeat-5.6.3-windows-x86_64\install-service-filebeat.ps1?
+    [D] Do not run  [R] Run once  [S] Suspend  [?] Help (default is "D"): R
+    
+    Status   Name               DisplayName
+    ------   ----               -----------
+    Stopped  filebeat           filebeat
+    
+    
+            Now to unistal I used the following method.
+    
+        Open windows powershell
+    
+    
+            PS C:\windows\system32> PowerShell.exe -ExecutionPolicy UnRestricted -File  C:\ELKStack\filebeat-5.6.3-windows-x86_64\un
+            install-service-filebeat.ps1
+    
+    
+            __GENUS          : 2
+            __CLASS          : __PARAMETERS
+            __SUPERCLASS     :
+            __DYNASTY        : __PARAMETERS
+            __RELPATH        :
+            __PROPERTY_COUNT : 1
+            __DERIVATION     : {}
+            __SERVER         :
+            __NAMESPACE      :
+            __PATH           :
+            ReturnValue      : 0
+    
+    
+            PS C:\windows\system32> Invoke-Expression -command "C:\ELKStack\nssm-2.24\win64\nssm remove Kibana"
+            Service "Kibana" removed successfully!
+    
+            PS C:\windows\system32> Invoke-Expression -command "C:\ELKStack\nssm-2.24\win64\nssm remove logstash"
+            Service "Logstash" removed successfully!
+    
+            PS C:\windows\system32> Invoke-Expression -command "C:\ELKStack\elasticsearch-5.6.3\bin\elasticsearch-service.bat remove"
+            The service 'elasticsearch-service-x64' has been removed`enter code here`
+    
+    
+      [1]: https://i.stack.imgur.com/ooHa8.png
+    
+

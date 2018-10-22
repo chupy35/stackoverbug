@@ -1,0 +1,21 @@
+21378571 Elasticsearch index not opening due to settings
+
+While trying some new settings, I did PUT a wrong setting on an index.
+
+The index was closed at that time (as required by ES while PUT-ting in new
+settings ).  Now when I try to re-open it, it throws "IndexCreationException"
+due to those wrong settings.
+
+Even if I try to PUT in a new setting (which I suppose is correct), ES cries
+about the previous old wrong settings again throwing "IndexCreationException".
+
+So I am unable to remove or update those wrong settings and my index is not
+opening up now.
+
+My question is, do I have any options other than deleting the whole index and
+reindexing with corrected settings?
+
+**Update**
+
+[Here is the log](http://hastebin.com/gumujulodi.vhdl) containing the errors.
+

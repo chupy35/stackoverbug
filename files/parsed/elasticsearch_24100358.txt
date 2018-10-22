@@ -1,0 +1,68 @@
+24100358 Return document on update elasticsearch
+
+Lets say I'm updating user data
+
+    
+    
+    curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+        "doc" : {
+            "name" : "new_name"
+        },
+        "fields": ["_source"]
+    }'
+    
+
+Heres an example of what I'm getting back when I perform an update
+
+    
+    
+    {
+      "_index" : "test",
+      "_type" : "type1",
+      "_id" : "1",
+      "_version" : 4
+    }
+    
+
+How do I perform an update that returns the given document post update?
+
+The documentation is a little misleading with regards to returning fields when
+performing an Elasticsearch update. It actually uses the same approach that
+the Index api uses, passing the parameter on the url, not as a field in the
+update.
+
+In your case you would submit:
+
+    
+    
+    curl -XPOST 'localhost:9200/test/type1/1/_update?fields=_source' -d '{
+        "doc" : {
+            "name" : "new_name"
+        }
+    }'
+    
+
+In my testing in Elasticsearch 1.2.1 it returns something like this:
+
+    
+    
+    {
+      "_index":"test",
+      "_type":"testtype",
+      "_id":"1","_version":9,
+      "get": {
+        "found":true,
+        "_source": {
+            "user":"john",
+            "body":"testing update and return fields",
+            "name":"new_name"
+          }
+       }
+    }
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html>
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+update.html>
+

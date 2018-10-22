@@ -1,0 +1,96 @@
+12141824 How to select parent checkbox based on child checkboxes in
+angular.js?
+
+I've been playing with Angular.js recently and decided to check all the
+checkboxes once parent checkbox is checked, which I've done using `ng-model`
+and `ng-checked` directives.
+
+    
+    
+        <div ng-app>
+            <div ng-controller="Ctrl">
+                <input type="checkbox" ng-model="parent"/> Select All<br/>
+                <input type="checkbox" ng-model="child_1" ng-checked="parent" ng-click="getAllSelected()"/> First<br/>
+                <input type="checkbox" ng-model="child_2" ng-checked="parent" ng-click="getAllSelected()"/> Second<br/>
+                <input type="checkbox" ng-model="child_3" ng-checked="parent" ng-click="getAllSelected()"/> Three<br/>
+                <input type="checkbox" ng-model="child_4" ng-checked="parent" ng-click="getAllSelected()"/> Four<br/>
+                <input type="checkbox" ng-model="child_5" ng-checked="parent" ng-click="getAllSelected()"/> Five<br/>
+            </div>
+        </div>
+    
+
+Now I'm trying select all the parent checkbox once all the child checkboxes
+are checked but facing some issues.
+
+    
+    
+        function Ctrl($scope) {
+           $scope.getAllSelected = function () {
+              var chkChild = document.querySelectorAll('input[ng-model^="child_"]').length;
+              var chkChildChecked = document.querySelectorAll('input[ng-model^="child_"]:checked').length;
+              if (chkChild === chkChildChecked) $scope.parent= true;
+              else $scope.parent= false;
+           }
+        }
+    
+
+Demo: <http://jsfiddle.net/codef0rmer/QekpX/>
+
+Can we make the above code more robust?
+
+The ng-checked attribute in the checkbox takes in an expression. So you can
+give an expression with and/or conditions, as mentioned below to make it
+checked based on an expression.
+
+    
+    
+    <input type="checkbox" ng-checked="child_1 && child_2 && child_3 && child_4 && child_5" ng-model="parent"/> Select All<br/>
+    
+
+You dont have to write a seprate function to do the computation when every
+child checkbox is clicked.
+
+[Here is example in jsfiddle](http://jsfiddle.net/pio123/624y6/1/)
+
+Visually it updates all the checkboxes checked with ng-selected, but then when
+you go to actually submit the data the data doesn't match up with what was
+selected. I suggest doing a ng-click() which sucks, but if your data is
+dynamic.
+
+<http://codepen.io/stirlingw/pen/gpwXWM>
+
+    
+    
+    //Random JSON object
+    $scope.labels = 
+      [{
+        label: 'Death Row Records', 
+        selected: false, 
+        artists: [
+          {artist: 'MC Hammer', selected: false},
+          {artist: 'Andre "Dr. Dre" Young', selected: false},
+          {artist: 'Snoop Dogg', selected: false},
+          {artist: 'Tupac Shakur', selected: false},
+          {artist: 'Nate Dogg', selected: false},
+       ]
+    }]; 
+    
+    //JS
+    $scope.clicker = function(label){
+      label.artists.forEach(function(e){
+        e.selected = !label.selected;
+      });
+    };
+    
+    //html
+    <ul>
+       <li ng-repeat="label in labels"> <input type="checkbox" ng-model="label.selected" ng-click="clicker(label)"> {{label.label}} 
+           <ul>
+               <li ng-repeat="artist in label.artists">
+                   <input type="checkbox" ng-model="artist.selected" > {{artist.artist}}
+               </li>
+           </ul> 
+       </li>  
+    </ul>
+    
+

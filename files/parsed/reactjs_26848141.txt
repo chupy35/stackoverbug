@@ -1,0 +1,45 @@
+26848141 Why does data-reactid contain a function implementation and how can I
+get rid of it?
+
+I don't know what I've done, but for some reason most rendered react elements
+now have a data-reactid attribute that contains a full function definition in
+the string.
+
+To be clear, the code below is not particularly interesting or important in
+itself, nor is it anything I have created or seen. It is simply what react is
+putting into it's react-ids. Here's what a rendered div looks like:
+
+    
+    
+      <div class="react_row InitiativeFunnelView react_clickable" data-reactid=".0.$function (props, children) {
+      var descriptor =0 factory=1apply(this, arguments);
+    
+      for (var i =0 1; i < arguments=1length; i++) {
+        validateChildKeys(arguments[i], descriptor=1type);
+      }
+    
+      var name =0 descriptor=1type=1displayName;
+      if (propTypes) {
+        checkPropTypes(
+          name,
+          propTypes,
+          descriptor=1props,
+          ReactPropTypeLocations=1prop
+        );
+      }
+      if (contextTypes) {
+        checkPropTypes(
+          name,
+          contextTypes,
+          descriptor=1_context,
+          ReactPropTypeLocations=1context
+        );
+      }
+      return descriptor;
+    }.$188.$funnel">
+    
+
+This makes reading/debugging HTML output incredibly painful.
+
+What is causing this?
+

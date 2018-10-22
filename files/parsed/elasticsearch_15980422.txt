@@ -1,0 +1,26 @@
+15980422 Elasticsearch autocomplete and searching against multiple term fields
+
+I'm integrating elasticsearch into an asset tracking application. When I setup
+the mapping initially, I envisioned the 'brand' field being a single-term
+field like 'Hitachi', or 'Ford'. Instead, I'm finding that the brand field in
+the actual data contains multiple terms like: "MB 7 A/B", "B-7" or even "Brush
+Bull BB72X".
+
+I have an autocomplete component setup now that I configured to do
+autocomplete against an edgeNGram field, and perform the actual search against
+an nGram field. It's completely useless the way I set it up because users
+expect the search results to be restricted to what the autocomplete matches.
+
+Any suggestions on the best way to setup my mapping to support autocomplete
+and subsequent searches against a multiple term field like this? I'm
+considering a terms query against a keyword field, or possibly a match query
+with 'and' as the operator? I also have to deal with hyphens like "B-7".
+
+you can use phrase suggest, the guide is here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+suggesters.html>
+
+the phrase suggest guide is here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+suggesters-phrase.html>
+

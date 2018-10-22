@@ -1,0 +1,87 @@
+15378787 elasticsearch custom_score multiplication is inaccurate
+
+I've inserted some documents which are all identical except for one floating-
+point field, called `a`.
+
+When `script` of a `custom_score` query is set to just `_score`, the resulting
+score is 0.40464813 for a particular query matching some fields. When `script`
+is then changed to `_score * a` (mvel) for the same query, where `a` is
+9.908349251612433, the final score becomes 4.0619955.
+
+Now, if I run this calculation via Chrome's JS console, I get
+4.009394996051871.
+
+  * 4.0619955 (elasticsearch)
+  * 4.009394996051871 (Chrome)
+
+This is quite a difference and produces an incorrect ordering of results. Why
+could it be, and is there a way to correct it?
+
+If I run a simple calculation using the numbers you provided, then I get the
+result that you expect.
+
+    
+    
+    curl -XPOST 'http://127.0.0.1:9200/test/test?pretty=1'  -d '
+    {
+       "a" : 9.90834925161243
+    }
+    '
+    
+    curl -XGET 'http://127.0.0.1:9200/test/test/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "custom_score" : {
+             "script" : "0.40464813 *doc[\u0027a\u0027].value",
+             "query" : {
+                "match_all" : {}
+             }
+          }
+       }
+    }
+    '
+    
+    # {
+    #    "hits" : {
+    #       "hits" : [
+    #          {
+    #             "_source" : {
+    #                "a" : 9.90834925161243
+    #             },
+    #             "_score" : 4.009395,
+    #             "_index" : "test",
+    #             "_id" : "lPesz0j6RT-Xt76aATcFOw",
+    #             "_type" : "test"
+    #          }
+    #       ],
+    #       "max_score" : 4.009395,
+    #       "total" : 1
+    #    },
+    #    "timed_out" : false,
+    #    "_shards" : {
+    #       "failed" : 0,
+    #       "successful" : 5,
+    #       "total" : 5
+    #    },
+    #    "took" : 1
+    # }
+    
+
+I think what you are running into here is testing too little data across
+multiple shards.
+
+Doc frequencies are calculated per shard by default. So if you have two
+identical docs on shard_1 and one doc on shard_2, then the docs on shard_1
+will score lower than the docs on shard_2.
+
+With more data, the document frequencies tend to even out over shards. But
+when testing small amounts of data you either want to create an index with
+only one shard, or to add `search_type=dfs_query_then_fetch` to the query
+string params.
+
+This calculates global doc frequencies across all involved shards before
+calculating the scores.
+
+If you set `explain` to `true` in your query, then you can see exactly how
+your scores are being calculated
+

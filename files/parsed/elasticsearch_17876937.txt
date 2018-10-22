@@ -1,0 +1,47 @@
+17876937 Elasticsearch query does not give back id (but all other data)
+
+I'm quite new to ElasticSearch, and I've written (to be more precise
+generated) a simple query to retrieve saved data created by a certain user.
+
+The query gives back right results, my problem is that the `id` and/or the
+`_id` field is missing from the result. All other fields are retrieved
+perferctly, the condition is okay too.
+
+Can you suggest me, how to include the ˙id˙ field to the result? Here is the
+query:
+
+    
+    
+    {
+      'filter': {
+        'limit': {'value': 100}
+      }, 
+      'query': {
+        'bool': {
+          'should': [
+            {'term': {'user': 'acct:test_user@0.0.0.0:5000'}}
+          ], 
+          'minimum_number_should_match': 1
+        }
+      }
+    }
+    
+
+(I know I can write the query simpler but it is designed that other terms will
+be added to it) The user field's definition is simple too:
+
+    
+    
+    'user': {'type': 'string', 'index': 'not_analyzed'}
+    
+
+Thanks for the help. I'm aware that this is may be a rookie question, but I
+just can't get it right.
+
+Just to make sure you know, `_id` is not part of the document body like other
+fields. Unless you duplicate `_id` in the document, you won't see it in the
+`_source` part of a result.
+
+You will get `_id` returned, but not "in the same place" as the other fields,
+that is not in the `_source`, it is one level higher.
+

@@ -1,0 +1,23 @@
+23090435 Elasticsearch Multi Get with Aggregation
+
+Can you use the Multi Get API with aggregation/facets?
+
+For example, if I store documents called Shapes and I have 500 shape_ids, each
+shape has a side_count and I'd like to find out the average side_count of that
+list of shape_ids.
+
+A get request is very different compared to a search request. A get doesn't
+imply any query as given index, type and id (or routing) of a document we know
+where it is (which shard), thus the document is retrieved from the interesting
+shard and returned. Multi get is just a variation that does the same with
+multiple documents, in a more optimized way as it groups get requests per
+shards, minimizing the network roundtrips. Note also that get is real-time, as
+documents can either be retrieved from the lucene index or from the
+elasticsearch transaction log if not available yet for search.
+
+Aggregations require a search request and cannot be run on top of documents
+returned by get requests. You might be able to achieve the same result though
+using the search api and the [ids
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-ids-filter.html) instead of the multi get.
+

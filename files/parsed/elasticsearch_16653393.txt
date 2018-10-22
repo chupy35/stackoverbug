@@ -1,0 +1,41 @@
+16653393 Use existing field as id in elasticsearch
+
+Just started using elasticSearch today. I was wondering if it would be
+possible to set in some kind of global parameter to use a certain field within
+a document as the ID always?
+
+My JSON documents will always have it's own unique ID
+
+    
+    
+    {
+      "Record ID": "a06b0000004SWbdAAG",
+      "System Modstamp": "01/31/2013T07:46:02.000Z",
+      "body": "Test Body"
+    }
+    
+
+Here I would like to use Record ID as the ID field.
+
+Regards
+
+You want to use the path setting, see the docs here:
+
+<http://www.elasticsearch.org/guide/reference/mapping/id-field/>
+
+specifically something like this should work in your mapping:
+
+    
+    
+    {
+        "your_mapping" : {
+            "_id" : {
+                "path" : "Record ID"
+            }
+        }
+    }
+    
+
+I've never tried having variable names split up though. You might want to
+camelcase or underscore them if you run into wierdness.
+

@@ -1,0 +1,42 @@
+25137449 Elasticsearch: How to forbid the analyzing for a certain data type
+(e.g. string)
+
+we gathering data(in json format) from user input. I want to know is there any
+way to forbid the analyzing process for certain data type(e.g. string), so
+that if we detect the value of some field is in string format, we will not
+analyze it, just leave it as a whole.
+
+thanks!
+
+You can do this using index template,
+
+    
+    
+    curl -XPUT "http://localhost:9200/_template/not_analyzed_template" -d'
+    {
+        "template": "*", 
+        "mappings": {
+            "_default_": {
+                "dynamic_templates": [
+                    {
+                        "template_1": {
+                            "mapping": {
+                                "index": "not_analyzed",
+                                "type": "string"
+                            },
+                            "match_mapping_type": "string",
+                            "match": "*"
+                        }
+                    }
+                ]
+            }
+        }
+    }'
+    
+
+just, do above request.
+
+After that add data to es, string is not analyzed from now.
+
+Hope this helps!!
+

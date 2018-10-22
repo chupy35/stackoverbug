@@ -1,0 +1,45 @@
+10987509 How can I list by keys and values in angularjs?
+
+> **Possible Duplicate:**  
+>  [AngularJS - How can I reference the property name within an ng-
+Repeat](https://stackoverflow.com/questions/10954286/angularjs-how-can-i-
+reference-the-property-name-within-an-ng-repeat)
+
+I have a JSON file like that:
+
+    
+    
+    fields: {
+        alias: {
+            type: "string",
+        },
+        name: {
+            type: "string",
+        }
+    }
+    
+
+I want something like that:
+
+    
+    
+    <dl ng-repeat="for field in fields.items">
+        <dt>
+            {{ field.key }}
+        </dt>
+        <dd>
+            {{ field.value }}
+        </dd>
+    </dl>
+    
+
+thanks in advance!
+
+according to ngRepeat docs you can use "(key, value) in expression" as
+parameters – where key and value can be any user defined identifiers, and
+expression is the scope expression giving the collection to enumerate.
+
+For example: (name, age) in {'adam':10, 'amalie':12}.
+
+<http://docs.angularjs.org/api/ng.directive:ngRepeat>
+

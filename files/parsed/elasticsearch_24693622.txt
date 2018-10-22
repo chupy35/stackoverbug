@@ -1,0 +1,25 @@
+24693622 Elastic search index number of documents and scores change when
+recreating index from scratch
+
+I have been experimenting with elasticsearch, and am stuck on understanding
+scoring and indexation.
+
+I created a river/mapping/analyzer (folding, normalization, stemming) and
+request to benchmark on. All of this seems to work pretty well, however I
+observe that if I delete my index and recreate it with the exact same
+configuration, the scores as well as the order of the results of my request
+change.
+
+Moreover, the number of documents and the size of the index change upon
+recreation (23.718 docs/19.7MB to 20.072/13.5MB for instance) while there is
+no sign of error in elasticsearch logs and the query in my river always
+outputs the same number of rows.
+
+Is that possibly expected? If not, where should I look and what could be
+wrong?
+
+**EDIT:** I am using elasticsearch 1.1.1, with mysql (5.5) river using mysql-
+jdbc 5.1.26 and elasticsearch river-jdbc 2.2.2
+
+Thanks in advance
+

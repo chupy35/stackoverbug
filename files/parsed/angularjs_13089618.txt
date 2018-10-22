@@ -1,0 +1,98 @@
+13089618 AngularJS: need to attach a selected collection to a model
+
+I'm building a CRUD and I want to some model to be linked to others. So on
+some update/create template I need to add some other model and save their id
+when submitting the form. So I did a basic form that is served by my backend.
+Here is the part where I try to display the linked model:
+
+    
+    
+    <div ng-repeat="item in otherItems">
+        <select ng-model="item" name="item" >
+            <option value="1" ng-selected="item">
+            <option value="2" ng-selected="item">
+            <option value="3" ng-selected="item">
+        </select>
+        <a class="remove" ng-click="removeRelated(item)">remove</a>
+    </div>
+    <a ng-click="addRelated()"><i class="icon-plus"></i></a>
+    
+
+Note: otherItems could be empty at the beginning (when doing a create or when
+an item is not linked to any other related model's item). So when one press
+add/remove it will trigger a controller's function:
+
+    
+    
+    $scope.addRelated = function (){
+        if (typeof $scope[otherItems]=="undefined")
+            $scope[otherItems] = new Array();
+    
+        $scope[otherItems].push($scope[otherItems].length);
+    };
+    
+    $scope.removeRelated = function (item){
+        console.debug(item);
+        var idx = $scope[otherItems].indexOf(item);
+        if (idx !== -1) {
+            $scope[otherItems].splice(idx, 1);
+        }
+    };
+    
+
+My problem is when I save I get the position of item in items (so it's always
+0, 1, 2...) I won't have an array of selected ID.  I guess there is something
+wrong with my addRelated maybe. What am I doing wrong?
+
+Here is a screenshot to understand the idea since I may not be very clear:
+![enter image description here](https://i.stack.imgur.com/DZ0eL.png)
+
+So something like this? <http://plnkr.co/edit/6eqWL5>
+
+The markup..
+
+    
+    
+    <body ng-controller="MainCtrl">
+      <div ng-repeat="otherItem in otherItems">
+        <select ng-model="otherItem.selectedItem" ng-options="item for item in otherItem.items"></select>
+        <a ng-click="removeOtherItem($index)">remove</a>
+      </div>
+      <a ng-click="addOtherItem()">add</a>
+      <hr/>
+      Selected:
+      <ul>
+        <li ng-repeat="otherItem in otherItems">
+          otherItem[{{$index}}].selectedItem = {{otherItem.selectedItem}}
+        </li>
+      </ul>
+    </body>
+    
+
+The code
+
+    
+    
+    app.controller('MainCtrl', function($scope) {
+      $scope.otherItems = [
+          { 
+            selectedItem: null,
+            items: [1, 2, 3]
+          },
+          {
+            selectedItem: null,
+            items: [4, 5, 6] 
+          }
+        ];
+      $scope.addOtherItem = function(){
+        $scope.otherItems.push({ items: [7, 8, 9]});
+      };
+      $scope.removeOtherItem = function(index) {
+        $scope.otherItems.splice(index, 1);
+      };
+    });
+    
+
+Sorry if it's off from what you're asking for... the question was a little
+vague, so I'm guessing at some of the functionality.
+

@@ -1,0 +1,50 @@
+23884873 Dynamic Mappings for nested field in elasticsearch
+
+Example document:
+
+    
+    
+    {
+       "first_name": "Uttam",
+       "last_name": "Kini",
+       "metadata": [
+            {
+               "field_type": "small_text",
+               "field_value": "bla bla"
+            }, 
+            {
+               "field_type": "large_text",
+               "field_value": "bla bla bla bla bla bla bla bla"
+            }, 
+         ]
+    }
+    
+
+How do I dynamically set the mapping of `metadata.field_value` based on
+`metadata.field_type`?
+
+For example, when `metadata.field_type` is `small_text` I would like to use an
+analyzer with keyword tokenizer and when `metadata.field_type` is `large_text`
+I would like to use a different analyzer.
+
+I think it is not possible to do this directly. The important reason it is not
+supported is that it is not possible to provide good quality results out of
+field that contains products of different analyzers. Think about parsing the
+query: which analyzer would you use on query to match terms produced by two
+different analyzers?
+
+The solution to this is to use [multi-
+fields](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#_multi_fields_3). You basically create two related fields for
+`field_value`, applying different mapping to each of them. Then, at query time
+you construct a query with two branches:
+
+    
+    
+    (field_type:small_text AND field_value.small_text:abc)
+      OR (field_type:large_text AND field_value.large_text:abc)
+    
+
+_Note: I've used query string here for readability, you probably had better
+use filtered query with`or` and `and` filters_
+

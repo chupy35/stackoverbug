@@ -1,0 +1,12 @@
+23584104 elasticsearch getting indices onto different server
+
+I have an elasticsearch index already on one server I want to move it to a
+different one without going through bulk indexing or whatever, the indices
+already exist. What's an easy way to move the indices? There should be some
+sort of import or some binary that could be copied. Thanks!
+
+I'd use snapshot and restore:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+snapshots.html>
+

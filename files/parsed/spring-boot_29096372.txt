@@ -1,0 +1,57 @@
+29096372 ErrorPageFilter changes error codes to HTTP 200 OK
+
+It seems like Spring Boot's ErrorPageFilter changes all my HTTP status codes
+to 200 OK (apart from 4xx). This only occurs when deploying to a Servlet
+container. Is this a bug or am I doing something wrong?
+
+To reproduce this I created a really simple Spring Boot app:
+
+    
+    
+    @SpringBootApplication
+    @RestController
+    public class ResponseErrorController extends SpringBootServletInitializer {
+        public static void main(String[] args) {
+            SpringApplication.run(ResponseErrorController.class, args);
+        }
+    
+        @Override
+        protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+            return builder.sources(ResponseErrorController.class);
+        }
+    
+        @RequestMapping("/304")
+        public void lala(HttpServletResponse response) throws Exception {
+            response.sendError(304, "Not Modified");
+        }
+    }
+    
+
+When launching this with **non-embedded** Tomcat (or Jetty) opening
+<http://localhost:8080/304> in the browser I always get a 200 OK (without
+content).
+
+After some debugging I found that the ErrorPageFilter does not delegate the
+status code from the wrapped response to the real one. I know that I can
+return ResponeEntity in my controller but my actual problem occurs with a
+Servlet of another framework that sends the 304 - this controller is only to
+demo.
+
+Has anyone else seen this?
+
+Status codes below 400 are no errors and should be set via `setStatus(int)`
+instead of `sendError(int)`. `ErrorPageFilter` therefore only handles
+sendError calls with status code >= 400.
+
+So here's how to fix it:
+
+  * If it's your own code: use `setStatus(int)` instead.
+
+  * If a third-party servlet or filter sends 3xx status codes via `sendError(int)`: as a workaround you can remove or replace the `ErrorPageFilter` in your `SpringBootServletInitializer` via:
+    
+        protected WebApplicationContext run(SpringApplication application) {
+        application.getSources().remove(ErrorPageFilter.class);
+        return super.run(application);
+    }
+    
+

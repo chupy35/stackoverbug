@@ -1,0 +1,58 @@
+18902877 How to use an Array mapping in ES?
+
+I wanted to create a mapping for `movies` that look like:
+
+    
+    
+    {
+       title: "The Artist",
+       genres: ["Drama", "Comedy"]
+    }
+    
+
+In the [ElasticSearch
+documentation](https://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-
+array-type.html) I see this example:
+
+    
+    
+    "properties" : {
+            "message" : {"type" : "string"},
+            "tags" : {"type" : "string", "index_name" : "tag"},
+            ...
+      }
+    
+
+However, now I am confused.. What I expected to see was:
+
+    
+    
+     "properties" : {
+         "message" : {"type" : "string"},
+          "tags" : {"type" : "array"}
+      }
+    
+
+So, why does the example just provide a reference to another index? How would
+I define that "tags" index? Or, when would I use that Array mapping?
+
+So ElasticSearch doesn't need to specify that a mapping is an array. You can
+treat any mapping as an array by using square brackets:
+
+    
+    
+    {
+        title: ["The Artist", "Formerly known as Prince" ],
+        genres: ["Drama", "Comedy"],
+        ...
+    }
+    
+
+See the last sentence on the page:
+
+> We could, of course, name the field as tag and skip the index_name all
+together
+
+The "index_name" mapping just allows you to define an alias in the plural form
+of tag -> tags.
+

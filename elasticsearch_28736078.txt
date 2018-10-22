@@ -1,0 +1,4 @@
+28736078
+Is there any aggregation equivalent to fuzzy search in elasticsearch?
+<p>In elasticsearch, I can achieve like query search using Fuzzy query. Is there any filter or aggregation to support the same?</p>&#xA;&#xA;<p>example of fuzzy search :</p>&#xA;&#xA;<pre><code>QueryBuilder qb = QueryBuilders.fuzzyQuery("name", "userNsme");&#xA;</code></pre>&#xA;
+<p>You can use the <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-filter.html" rel="nofollow">query filter</a> to filter by a fuzzy query.</p>&#xA;&#xA;<pre><code>{&#xA;    "filter": {&#xA;        "query": {&#xA;            "fuzzy": {&#xA;                "name": "userNsme"&#xA;            }&#xA;        }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;

@@ -1,0 +1,13 @@
+21105239 Elasticsearch HTTP River
+
+I'm starting to play around with Elasticsearch, and I'd like to periodically
+pull data via HTTP from a particular location, ideally as a river, every few
+seconds or so.
+
+The particular address is a simple monitoring endpoint, and outputs some JSON
+about the state of it's systems. Doesn't need any authentication, just the
+HTTP request.
+
+Is there a recommended way of doing this inside ES? Or, should I just put
+together a polling server that pull and pushes?
+

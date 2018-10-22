@@ -1,0 +1,240 @@
+23917327 Delete all documents from index/type without deleting type
+
+I know one can delete all documents from a certain type via deleteByQuery.
+
+Example:
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/twitter/tweet/_query' -d '{
+        "query" : {
+            "term" : { "user" : "kimchy" }
+        }
+    }'
+    
+
+But i have NO term and simply want to delete all documents from that type, no
+matter what term. What is best practice to achieve this? Empty term does not
+work.
+
+[Link to
+deleteByQuery](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+delete-by-query.html)
+
+I believe if you combine the delete by query with a match all it should do
+what you are looking for, something like this (using your example):
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/twitter/tweet/_query' -d '{
+        "query" : { 
+            "match_all" : {}
+        }
+    }'
+    
+
+Or you could just delete the type:
+
+    
+    
+    curl -XDELETE http://localhost:9200/twitter/tweet
+    
+
+Torsten Engelbrecht's comment in John Petrones answer expanded:
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/twitter/tweet/_query' -d 
+      '{
+          "query": 
+          {
+              "match_all": {}
+          }
+       }'
+    
+
+(I did not want to edit John's reply, since it got upvotes and is set as
+answer, and I might have introduced an error)
+
+(Reputation not high enough to comment) The second part of John Petrone's
+answer works - no query needed. It will delete the type and all documents
+contained in that type, but that can just be re-created whenever you index a
+new document to that type.
+
+Just to clarify: `$ curl -XDELETE 'http://localhost:9200/twitter/tweet'`
+
+Note: this _does_ delete the mapping! But as mentioned before, it can be
+easily re-mapped by creating a new document.
+
+Starting from Elasticsearch 2.x delete is not anymore allowed, since documents
+remain in the index causing index corruption.
+
+Elasticsearch 2.3 the option
+
+    
+    
+        action.destructive_requires_name: true
+    
+
+in elasticsearch.yml do the trip
+
+    
+    
+        curl -XDELETE http://localhost:9200/twitter/tweet
+    
+
+Just to add couple cents to this.
+
+The
+["delete_by_query"](https://www.elastic.co/guide/en/elasticsearch/plugins/current/delete-
+by-query-usage.html) mentioned at the top is still available as a plugin in
+elasticsearch 2.x.
+
+Although in the latest upcoming version 5.x it will be replaced by  ["delete
+by query
+api"](https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-
+delete-by-query.html)
+
+> Note for **ES2+**
+
+Starting with ES 1.5.3 the delete-by-query API is deprecated, and is
+completely removed since ES 2.0
+
+Instead of the API, the [Delete By Query is now a
+plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/2.3/plugins-
+delete-by-query.html).
+
+In order to use the Delete By Query plugin you must install the plugin on all
+nodes of the cluster:
+
+    
+    
+    sudo bin/plugin install delete-by-query
+    
+
+> All of the nodes must be restarted after the installation.
+
+  
+The usage of the plugin is the same as the old API. You don't need to change
+anything in your queries - this plugin will just make them work.
+
+* * *
+
+*For complete information regarding WHY the API was removed you can read more [here](https://www.elastic.co/guide/en/elasticsearch/plugins/2.3/delete-by-query-plugin-reason.html).
+
+> The Delete-By-Query plugin has been removed in favor of a new Delete By
+Query API implementation in core. [Read
+here](https://www.elastic.co/guide/en/elasticsearch/plugins/current/plugins-
+delete-by-query.html)
+
+    
+    
+    curl -XPOST 'localhost:9200/twitter/tweet/_delete_by_query?conflicts=proceed&pretty' -d'
+    {
+        "query": {
+            "match_all": {}
+        }
+    }'
+    
+
+From ElasticSearch 5.x, delete_by_query API is there by default
+
+`POST: http://localhost:9200/index/type/_delete_by_query`
+
+    
+    
+    {
+        "query": { 
+            "match_all": {}
+        }
+    }
+    
+
+You have these alternatives:
+
+1) Delete a whole index:
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/indexName'             
+    
+
+example:
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/mentorz'
+    
+
+For more details you can find here
+-<https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-
+delete-index.html>
+
+2) Delete by **Query** to those that match:
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/mentorz/users/_query' -d                
+        '{
+            "query":
+                {
+                    "match_all": {}
+                }
+        }'
+    
+
+*Here _mentorz_ is an index name and _users_ is a type
+
+In **Kibana** Console:
+
+    
+    
+    POST calls-xin-test-2/_delete_by_query
+    {
+      "query": { 
+        "match_all": {}
+      }
+    }
+    
+
+You can delete documents from type with following query:
+
+    
+    
+    POST /index/type/_delete_by_query
+    {
+        "query" : { 
+            "match_all" : {}
+        }
+    }
+    
+
+I tested this query in Kibana and Elastic 5.5.2
+
+If you want to delete document according to a date. You can use kibana console
+(v.6.1.2)
+
+    
+    
+    POST index_name/_delete_by_query
+    {
+          "query" : {
+                  "range" : {
+                     "sendDate" : {
+                         "lte" : "2018-03-06"
+                                  }
+                            }
+                      }
+    }
+    
+
+The above answers no longer work with ES 6.2.2 because of [Strict Content-Type
+Checking for Elasticsearch REST Requests](https://www.elastic.co/blog/strict-
+content-type-checking-for-elasticsearch-rest-requests). The `curl` command
+which I ended up using is this:
+
+    
+    
+    curl -H'Content-Type: application/json' -XPOST 'localhost:9200/yourindex/_doc/_delete_by_query?conflicts=proceed' -d' { "query": { "match_all": {} }}'
+    
+

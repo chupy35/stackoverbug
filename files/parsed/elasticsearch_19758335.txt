@@ -1,0 +1,237 @@
+19758335 error when trying to update the settings
+
+i try to execute this commands via a bash script but i get these errors:
+
+    
+    
+    #!/bin/bash 
+    
+    curl -XPOST 'localhost:9200/my_index/_close' 
+    
+    curl -XPUT 'localhost:9200/my_index/_settings' -d '{ 
+     "analysis": { 
+        "analyzer": { 
+          "ar_analyzer": { 
+            "tokenizer": "standard", 
+            "filter" : ["standard", "lowercase", "synonym", "ar_stemmer"] 
+          }, 
+          "fr_analyzer": { 
+            "tokenizer": "standard", 
+            "filter" : ["standard", "lowercase", "synonym", "fr_stemmer"] 
+          } 
+        }, 
+        "filter" : { 
+          "ar_stemmer" : { 
+              "type" : "stemmer", 
+              "name" : "arabic" 
+          }, 
+          "fr_stemmer" : { 
+              "type" : "stemmer", 
+              "name" : "french" 
+          }, 
+          "synonym" : { 
+              "type" : "synonym", 
+              "synonyms_path" : "synonyms.txt" 
+          } 
+        } 
+      } 
+    }' 
+    
+    curl -XPOST 'localhost:9200/my_index/_open' 
+    
+
+**Error stacktrace :**
+
+> {"error":"IndexPrimaryShardNotAllocatedException[[my_index] primary not
+allocated post
+api]","status":409}{"error":"ElasticSearchIllegalArgumentException[Can't
+update non dynamic settings[[index.analysis.filter.ar_stemmer.name ,
+index.analysis.analyzer.fr_analyzer.filter.3,
+index.analysis.filter.synonym.type,
+index.analysis.analyzer.ar_analyzer.filter.0,
+index.analysis.analyzer.fr_analyzer.filter.0,
+index.analysis.analyzer.ar_analyzer.filter.1,
+index.analysis.analyzer.fr_analyzer.filter.2,
+index.analysis.analyzer.fr_analyzer.filter.1,
+index.analysis.analyzer.ar_analyzer.filter.2,
+index.analysis.analyzer.ar_analyzer.filter.3,
+index.analysis.filter.ar_stemmer.type, index.analysis.filter.fr_stemmer.name ,
+index.analysis.analyzer.ar_analyzer.tokenizer,
+index.analysis.filter.fr_stemmer.type,
+index.analysis.analyzer.fr_analyzer.tokenizer,
+index.analysis.filter.synonym.synonyms_path]] for open
+indices[[my_index]]]","status":400}
+
+Hi i am using setting like this way may be it help you:
+
+## Close the index
+
+    
+    
+    curl -XPOST 'localhost:9200/lookupindex/_close'
+    
+
+## Update the settings
+
+    
+    
+    curl -XPUT 'localhost:9200/lookupindex/_settings' -d '{
+        "index": {
+            "analysis": {
+                "analyzer": {
+                    "custom_standard_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "whitespace",
+                        "filter": [
+                            "lowercase",
+                            "asciifolding",
+                            "customstopwords"
+                        ]
+                    },
+                    "phonetic_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "standard",
+                        "filter": [
+                            "lowercase",
+                            "asciifolding",
+                            "phoneticstopwords"
+                        ]
+                    }
+                },
+                "filter": {
+                    "customstopwords": {
+                        "type": "stop",
+                        "stopwords": [
+                            "+",
+                            ".",
+                            " ",
+                            "ca",
+                            "fl",
+                            "bc",
+                            "b.c",
+                            "b.c.e",
+                            "bce",
+                            "act.c.",
+                            "act",
+                            "style",
+                            "style of",
+                            "attr.",
+                            "attr",
+                            "manner of",
+                            "manner",
+                            "circle of",
+                            "circle",
+                            "after",
+                            "near",
+                            "copy",
+                            "copy after",
+                            "imitator",
+                            "school, copy",
+                            "studio",
+                            "studio of",
+                            "Italian school",
+                            "workshop of",
+                            "workshop",
+                            "16th",
+                            "or",
+                            "17th c.",
+                            "late follower",
+                            "follower of",
+                            "follower",
+                            "attributed",
+                            "near",
+                            "copy after painting",
+                            "by or after",
+                            "fake",
+                            "and school",
+                            "workshop-copy",
+                            "counterproof",
+                            "copy after drawing",
+                            "copy of",
+                            "school of",
+                            "called",
+                            "copy IBS",
+                            "German School",
+                            "placed with",
+                            "attribution"
+                        ]
+                    },
+                    "phoneticstopwords": {
+                        "type": "stop",
+                        "stopwords": [
+                            "+",
+                            ",",
+                            "-",
+                            ".",
+                            "ca",
+                            "fl",
+                            "bc",
+                            "b.c",
+                            "b.c.e",
+                            "bce",
+                            "act.c.",
+                            "act",
+                            "style",
+                            "style of",
+                            "attr.",
+                            "attr",
+                            "manner of",
+                            "manner",
+                            "circle of",
+                            "circle",
+                            "after",
+                            "near",
+                            "copy",
+                            "copy after",
+                            "imitator",
+                            "school, copy",
+                            "studio",
+                            "studio of",
+                            "Italian school",
+                            "workshop of",
+                            "workshop",
+                            "16th",
+                            "or",
+                            "17th c.",
+                            "late follower",
+                            "follower of",
+                            "follower",
+                            "attributed",
+                            "near",
+                            "copy after painting",
+                            "by or after",
+                            "fake",
+                            "and school",
+                            "workshop-copy",
+                            "counterproof",
+                            "copy after drawing",
+                            "copy of",
+                            "school of",
+                            "called",
+                            "copy IBS",
+                            "German School",
+                            "placed with",
+                            "attribution"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    '  
+    
+
+## Reopen the index once done
+
+    
+    
+    curl -XPOST 'localhost:9200/lookupindex/_open'
+    
+
+I had the similar exception. Is your example complete? Are you creating the
+index before closing it?
+
+In my case it was the following: "create index, close it, add settings, add
+other settings, add mapping, open index". Waiting for about 1s after index
+creation fixed the exception.
+

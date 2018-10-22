@@ -1,0 +1,102 @@
+23917431 Calculating sum of nested fields with date_histogram aggregation in
+Elasticsearch
+
+I'm having trouble getting the sum of a nested field in Elasticsearch using a
+date_histogram, and I'm hoping somebody can lend me a hand.
+
+I have a mapping that looks like this:
+
+    
+    
+    "client" : {
+      // various irrelevant stuff here...
+    
+      "associated_transactions" : {
+        "type" : "nested",
+        "include_in_parent" : true,
+        "properties" : {
+          "amount" : {
+            "type" : "double"
+          },
+          "effective_at" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          }
+        }
+      }
+    }
+    
+
+I'm trying to get a date_histogram that shows total revenue by month across
+all clients--i.e. a time series showing the sum associated_transactions.amount
+in a histogram determined by associated_transactions.effective_date. I tried
+running this query:
+
+    
+    
+    {
+      "query": {
+        // ...
+      },
+      "aggregations": {
+        "revenue": {
+          "date_histogram": {
+            "interval": "month",
+            "min_doc_count": 0,
+            "field": "associated_transactions.effective_at"
+          },
+          "aggs": {
+            "monthly_revenue": {
+              "sum": {
+                "field": "associated_transactions.amount"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+But the sum it's giving me isn't right. It seems that what ES is doing is
+finding all clients who have any transaction in a given month, then summing
+all of the transactions (from any time) for those clients. That is, it's a sum
+of the amount spent in the lifetime of a client who made a purchase in a given
+month, not the sum of purchases in a given month.
+
+Is there any way to get the data I'm looking for, or is this a limitation in
+how ES handles nested fields?
+
+Thanks very much in advance for your help!
+
+David
+
+Try this?
+
+    
+    
+    {
+      "query": {
+        // ...
+      },
+      "aggregations": {
+        "revenue": {
+          "date_histogram": {
+            "interval": "month",
+            "min_doc_count": 0,
+            "field": "associated_transactions.effective_at"
+    
+            "aggs": {
+              "monthly_revenue": {
+                "sum": {
+                  "field": "associated_transactions.amount"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+i.e. move the "aggs" key into the "date_histogram" field.
+

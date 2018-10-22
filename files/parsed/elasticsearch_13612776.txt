@@ -1,0 +1,133 @@
+13612776 How do you disable term freqency for indexing and search results?
+
+I am looking to use Elasticsearch in such a way where term frequency isn't
+really useful. I am running Elasticsearch 0.19. I have tried setting
+"omit_term_freq_and_positions" to true for a few specific fields but that
+doesn't seem to affect anything.
+
+    
+    
+    tags: {
+            type: "string",
+            search_analyzer : "snowball", 
+            index_analyzer : "snowball",
+            boost : 4,
+            omit_term_freq_and_positions : "true",
+          }
+    
+
+Search results still seem to take frequency into account when explain=true.
+
+Here is a sample query I am running:
+
+    
+    
+    {
+    "from": 0,
+    "size": 15,
+    "query": {
+        "filtered": {
+            "query": {
+                "multi_match": {
+                    "query": "italian",
+                    "fields": [
+                        "name",
+                        "tags"
+                    ]
+                }
+            },
+            "filter": {
+                "geo_distance": {
+                    "distance": "5km",
+                    "location": {
+                        "lat": 40.76405282025,
+                        "lon": -73.972994269042
+                    }
+                }
+            }
+        }
+    }
+    }
+    
+
+First hit from said query:
+
+    
+    
+    "hits": [
+            {
+                "_shard": 0,
+                "_node": "TtX90CDASk2wsHErdEe7BQ",
+                "_index": "businesses",
+                "_type": "business",
+                "_id": "25385",
+                "_score": 20.388601,
+                "_source": {
+                    "_boost": "1.5",
+                    "bid": "25385",
+                    "name": "Donatella",
+                    "address": "184 8th Ave",
+                    "city": "New York",
+                    "state": "NY",
+                    "zip": "10011",
+                    "tags": "Restaurant,Italian",
+                    "location": [
+                        {
+                            "lat": 40.743015,
+                            "lon": -73.99992
+                        }
+                    ]
+                },
+                "_explanation": {
+                    "value": 20.3886,
+                    "description": "max of:",
+                    "details": [
+                        {
+                            "value": 20.3886,
+                            "description": "weight(tags:italian in 14282), product of:",
+                            "details": [
+                                {
+                                    "value": 0.7244212,
+                                    "description": "queryWeight(tags:italian), product of:",
+                                    "details": [
+                                        {
+                                            "value": 5.6289353,
+                                            "description": "idf(docFreq=399, maxDocs=40962)"
+                                        },
+                                        {
+                                            "value": 0.12869595,
+                                            "description": "queryNorm"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "value": 28.144676,
+                                    "description": "fieldWeight(tags:italian in 14282), product of:",
+                                    "details": [
+                                        {
+                                            "value": 1,
+                                            "description": "tf(termFreq(tags:italian)=1)"
+                                        },
+                                        {
+                                            "value": 5.6289353,
+                                            "description": "idf(docFreq=399, maxDocs=40962)"
+                                        },
+                                        {
+                                            "value": 5,
+                                            "description": "fieldNorm(field=tags, doc=14282)"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+    
+
+Is there a special query type you need to do in order to have searches and
+indexing ignore term frequency? Am I utilizing omit_term_freq_and_positions
+improperly?
+
+Help would be greatly appreciated!
+

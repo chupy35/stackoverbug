@@ -1,0 +1,29 @@
+23411887 Elasticsearch - Maintaining Document History
+
+I am new to Elasticsearch with a very basic question to ask;
+
+I am planning to use Elasticsearch as a document store and with storing
+documents, one of the requirements I have is to maintain historical data as
+well.
+
+So I can post documents to Elasticsearch successfully, but when I post an
+updated version of the same document - as I've seen - original copy is
+overwritten. What I need is to have Elasticsearch keep older copies stored as
+well which I should be able to access via specifying a version number.
+
+I have looked at its native support for document versioning which works great
+for concurrency control but doesn't look like it keeps a history of previous
+versions and only the latest version is available.
+
+Could someone guide me in the right direction here please.
+
+As stated in
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+get.html) ES do not store older versions.
+
+> Note that Elasticsearch do not store older versions of documents. Only the
+current version can be retrieved.
+
+You should store the history in a separate index. And insert into the history
+index on every update to the original document index.
+

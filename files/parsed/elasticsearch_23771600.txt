@@ -1,0 +1,11 @@
+23771600 What is the maximum size of an array in elasticsearch
+
+What would be the maximum recommended size for an array field in an
+elasticsearch document? I am looking into using a document field in order to
+keep a list of the IDs of "followers" of a user, in order to boost the
+document in the query results when the user executing the query is following a
+potential match.
+
+Also, is there perhaps a better way to improve the relevance of a user
+document than this rather brutal approach?
+

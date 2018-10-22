@@ -1,0 +1,79 @@
+23997621 using minimum_match inside filter in elasticsearch
+
+I'm trying to build a elastic-call where I wanna sett some filters within a
+curtain area, what I would like to do is something like:
+
+    
+    
+    {
+        "query" : {
+            "filtered" : {
+                "query"  : {
+                    "match_all" : { }
+                },
+                "filter" : {
+                    "and" : [
+                        {
+                            "bool" : {
+                                "must" : {
+                                    "terms" : {
+                                        "my_filter"     : [1, 2, 4],
+                                        "minimum_match" : 3
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "geo_distance" : {
+                                "location" : "56.20123,14.3240234",
+                                "distance" : "30km"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    
+
+however when trying this all I get is "minimum_match is not allowed for terms
+in filter, is there any way around this?
+
+I've tried to use the bool as the query but I was not allowed to filter on
+that one
+
+Can you please make a try `minimum_match` with query. as below
+
+    
+    
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "and": {
+                   "filters": [
+                      {
+                         "query": {
+                            "terms": {
+                                    "my_filter"     : [1, 2, 4],
+                                    "minimum_match" : 3
+                            }
+                         }
+                      },
+                      {
+                         "geo_distance": {
+                            "location": "56.20123,14.3240234",
+                            "distance": "30km"
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    }
+    
+

@@ -1,0 +1,148 @@
+19309131 Dynamic Mapping for Nested Type
+
+I am trying to create a dynamic mapping for objects like the following:
+
+    
+    
+      {
+        "product": {
+            "productId": 99999,
+            "manufacturerId": "A0001",
+            "manufacturerCode": "A101LI",
+            "name": "Test Product",
+            "description": "Describe the product here.",
+            "feature_details":{
+                "category": "Category1",
+                "brand": "Brand Name"
+            },
+            "feature_tpcerts":{
+                "certifiedPass": true,
+                "levelCertified": 2
+            },
+            "feature_characteristics":{
+                "amount": 0.73,
+                "location": 49464
+            }
+        }
+    }
+    
+
+I would like the `feature_*` properties to be a nested type, which I have
+defined in the mapping below with the nested_feature template and it is
+working as expected. However, I also want to have each property in the nested
+object of the `feature_*`property to be `multi_value` with an additional
+`facet` property defined. I have tried the second nested_template template,
+but without any success.
+
+    
+    
+     {
+        "product" : {
+            "_timestamp" : {"enabled" : true, "store": "yes" },
+            "dynamic_templates": [
+                {
+                  "nested_feature": {
+                    "match" : "feature_*",
+                    "mapping" : {
+                      "type" : "nested",
+                      "stored": "true"
+                    }
+                  }
+                },
+                {
+                    "nested_template": {
+                        "match": "feature_*.*",
+                        "mapping": {
+                            "type": "multi_field",
+                            "fields": {
+                                "{name}": {
+                                    "type": "{dynamic_type}",
+                                    "index": "analyzed"
+                                },
+                                "facet": {
+                                    "type": "{dynamic_type}",
+                                    "index": "not_analyzed"
+                                }
+                            }
+                        }
+                    }
+                }           
+            ],
+            "properties" : {
+                "productId" : { "type" : "integer", "store" : "yes"},
+                "manufacturerId" : { "type" : "string", "store" : "yes", "index" : "analyzed"},
+                "manufacturer" : { "type" : "string", "store" : "yes", "index" : "not_analyzed"},
+                "manufacturerCode" : { "type" : "string", "store" : "yes"},
+                "name" : {"type" : "string", "store" : "yes"},
+                "description": {"type": "string", "index" : "analyzed"}
+            }
+        }
+    }
+    
+
+Unfortunately, the properties within the `feature_*` properties are created
+from another process and can be almost any name/value pair. Any suggestions on
+how to use a dynamic template to setup a property as nested as well as make
+each property within the nested object `multi_field` with an additional
+`facet` property?
+
+You just have to use `path_match` instead of `match` when the pattern refers
+to the whole field path, otherwise only its name (last part) is taken into
+account. Have a look at the [reference
+page](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+root-object-type.html) for the root object, which contains also some
+documentation related to dynamic templates.
+
+You might also want to use `match_mapping_type` as you can't set
+`"index":"analyzed"` for numeric or boolean fields for instance. In that case
+you might want to do different things depending on the field type.
+
+I noticed that your document contains the product root object, which you don't
+really need. I would remove it, as the type name is already product.
+
+Also, I would avoid storing fields explicitly unless you really need to, as
+with elasticsearch you have the [`_source`
+field](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+source-field.html) stored by default, which is what you are going to need all
+the time.
+
+The following mapping should work in your case (without the product root
+object in the documents):
+
+    
+    
+    {
+          "product" : {
+              "dynamic_templates": [
+                  {
+                    "nested_feature": {
+                      "match" : "feature_*",
+                      "mapping" : {
+                        "type" : "nested"
+                      }
+                    }
+                  },
+                  {
+                      "nested_template": {
+                          "path_match": "feature_*.*",
+                          "match_mapping_type" : "string",
+                          "mapping": {
+                              "type": "multi_field",
+                              "fields": {
+                                  "{name}": {
+                                      "type": "{dynamic_type}",
+                                      "index": "analyzed"
+                                  },
+                                  "facet": {
+                                      "type": "{dynamic_type}",
+                                      "index": "not_analyzed"
+                                  }
+                              }
+                          }
+                      }
+                  }                
+              ]
+          }
+      }
+    
+

@@ -1,0 +1,59 @@
+22368392 ElasticSearch: If split-brain occurs, can a replica node be rejected
+by cluster?
+
+I've faced a situation recently like this:
+
+My cluster has 3 nodes. 1 is not a data node and can never be a master. The
+other 2 can. The minimum master nodes is set to 2 for all of these nodes.
+
+The 2 data nodes store the exact same index with all shards. 1 is just a
+replica of the other.
+
+1 of the nodes crashed and had to restart, but afterwards it could never
+rejoin the cluster even though I see it is trying to.
+
+Here is what I see in the logs:
+
+    
+    
+    [2014-03-12 08:07:31,571][INFO ][discovery.zen] [Search 6] failed to send join 
+    request to master [[Search 6][Zsg_fKviRW6eJJG3aYIWeA][BLAHBLAH]
+    [inet[/BLAHBLAH:9300]]],
+    reason [org.elasticsearch.transport.RemoteTransportException: [Search 6]
+    [inet[/BLAHBLAH:9300]][discovery/zen/join];
+    org.elasticsearch.ElasticsearchIllegalStateException:
+    Node [[Search 6][vwurISIMTTC-Ra1EmiI8vA][BLAHBLAH][inet[/BLAHBLAH:9300]]]
+    not master for join request from [[Search 6][vwurISIMTTC-Ra1EmiI8vA]
+    [BLAHBLAH [inet[/BLAHBLAH:9300]]]]
+    
+
+(Note IPs were overwritten with BLAHBLAH above).
+
+What does this mean?
+
+`not master for join request`
+
+This error means that the nodeId of the master in the clusterJoinRequest does
+not match the actual nodeId of the master node receiving the request.
+
+You can see in the logs that the localNode elected a master with the
+**Zsg_fKviRW6eJJG3aYIWeA** id:
+
+> [Search 6] failed to send join request to master [[Search 6][
+**Zsg_fKviRW6eJJG3aYIWeA** ][BLAHBLAH] [inet[/BLAHBLAH:9300]]]
+
+But the actual nodeId at the address that received the join request was
+**vwurISIMTTC-Ra1EmiI8vA** :
+
+> Node [[Search 6][ **vwurISIMTTC-Ra1EmiI8vA**
+][BLAHBLAH][inet[/BLAHBLAH:9300]]] not master for join request
+
+The weird thing is that the logs show that the node sending the request is the
+same as the node receiving the request. How are you getting the address for
+the nodes? Also, do all the nodes have the same name? If not, you might just
+want to restart to reset the nodeId.
+
+> Node [[Search 6][ **vwurISIMTTC-Ra1EmiI8vA**
+][BLAHBLAH][inet[/BLAHBLAH:9300]]] not master for join request from [[Search
+6][ **vwurISIMTTC-Ra1EmiI8vA** ] [BLAHBLAH [inet[/BLAHBLAH:9300]]]]
+

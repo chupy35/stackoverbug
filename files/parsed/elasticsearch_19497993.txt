@@ -1,0 +1,41 @@
+19497993 return at least one unique value for low-boost fields
+
+Imagine, we have a document {position, primary_language, secondary_language}
+
+Let it contains next data:
+
+    
+    
+    Junior Software Developer,  python,  ruby
+    Senior Software Developer,  ruby,    python
+    Python Software Developer,  python,  php
+    Ruby Junior Developer,      ruby,    php
+    Programmer,                 ruby,    python
+    Python Programmer,          python,  php
+    .....
+    ...and more and more lines
+    
+
+And I do multi_match search for 'python' against position, primary_language,
+secondary_language with result size=5
+
+What I want:
+
+  * I want at least 1 row, where 'python' contains in the position field
+  * I want at least 1 row, where 'python' contains in the primary_language field 
+  * I want at least 1 row, where 'python' contains in the secondary_language field
+
+If I play with 'boost', I could get 5 results with python in primary or
+secondary, but not in position, also with boosting position I could return 5
+results with 'python' in position title, but nothing in primary and secondary.
+
+I generally I'm building something like distinct from sql.
+
+Thanks
+
+UPDATE:
+
+Found that dismax filter works for me, thought it's native behavior quite
+different - checking this paper <http://searchhub.org/2010/05/23/whats-a-
+dismax/>
+

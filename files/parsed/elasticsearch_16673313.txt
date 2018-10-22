@@ -1,0 +1,62 @@
+16673313 Matching author and title with elasticsearch
+
+I'm trying to match books based on an author and title. Unfortunately titles
+and authors used as input differ from those in elasticsearch, the words are in
+different orders and have other differences so I can't do exact matching. My
+book records have a field author and title. I've come up with the following
+query:
+
+    
+    
+    {
+      "query":{
+        "bool":{
+          "must":{
+            "query_string":{
+              "query":"Not the Israel My Parents Promised Me"
+            },
+            "fuzzy":{
+              "author":{
+                "value":"Peka, Harvey",
+                "boost":2
+              }
+            }
+          }
+        }
+      },
+      "from":1,
+      "size":1
+    }
+    
+
+It's giving the same result every time no matter what the input so it seems
+like there's a problem with it. Am I going about it the wrong way?
+
+I indexed some books and authors and tried this out. Worked for me for
+different combinatios, like, jumbled words and incomplete names and even when
+some words were incorrect, as shown below:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "query_string": {
+                "default_field": "book",
+                "query": "The girl with the angel tattoo"
+              }
+            },
+            {
+              "query_string": {
+                "default_field": "author",
+                "query": "Steig Larsson"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+

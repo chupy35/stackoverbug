@@ -1,0 +1,329 @@
+13760468 Not able to search for string within a string in elasticsearch index
+
+I'm trying to setup the mapping for my elasticsearch instance with full name
+matching and partial name matching:
+
+    
+    
+    curl -XPUT 'http://127.0.0.1:9200/test/?pretty=1'  -d '{
+      "mappings": {
+        "venue": {
+          "properties": {
+            "location": {
+              "type": "geo_point"
+            },
+            "name": {
+              "fields": {
+                "name": {
+                  "type": "string",
+                  "analyzer": "full_name"
+                },
+                "partial": {
+                  "search_analyzer": "full_name",
+                  "index_analyzer": "partial_name",
+                  "type": "string"
+                }
+              },
+              "type": "multi_field"
+            }
+          }
+        }
+      },
+      "settings": {
+        "analysis": {
+          "filter": {
+            "swedish_snow": {
+              "type": "snowball",
+              "language": "Swedish"
+            },
+            "name_synonyms": {
+              "type": "synonym",
+              "synonyms_path": "name_synonyms.txt"
+            },
+            "name_ngrams": {
+              "side": "front",
+              "min_gram": 2,
+              "max_gram": 50,
+              "type": "edgeNGram"
+            }
+          },
+          "analyzer": {
+            "full_name": {
+              "filter": [
+                "standard",
+                "lowercase"
+              ],
+              "type": "custom",
+              "tokenizer": "standard"
+            },
+            "partial_name": {
+              "filter": [
+                "swedish_snow",
+                "lowercase",
+                "name_synonyms",
+                "name_ngrams",
+                "standard"
+              ],
+              "type": "custom",
+              "tokenizer": "standard"
+            }
+          }
+        }
+      }
+    }'
+    
+
+I fill it with some data:
+
+    
+    
+    curl -XPOST 'http://127.0.0.1:9200/_bulk?pretty=1'  -d '
+    {"index" : {"_index" : "test", "_type" : "venue"}}
+    {"location" : [59.3366, 18.0315], "name" : "johnssons"}
+    {"index" : {"_index" : "test", "_type" : "venue"}}
+    {"location" : [59.3366, 18.0315], "name" : "johnsson"}
+    {"index" : {"_index" : "test", "_type" : "venue"}}
+    {"location" : [59.3366, 18.0315], "name" : "jöhnsson"}
+    '
+    
+
+Perform some searches to test, **Full name:**
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/venue/_search?pretty=1' -d '{
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "text": {
+                "name": {
+                  "boost": 1,
+                  "query": "johnsson"
+                }
+              }
+            },
+            {
+              "text": {
+                "name.partial": "johnsson"
+              }
+            }
+          ]
+        }
+      }
+    }'
+    
+
+**Result:**
+
+    
+    
+    {
+      "took": 3,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 2,
+        "max_score": 0.29834434,
+        "hits": [
+          {
+            "_index": "test",
+            "_type": "venue",
+            "_id": "CAO-dDr2TFOuCM4pFfNDSw",
+            "_score": 0.29834434,
+            "_source": {
+              "location": [
+                59.3366,
+                18.0315
+              ],
+              "name": "johnsson"
+            }
+          },
+          {
+            "_index": "test",
+            "_type": "venue",
+            "_id": "UQWGn8L9Squ5RYDMd4jqKA",
+            "_score": 0.14663845,
+            "_source": {
+              "location": [
+                59.3366,
+                18.0315
+              ],
+              "name": "johnssons"
+            }
+          }
+        ]
+      }
+    }
+    
+
+**Partial name:**
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/venue/_search?pretty=1' -d '{
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "text": {
+                "name": {
+                  "boost": 1,
+                  "query": "johns"
+                }
+              }
+            },
+            {
+              "text": {
+                "name.partial": "johns"
+              }
+            }
+          ]
+        }
+      }
+    }'
+    
+
+**Result:**
+
+    
+    
+    {
+      "took": 3,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 2,
+        "max_score": 0.14663845,
+        "hits": [
+          {
+            "_index": "test",
+            "_type": "venue",
+            "_id": "UQWGn8L9Squ5RYDMd4jqKA",
+            "_score": 0.14663845,
+            "_source": {
+              "location": [
+                59.3366,
+                18.0315
+              ],
+              "name": "johnssons"
+            }
+          },
+          {
+            "_index": "test",
+            "_type": "venue",
+            "_id": "CAO-dDr2TFOuCM4pFfNDSw",
+            "_score": 0.016878016,
+            "_source": {
+              "location": [
+                59.3366,
+                18.0315
+              ],
+              "name": "johnsson"
+            }
+          }
+        ]
+      }
+    }
+    
+
+**Name within name:**
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/venue/_search?pretty=1' -d '{
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "text": {
+                "ame": {
+                  "boost": 1,
+                  "query": "johnssons"
+                }
+              }
+            },
+            {
+              "text": {
+                "name.partial": "johnssons"
+              }
+            }
+          ]
+        }
+      }
+    }'
+    
+
+**Result:**
+
+    
+    
+    {
+      "took": 2,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 1,
+        "max_score": 0.39103588,
+        "hits": [
+          {
+            "_index": "test",
+            "_type": "venue",
+            "_id": "UQWGn8L9Squ5RYDMd4jqKA",
+            "_score": 0.39103588,
+            "_source": {
+              "location": [
+                59.3366,
+                18.0315
+              ],
+              "name": "johnssons"
+            }
+          }
+        ]
+      }
+    }
+    
+
+As you can see I'm only getting one venue back which is `johnssons`. Shouldn't
+I get both `johnssons` and `johnsson` back? What am I doing wrong in my
+settings?
+
+You are using `full_name` analyzed as a search analyzer for the `name.partial`
+field. As a result your query is getting translated into the query for the
+term `johnssons`, which doesn't match anything.
+
+You can use [Analyze
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+analyze.html) to see what how your records are indexed. For example, this
+command
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/_analyze?analyzer=partial_name&pretty=1' -d 'johnssons'
+    
+
+will show you that during indexing the string "johnssons" is getting
+translated into the following terms: "jo", "joh", "john", "johns", "johnss",
+"johnsso", "johnsson". While this command
+
+    
+    
+     curl -XGET 'http://127.0.0.1:9200/test/_analyze?analyzer=full_name&pretty=1' -d 'johnssons'
+    
+
+will show you that during searching the string "johnssons" is getting
+translated into term "johnssons". As you can see there is no match between
+your search term and your data here.
+

@@ -1,0 +1,58 @@
+23948107 reload elasticsearch after changing elasticsearch.yml
+
+How to make `elasticsearch` apply new configuration?  I changed one string in
+file `~ES_HOME/config/elasticsearch.yml`:
+
+    
+    
+    # Disable HTTP completely:
+    #
+    http.enabled: false
+    
+
+Then tried to reload `elasticsearch`:
+
+    
+    
+    elasticsearch reload
+    
+
+Then tried to restart `elasticsearch`:
+
+    
+    
+    elasticsearch restart
+    
+
+Then checked and see that http requests are still acceptable to elastic
+search.
+
+So my settings are not applied.
+
+My os is `os X`. ElasticSearch version is `1.2.0`
+
+If ElasticSearch is installed on Windows setup then you have to restart
+ElasticSearch windows service.
+
+Thanks.
+
+Strangely or not so, the supposed way to do it is just to stop the service,
+and start it again :)
+
+I.E. get its pid (running _ps axww | grep elastic_ ), and then _kill ESpid_ ;
+just be sure to use the TERM signal, to give it a chance to close properly.
+
+Some *nix elasticsearch distros have control scripts wrappers for start/stop ,
+but I don't think OS X does.
+
+And on a side note, you have probably found the [Cluster Update
+Settings](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-
+update-settings.html "Cluster Update Settings") API, and though it provides
+quite a few options, regretfully it can't be used to change that particular
+setting.
+
+HTH
+
+P.S. And yep, in Windows setup the services.msc is the way to do it, but doubt
+this is helpful for you :)
+

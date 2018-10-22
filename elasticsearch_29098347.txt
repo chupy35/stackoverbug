@@ -1,0 +1,4 @@
+29098347
+ElasticSearch CJK language analyser
+<p>I am indexing data based on language ISO 639 code: en, de etc. using the out of the box analyzers.</p>&#xA;&#xA;<p>When it comes to CJK (Chinese, Japanese, Korean), based on the language ISO code, should I indexing ja (Japanese) and ko (Korean) into the CJK index (assuming Chinese is separately supported as per the documentation)?.</p>&#xA;
+<p>You can do the indexing with separate analyzers for Chinese and Japanese. For Korean, they are yet to add analyzer.</p>&#xA;&#xA;<p>For Chinese you need to install the smartcn-sentence plugin and add into your mappings. You can find the smartcn-analyzer here <a href="https://github.com/elastic/elasticsearch-analysis-smartcn" rel="nofollow">smartscn-analyzer</a></p>&#xA;&#xA;<p>For Japanese you need to install Kuromoji plugin. You can find the kuromoji analyzer here <a href="https://github.com/elastic/elasticsearch-analysis-kuromoji" rel="nofollow">Kuromoji-analyzer</a></p>&#xA;

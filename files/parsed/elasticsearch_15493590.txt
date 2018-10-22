@@ -1,0 +1,42 @@
+15493590 elasticsearch python script plugin in Update API
+
+I am trying to run a simple update script in elasticsearch. It seems to work
+fine with mvel, but not with python.
+
+    
+    
+    curl -XPOST 'localhost:9200/index1/type1/1/_update?pretty=true' 
+    -d '{"script" : "ctx._source.myfield=\"item\""}'
+    {
+      "ok" : true,
+      "_index" : "index1",
+      "_type" : "type1",
+      "_id" : "1",
+      "_version" : 7
+    }
+    
+    curl -XPOST 'localhost:9200/index1/type1/1/_update?pretty=true' 
+    -d '{"script" : "ctx._source.myfield=\"item\"","lang":"python"}'
+    {
+      "error" : "ElasticSearchIllegalArgumentException[failed to execute script]; nested: NullPointerException; ",
+      "status" : 400
+    }
+    
+
+my ES version is 0.20.4
+
+my elasticsearch-lang-python plugin is 1.1.0 ( i also tried with 1.2.0)
+
+It looks like [a bug](https://github.com/elasticsearch/elasticsearch-lang-
+python/issues/4) in python plugin. You can add empty parameter list as a
+workaround:
+
+    
+    
+    curl -XPOST 'localhost:9200/index1/type1/1/_update?pretty=true' -d '{
+        "script": "ctx[\"_source\"][\"myfield\"]=\"foo\"",
+        "lang": "python",
+        "params": {}
+    }'
+    
+

@@ -1,0 +1,95 @@
+21567384 How to create and retrieve using the Java API an Elasticsearch field
+with a complex type?
+
+I have the following:
+
+    
+    
+    final duration = (jsonBuilder()
+            .startObject()
+            .field('start', new DateTime(testResult.startTime, dateTimeZone))
+            .field('end', new DateTime(testResult.endTime, dateTimeZone))
+            .endObject())
+    
+    client.prepareIndex('builds', 'test')
+            .setSource(jsonBuilder()
+                    .startObject()
+                    .field("duration", duration)
+                    .endObject())
+    
+    SearchResponse searchResponse = client.prepareSearch('builds')
+            .setQuery(boolQuery()
+                    .must(termQuery('_type', 'test')))
+            .execute()
+            .actionGet()
+    
+    final source = searchResponse.hits.hits[0].source as Map<String, Object>
+    
+
+How do I retrieve the values of `duration.start` and `duration.end` from here?
+
+Try 1..!
+
+    
+    
+        SearchHit[] searchHits = searchResponse.getHits().getHits();
+        Map<String, Object> s=searchHits[0].sourceAsMap();
+        Map<String, Date> duration=(Map<String, Date>) s.get("duration");
+        Date start=duration.get("start");
+        Date end=duration.get("end");
+    
+
+Try 2..!
+
+    
+    
+        SearchHit[] searchHits = searchResponse.getHits().getHits();
+        StringBuilder builder = new StringBuilder();
+        int length = searchHits.length;
+        builder.append("[");
+        for (int i = 0; i < length; i++) {
+            if (i == length - 1) {
+                builder.append(searchHits[i].getSourceAsString());
+            } else {
+                builder.append(searchHits[i].getSourceAsString());
+                builder.append(",");
+            }
+        }
+        builder.append("]");
+             String result= builder.toString();
+    
+
+it will return a string and its a valid JSON array use JSON parser and fetch
+values as normal json process..!
+
+The problem is that `field()` doesn't recognize `XContentBuilder` as a value
+despite what <http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/index_.html> implies. From the source code for `XContentBuilder`,
+it's unclear to me how to use `field` with `XContentBuilder`.
+
+It's easy enough to use a Map as a value, though.
+
+    
+    
+    final duration = [
+            'start': new DateTime(testResult.startTime, dateTimeZone),
+            'end': new DateTime(testResult.endTime, dateTimeZone)]
+    
+    client.prepareIndex('builds', 'test')
+            .setSource(jsonBuilder()
+                    .startObject()
+                    .field("duration", duration)
+                    .endObject())
+    
+    SearchResponse searchResponse = client.prepareSearch('builds')
+            .setQuery(boolQuery()
+                    .must(termQuery('_type', 'test')))
+            .execute()
+            .actionGet()
+    
+    final source = searchResponse.hits.hits[0].source
+    
+    assertThat(source.duration.start, equalTo('1970-01-01T00:00:00.001Z'))
+    assertThat(source.duration.end, equalTo('1970-01-01T00:00:00.002Z'))
+    
+

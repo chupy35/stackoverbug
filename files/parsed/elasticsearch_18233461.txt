@@ -1,0 +1,117 @@
+18233461 ElasticSearch _Source is always empty on the return
+
+I am posting a query to `http://localhost:9200/movie_db/movie/_search` but
+_source attribute is always empty on the return resposne. I made it enabled
+but that doesn't help.
+
+Movie DB:
+
+    
+    
+    TRY DELETE /movie_db
+    PUT /movie_db {"mappings": {"movie": {"properties": {"title": {"type": "string", "analyzer": "snowball"}, "actors": {"type": "string", "position_offset_gap" : 100, "analyzer": "standard"}, "genre": {"type": "string", "index": "not_analyzed"}, "release_year": {"type": "integer", "index": "not_analyzed"}, "description": {"_source": true, "type": "string", "analyzer": "snowball"}}}}}
+    BULK INDEX movie_db/movie
+    {"_id": 1, "title": "Hackers", "release_year": 1995, "genre": ["Action", "Crime", "Drama"], "actors": ["Johnny Lee Miller", "Angelina Jolie"], "description": "High-school age computer expert Zero Cool and his hacker friends take on an evil corporation's computer virus with their hacking skills."}
+    {"_id": 2, "title": "Johnny Mnemonic", "release": 1995, "genre": ["Science Fiction", "Action"], "actors": ["Keanu Reeves", "Dolph Lundgren"], "description": "A guy with a chip in his head shouts incomprehensibly about room service in this dystopian vision of our future."}
+    {"_id": 3, "title": "Swordfish", "release_year": 2001, "genre": ["Action", "Crime"], "actors": ["John Travolta", "Hugh Jackman", "Halle Berry"], "description": "A cast of characters challenge society's commonly held view that computer experts are not the beautiful people. Somehow, the CIA is hacked in under 5 minutes."}
+    {"_id": 4, "title": "Tomb Raider", "release_year": 2001, "genre": ["Adventure", "Action", "Fantasy"], "actors": ["Angelina Jolie", "Jon Voigt"], "description": "The story of a girl and her quest for antiquities in the face of adversity. This epic is adapter from its traditional video-game format to the big screen"}
+    
+
+Query:
+
+    
+    
+    {
+        "query" : 
+        {
+            "term" : { "genre" : "Crime" }
+        },
+    }
+    
+
+Results:
+
+    
+    
+    {
+        "took": 4,
+        "timed_out": false,
+        "_shards": {
+            "total": 5,
+            "successful": 5,
+            "failed": 0
+        },
+        "hits": {
+            "total": 2,
+            "max_score": 0.30685282,
+            "hits": [
+                {
+                    "_index": "movie_db",
+                    "_type": "movie",
+                    "_id": "3",
+                    "_score": 0.30685282,
+                    "_source": {}
+                },
+                {
+                    "_index": "movie_db",
+                    "_type": "movie",
+                    "_id": "1",
+                    "_score": 0.30685282,
+                    "_source": {}
+                }
+            ]
+        }
+    }
+    
+
+Solution:
+
+In elasticsearch config folder, open elasticsearch.yml and set cluster.name to
+a different value, then restart elasticsearch.bat
+
+I had the same problem: despite enabling `_source` in my query as well as in
+my mappings, `_source` would always be `{}`.
+
+Your proposed solution of setting cluster.name in elasticsearch.yml gave me
+the hint that the problem must be some hidden setting in the old cluster.
+
+I found out that I had an index template definition that came with a plugin I
+installed (in my case elasticsearch-transport-couchbase), which said
+
+    
+    
+        "_source" : {
+          "includes" : [ "meta.*" ]
+        },
+    
+
+thereby implicitely excluding all fields other than `meta.*` from source.
+
+Check your templates like this:
+
+    
+    
+    curl -XGET localhost:9200/_template/?pretty
+    
+
+I deleted the `couchbase` template like so
+
+    
+    
+    curl -XDELETE localhost:9200/_template/couchbase
+    
+
+and created a new, almost identical one but with `source` enabled.
+
+Here is how:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-
+templates.html>
+
+I once accidentally passed a single field in source array and that too didn't
+exist. Just for example `"_source": ["bazinga"]` and in the aggregations
+result `source` was empty.
+
+So maybe you could simple pass a totally unrelated string into the `_source`
+array. This can be a better solution instead of making changes in the
+`elasticsearch.yml` file.
+

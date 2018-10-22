@@ -1,0 +1,62 @@
+14120569 Unable to search for parent and child documents using Elasticsearch?
+
+I have indexed a child document in Elasticsearch as follows:
+
+    
+    
+    {
+     _parent: chow-demo
+     _index: prototype_2013.01.02
+     _type: chow-clfg
+     _id: l7jvEgD-SrG-Ws_9ab52IA
+     _score: 11.600378
+     _source: {
+      chow-clfg: {
+      @type: chow-clfg
+      clfg: Cg5iUlAvU9IIAAAA8Rg
+      @timestamp: 2013-01-02T10:15:00.000Z
+      count: 1
+      }
+     }
+    }
+    
+
+The parent has at least 2 records that has **clfg** as a common identifier as
+follows:
+
+    
+    
+    {
+     _index: "prototype_2013.01.02",
+     _type: chow-demo, 
+     clfg: Cg5iUlAvU9IIAAAA8Rg,
+     obid: 97066795
+    }
+    
+
+However when I query using the "has_child" query, I get no results:
+
+    
+    
+    curl -XGET "localhost:9200:/prototype_2013.01.02/chow-demo/_search"
+    {
+     "query": {
+      "has_child": {
+       "type": "chow-clfg",
+       "query": {
+        "term": {
+          "clfg": "Cg5iUlAvU9IIAAAA8Rg"
+        }
+       }
+      }
+     }
+    }
+    
+
+However when I query individually for the documents, there were correct
+results returned. Why is that so? Isn't the parent routing supposed to be able
+to identify results using the child using the parent field?
+
+When child is indexed, its "_parent" field should contain the parent's id (not
+parent's type as it seems to be in you case).
+

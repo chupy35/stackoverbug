@@ -1,0 +1,39 @@
+22034722 Tool to compare elasticsearch index into data base records to
+ascertain inconsistent state
+
+> I Want to know whether any tool available for comparing database entries
+into elastcisearch index to find the mismatch.
+
+Thanks in advance.
+
+I believe not, this has the potential to be a very taxing operation. However
+if you have used a unique `PK` from your database as the `_id` for the
+documents in elasticsearch then you could use the following command whilst
+iterating through records -
+
+    
+    
+    curl -XHEAD -i 'http://localhost:9200/twitter/tweet/1'
+    
+
+This will return an appropriate response as to whether the document exists or
+not. Storing all `_id`'s which don't exist and placing these into
+ElasticSearch, within your own bespoke script or application.
+
+If this is not the case the complexity of the problem significantly rise as do
+the implications to the cluster.
+
+There is a way to do this with the
+[Scrutineer](https://github.com/Aconex/scrutineer) tool, which provides
+support for comparing data stored in Elasticsearch against a source of truth,
+usually relational database.
+
+After running this tool, you'll get a report of:
+
+  * records in the source of truth and not in ES (missed create)
+  * records in ES and not in the source of truth (missed delete)
+  * records in ES and the source of truth which are out of synch (missed update)
+
+Basically, this will give you an exact overview of the de-/synchronization
+state of the two data stores you're comparing (ES + DB).
+

@@ -1,0 +1,12 @@
+19552710 DateHistogram Facet return ZERO if nothing took place at certain time
+
+I am using a date histogram to get the count per hour of some messages in
+elastic search.  However the date histogram facet will only show the count per
+hour in the hours were some activity took place. Is there a way to force it to
+return zero if no activity happened during that interval.
+
+This is just how it works, we have some code in place on our end to populate
+missing "buckets" with zeros. I'm not sure yet if this is a good design
+decision or a bug - perhaps open an issue for it on
+<http://github.com/elasticsearch/elasticsearch> ?
+

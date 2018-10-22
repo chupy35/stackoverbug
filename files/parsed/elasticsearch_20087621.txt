@@ -1,0 +1,5 @@
+20087621 In Elasticsearch, the difference between Array Type and Nested type?
+
+I don't know what is the difference between Array Type and Nested type.  Which
+one is faster in search than other ? Thanks;
+

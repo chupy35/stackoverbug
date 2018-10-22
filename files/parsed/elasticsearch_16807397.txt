@@ -1,0 +1,117 @@
+16807397 Elasticsearch search query only returns exact matches
+
+I have a query like below,
+
+Any ideas, why I am getting only the exact match results when I do search .
+For Example ;
+
+When I search "Aegli" I get results, but when I search for "Aegl" No results
+returned
+
+    
+    
+    query = {
+      "query": {
+        "query_string": {
+          "query": "%s"%q
+        }
+      },
+      "filter": {
+        "term": {
+          "has_product": 1
+        }
+      },
+      "facets": {
+        "destination": {
+          "terms": {
+            "field": "destination.en"
+          },
+          "facet_filter": {
+            "term": {
+              "has_product": 1
+            }
+          }
+        },
+        "hotel_class": {
+          "terms": {
+            "field": "hotel_class"
+          },
+          "facet_filter": {
+            "term": {
+              "has_product": 1
+            }
+          }
+        },
+        "hotel_type": {
+          "terms": {
+            "field": "hotel_type"
+          },
+          "facet_filter": {
+            "term": {
+              "has_product": 1
+            }
+          }
+        }
+      }
+    }
+    
+
+I do not see your real query but you might be missing `*` at end of your
+search word and your query string should be like;
+
+    
+    
+    {"query_string": {"query": "%s*"}
+    
+
+For example;
+
+    
+    
+    {"query_string": {"query": "Aegl*"}
+    
+
+Having a mapping like below
+
+    
+    
+    {
+        "mappings": {
+            "hotel": {
+                'properties': {"name": {
+                    "type": "string",
+                    "search_analyzer": "str_search_analyzer",
+                    "index_analyzer": "str_index_analyzer"
+                }
+                }},
+    
+        },
+    
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "str_search_analyzer": {
+                        "tokenizer": "keyword",
+                        "filter": ["lowercase"]
+                    },
+    
+                    "str_index_analyzer": {
+                        "tokenizer": "keyword",
+                        "filter": ["lowercase", "substring"]
+                    }
+                },
+    
+                "filter": {
+                    "substring": {
+                        "type": "nGram",
+                        "min_gram": 1,
+                        "max_gram": 20
+                    }
+                }
+            }
+        }
+    }
+    
+
+Solved my problem
+

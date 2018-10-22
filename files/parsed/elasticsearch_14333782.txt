@@ -1,0 +1,85 @@
+14333782 ElasticSearch for terms with spaces
+
+We are running ElasticSearch and are having some issues when searching for
+terms that contain a space. A concrete example: there is an a person named JM
+Bruno, but when searching for this no results are returned. I vaguely remember
+searching for this exact term did return the result, but I can't reproduce
+that right now.
+
+I tried adding a space as well as "\ " to my tokenizer pattern, without much
+luck. The ES settings are the following (using the Tire gem in a Ruby on Rails
+application)
+
+    
+    
+    module Search
+    def self.included base
+    base.send :include, Tire::Model::Search
+    base.send :include, Tire::Model::Callbacks
+    
+    base.class_eval do
+      settings  analysis: {
+                  filter: {
+                    ngram: {
+                      type: 'nGram',
+                      max_gram: 12,
+                      min_gram: 3
+                    },
+                    url_stop: {
+                      type: "stop",
+                      stopwords: %w[http https]
+                    }
+                  },
+                  tokenizer: {
+                    url_email_tokenizer: {
+                      pattern: '[^\w\-\.@]+',
+                      type: 'pattern'
+                    }
+                  },
+                  analyzer: {
+                    url_analyzer: {
+                      tokenizer: "url_email_tokenizer",
+                      filter: %w[url_stop ngram],
+                      type: "custom"
+                    },
+                    name_analyzer: {
+                      tokenizer: 'url_email_tokenizer',
+                      filter: 'ngram',
+                      type: 'custom'
+                    }
+                  }
+                }
+    
+    
+        end
+      end
+    end
+    
+
+We use these tokenizers to search for domain names and email addresses as
+well.
+
+Try to run [_analyze
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+analyze.html) with the analyzer you applied to your field.
+
+    
+    
+    curl -XGET 'localhost:9200/_analyze?analyzer=name_analyzer' -d 'JM Bruno'
+    
+
+You will see how Elasticsearch breaks your field content into tokens and why
+you can not search for it using a TermQuery. A TermQuery is not analyzed so it
+compares your query exactly as is with the inverted index.
+
+I've encountered the same issue and the only thing I came up to was just
+replacing space character with "?" wildcard. It looked like default tokenizer
+as well as one I was specifically requesting in query string search were
+ignored.
+
+You need to setup a [multi-field
+type](https://www.elastic.co/guide/en/elasticsearch/reference/current/_multi_fields.html)
+
+Also take a look at this very cool
+[tutorial](http://joelabrahamsson.com/elasticsearch-101/)
+

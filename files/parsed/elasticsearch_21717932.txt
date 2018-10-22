@@ -1,0 +1,60 @@
+21717932 missing some entries in a type of one specific elastic search index
+
+there was a Mysql table "user" include 12038 rows, our team have made an
+elastic search index for it to enhance the search functionality of user. there
+are 12039 rows in table "user" so we create 12039 entries into
+/test01_user/org for each row, if access the url below:
+
+    
+    
+    domain.example:9200/test01_user/org/_count
+    
+
+I got this result
+
+    
+    
+    "{"count":12039,"_shards":{"total":4,"successful":4,"failed":0}}".
+    
+
+but when I acess the same url again
+
+    
+    
+    "example:9200/test01_user/org/_count"
+    
+
+OMG, the result is
+
+"{"count":11036,"_shards":{"total":4,"successful":4,"failed":0}}"
+
+every time, the result is different, 12039 or 11036. I check to log file,no
+any modification was made on "test01_user/org". so after I have tried several
+times to access the same url, I got the result below:
+
+    
+    
+    {"count":12039,"_shards":{"total":4,"successful":4,"failed":0}}
+    {"count":11036,"_shards":{"total":4,"successful":4,"failed":0}}
+    {"count":12039,"_shards":{"total":4,"successful":4,"failed":0}}
+    {"count":11036,"_shards":{"total":4,"successful":4,"failed":0}}
+    {"count":12039,"_shards":{"total":4,"successful":4,"failed":0}}
+    
+
+it seems the number of entries was 11036(why not 12039) in half of my try. I
+checked the es log file trying to find something, but noting there is.
+
+but at the next day morning after I found this problem, I got the right
+result:
+
+    
+    
+    {"count":12039,"_shards":{"total":4,"successful":4,"failed":0}}
+    {"count":12039,"_shards":{"total":4,"successful":4,"failed":0}}
+    {"count":12039,"_shards":{"total":4,"successful":4,"failed":0}}
+    {"count":12039,"_shards":{"total":4,"successful":4,"failed":0}}
+    
+
+so I can't reproduce this problem now! is there someone have meet this
+problem.
+

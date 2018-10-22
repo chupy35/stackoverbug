@@ -1,0 +1,4 @@
+33702127
+Are ElasticSearch snapshots independent of the ElasticSearch version
+<p>If I make a snapshot using ElasticSearch version 1.5 can I deploy it to an ElasticSearch 2.0 cluster?</p>&#xA;
+<p>Yes, according to <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-upgrade.html" rel="nofollow">this page</a>:</p>&#xA;&#xA;<blockquote>&#xA;  <p>Elasticsearch 2.x (Lucene 5) can read disk formats from Elasticsearch&#xA;  0.90 and 1.x (Lucene 4), but not from Elasticsearch 0.20 and before (Lucene 3).</p>&#xA;</blockquote>&#xA;&#xA;<p>But definitely do a dry-run first though to make sure everything works as expected.  </p>&#xA;

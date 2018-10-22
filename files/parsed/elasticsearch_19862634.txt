@@ -1,0 +1,166 @@
+19862634 How to address, delete or access child objects in ElasticSearch?
+
+How are child objects addressed in elasticseacrch?
+
+Suppose we create two parents and three children. Note that there are two
+children with id `c2` but with different parents:
+
+    
+    
+    curl -XPUT localhost:9200/test/parent/p1 -d'{
+      "name": "Parent 1"
+    }'
+    
+    curl -XPUT localhost:9200/test/parent/p2 -d'{
+      "name": "Parent 2"
+    }'
+    
+    curl -XPOST localhost:9200/test/child/_mapping -d '{
+      "child":{
+        "_parent": {"type": "parent"}
+      }
+    }'
+    
+    curl -XPOST localhost:9200/test/child/c1?parent=p1 -d '{
+       "child": "Parent 1 - Child 1"
+    }'
+    
+    curl -XPOST localhost:9200/test/child/c2?parent=p1 -d '{
+       "child": "Parent 1 - Child 2"
+    }'
+    
+    curl -XPOST localhost:9200/test/child/c2?parent=p2 -d '{
+       "child": "Parent 2 - Child 2"
+    }'
+    
+
+If we search the children, we see that there are two children with `_id` of
+`c2`
+
+    
+    
+    curl -XGET localhost:9200/test/_search
+    
+    {
+      "_shards": {
+        "failed": 0, 
+        "successful": 5, 
+        "total": 5
+      }, 
+      "hits": {
+        "hits": [
+          {
+            "_id": "c1", 
+            "_index": "test", 
+            "_score": 1.0, 
+            "_source": {
+              "child": "Parent 1 - Child 1"
+            }, 
+            "_type": "child"
+          }, 
+          {
+            "_id": "c2", 
+            "_index": "test", 
+            "_score": 1.0, 
+            "_source": {
+              "child": "Parent 1 - Child 2"
+            }, 
+            "_type": "child"
+          }, 
+          {
+            "_id": "c2", 
+            "_index": "test", 
+            "_score": 1.0, 
+            "_source": {
+              "child": "Parent 2 - Child 2"
+            }, 
+            "_type": "child"
+          }
+        ], 
+        "max_score": 1.0, 
+        "total": 3
+      }, 
+      "timed_out": false, 
+      "took": 1
+    }
+    
+
+How do I address `p1/c2`? Without the parent child relationship, the `_id` can
+be used access, change or delete a child object. In my case I let
+elasticsearch create the `id` of the objects.
+
+To access the child objects, the `_id` is not enough:
+
+    
+    
+    curl -XGET localhost:9200/test/child/c2
+    
+
+I have to specify the parent as well:
+
+    
+    
+    curl -XGET localhost:9200/test/child/c2?parent=p1
+    
+
+In my system it is worse, some objects I can directly access without the
+`parent` and others I cannot access. (Why???)
+
+If I delete c2 (without parent!):
+
+    
+    
+    curl -XDELETE http://localhost:9200/test/child/c2
+    
+
+both children are deleted. To delete only one child I have to use `?parent=p1`
+
+    
+    
+    curl -XDELETE http://localhost:9200/test/child/c2?parent=p1
+    
+
+Here are my questions.
+
+  * **What is the best practices to manage the identity of child objects?**
+
+  * Does that mean, that I have to somehow put the parent id manually into the child object and then construct the of the object as `id?parent=parent_id`
+
+  * Why does elasticsearch not return the parent id?
+
+  * If I let elasticseach create the id of the child objects, are they guaranteed to be unique or can it happen that two children of different parents get the same `id`?
+
+Child documents are just ordinary documents in Elasticsearch, with an
+additional _parent field that points to a document in the parent type.  
+When accessing child documents, either when indexing or when getting, you need
+to specify the parent id in the request. This is because the parent id is
+actually used for routing of the child document (see for instance about
+routing
+-<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search.html#search-
+routing>).  
+This means that the child document is sharded according to the **parent** id,
+so it resides on the same shard as the parent.
+
+In your example above, what probably happened is that each of your c2
+documents was created on a separate shard - one was sharded by its own id, and
+the other (where you specified the parent) according to the parent id.
+
+This is important to understand so you won't have inconsistencies between
+index, get and search. So you need to remember to **always** pass the parent
+when you're working with child documents so they will be routed to the right
+shard.
+
+About the document id - you need to treat it like all other documents. This
+means that it needs to be unique, you can't have 2 documents with the same id
+even if they have different parents.  
+You can either use the parent id as part of the child document id (as you
+suggested), or let ES generate a unique id if that makes sense in your use
+case. Document IDs that ES generates are unique, no matter the parent.
+
+About getting the parent field back, you need to request it explicitly, it is
+not returned by default. (Request it using the fields parameter -
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+get.html#get-fields>, or in search -
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-fields.html>).
+

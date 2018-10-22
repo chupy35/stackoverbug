@@ -1,0 +1,83 @@
+22912634 filtering on geo_distance in elasticsearch
+
+I'm trying to set a maximum distance from my center location in my
+elasticsearch query, there's no problems with the sorting part:
+
+    
+    
+    {
+        "query" : {
+            "match_all" : {}
+        },
+        "sort"  : [
+            {
+                "_geo_distance" : {
+                    "location" : "56,14",
+                    "order"    : "asc",
+                    "unit"     : "km"
+                }
+            }
+        ]
+    }
+    
+
+however when I try adding a filter I get the `"[geo_distance] filter does not
+support [location]"`:
+
+    
+    
+    {
+        "query" : {
+            "filtered" : {
+                "query"  : {
+                    "match_all" : {}
+                },
+                "filter" : {
+                    "geo_distance" : {
+                        "distance" : "200m",
+                        "location" : {
+                            "location" : "56,14"
+                        }
+                    }
+                }
+            }
+        },
+        "sort"  : [
+            {
+                "_geo_distance" : {
+                    "location" : "56,14",
+                    "order"    : "asc",
+                    "unit"     : "km"
+                }
+            }
+        ]
+    }
+    
+
+any ideas of what I'm doing wrong?
+
+Use this filter instead
+
+    
+    
+     "filter" : {
+            "geo_distance" : {
+                "distance" : "200m",
+                "location" : "56,14"
+            }
+        }
+    
+
+Location can be any name for the field like if you field name is loc or
+locator,then the query would be
+
+    
+    
+    "filter" : {
+                "geo_distance" : {
+                    "distance" : "200m",
+                    "loc"/"locator" : "56,14"
+                }
+            }
+    
+

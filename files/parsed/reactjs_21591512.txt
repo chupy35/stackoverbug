@@ -1,0 +1,96 @@
+21591512 Pass props from template into react.js root node
+
+I may have missed something, but here goes. If I have:
+
+    
+    
+    var Swoosh = React.createClass({
+      render: function() {
+        return (
+          <div className="swoosh">
+            Boom.
+          </div>
+        );
+      }
+    });
+    
+    React.renderComponent(
+      <Swoosh />,
+      document.getElementById('content')
+    );
+    
+
+Can I set `props` as attributes on the mount point (where `id='content'`)?
+
+    
+    
+    <div id='content' foo='alice' bar='has' bav='a cat' />
+    <!-- have foo, bar & bav available as props in <Swoosh />? -->
+    
+
+No, though of course you can do:
+
+    
+    
+    var container = document.getElementById('content');
+    React.renderComponent(
+      <Swoosh
+        foo={container.getAttribute('foo')}
+        bar={container.getAttribute('bar')}
+        bav={container.getAttribute('bav')} />,
+      container
+    );
+    
+
+(or if you want to make an attributes dict using something like
+<https://stackoverflow.com/a/5282801/49485>, then you can do
+`Swoosh(attributes)`).
+
+There's nothing in the API to transfer properties from a plain DOM element to
+a React component, but you could create a Mixin to do it. Note that this will
+only work on a component passed to `renderComponent` because it uses
+`setProps`:
+
+([Working JSFiddle](http://jsfiddle.net/ssorallen/YgPPV/))
+
+    
+    
+    var InheritsDomAttributes = {
+      componentDidMount: function(rootNode) {
+        var hasNextProps = false;
+        var nextProps = {};
+        var parentNode = rootNode.parentNode;
+    
+        Object.keys(parentNode.attributes).forEach(function(key) {
+          var namedNode;
+    
+          // NamedNodeMaps have an attribute named "length" that
+          // should not be considered a set attribute.
+          if (key !== "length") {
+            hasNextProps = true;
+            namedNode = parentNode.attributes[key];
+            nextProps[namedNode.name] = namedNode.value;
+          }
+        });
+    
+        if (hasNextProps) this.setProps(nextProps);
+      }
+    };
+    
+    var Swoosh = React.createClass({
+      mixins: [InheritsDomAttributes],
+      render: function() {
+        return (
+          <div className="swoosh">
+            Boom.
+          </div>
+        );
+      }
+    });
+    
+    React.renderComponent(
+      <Swoosh />,
+      document.getElementById('content')
+    );
+    
+

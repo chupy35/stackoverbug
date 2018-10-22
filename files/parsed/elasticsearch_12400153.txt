@@ -1,0 +1,73 @@
+12400153 ElasticSearch Delete Query - Filter with term and range
+
+I have the following query that I am trying to use to delete data from an
+[ElasticSearch](http://www.elasticsearch.org/) index.
+
+    
+    
+    {
+        "filter": {
+            "and": [
+                {
+                    "range": {
+                        "Time": {
+                            "from": "20120101T000000",
+                            "to": "20120331T000000"
+                        }
+                    }
+                },
+                {
+                    "term": {
+                        "Source": 1
+                    }
+                }
+            ]
+        }
+    }
+    
+
+I have tried to delete documents based on this query. This query returns
+results fine when I run it against the index. But when I try to run a delete
+command against the index, nothing happens.
+
+I am not sure if I am constructiing the query wrong or what else.
+
+You're using only a filter while the [delete by query
+API](http://www.elasticsearch.org/guide/reference/api/delete-by-query.html)
+probably needs a query. You can convert your filter to a query using a
+[filtered query](http://www.elasticsearch.org/guide/reference/query-
+dsl/filtered-query.html) like this:
+
+    
+    
+    {
+        "filtered" : {
+            "query" : {
+                "match_all" : {}
+            },
+            "filter": {
+                "and": [
+                    {
+                        "range": {
+                            "Time": {
+                                "from": "20120101T000000",
+                                "to": "20120331T000000"
+                            }
+                        }
+                    },
+                    {
+                        "term": {
+                            "Source": 1
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+Otherwise you could convert your filter to a query using a [bool
+query](http://www.elasticsearch.org/guide/reference/query-dsl/bool-query.html)
+with two must clauses, so that you don't need a filtered query anymore.
+Anyway, I guess the filter approach is better since filters are faster.
+

@@ -1,0 +1,84 @@
+22632087 Reduce number of results returned by elasticsearch
+
+I am using an ngram analyzer for doing auto complete search on a particular
+field using elasticsearch. By default I have set the number of results to
+return to 10 using "size:10" inside the query.
+
+But what I want is that as my search nears the exact match, the results
+returned by elastic search should reduce
+
+For example If searching for: `"fl"` Will return : `"flake", "flower",
+"fleet", "flank", "flatter"`.
+
+If searching for: `"fla"` Will return : `"flan","flank", "flatter"`.
+
+If searching for: `"flan"` Will return : `"flan","flank"`.
+
+Right now all results are returned even if I search for `"flan"` I am also
+using phonetic search.
+
+This answer is applicable if your data is not multilingual (only if data
+language is just english)
+
+Use a custom analyzer. You can set the analyzer name to **default** (instead
+of myAnalyzer), if you want that to be your default analyzer in all cases.
+
+    
+    
+    index :
+    analysis :
+        analyzer : 
+            myAnalyzer :
+                type : custom
+                tokenizer : whitespace
+                filter : [word_filter, lowercase, stop]
+        filter :
+            word_filter :
+                type : word_delimiter
+                split_on_numerics : false
+                generate_word_parts : false
+                generate_number_parts : false
+                split_on_case_change : false
+                preserve_original : false
+    
+
+PS: You need to create the indices and reindex the entire data again after
+this change.
+
+One way to considerably reduce latency is that rather than using unigram as
+min_gram, use digrams or trigrams. Otherwise if the user will type just a
+single letter (for example 'a'), there may be hundreds of thousands of results
+from the database, which won't be even 'remotely-relevant' for the user (and
+very inefficient).
+
+You can use this kind of filter:
+
+    
+    
+    {
+    
+     "filter": 
+    {
+                "autocomplete_filter": {
+                    "type":     "edge_ngram",
+                    "min_gram": 3,
+                    "max_gram": 20
+                }
+        }
+    
+    }
+    
+
+This will significantly reduce the number of results by removing the
+irrelevant ones, which will improve the efficiency of your software.
+
+You can check out
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/_index_time_search_as_you_type.html)
+page for full documentation.
+
+For making even better suggestor, I recommend you to go through
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current//search-
+suggesters-completion.html) . This will not only limit your results according
+to given query (just the way you want) but will also considerably improve the
+efficiency of the software!
+

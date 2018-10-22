@@ -1,0 +1,44 @@
+25053109 how to query elasticsearch based on documentid
+
+Failed to deserialize exception response from stream error while query on Id
+based query in elastic search. but when I execute the following query.
+
+    
+    
+    client.prepareSearch(index)
+        .setSearchType(SearchType.QUERY_AND_FETCH)
+         .addField("aa.ct")
+         .addField("aa.bb")
+         .addField("a.aa") .
+    
+
+It works but I need to search based on Id of document.
+
+    
+    
+      SearchResponse response = client.prepareSearch("dbIndex")
+        .setSearchType(SearchType.QUERY_AND_FETCH)
+        .setQuery(QueryBuilders.termQuery("_id","532adfdxfe8343000458ffd3"))
+        .setExplain(true)
+        .setQuery().setExplain(true)
+        .execute()
+        .actionGet();
+    
+
+Use `prepareGet` and set the ID.
+
+    
+    
+    GetResponse response = esClient.prepareGet()
+        .setIndex("dbIndex")
+        .setType("yourType")// set the index type as well
+        .setId("532adfdxfe8343000458ffd3")
+        .setFields(new String[]{"aa.ct", "aa.bb", "a.aa"})
+        .execute()
+        .actionGet();
+    
+
+You can use get method to search for an _id. (Its not actual searching but a
+kind of that) It returns the record if it really exist, else in the json
+response, it will say, exists: false.
+

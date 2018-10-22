@@ -1,0 +1,3 @@
+28487349
+How to send large documents to ES for indexing?
+<p>Our application submits text files for indexing to an Elasticsearch server, and the file's content is stored in a single field. And when we do that for large  files (250 MB) on a machine with limited resources, our application runs out of memory when loading file's content. </p>&#xA;&#xA;<p>What is the recommended approach for sending large documents to ES? Is there a way to index them in chunks?</p>&#xA;&#xA;<p>Thanks.</p>&#xA;

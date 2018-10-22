@@ -1,0 +1,14 @@
+22203206 Checking results of a bulk insert in elasticsearch without "ok": true
+
+1.0 removed the "ok" from responses, and I'm wondering if there's a
+recommended way to check if bulk inserts succeeded in the new world.
+
+The documentation comes with the following:
+
+> The response to a bulk action is a large JSON structure with the individual
+results of each action that was performed. The failure of a single action does
+not affect the remaining actions.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html>
+

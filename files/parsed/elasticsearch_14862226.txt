@@ -1,0 +1,85 @@
+14862226 ElasticSearch Pagination & Sorting
+
+I am trying to sort search results by a date across multiple pages of results.
+Sorting is working within each page, is there a way to sort across the entire
+set?
+
+For example: If page 1 has items from Feb 13 through Feb 1st; the second page
+should not have items after Feb 1st.
+
+Here is a brief snippet of the request that I am sending. I have also tried
+sorting by date then _score, but that produced even stranger results
+(primarily, the sort order was the same).
+
+    
+    
+    {
+      "query": {
+        "from": 0,
+        "size": 24
+        "sort": [
+          "published_on": {
+            "missing": "_last",
+            "ignore_unmapped": true,
+            "order": "desc"
+          }
+        ]
+        "custom_filters_score": {
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "match": {
+                    "content": "Some query"
+                  }
+                }
+              ]
+              ... more ...
+            }
+          },
+          "filters": [
+            {
+              "filter" => {
+                "type" => {
+                  "value" => "cats"
+                }
+              },
+              "boost" => 2
+            }
+            ... more ...
+          ]
+        }
+      }
+    }
+    
+
+Any thoughts? Thanks in advance!
+
+sort, size, from must be in the root
+
+    
+    
+        {
+           query:{
+              ...
+           },
+           sort:[
+             ...
+           ],
+           from:15,
+           size:5
+        }
+    
+
+[Search API -
+Sort](http://www.elasticsearch.org/guide/reference/api/search/sort.html)
+
+In short, I am an idiot.
+
+I was not multiplying the page index by the number of items on the page. I'm
+not sure how I missed the same entires on every page, moved up by a single
+spot.
+
+I'm sure this will resolve all of the other odd issues that I have been
+dealing with.
+

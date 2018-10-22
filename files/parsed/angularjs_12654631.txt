@@ -1,0 +1,435 @@
+12654631 Why does AngularJS include an empty option in select?
+
+I've been working with AngularJS for the last few weeks, and the one thing
+which is really bothering me is that even after trying all permutations or the
+configuration defined in the specification at
+<http://docs.angularjs.org/api/ng.directive:select>, I still get an empty
+option as the first child of select element.
+
+Here's the Jade:
+
+    
+    
+    select.span9(ng-model='form.type', required, ng-options='option.value as option.name for option in typeOptions');
+    
+
+Here the controller:
+
+    
+    
+    $scope.typeOptions = [
+        { name: 'Feature', value: 'feature' },
+        { name: 'Bug', value: 'bug' },
+        { name: 'Enhancement', value: 'enhancement' }
+    ];
+    
+
+Finally, here's the HTML which gets generated:
+
+    
+    
+    <select ng-model="form.type" required="required" ng-options="option.value as option.name for option in typeOptions" class="span9 ng-pristine ng-invalid ng-invalid-required">
+        <option value="?" selected="selected"></option>
+        <option value="0">Feature</option>
+        <option value="1">Bug</option>
+        <option value="2">Enhancement</option>
+    </select>
+    
+
+What do I need to do to get rid of it?
+
+P.S.: Things work without this as well, but it just looks odd if you use
+select2 without multiple selection.
+
+The empty `option` is generated when a value referenced by `ng-model` doesn't
+exist in a set of options passed to `ng-options`. This happens to prevent
+accidental model selection: AngularJS can see that the initial model is either
+undefined or not in the set of options and don't want to decide model value on
+its own.
+
+If you want to get rid of the empty option just select an initial value in
+your controller, something like:
+
+    
+    
+    $scope.form.type = $scope.typeOptions[0].value;
+    
+
+Here is the jsFiddle: <http://jsfiddle.net/MTfRD/3/>
+
+In short: the empty option means that no valid model is selected (by valid I
+mean: from the set of options). You need to select a valid model value to get
+rid of this empty option.
+
+If you want an initial value, see @pkozlowski.opensource's answer, which FYI
+can also be implemented in the view (rather than in the controller) using ng-
+init:
+
+    
+    
+    <select ng-model="form.type" required="required" ng-init="form.type='bug'"
+      ng-options="option.value as option.name for option in typeOptions" >
+    </select>
+    
+
+If you don't want an initial value, "a single hard-coded element, with the
+value set to an empty string, can be nested into the element. This element
+will then represent null or "not selected" option":
+
+    
+    
+    <select ng-model="form.type" required="required"
+      ng-options="option.value as option.name for option in typeOptions" >
+        <option style="display:none" value="">select a type</option>
+    </select>
+    
+
+  
+I faced the same issue. If you are posting an angular form with normal post
+then you will face this issue, as angular don't allow you to set values for
+the options in the way you have used. If you get the value of "form.type" then
+you will find the right value. You have to post the angular object it self not
+the form post.
+
+Maybe useful for someone:
+
+If you want to use plain options instead of ng-options, you could do like
+below:
+
+    
+    
+    <select ng-model="sortorder" ng-init="sortorder='publish_date'">
+      <option value="publish_date">Ascending</option>
+      <option value="-publish_date">Descending</option>
+    </select>
+    
+
+Set the model inline. Use ng-init to get rid of empty option
+
+Though both @pkozlowski.opensource's and @Mark's answers are correct, I'd like
+to share my slightly modified version where I always select the first item in
+the list, regardless of its value:
+
+    
+    
+    <select ng-options="option.value as option.name for option in typeOptions" ng-init="form.type=typeOptions[0].value">
+    </select>
+    
+
+**Angular < 1.4**
+
+For anyone out there that treat "null" as valid value for one of the options
+(so imagine that "null" is a value of one of the items in _typeOptions_ in
+example below), I found that simplest way to make sure that automatically
+added option is hidden is to use ng-if.
+
+    
+    
+    <select ng-options="option.value as option.name for option in typeOptions">
+        <option value="" ng-if="false"></option>
+    </select>
+    
+
+Why **ng-if** and not ng-hide? Because you want css selectors that would
+target first option inside above select to target "real" option, not the one
+that's hidden. It gets useful when you're using protractor for e2e testing and
+(for whatever reason) you use by.css() to target select options.
+
+**Angular >= 1.4**
+
+Due to the refactoring of the select and options directives, using `ng-if` is
+no longer a viable option so you gotta turn to `ng-show="false"` to make it
+work again.
+
+Try this one in your controller, in the same order:
+
+    
+    
+    $scope.typeOptions = [
+        { name: 'Feature', value: 'feature' }, 
+        { name: 'Bug', value: 'bug' }, 
+        { name: 'Enhancement', value: 'enhancement' }
+    ];
+    $scope.form.type = $scope.typeOptions[0];
+    
+
+Yes ng-model will create empty option value, when ng-model property undefined.
+We can avoid this, if we assign object to ng-model
+
+Example
+
+angular coding
+
+    
+    
+    $scope.collections = [
+        { name: 'Feature', value: 'feature' }, 
+        { name: 'Bug', value: 'bug' }, 
+        { name: 'Enhancement', value: 'enhancement'}
+    ];
+    
+    $scope.selectedOption = $scope.collections[0];
+    
+    
+    <select class='form-control' data-ng-model='selectedOption' data-ng-options='item as item.name for item in collections'></select>
+    
+
+Important Note:
+
+Assign object of array like $scope.collections[0] or $scope.collections[1] to
+ng-model, dont use object properties. if you are getting select option value
+from server, using call back function, assign object to ng-model
+
+NOTE from Angular document
+
+Note: ngModel compares by reference, not value. This is important when binding
+to an array of objects. see an example <http://jsfiddle.net/qWzTb/>
+
+i have tried lot of times finally i found it.
+
+Here is the fix :
+
+for a sample data like :
+
+    
+    
+    financeRef.pageCount = [{listCount:10,listName:modelStrings.COMMON_TEN_PAGE},    
+    {listCount:25,listName:modelStrings.COMMON_TWENTYFIVE_PAGE},
+    {listCount:50,listName:modelStrings.COMMON_FIFTY_PAGE}];
+    
+
+The select option should be like this:-
+
+    
+    
+    <select ng-model="financeRef.financeLimit" ng-change="financeRef.updateRecords(1)" 
+    class="perPageCount" ng-show="financeRef.showTable" ng-init="financeRef.financeLimit=10"
+    ng-options="value.listCount as value.listName for  value in financeRef.pageCount"
+    ></select>
+    
+
+The point being when we write `value.listCount` as `value.listName`, it
+automatically populates the text in `value.listName` but the value of the
+selected option is `value.listCount` although the values my show normal 0,1,2
+.. and so on !!!
+
+In my case, the `financeRef.financeLimit` is actually grabbing the
+`value.listCount` and I can do my manipulation in the controller dynamically.
+
+A simple solution is to set an option with a blank value `""` I found this
+eliminates the extra undefined option.
+
+A quick solution:
+
+    
+    
+    select option:empty { display:none }
+    
+
+Hope it helps someone. Ideally, the selected answer should be the approach but
+if in case that's not possible then should work as a patch.
+
+This worked for me
+
+    
+    
+    <select ng-init="basicProfile.casteId" ng-model="basicProfile.casteId" class="form-control">
+         <option value="0">Select Caste....</option>
+         <option data-ng-repeat="option in formCastes" value="{{option.id}}">{{option.casteName}}</option>
+     </select>
+    
+
+This works perfectly fine
+
+    
+    
+    <select ng-model="contact.Title" ng-options="co for co in['Mr.','Ms.','Mrs.','Dr.','Prof.']">
+        <option style="display:none" value=""></option>
+    </select>
+    
+
+the way it works is, that this gives the first option to be displayed before
+selecting something and the `display:none` removes it form the dropdown so if
+you want you can do
+
+    
+    
+    <select ng-model="contact.Title" ng-options="co for co in['Mr.','Ms.','Mrs.','Dr.','Prof.']">
+        <option style="display:none" value="">select an option...</option>
+    </select>
+    
+
+and this will give you the `select and option` before selecting but once
+selected it will disappear, and it will not show up in the dropdown.
+
+Something similar was happening to me too and was caused by an upgrade to
+angular 1.5.`ng-init` seems to be being parsed for _type_ in newer versions of
+Angular. In older Angular `ng-init="myModelName=600"` would map to an option
+with value "600" i.e. `<option value="600">First</option>` but in Angular 1.5
+it won't find this as it seems to be expecting to find an option with value
+600 i.e `<option value=600>First</option>`. Angular would then insert a random
+first item:
+
+    
+    
+    <option value="? number:600 ?"></option>
+    
+
+**Angular < 1.2.x**
+
+    
+    
+    <select ng-model="myModelName" ng-init="myModelName=600">
+      <option value="600">First</option>
+      <option value="700">Second</option>
+    </select>
+    
+
+**Angular > 1.2**
+
+    
+    
+    <select ng-model="myModelName" ng-init="myModelName='600'">
+      <option value="600">First</option>
+      <option value="700">Second</option>
+    </select>
+    
+
+Among the multitudes of answers here, I figured I'd repost the solution that
+worked for me and met **all** of the following conditions:
+
+  * provided a _placeholder/prompt_ when the ng-model is _falsy_ (e.g. "--select region--" w. `value=""`)
+  * when ng-model value is _falsy_ and user opens the options dropdown, the placeholder is selected (other solutions mentioned here make the first option appear selected which can be misleading)
+  * allow the user to deselect a valid value, essentially selecting the _falsy_ /default value again
+
+[![enter image description
+here](https://i.stack.imgur.com/MGEh5.png)](https://i.stack.imgur.com/MGEh5.png)
+
+**code**
+
+    
+    
+    <select name="market_vertical" ng-model="vc.viewData.market_vertical"
+        ng-options="opt as (opt | capitalizeFirst) for opt in vc.adminData.regions">
+    
+        <option ng-selected="true" value="">select a market vertical</option>
+    </select>
+    
+
+**src**
+
+original q&a - <https://stackoverflow.com/a/32880941/1121919>
+
+Ok, actually the answer is way simple: when there is a option not recognized
+by Angular, it includes a dull one. What you are doing wrong is, when you use
+ng-options, it reads an object, say `[{ id: 10, name: test }, { id: 11, name:
+test2 }] right?`
+
+This is what your model value needs to be to evaluate it as equal, say you
+want selected value to be 10, you need to set your model to a value like `{
+id: 10, name: test }` to select 10, therefore it will NOT create that trash.
+
+Hope it helps everybody to understand, I had a rough time trying :)
+
+I would like to add that if the initial value comes from a binding from some
+parent element or 1.5 component, make sure that the proper type is passed. If
+using `@` in binding, the variable passed will be string and if the options
+are eg. integers then the empty option will show up.
+
+Either parse properly the value in init, or binding with `<` and not `@` (less
+recommended for performance unless necessary).
+
+Simple solution
+
+    
+    
+    <select ng-model='form.type' required><options>
+    <option ng-repeat="tp in typeOptions" ng-selected="    
+    {{form.type==tp.value?true:false}}" value="{{tp.value}}">{{tp.name}}</option>
+    
+
+A grind solution with jQuery when you haven't the control of the options
+
+html:
+
+    
+    
+    <select id="selector" ng-select="selector" data-ng-init=init() >
+    ...
+    </select>
+    
+
+js:
+
+    
+    
+    $scope.init = function () {
+        jQuery('#selector option:first').remove();
+        $scope.selector=jQuery('#selector option:first').val();
+    }
+    
+
+I'm using Angular 1.4x and I found this example, so I used ng-init to set the
+initial value in the select:
+
+    
+    
+    <select ng-init="foo = foo || items[0]" ng-model="foo" ng-options="item as item.id for item in items"></select>
+    
+
+If you use ng-init your model to solve this problem:
+
+    
+    
+    <select ng-model="foo" ng-app ng-init="foo='2'">
+    
+
+i had the same problem,  i (removed "ng-model") changed this :
+
+    
+    
+    <select ng-model="mapayear" id="mapayear" name="mapayear" style="  display:inline-block !important;  max-width: 20%;" class="form-control">
+      <option id="removable" hidden> Selecione u </option>
+        <option selected ng-repeat="x in anos" value="{{ x.ano }}">{{ x.ano }}
+    </option>
+    </select>
+    
+
+to this:
+
+    
+    
+    <select id="mapayear" name="mapayear" style="  display:inline-block !important;  max-width: 20%;" class="form-control">
+      <option id="removable" hidden> Selecione u </option>
+        <option selected ng-repeat="x in anos" value="{{ x.ano }}">{{ x.ano }}
+    </option>
+    </select>
+    
+
+now its working, but in my case it was cause ive deleted that scope from
+ng.controller, check if u didn't do the same.
+
+Hi I had some jQUery mobile references and I removed them. With jQuery mobile
+any of above fixes did not work for me. ( Its great if someone can explain the
+conflict between jQuery Mobile and Angular JS )
+
+<https://guntucomputerhacks.blogspot.com.au/2017/10/angular-js-drop-down-
+first-options-vs.html>
+
+The only thing worked for me is using `track by` in `ng-options`, like this:
+
+    
+    
+     <select class="dropdown" ng-model="selectedUserTable" ng-options="option.Id as option.Name for option in userTables track by option.Id">
+    
+
+This solution works for me:
+
+    
+    
+    <select ng-model="mymodel">    
+       <option ng-value="''" style="display:none;" selected>Country</option>
+       <option value="US">USA</option>
+    </select>
+    
+

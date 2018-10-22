@@ -1,0 +1,18 @@
+31430693 Spring Boot Server using HTTPS, Management Server only HTTP?
+
+Based on an answer from @andy-wilkinson to a past Spring Boot
+[question](https://stackoverflow.com/questions/28686229/when-customizing-the-
+management-server-port-how-is-this-implemented), it appears that with the
+exception of a couple parameters (port for example), the management server
+leverages the same configuration as the regular servlet container.
+
+I would like to configure the main Spring Boot server to use HTTPS (for the
+application/service it is serving) and to use just HTTP for the actuator
+endpoints. Has anyone done this? Is this even possible?
+
+-Joshua 
+
+It's not possible at the moment. Please [open an
+issue](https://github.com/spring-projects/spring-boot/issues/new) if it's an
+enhancement that you'd like to see.
+

@@ -1,0 +1,29 @@
+30275976 Spring Boot 1.2.3.RELEASE ApplicationReadyEvent not found
+
+I am reading Spring Boot reference (version 1.2.3-RELEASE) and in point 22.4
+Application events and listeners point 4 states:
+
+"An ApplicationReadyEvent is sent after the refresh and any related callbacks
+have been processed to indicate the application is ready to service requests."
+
+So I tried:
+
+    
+    
+    SpringApplication app = new SpringApplication(LearnSpringBootApplication.class);
+    app.addListeners(new ApplicationListener<ApplicationReadyEvent>() {
+    
+
+...
+
+but it cannot find the ApplicationReadyEvent. Has it been removed ? If so - is
+there any equivalent for it ?
+
+I found this post here:
+
+[Spring Boot - Wait for web server to
+start](https://stackoverflow.com/questions/28240403/spring-boot-wait-for-web-
+server-to-start)
+
+but was wondering if there is another way?
+

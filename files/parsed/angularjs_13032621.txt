@@ -1,0 +1,233 @@
+13032621 Need some examples of binding attributes in custom AngularJS tags
+
+I am attempting to create a custom tag similar to the following:
+
+    
+    
+    <mytag type="Big" />
+    
+
+where type is an attribute that gets bound to the component. in such a way
+that it sets the text in a label, as shown below:
+
+    
+    
+    <label>{{type}}</label>
+    
+
+... (other components)...
+
+As the documentation says, I have a controller that sets a default type:
+
+    
+    
+    $scope.type = "Small";
+    
+
+so that if I use my tag without the attribute type still gets set.
+
+I am attempting to do binding using a directive:
+
+    
+    
+    angular.module('TestPage',[])
+          .directive('mytag',function() {
+              return {
+                  restrict: 'E',
+                  templateUrl: 'component.html',
+                  scope: {
+                      type: '='
+                  }
+              }
+          });
+    
+
+Note that I do have the appropriate ng-app settings in my component template
+(ng-app="TestPage").
+
+My problem is that the binding to type does not appear to be actually binding
+anything.
+
+I have read the documentation about how to bind a variable to components using
+directive. According to the documentation, you can do such bindings inside a
+scope. Scopes apparently can contain an "object-hash" (whatever that is!)
+which creates something called an "isolate scope" (???). Such scopes can
+represent "local properties" in the following ways:
+
+> @ or @attr - bind a local scope property to the DOM attribute. The result is
+always a string  since DOM attributes are strings. If no attr name is
+specified then the local name and  attribute name are same. Given and widget
+definition of scope: { localName:'@myAttr' }, then widget scope property
+localName will reflect the interpolated value of hello {{name}}. As the name
+attribute changes so will the localName property on the widget scope. The name
+is read from the parent scope (not component scope).
+
+Huh??? What has all this to do with the proper syntax for binding?
+
+> = or =expression - set up bi-directional binding between a local scope
+property and the parent scope property. If no attr name is specified then the
+local name and attribute name are same.  Given and widget definition of scope:
+{ localModel:'=myAttr' }, then widget scope property localName will reflect
+the value of parentModel on the parent scope. Any changes to parentModel will
+be reflected in localModel and any changes in localModel will reflect in
+parentModel.
+
+Excuse me? What is being said here???
+
+> & or &attr - provides a way to execute an expression in the context of the
+parent scope. If no  attr name is specified then the local name and attribute
+name are same. Given  and widget definition of scope: { localFn:'increment()'
+}, then isolate scope property localFn will point to a function wrapper for
+the increment() expression. Often it's desirable to pass data from the isolate
+scope via an expression and to the parent scope, this can be done by passing a
+map of local variable names and values into the expression wrapper fn. For
+example, if the expression is increment(amount) then we can specify the amount
+value by calling the localFn as localFn({amount: 22}).
+
+Now I'm totally confused! You have widget tags and some kind of related
+function that I have to write iin order to do the bind??? All I want is to
+bind a value to a label tag!
+
+I have copied the above text from the documentation
+(<http://docs.angularjs.org/guide/directive>) to make a point: that this doco
+reads like the old UNIX documentation: really useful to those who already know
+the system, but not so helpful to beginners who are trying to develop real
+expertise. With all the tutorials that show how to do simple tasks in
+AngularJS (great for toy apps but not so good for the kinds of client- side
+applications I want to build), why aren't there any for the more advanced
+stuff???
+
+Okay, time for me to be more constructive.
+
+Can someone please provide some nice, simple examples of how to do the various
+bindings that this documentation is trying so hard to describe??? Examples
+that show the proper syntax for these scope statements and descriptions (in
+plain English) of exactly how they go back to the attribute being added to the
+custom tag???
+
+Thank you for your patience and thanks in advance for any assistance.
+
+Youre pretty close..
+
+    
+    
+    app.directive('mytag',function() {
+        return {
+            restrict: 'E',
+            template: '<div>' +
+                '<input ng-model="controltype"/>' + 
+                '<button ng-click="controlfunc()">Parent Func</button>' + 
+                '<p>{{controlval}}</p>' + 
+             '</div>',
+            scope: {
+                /* make typeattribute="whatever" bind two-ways (=)
+                $scope.whatever from the parent to $scope.controltype
+                on this directive's scope */
+                controltype: '=typeattribute',
+                /* reference a function from the parent through
+                   funcattribute="somefunc()" and stick it our
+                   directive's scope in $scope.controlfunc */
+                controlfunc: '&funcattribute',
+                /* pass a string value into the directive */
+                controlval: '@valattribute'
+            },
+            controller: function($scope) {                  
+            }
+        };
+    });
+    
+      <div ng-controller="ParentCtrl">
+           <!-- your directive -->
+           <mytag typeattribute="parenttype" funcattribute="parentFn()" valattribute="Wee, I'm a value"></mytag>
+           <!-- write out your scope value -->
+           {{parenttype}}
+      </div>
+    
+    
+      app.controller('ParentCtrl', function($scope){ 
+           $scope.parenttype = 'FOO';
+           $scope.parentFn = function() {
+               $scope.parenttype += '!!!!';
+           }
+      });
+    
+
+The magic is mostly in the `scope:` declaration in your directive definition.
+having any `scope: {}` in there will "isolate" the scope from the parent,
+meaning it gets it's own scope... without that, it would use the parent's
+scope. The rest of the magic is in the scope's properties: `scope: {
+'internalScopeProperty' : '=externalAttributeName' }`... where the `=`
+represents a two way binding scenario. If you change that `=` to a `@` you'll
+see it just allows you to pass a string as an attribute to the directive. The
+`&` is for executing functions from the parent scope's context.
+
+I hope that helps.
+
+* * *
+
+**EDIT:[Here is a working PLNKR](http://plnkr.co/edit/SJCVe6)**
+
+I struggled a bit with this documentation too when first getting into angular,
+but I will make an attempt try to clarify things for you. First, when using
+this `scope` property, it creates an "isolated scope." All this means is that
+it won't inherit any properties from parent scopes, and so you don't have to
+worry about any collisions within the scope.
+
+Now, the '@' notation means that the evaluated value in the attribute will
+automatically get bound into your scope for the directive. So, `<my-directive
+foo="bar" />` would end up with the scope having a property called `foo` that
+holds the string "bar". You could also do something like `<my-directive
+foo="{{bar}}"` And then the evaluated value of `{{bar}}` will be bound to the
+scope. Since attributes are always strings, you will always end up with a
+string for this property in the scope when using this notation.
+
+The '=' notation basically provides a mechanism for passing an object into
+your directive. It always pulls this from the parent scope of the directive,
+so this attribute will never have the `{{}}`. So, if you have `<my-directive
+foo="bar" />` it will bind whatever is in `$scope.bar` into your directive in
+the `foo` property of your directive's scope. Any change's you make to `foo`
+within your scope will be refelected in `bar` in the parent scope, and vice
+versa.
+
+I haven't used the '&' notation nearly as much as the other too, so I don't
+know it as well as those two. From what I understand, it allows you to
+evaluate expressions from the context of the parent scope. So if you have
+something like `<my-directive foo="doStuff()" />`, whenever you call
+scope.foo() within your directive, it will call the doStuff function in the
+directive's parent scope. I'm sure there's a lot more you can do with this,
+but I'm not as familiar with it all. Maybe someone else can explain this one
+in more detail.
+
+If just the symbol is set in the scope, it will use the same name as the
+attribute to bind to the directives scope. For example:
+
+    
+    
+    scope: {
+       foo1: '@',
+       foo2: '=',
+       foo3: '&'
+    }
+    
+
+When including the directive, there would need to be the attributes foo1,
+foo2, and foo3. If you want a property in your scope different than the
+attribute name, you can specify that after the symbol. So, the example above
+would be
+
+    
+    
+    scope: {
+       foo1: '@bar1',
+       foo2: '=bar2',
+       foo3: '&bar3'
+    }
+    
+
+When including the directive, there would need to be the attributes bar1,
+bar2, and bar3, and these would get bound in the scope under properties foo1,
+foo2, and foo3 respectively.
+
+I hope this helps. Feel free to ask questions with which I can clarify my
+answer.
+

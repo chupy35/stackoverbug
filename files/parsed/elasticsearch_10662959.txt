@@ -1,0 +1,14 @@
+10662959 ElasticSearch all documents returned even when escaped
+
+I have a method that escapes a query using regular expression, wraps the whole
+query with asterisk and then send a query to ElasticSearch.
+
+Everything works great except from when a user sends just an asterisk in the
+query than I get back all documents. I debugged the code and the query that is
+sent to the server is "*\\**", the expected behavior is that all documents
+containing an asterisk will be returned but the behavio
+
+What am I missing ?
+
+Thanks
+

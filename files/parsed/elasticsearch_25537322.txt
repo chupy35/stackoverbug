@@ -1,0 +1,135 @@
+25537322 Find out which fields matched in a multi match query
+
+I am using a typical multi match query on three fields: name, city, state. The
+multi match query is also using a Java function score script. Is there any way
+to know in the score script what fields matched my multi match query? If not,
+is there any way to figure this out from the SearchResponse object?
+
+I am currently on Elasticsearch 1.2.1 but I can easily upgrade if it's
+necessary.
+
+I don't believe you can do this directly with just multi match, but if you add
+highlighting you should get a response showing which fields matched:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/highlighting-
+intro.html>
+
+In the example from this page:
+
+    
+    
+        GET /megacorp/employee/_search
+        {
+            "query" : {
+                "match_phrase" : {
+                    "about" : "rock climbing"
+                }
+            },
+            "highlight": {
+                "fields" : {
+                    "about" : {}
+                }
+            }
+    
+    }
+    
+
+you would change the match_phrase to a multi_match and add the field list:
+
+    
+    
+        GET /megacorp/employee/_search
+        {
+            "query" : {
+                "multi_match" : {
+                    "query" : "rock climbing",
+                    "fields": ["about", "otherfield"]
+                }
+            },
+            "highlight": {
+                "fields" : {
+                    "about" : {},
+                     "otherfield": {}
+                }
+            }
+    
+    }
+    
+
+and that should get you a highlight response which includes the highlight
+around the matching text and the field that was matched.
+
+There is another exact way to find out which field is matched in the query
+
+Because the highlight is post highlight process, it is not accurate because of
+the way it did
+
+Just use named query to do it instead of multi-match
+
+such as
+
+    
+    
+      {
+        "multi_match" : {
+          "query" : "query phrase here",
+          "fields" : [ "name", "tag", "categorys" ],
+          "operator" : "AND"
+      }
+    
+
+translate it into bool query with name
+
+    
+    
+        "should": [
+            {
+                "match": {
+                   "name": {
+                        "query": "query phrase here",
+                        "_name":"name_field"
+                   }
+                }
+            },{
+                "match": {
+                   "tag":{
+                        "query": "query phrase here",
+                        "_name":"tag_field"
+                   }
+                }   
+            },{
+                "match": {
+                   "categorys":{
+                        "query": "query phrase here",
+                        "_name":"cat_field"
+                   }
+                }
+            }
+         ]
+    
+
+it will return the result like that
+
+    
+    
+         {
+            "_index": "indexName",
+            "_type": "type",
+            "_id": "id",
+            "_score": 0.27836448,
+            "matched_queries": [
+               "tag_field"
+            ]
+         },
+         {
+            "_index": "indexName",
+            "_type": "type",
+            "_id": "id",
+            "_score": 0.27836448,
+            "matched_queries": [
+               "name_field",
+               "tag_field"
+            ]
+         }
+    
+

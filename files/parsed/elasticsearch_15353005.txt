@@ -1,0 +1,129 @@
+15353005 elasticsearch facets OR filter
+
+I have a problem with my elasticsearch DSL, in that when using facet
+navigation, when I apply my facet filter, the next set of results don't
+include any further facets, even though I've asked for them.
+
+When I do the initial search, I get the results I want back:
+
+    
+    
+    {
+    "sort": {
+        "_score": {},
+        "salesQuantity": {
+            "order": "asc"
+        }
+    },
+    "query": {
+        "filtered": {
+            "query": {
+                "match": {
+                    "categoryTree": "D01"
+                }
+            },
+            "filter": {
+                "term": {
+                    "publicwebEnabled": true,
+                    "parentID": 0
+                }
+            }
+        }
+    },
+    "facets": {
+        "delivery_locations": {
+            "terms": {
+                "field": "delivery_locations",
+                "all_terms": true
+            }
+        },
+        "categories": {
+            "terms": {
+                "field": "categoryTree",
+                "all_terms": true
+            }
+        },
+        "collectable": {
+            "terms": {
+                "field": "collectable",
+                "all_terms": true
+            }
+        }
+    },
+    "from": 0,
+    "size": 12}
+    
+
+When I then apply a filter like so, the results I get back do not include the
+facets:
+
+    
+    
+    {
+    "sort": {
+        "_score": {},
+        "salesQuantity": {
+            "order": "asc"
+        }
+    },
+    "query": {
+        "filtered": {
+            "query": {
+                "match": {
+                    "categoryTree": "D01"
+                }
+            },
+            "filter": {
+                "term": {
+                    "publicwebEnabled": true,
+                    "parentID": 0
+                },
+                "or": [
+                    {
+                        "range": {
+                            "Retail_Price": {
+                                "to": "49.99",
+                                "from": "0"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "facets": {
+        "delivery_locations": {
+            "terms": {
+                "field": "delivery_locations",
+                "all_terms": true
+            }
+        },
+        "categories": {
+            "terms": {
+                "field": "categoryTree",
+                "all_terms": true
+            }
+        },
+        "collectable": {
+            "terms": {
+                "field": "collectable",
+                "all_terms": true
+            }
+        }
+    },
+    "from": 0,
+    "size": 12}
+    
+
+**NOTE** , I'm adding the OR filter above - because users may choose multiple
+price ranges to filter on.
+
+Am I doing something wrong?
+
+I want the new facets returned as altering the prices would obviously alter
+the facet counts of the other facets...
+
+Add the original term-filter inside the or-filter, or add another boolean
+filter to wrap your whole filter inside a boolean expression. I dont think you
+can add the two filters just by comma-separating them like that.
+

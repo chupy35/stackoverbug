@@ -1,0 +1,31 @@
+21942088 Elasticsearch reindexing approach
+
+I do data research based on 200Mil records using elasticsearch. From time to
+time the index needs to be updated with new synonyms and stop words so records
+should be reindexed. Now I'm trying to find approaches to do the reindexing
+process as fast as possible. I got to the idea of building the elasticsearch
+plugin which should:
+
+  1. Watch filestystem for synonym/stopwords file change
+  2. Make diff of previous synonym/stopwords file
+  3. Find records which could be affected because of synonym/stopwords file change
+  4. Reindex only records found on 3
+
+Maby you have better approach please share it.
+
+What about following approach:
+
+  1. create alias for the index and use it in searching
+  2. when key/stopwords changing create a new index
+  3. when new index is full of data move previously created alias from the old index to the new one
+  4. delete the old index
+
+Thank to that you will always have your index available (except during moving
+the alias but it takes seconds) and thanks to that the reindexing time won't
+matter.
+
+Here you have more details and better explanation of using aliases when
+updating indexes: [Is there a smarter way to reindex
+elasticsearch?](https://stackoverflow.com/questions/13851044/is-there-a-
+smarter-way-to-reindex-elasticsearch)
+

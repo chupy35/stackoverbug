@@ -1,0 +1,62 @@
+22765806 Elasticsearch Filtered Query Results Confusing
+
+I'm trying to use a filtered query on an Elasticsearch index that has about 3M
+documents and I can't seem to get it to work as I would expect.
+
+To elaborate, my query looks like this (my index is for college course
+information):
+
+    
+    
+    {
+      "query":{
+        "filtered":{
+          "query":{
+            "match_phrase_prefix":{
+              "course_abbreviation":"CS 3"
+            }
+          },
+          "filter":{
+            "term":{
+              "department_id":49599
+            }
+          }
+        }
+      }
+    }
+    
+
+This produces no results. However, if I give an entire "course_abbreviation"
+(ex: CS 301), I get one result.
+
+To further add to my confusion, if I do the following query:
+
+    
+    
+    {
+      "query":{
+        "match_phrase_prefix":{
+          "course_abbreviation": "CS 3"
+        }
+      }
+    }
+    
+
+I get multiple documents that have my desired department_id (as well as
+documents with other department_ids) and that also match course_abbreviations
+such as "CS 301", "CS 322", "CS 365", etc.
+
+Am I wrong to expect that my filtered query would produce the same documents
+as the non-filtered query sans the documents with other department_ids?
+
+It's tough being completely sure what is going on w/o a curl recreation
+(<http://www.elasticsearch.org/help>), but based on the comments it sounds
+like you should use an edgengram analyzer. This works well on partial matches
+for terms in any part of the data.
+
+My experience is that it is best to only apply the edgengram expansion while
+indexing (ie, in your index_analyzer). Search side, you just pass down the
+terms and try out a match query.
+
+Best Regards
+

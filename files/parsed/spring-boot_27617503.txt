@@ -1,0 +1,23 @@
+27617503 No log messages after Spring Boot upgrade
+
+I have recently upgraded spring boot from 1.1.10 to 1.2.0. I did not specify
+version information for spring boot dependencies like spring mvc. So they also
+got upgraded.
+
+After upgrade, I am not able to see any log information from spring. I am able
+to see the sysout and syserr information of my code though.
+
+Did any thing change in the latest relese ?
+
+As per the changelog [Spring Boot 1.2.0 changelog](https://github.com/spring-
+projects/spring-boot/wiki/Spring-Boot-1.2-Release-Notes#logging-output) Spring
+Boot's default behavior is to not write any log files.
+
+Sorry folks, I have a log4j.properties in my class path. That configuration
+file prevented entries from springframework packages. Not sure how it ended up
+there though. Probably 1.1.10 is not picking it up. Things might have changed
+with 1.2.0. Hence the problem. Once I deleted that file, every thing is
+working fine
+
+Thank you for your time
+

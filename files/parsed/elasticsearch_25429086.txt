@@ -1,0 +1,70 @@
+25429086 Data model for fields that change frequently in ElasticSearch
+
+What is the best way to deal with fields that change frequently inside a
+document for ElasticSearch? Per their [docs about partial
+updates](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/partial-
+updates.html)...
+
+> Internally, however, the update API simply manages the same retrieve-change-
+reindex process that we have already described.
+
+In particular, what should be done when the indexing of the document will
+likely be expensive given the number of indexed field and the size of some of
+the text fields that have to be analyzed?
+
+As a concrete example, use SO's view and vote counts on questions and answers.
+It would seem expensive to reindex the text body just to update those values.
+
+I think best way to handle the change is to split the document (you can use
+Parent child relationship, or just have parent id), and make document as small
+as possible (moving changeable part to new types) .
+
+This can be a way to accomplish your requirement say SO,
+
+You can use multiple types for this, consider This post (Views and Vote
+count).
+
+  1. Create a type for post, view and vote. 
+  2. For a post , index a document to **post type** (index post id, title description tag), and for every view of that post you can index a document to **view type** (with id of post), and if voted you can index vote with (no of votes , id of post and other info you need [like positive or negative flag] ) to **vote type**.
+  3. So, to get views for post, use filter of post id, and get document counts in views type
+  4. To get no of votes, use **stat aggregation** for no of votes , or **terms aggregation** followed by **stat aggregation** for getting positive and negative votes.
+
+This is way I think is best, and there can be other opinion too.
+
+Thanks
+
+Maybe you shouldn't update so frequently. Perhaps things like vote/views
+should only be periodically updated in ES, while more critical fields like
+answers/questions be pushed immediately. Consider what's most important and
+see if you can get away with some level of staleness.
+
+ElasticSearch is great for text search, but I would not consider ES to support
+SO in its entirety (or similar applications). It could be a useful tool for
+searching for answers/questions on SO, or for internal applications (like
+log/event analysis). But perhaps the actual serving of data could be better
+done with a different solution? Maybe it should be powered by Cassandra
+instead for the bulk of the work? You get the idea...
+
+If you want to use ES as a solution to your needs, and you MUST update
+frequently, you could definitely consider the parent/child model mentioned
+already. of course, that method will require more memory/disk space, and it
+will take up more cpu/time when you query for totals. An alternative would be
+to have the parent store searchable fields, and let the child hold the
+metadata (where the child's fields are not analyzed). this will allow you to
+make frequent updates without having to undergo an expensive re-index, since
+there is nothing to index.
+
+You could also consider what I mentioned above and see if you can get away
+with some staleness. This can be done in many ways too. You can throttle your
+requests by type of change, or change the refresh/flush interval, or consider
+de-duping updates if you are sending updates in bulk. These too have their
+shortcomings...
+
+What I do is that I use a database like mongo or mysql for storing properties
+that get updated frequently and use elastic search to store documents for text
+searching.
+
+Example: I want to keep data about a book and its contents and I also want to
+keep the total number of views, _updating and reindexing the document each
+time a user views it is a total overkill._
+

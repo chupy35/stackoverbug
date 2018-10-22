@@ -1,0 +1,94 @@
+15529701 accessing _id or _parent fields in script query in elasticsearch
+
+when writing a search query with a script, I can access fields using
+"doc['myfield']"
+
+    
+    
+    curl -XPOST 'http://localhost:9200/index1/type1/_search' -d '
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "script": {
+              "script": "doc[\"myfield\"].value>0",
+              "params": {},
+              "lang":"python"
+            }
+          }
+        }
+      }
+    }'
+    
+
+how do I go about accessing the _id or _parent fields?
+
+The "ctx" object does not seem to be available in a search query (while it is
+accessible in an update API request, why?).
+
+Mind you, I am using the python language instead of mvel, but both of them
+pose the same question.
+
+By default, both document id and parent id are indexed in uid format:
+`type#id`. Elasticsearch provides a [few
+methods](https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/index/mapper/Uid.java#L96)
+that can be used to extract type and id from uid string. Here is an example of
+using these methods in MVEL:
+
+    
+    
+    curl -XDELETE localhost:9200/test
+    curl -XPUT localhost:9200/test -d '{
+        "settings": {
+            "index.number_of_shards": 1,
+            "index.number_of_replicas": 0
+        },
+        "mappings": {
+            "doc": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "child_doc": {
+                "_parent": {
+                    "type": "doc"
+                },
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }'
+    curl -XPUT "localhost:9200/test/doc/1" -d '{"name": "doc 1"}'
+    curl -XPUT "localhost:9200/test/child_doc/1-1?parent=1" -d '{"name": "child 1-1 of doc 1"}'
+    curl -XPOST "localhost:9200/test/_refresh"
+    echo
+    curl "localhost:9200/test/child_doc/_search?pretty=true" -d '{
+        "script_fields": {
+            "uid_in_script": {
+                "script": "doc[\"_uid\"].value"
+            },
+            "id_in_script": {
+                "script": "org.elasticsearch.index.mapper.Uid.idFromUid(doc[\"_uid\"].value)"
+            },
+            "parent_uid_in_script": {
+                "script": "doc[\"_parent\"].value"
+            },
+            "parent_id_in_script": {
+                "script": "org.elasticsearch.index.mapper.Uid.idFromUid(doc[\"_parent\"].value)"
+            },
+            "parent_type_in_script": {
+                "script": "org.elasticsearch.index.mapper.Uid.typeFromUid(doc[\"_parent\"].value)"
+            }
+        }
+    }'
+    echo
+    
+

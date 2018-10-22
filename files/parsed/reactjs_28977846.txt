@@ -1,0 +1,31 @@
+28977846 this.refs no longer available in componentDidMount?
+
+From the changelog for React v0.13:
+
+"ref resolution order has changed slightly such that a ref to a component is
+available immediately after its `componentDidMount` method is called; this
+change should be observable only if your component calls a parent component's
+callback within your `componentDidMount`, which is an anti-pattern and should
+be avoided regardless"
+
+So, is there a better way to access `this.refs` after the DOM mounts? I
+dislike using `setTimeout()`, but that is the best method I see to work on a
+specific DOM after it mounts. Is there a replacement method I am missing? Or,
+is the best way to attach an `onLoad` method directly to the component?
+
+Maybe you are reading too much into this.
+
+My interpretation is that all refs to child components are available in
+`componentDidMount`.
+
+The change is that they are not available before the child component's own
+`componentDidMount` has completed (which happens before the parent
+component's). And you would only be affected by that if you call some callback
+from inside `componentDidMount` of the child, and that code tries to use the
+`ref` immediately. Which seems like an edge-case and, as they say, an anti-
+pattern.
+
+So "normal usage" should not be impacted by this change.
+
+Please try and report back.
+

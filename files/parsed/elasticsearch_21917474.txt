@@ -1,0 +1,190 @@
+21917474 How do I get a list of closed indexes in ElasticSearch?
+
+I recently closed an index via the Head plugin in Elasticsearch. I did NOT
+delete it.
+
+I want to re-open it, but god forbid I forget which index I closed.
+
+How do get a list of all the indexes that I closed?
+
+I tried:
+
+    
+    
+    curl -s localhost:9200/_stats  | grep logstash-2013.12.05
+    curl -s localhost:9200/_status | grep logstash-2013.12.05
+    
+
+But no luck.
+
+So far, there is no any API to do this. But you can write a script to
+determine which index is closed.
+
+Checking API:
+
+    
+    
+        curl -XGET http://localhost:9200/_cluster/health/logstash-2014.02.21?pretty
+    
+
+Here is the status of index
+
+Index Opened:
+
+    
+    
+    {
+         "cluster_name" : "ABC",
+         "status" : "green",
+         "timed_out" : false,
+         "number_of_nodes" : 1,
+         "number_of_data_nodes" : 1,
+         "active_primary_shards" : 1,
+         "active_shards" : 1,
+         "relocating_shards" : 0,
+         "initializing_shards" : 0,
+         "unassigned_shards" : 0
+    }
+    
+
+Index Closed:
+
+    
+    
+    {
+        "cluster_name" : "ABC",
+        "status" : "green",
+        "timed_out" : false,
+        "number_of_nodes" : 1,
+        "number_of_data_nodes" : 1,
+        "active_primary_shards" : 0,
+        "active_shards" : 0,
+        "relocating_shards" : 0,
+        "initializing_shards" : 0,
+        "unassigned_shards" : 0
+    }
+    
+
+From the information you can determine the index status by
+**active_primary_shards**. Hope this can help you.
+
+When asking for: /_cluster/state/metadata
+
+You get a list of indices, from each index you can request the state:
+metadata.indices["your_index"].state
+
+I use this in my plugin as well and it works for me:
+<http://www.gridshore.nl/esgui/>
+
+If the only question for you here is just seeing which index is closed, i.e.
+the administrative task you can use e.g. ElasticSearh head plugin:
+
+    
+    
+    http://yourserver:9200/_plugin/head/
+    
+
+Don't forget the last slash. If you can not install it (e.g. on some hosted
+ElasticSearch), or can't use it for other reason, or want to manipulate
+indices programmatically, you can use other advices here to find it out using
+API.
+
+P.S.: /_cluster/state/metadata really can be very-very long e.g. if you are
+using dynamic mapping.
+
+You can use this:
+
+    
+    
+    http://yourserver:9200/_cluster/state/blocks?pretty
+    
+
+it would have been nice for Elasticsearch to stick it on this page:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-open-
+close.html>
+
+Use Curl GET _cat/indices, $2 would show the state of your index.
+
+Since Elasticsearch 5 you can sort the catalog output
+
+    
+    
+    GET /_cat/indices?v&s=status:asc
+    
+
+Would give you [![enter image description
+here](https://i.stack.imgur.com/Hvbaq.png)](https://i.stack.imgur.com/Hvbaq.png)
+
+Adding a command that prints the list of closed indices (and nothing else),
+wich I was googling for.
+
+    
+    
+    curl -s -XGET 'http://localhost:9200/_cat/indices?h=status,index' | awk '$1 == "close" {print $2}'
+    
+
+  * `-s` will silence the curl, so it doesn't show status bar
+  * `h=status,index` param says the `_cat` command to print only the two columns
+  * the `awk` filter will print index names when status is _close_
+
+See also: <https://www.elastic.co/guide/en/elasticsearch/reference/2.4/cat-
+indices.html>
+
+* * *
+
+Apparently newer version of the `_cat` command is more powerful.. sorting,
+filtering, you name it. See:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/cat-
+indices.html>
+
+    
+    
+    http://es_endpoints.com:9200/index-pattern-*/_settings?expand_wildcards=closed
+    
+
+Get the answer from IndicesOptions.java from ES source code:
+
+    
+    
+    public static IndicesOptions fromParameters(Object wildcardsString, Object ignoreUnavailableString, Object allowNoIndicesString, IndicesOptions defaultSettings) {
+        if (wildcardsString == null && ignoreUnavailableString == null && allowNoIndicesString == null) {
+            return defaultSettings;
+        }
+    
+        boolean expandWildcardsOpen = false;
+        boolean expandWildcardsClosed = false;
+        if (wildcardsString == null) {
+            expandWildcardsOpen = defaultSettings.expandWildcardsOpen();
+            expandWildcardsClosed = defaultSettings.expandWildcardsClosed();
+        } else {
+            String[] wildcards = nodeStringArrayValue(wildcardsString);
+            for (String wildcard : wildcards) {
+                if ("open".equals(wildcard)) {
+                    expandWildcardsOpen = true;
+                } else if ("closed".equals(wildcard)) {
+                    expandWildcardsClosed = true;
+                } else if ("none".equals(wildcard)) {
+                    expandWildcardsOpen = false;
+                    expandWildcardsClosed = false;
+                } else if ("all".equals(wildcard)) {
+                    expandWildcardsOpen = true;
+                    expandWildcardsClosed = true;
+                } else {
+                    throw new IllegalArgumentException("No valid expand wildcard value [" + wildcard + "]");
+                }
+            }
+        }
+    
+        //note that allowAliasesToMultipleIndices is not exposed, always true (only for internal use)
+        return fromOptions(
+                nodeBooleanValue(ignoreUnavailableString, "ignore_unavailable", defaultSettings.ignoreUnavailable()),
+                nodeBooleanValue(allowNoIndicesString, "allow_no_indices", defaultSettings.allowNoIndices()),
+                expandWildcardsOpen,
+                expandWildcardsClosed,
+                defaultSettings.allowAliasesToMultipleIndices(),
+                defaultSettings.forbidClosedIndices(),
+                defaultSettings.ignoreAliases()
+        );
+    }
+    
+

@@ -1,0 +1,95 @@
+18360225 elastic search, is it possible to update nested objects without
+updating the entire document?
+
+I'm indexing a set of documents (imagine them as forum posts) with a nested
+object which is the user related to that post. My problem is that the user
+fields might be updated, but since the posts do not change they are not
+reindexed and the user nested objects become outdated. Is there a way to
+update the nested objects without reindexing the whole document again? Or the
+only solution would be to reindex all the related posts of a user everytime
+that the user changes?
+
+You can use the Update API.
+
+    
+    
+    curl -XPOST localhost:9200/docs/posts/post/_update -d '{
+        "script" : "ctx._source.nested_user = updated_nested_user",
+        "params" : {
+            "updated_nested_user" : {"field": "updated"}
+        }
+    }'
+    
+
+See this [SO answer](https://stackoverflow.com/questions/15722197/updating-
+indexed-document-in-elasticsearch) for full detail.
+
+Note that update scripts support conditional logic, as shown
+[here](http://www.elastic.co/guide/en/elasticsearch/reference/current/docs-
+update.html). So you could tag forum posts when the user changes, then iterate
+over the posts to update only posts with changed users.
+
+    
+    
+    curl -XPOST 'localhost:9200/docs/posts/post/_update' -d '{
+        "script" : "ctx._source.tags.contains(tag) ? "ctx._source.nested_user = updated_nested_John" : ctx.op = "none"",
+        "params" : {
+            "tag": "updated_John_tag",
+            "updated_nested_John" : {"field": "updated"}
+        }
+    }'
+    
+
+_UPDATED_
+
+Perhaps my ternary operator example was incomplete. This was not mentioned in
+the question, but assuming that users change their info in a separate part of
+the app, it would be nice to apply those changes to the forum posts in one
+script. Instead of using tags, try checking the user field directly for
+changes:
+
+    
+    
+    curl -XPOST 'localhost:9200/docs/posts/post/_update' -d '{
+        "script" : "ctx._source.nested_user.contains(user) ? "ctx._source.nested_user = updated_nested_John" : ctx.op = "none"",
+        "params" : {
+            "user": "John",
+            "updated_nested_John" : {"field": "updated"}
+        }
+    }'
+    
+
+As mentioned, though, this may be a slower operation than reindexing the full
+posts.
+
+Sadly elasticsearch cannot update only part of a document without reindexing
+the whole document. So, yes you would need to reindex the whole document to
+change a nested part.
+
+If you don't have the whole document to hand to resend it, you can just send
+the part that needs changing using the [update
+API](http://www.elasticsearch.org/guide/reference/api/update/), but be warned
+there are performance issues.
+
+Answer by @Scott Rice on how to use partial update in this context is very
+useful, while answer by @ramseykhalaf is more correct in sense that this is
+not possible without reindexing. If we do partial update, we do reindexing
+whole document anyway.
+
+However depends on understanding of what "reindexing" is.
+
+If we define reindexing as "resubmitting whole document to ES" - then we can
+call partial update the solution without reindexing in this sense. If we
+define reindexing as "recalculating data structures allowing to efficiently
+search for updated document in index" (which is more correct definition to my
+understanding), then it always happen.
+
+Please note that whole old copy of document will remain in index after partial
+update, marked as deleted (until next complete reindex from scratch or
+"optimize").
+
+To avoid this, child-parent relationship can be used instead of nested
+objects. Children can be added/deleted/updated without touching the parent
+document (however this have its cost of course - maintaining child-parent
+relationship forest in memory etc.).
+

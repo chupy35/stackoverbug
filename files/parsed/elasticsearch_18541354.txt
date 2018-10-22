@@ -1,0 +1,61 @@
+18541354 Elastic search sort script not working after upgrade
+
+The following sort script used to work in 0.2 but now fails in 0.9:
+
+    
+    
+    {
+      "_script": {
+        "script": "org.elasticsearch.common.Digest.md5Hex(doc['myId'].value + 12345)",
+        "type": "string",
+        "order": "asc"
+      }
+    }
+    
+
+The error I am receiving is:
+
+    
+    
+    PropertyAccessException[[Error: unresolvable property or identifier: org]
+    
+
+I have seen posts suggesting creating a custom score query that does this
+work, so a little extra information. I am already using a custom score query,
+and this sort is a secondary sort for when scores match, which can (and
+should) happen regularly. The constant number in the example above is based on
+the person performing the search so each person who searches gets a randomized
+but consistent sorting and we don't always show the same results at the top to
+everyone.
+
+I cannot find any information on why this is happening and how to go about
+fixing it while retaining the same sorting functionality. Any help or pointing
+me in a new direction would be greatly appreciated.
+
+I replied to your post in the mailing list, the problem is due to the fact
+that the `org.elasticsearch.common.Digest`has been removed from elasticsearch.
+I don't think you can replace it with a single line, probably easier to write
+a Java native script if you are familiar with Java.
+
+On the other hand I see you have some more details in your question here, and
+I've been wondering whether you could even avoid using script sorting to
+achieve what you want.
+
+Your usecase makes me think about the recently added [rescore
+query](http://www.elasticsearch.org/guide/reference/api/search/rescore/),
+which allows to rescore top K results using a secondary query. Do take into
+account that the rescore is executed on each shard. So if you ask for the
+first 10 documents, the rescore will happen on the top 10 documents per shard,
+and that will influence the top 10 documents that get selected during the
+reduce phase. Sounds like you were more looking for changing the order of the
+documents that get returned, while with the rescore query those documents
+might change due to the rescore process itself.
+
+The coming version, 0.90.4, will also contain random seeded ordering, which
+should help you with the random aspect of your sorting. Have a look at the
+[related issue](https://github.com/elasticsearch/elasticsearch/issues/1170) to
+know more.
+
+Would be cool to combine a rescore query with a function score query that
+allows for random ordering.
+

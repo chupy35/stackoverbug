@@ -1,0 +1,197 @@
+20730151 How to fix cluster health yellow with Elastic Search
+
+I have setup on server, with MongoDb and ElasticSearch. Using
+<https://github.com/richardwilly98/elasticsearch-river-mongodb> I have
+connected ElasticSearch and MongoDb together.
+
+I create a new index using:
+
+    
+    
+    curl -XPUT 'http://127.0.0.1:9200/_river/mongodb/_meta' -d '{ 
+            "type": "mongodb", 
+            "mongodb": { 
+            "db": "my_database", 
+            "collection": "my_collection"
+        }, 
+            "index": {
+            "name": "mainindex", 
+            "type": "string",
+            "bulk": {
+                "concurrent_requests": 1
+            }
+        }
+    }'
+    
+
+Once the command is executed and I go to <http://x.x.x.x:9200/_plugin/head/> I
+see the message: cluster health: yellow (1, 6).
+
+![cluster health: yellow \(1, 6\)](https://i.stack.imgur.com/bfrB7.jpg)
+
+![enter image description here](https://i.stack.imgur.com/mVxzG.jpg)
+
+Looks like you dont have a node for replica shards to go to. You can lower
+your replica count to 0 or add a second node to your cluster so that primary
+and replica shards can be safely placed on different nodes.
+
+The default configuration in elasticsearch.yml is probably this:
+
+    
+    
+    index.number_of_shards: 5  
+    index.number_of_replicas: 1
+    
+
+The idea being that if your node crashes, another node in your cluster will
+have a copy of the shard. Since you only have one node, the cluster has no
+where to put the replicas, and thus is in a yellow state.
+
+A cluster is being configured by having the same cluster name inside the
+elastic search config
+
+The default elasticsearch.yml you are probably using has these settings in the
+Beginning like this:
+
+    
+    
+    ################################### Cluster ###################################
+    
+    # Cluster name identifies your cluster for auto-discovery. If you're running
+    # multiple clusters on the same network, make sure you're using unique names.
+    #
+    # cluster.name: elasticsearch
+    
+    
+    #################################### Node #####################################
+    
+    # Node names are generated dynamically on startup, so you're relieved
+    # from configuring them manually. You can tie this node to a specific name:
+    #
+    # node.name: "Franz Kafka"
+    
+
+here you would need to configure a unique
+
+`cluster.name: "MainCluster"`
+
+and for each machine and/or instance a different unique
+
+`node.name: "LocalMachine1"`
+
+you now need to copy this `elasticsearch.yml` to another machine (in the same
+Network), or to the same place as e.g.`elasticsearch_2.yml` edit it for:
+
+`node.name: "LocalMachine2"`
+
+and your cluster is ready to go
+
+if not configured elastiscsearch will use a random Marvel Character (of 3000
+according the the documentation), so not to change the `node.name` should be
+ok also
+
+For having two nodes running on the same machine, you must make a
+configuration e.g. `elasticsearch_2.yml` copy, with above changes. Also you
+must have copies of the data and log path e.g. (homebrew specific paths:)
+
+    
+    
+    cp -r /usr/local/var/elasticsearch /usr/local/var/elasticsearch_2
+    cp -r /usr/local/var/log/elasticsearch /usr/local/var/log/elasticsearch_2
+    
+
+might look like
+
+    
+    
+    #################################### Paths ####################################
+    
+    # Path to directory containing configuration (this file and logging.yml):
+    #
+    # path.conf: /path/to/conf
+    
+    # Path to directory where to store index data allocated for this node.
+    #
+    path.data: /usr/local/var/elasticsearch_2/
+    #
+    # Can optionally include more than one location, causing data to be striped across
+    # the locations (a la RAID 0) on a file level, favouring locations with most free
+    # space on creation. For example:
+    #
+    # path.data: /path/to/data1,/path/to/data2
+    
+    # Path to temporary files:
+    #
+    # path.work: /path/to/work
+    
+    # Path to log files:
+    #
+    path.logs: /usr/local/var/log/elasticsearch_2/
+    
+
+make sure you do not have running elasicsearch on localhost loopback device
+
+127.0.0.1
+
+just comment it out in case it is not (homebrew does patch ist this way)
+
+    
+    
+    ############################## Network And HTTP ###############################
+    
+    # Elasticsearch, by default, binds itself to the 0.0.0.0 address, and listens
+    # on port [9200-9300] for HTTP traffic and on port [9300-9400] for node-to-node
+    # communication. (the range means that if the port is busy, it will automatically
+    # try the next port).
+    
+    # Set the bind address specifically (IPv4 or IPv6):
+    #
+    # network.bind_host: 192.168.0.1
+    
+    # Set the address other nodes will use to communicate with this node. If not
+    # set, it is automatically derived. It must point to an actual IP address.
+    #
+    # network.publish_host: 192.168.0.1
+    
+    # Set both 'bind_host' and 'publish_host':
+    #
+    # network.host: 127.0.0.1
+    
+
+now you can start elastic search like this:
+
+    
+    
+    bin/elasticsearch -D es.config=/usr/local/Cellar/elasticsearch/1.0.0.RC1/config/elasticsearch.yml
+    
+
+for the first node and master (because started first)
+
+and then
+
+    
+    
+    bin/elasticsearch -D es.config=/usr/local/Cellar/elasticsearch/1.0.0.RC1/config/elasticsearch_2.yml
+    
+
+Now you should have got 2 Nodes running
+
+I am posting an answer since I tumbled upon this question while looking for
+solution of similar issue.
+
+I have a dev environment where I need only 1 Elasticsearch node so there is no
+need for replicas for all my indices.
+
+To solve **cluster health: yellow** issue, I just made
+`index.number_of_replicas: 1`
+
+    
+    
+    PUT /_settings
+    {
+      "index" : {
+            "number_of_replicas" : 0
+        }
+    }
+    
+

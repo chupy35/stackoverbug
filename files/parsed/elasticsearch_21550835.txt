@@ -1,0 +1,100 @@
+21550835 Elasticsearch sequential dates
+
+I am creating a hotel booking system using Elasticsearch and am trying to find
+a way to return hotels that have a variable number of sequential dates
+available (for example 7 days) across a range of dates
+
+I am currently storing dates and prices as a child document to the hotel but
+am unsure how to undertake the search or if it is even possible with my
+current setup?
+
+Edit: added mappings
+
+Hotel Mapping
+
+    
+    
+    {
+      "hotel":{
+        "properties":{
+          "city":{
+            "type":"string"
+          },
+          "hotelid":{
+            "type":"long"
+          },
+          "lat":{
+            "type":"double"
+          },
+          "long":{
+            "type":"double"
+          },
+          "name":{
+            "type":"multi_field",
+            "fields":{
+              "name":{
+                "type":"string"
+              },
+              "name.exact":{
+                "type":"string",
+                "index":"not_analyzed",
+                "omit_norms":true,
+                "index_options":"docs",
+                "include_in_all":false
+              }
+            }
+          },
+          "star":{
+            "type":"double"
+          }
+        }
+      }
+    }
+    
+
+Date Mapping
+
+    
+    
+    {
+        "dates": {
+            "_parent": {
+                "type": "hotel"
+            },
+            "_routing": {
+                "required": true
+            },
+            "properties": {
+                "date": {
+                    "type": "date",
+                    "format": "dateOptionalTime"
+                },
+                "price": {
+                    "type": "double"
+                }
+            }
+        }
+    }
+    
+
+I am currently using a date range to select the available dates and then a
+field query to match the city - the other fields will be used later
+
+I had to to something similar and i ended up storing every day the hotel(room)
+was booked during indexing. (So a list of [2014-02-15, 2014-02-16, 2014-02-17,
+etc])
+
+After that is was fairy trivial to write a query to find all hotel rooms that
+were free during a certain date range.
+
+Still seems like there should be am ore elegant solution, but this ended up
+working great for me.
+
+In my project we have limited period of stays, so I created an object in
+mapping, and specified available booking dates for each period, like:
+
+  * list of available booking dates for 2 days stay
+  * list of available booking dates for 3 days stay 
+  * ....
+  * list of available booking dates for 10 days stay
+

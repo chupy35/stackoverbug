@@ -1,0 +1,80 @@
+23726085 Elasticsearch script_score with array
+
+I am trying to use script_score to update the score based on a json of ID
+values. The score should multiply the original score by the factor listed in
+params.
+
+    
+    
+    "script_score": {
+        "params": {
+          "ranking": {
+            "1": "1.3403946161270142",
+            "3": "1.3438195884227753"
+           }
+        },
+        "script": "_score * ranking[doc['ID'].value]"
+    }
+    
+
+I am getting the following error:
+
+    
+    
+    nested: QueryParsingException[[index name] script_score the script could not be loaded]; nested: CompileException[[Error: unbalanced braces [ ... ]]\n[Near : {... _score * ranking[doc['ID'].value] ....}]\n                                         ^\n[Line: 1, Column: 29]]; }]"
+    
+
+If I manually specify an ID for example _score * ranking['1'], it works fine.
+Also if I use the ID directly it works, but not if I use the ID value as the
+index. I should note that the ID is an integer. Can anyone help me solve this?
+Additionally, how would this work if the ID isn't in the ranking list? Would
+it treat it as score='_score'?
+
+You `ranking` param is not an array but a map. The type used for the `ID`
+field should match the type used for the key in your map, and the boost should
+be a number, not a string.
+
+Here is a document:
+
+    
+    
+    {
+      "ID" : "1"
+    }
+    
+
+and here is the updated query:
+
+GET /test/_search
+
+    
+    
+    {
+      "query": {
+        "function_score": {
+          "functions": [
+            {
+              "script_score": {
+                "params": {
+                  "ranking": {
+                    "1": 1.3403946161270142,
+                    "3": 1.3438195884227753
+                  }
+                },
+                "script": "_score * ranking.get(_doc['ID'].value)"
+              } 
+            }
+          ]
+        }
+      }
+    }
+    
+
+The current script doesn't handle cases where the entry is not within the
+parama map, case that leads to a `NullPointerException`.
+
+That said I think this boosting method will not scale as you need to have an
+entry per document in your params, which is hardly maintainable. Having the
+rank within each of the document seems better although you'd need to update
+them every time you want to change it.
+

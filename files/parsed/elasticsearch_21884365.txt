@@ -1,0 +1,10 @@
+21884365 Install elasticsearch mapper attachment plugin
+
+If I want to install elasticsearch-mapper-attachment plugin
+`$ES_HOME$\elasticsearch-1.0.0\bin\plugin.bat -install
+elasticsearch/elasticsearch-mapper-attachments/2.0.0.RC1` should I install
+Apache Tika before or comes Tika with the ElasticSearch installation?
+
+The plugin should include Tika already. All you need to do is to upload a
+document's base64 encoded attachment using the curl API.
+

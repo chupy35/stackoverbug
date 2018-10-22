@@ -1,0 +1,14 @@
+24064623 Elastic Search facet counts don't add up to total hits
+
+Please see my gist for the full details:
+<https://gist.github.com/jenkoian/85a3f69fcbf88a87538e>
+
+Most of the searching I've done on this has brought me back to
+<https://github.com/elasticsearch/elasticsearch/issues/1305> so I tried
+putting my index on a single shard and I get the same issue with incorrect
+counts.
+
+Did you specify `search_type=dfs_query_then_fetch` ?
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-search-type.html>
+

@@ -1,0 +1,54 @@
+23865234 Document found with _search but not with GET
+
+We have a single machine elastic search server (8 shards but all hosted at the
+same machine). Index contains 7 million documents. We do not specify any
+custom routing when indexing the documents. We are using Elastic search
+version 1.2.
+
+The problem is that we are unable to retrieve many of our documents using GET
+, . However using search?_id: we are able to retrieve all of those documents.
+
+We are also successful in retrieving a document by specifying routing
+parameter (with different values (1,2,3,...) ) with GET.
+
+With previous version, i.e. Elastic Search 1.0.3, we did not have that
+problem.
+
+Any suggestions for resolution?
+
+Thanks in advance
+
+There is a bug in Elasticsearch 1.2.0 that causes this specific behavior. It's
+due to a routing bug that was introduced in 1.2.0:
+
+> There was a routing bug in Elasticsearch 1.2.0 that could have a number of
+bad side effects on the cluster. Possible side effects include:
+
+>
+
+>   * documents that were indexed prior to the upgrade to 1.2.0 may not be
+accessible via get. A search would find these documents, but not a direct get
+of the document by ID.
+
+>
+
+>   * documents that were updated after the upgrade to 1.2.0 may be
+duplicated, with one copy from pre-1.2.0 and a second copy updated  
+>  since the upgrade to 1.2.0.
+
+>
+
+>   * if a document is duplicated as above, and versioning is in use, the
+document added after the upgrade to 1.2.0 will have its version  
+>  reset.
+
+>
+
+>
+
+ES is advising everyone to upgrade to 1.2.1 immediately. No word yet on how to
+resolve what appears to be index corruption introduced by using 1.2.0 to
+insert or update. Full details here:
+
+<http://www.elasticsearch.org/blog/elasticsearch-1-2-1-released/>
+

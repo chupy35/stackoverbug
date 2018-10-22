@@ -1,0 +1,11 @@
+20331845 How to query all fields individually with ElasticSearch
+
+As I understand it, ElasticSearch searches on the magic _all field by default.
+The problem with this seems to be that if a field uses a different index
+analyzer, the analyzed data from this field is not searched.
+
+I've had success with searching on the fields ['domain', '_all'] but I really
+need to avoid having to manually specify each field which was analyzed
+differently. I see fields supports wildcards but seemingly not ' _' on its
+own. I could do a_ , b*, c*, d* etc. but this seems a tad inefficient.
+

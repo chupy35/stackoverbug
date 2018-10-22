@@ -1,0 +1,78 @@
+23453832 How to retrieve the original Percolator query
+
+I'm trying to use the Percolator and retrieve not only the perculator id but
+the whole original query.
+
+This is my query:
+
+    
+    
+    curl -XPUT 'localhost:9200/my-index/.percolator/1' -d '{
+        "query" : {
+            "match" : {
+                "message" : "bonsai tree"
+            }
+        },
+        "moreInfo": {
+            "foo": "bar"
+        }
+    }'
+    
+
+When a matching document is found, I get this:
+
+    
+    
+    {
+        "took" : 19,
+        "_shards" : {
+            "total" : 5,
+            "successful" : 5,
+            "failed" : 0
+        },
+        "total" : 1,
+        "matches" : [
+            {
+                 "_index" : "my-index",
+                 "_id" : "1"
+            }
+        ]
+    }
+    
+
+What I realy interested in, is the `moreInfo` part of the query. I know I can
+query elasticsearch for it in an additional request, but it would be great to
+just have it directly, something like this:
+
+    
+    
+    {
+        "took" : 19,
+        "_shards" : {
+            "total" : 5,
+            "successful" : 5,
+            "failed" : 0
+        },
+        "total" : 1,
+        "matches" : [
+            {
+            "query" : {
+                "match" : {
+                    "message" : "bonsai tree"
+                }
+            },
+            "moreInfo": {
+                "foo": "bar"
+            }
+        ]
+    }
+    
+
+Is there a way to do that?
+
+Very good point, retrieving the query directly is not possible at the moment
+but it's something that we might want to add soon as you're not the only one
+asking for it and it makes a lot of sense. There's an issue open that
+describes this usecase already:
+<https://github.com/elasticsearch/elasticsearch/issues/4317>
+

@@ -1,0 +1,41 @@
+22977039 elasticsearch - tips on how to organize my data
+
+I'm trying elasticsearch by getting some data from facebook and twitter to.
+
+The question is: how can I organize this data in index?
+
+    
+    
+    /objects/posts
+    /objects/twits
+    
+
+or
+
+    
+    
+    /posts/post
+    /twits/twit
+    
+
+I'm trying queries such as, get posts by `author_id = X`
+
+First one is the good approach. Because creating two indices will create two
+lucence instances which will effect the response time.
+
+You need to think about the long term when deciding how to structure your data
+in Elasticsearch. How much data are you planning on capturing? Are search
+requests going to look into both Facebook and Twitter data? Amount of
+requests, types of queries and so on.
+
+Personally I would start of with the first approach,
+`localhost:9200/social/twitter,facebook/` as this will reduce the need for
+another index when it isn't necessarily required. You can search across both
+of the types easily which has less overhead than searching across two indexes.
+There is quite an interesting article
+[here](https://www.found.no/foundation/sizing-elasticsearch/) about how to
+grow with intelligence.
+
+Elasticsearch has many configurations, essentially its finding a balance which
+fits your data.
+

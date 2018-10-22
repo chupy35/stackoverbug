@@ -1,0 +1,4 @@
+33243061
+How to rename a snapshot repository in elasticsearch?
+<p>I have registered a snapshot repository like this:</p>&#xA;&#xA;<pre><code>PUT /_snapshot/es152_prod_backup&#xA;   {&#xA;     "type": "fs",&#xA;     "settings": {&#xA;     "location": "/var/es/backup",&#xA;     "compress": true&#xA;     }&#xA;   }&#xA;</code></pre>&#xA;&#xA;<p>Now I want to rename it to something more generic like: </p>&#xA;&#xA;<blockquote>&#xA;  <p>myapp_prod_backup</p>&#xA;</blockquote>&#xA;&#xA;<p>How can I do it? </p>&#xA;&#xA;<p>Thanks,</p>&#xA;&#xA;<p>Chandan</p>&#xA;
+<p>Add a new repository:</p>&#xA;&#xA;<pre><code>   PUT /_snapshot/myapp_prod_backup&#xA;   {&#xA;     "type": "fs",&#xA;     "settings": {&#xA;     "location": "/var/es/backup",&#xA;     "compress": true&#xA;     }&#xA;   }&#xA;</code></pre>&#xA;&#xA;<p>and delete the old one</p>&#xA;&#xA;<pre><code>   DELETE /_snapshot/myapp_prod_backup&#xA;</code></pre>&#xA;

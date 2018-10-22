@@ -1,0 +1,45 @@
+14939078 Scaling with regard to Nested vs Parent/Child Documents
+
+I'm running a proof of concept for us to run nested queries on more
+"normalised" data in ES.
+
+e.g. with nested
+
+Customer ->  \- name  
+\- email  \- events ->  \- created  \- type
+
+Now I have a situation where a list of events for a given customer can be
+moved to another customer. e.g. Customer A has 50 events  Customer B has 5000
+events
+
+I now want to move all events from customer A into Customer B
+
+At scale with millions of customers and queries are run on this for graphs in
+a UI is Parent/Child more suitable or should nested be able to handle it?
+
+What are the pros and cons in my situation?
+
+It's hard to give you even rough performance metrics like "Nested is good
+enough", but I can give you some details about Nested vs Parent/Child that can
+help. I'd still recommend working up a few benchmark tests to verify
+performance is acceptable.
+
+**Nested**
+
+  * Nested docs are stored in the same Lucene block as each other, which helps read/query performance. Reading a nested doc is faster than the equivalent parent/child.
+  * Updating a single field in a nested document (parent or nested children) forces ES to reindex the _entire_ nested document. This can be very expensive for large nested docs
+  * Changing the "parent" means ES will: delete old doc, reindex old doc with less nested data, delete new doc, reindex new doc with new nested data.
+
+**Parent/Child**
+
+  * Children are stored separately from the parent, but are routed to the same shard. So parent/children are slightly less performance on read/query than nested
+  * Parent/child mappings have a bit extra memory overhead, since ES maintains a "join" list in memory
+  * Updating a child doc does not affect the parent or any other children, which can potentially save a lot of indexing on large docs
+  * Changing the parent means you will delete the old child document and then index an identical doc under the new parent.
+
+It is possible Nested will work fine, but if you think there is the
+possibility for a lot of "data shuffling", then Parent/Child may be more
+suitable. Nested is best suited for instances where the nested data is not
+updated frequently but read often. Parent/Child is better for arrangements
+where the data moves around more frequently.
+

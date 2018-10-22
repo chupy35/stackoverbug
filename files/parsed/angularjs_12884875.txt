@@ -1,0 +1,77 @@
+12884875 AngularJS DOM Access On Init
+
+I wrote this simple jsfiddle in which I do (successfully) some basic addClass
+on a directive in a ng-repeat.
+
+<http://jsfiddle.net/rv6u2/5/>
+
+Now, my question is: which is the best ( _or intended_ ) place to do such DOM
+manipulations:
+
+**A. In the directive?**
+
+**B. In the controller?**
+
+Both possibilities are shown in my example.
+
+**Code:**
+
+    
+    
+    var TestApp = angular.module("TestApp", ['ngResource']);
+    TestApp.directive('onLoad', function() {
+        return {
+            restrict: 'A',
+            link: function(scope, elm, attrs) {
+                elm.addClass('loaded'); // A: DOM manipulation in directive
+                scope.initMe(scope.$eval(attrs.onLoad2), elm); // B: DOM manipulation handled in controller
+            }
+        };
+    });
+    
+
+thanks in advance :)
+
+**NEVER** manipulate the dom inside of controllers.
+
+Controllers should just use services and update attributes of $scope. All DOM
+manipulation should be made by directives and(in some cases) services(e.g.
+[$anchorScroll](http://docs.angularjs.org/api/ng.%24anchorScroll))
+
+See the concepts of angularjs [here](http://docs.angularjs.org/guide/concepts)
+
+**UPDATE** : Example of the correct way [here](http://jsfiddle.net/rv6u2/8/)
+
+A more "Angular way" of setting class loaded2 would be as follows (which
+avoids DOM manipulation inside the controller):
+
+In the HTML, declare a model for the class (myClass):
+
+    
+    
+    <div ng-repeat="item in items" ng-model="item" on-load="initMe(item)" ng-class="myClass">
+    
+
+In the link function, just call the controller method:
+
+    
+    
+    scope.initMe()
+    
+
+In the controller, manipulate the model/$scope property:
+
+    
+    
+    $scope.initMe = function() {
+       $scope.myClass = "loaded2";
+    }
+    
+
+Changing the model/scope will automatically update the view.
+
+This method is useful if you want to declare in the HTML that a class is being
+controlled by $scope property myClass. However, using elm.addClass() inside
+the linking function is more self-contained and easier to maintain (and I like
+that approach better).
+

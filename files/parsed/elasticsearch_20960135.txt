@@ -1,0 +1,68 @@
+20960135 Is it possible to get back a response from the percolator when
+inserting a document?
+
+While searching for a solution that allows me to trigger some actions whenever
+data is inserted I've found the percolator API from elasticsearch. I have read
+quite a few pages until I recognized that all queries using the percolator API
+are using GET.
+
+Is it the case that for a use case of inserting documents and wanting to know
+which ones matched a query I would need to do two requests? From the pages I
+get the impression I would have to insert the document first and then ask the
+percolator index with the same document if it had matched. Or is there a query
+parameter or similar to let elasticsearch include the percolator response into
+the response I get from the insert?
+
+I believe this wouldn't be possible.
+
+From [the documentation](http://www.elasticsearch.org/blog/percolator/)..
+
+> The _percolator which holds the repository of registered queries is just a
+another index in ES.
+
+Since the `percolator` is another index, one would need to hit ES with another
+query directed at `_percolator` as the index.
+
+Given your question I believe you are looking at elasticsearch 1.0, at the
+moment available in Beta2. This detail is important as the percolator has been
+rewritten in 1.0 and looks quite different compared to the one available in
+0.90.
+
+You normally use the percolator to register queries, which get stored. Then
+you can percolate a document to know how many queries it matches, without
+actually indexing it.
+
+What many people need is the additional step of indexing the document as well,
+thus it's nice to be able to do both percolate and indexing in the same
+request, so that you can both index the document and get back the queries that
+it matches. This used to be possible in 0.90 using the so called percolate
+while indexing. It is the only feature that was removed with the rewrite to
+1.0, to be able to better distribute the registered queries and scale them out
+as well.
+
+In fact, with 0.90 the queries are stored in a reserved index, called
+`_percolator`, which always has 1 shard and `auto_expand_replica` set to
+`true`. That means that every node will contain all the queries, as that
+single shard will be automatically replicated to all nodes. The main reason
+behind this is that when you want to index a document and percolate at the
+same time, in order to do it in a perfomant way you need to make sure that the
+two shards that you need to hit (queries and data) are on the same node. If
+all queries are on all nodes, this is guaranteed thus percolate while indexing
+is possible and will be fast enough. But there's a big limitation, which is
+why the percolator has been rewritten: there's a limit to the number of
+queries you can register, as they'll go in a single shard.
+
+With 1.0, you can register queries against any index, and they'll be
+registered under a reserved type called `.percolator`. You can then scale out
+with queries as well, as they are in a normal index and you can define the
+number of shards. The disadvantage is that you don't have a whole copy of the
+queries on each node, thus percolating while indexing is not possible. What
+you can do though, which is equivalent but consists of two requests is:
+
+  1. index the document
+  2. [percolate the existing document](http://www.elasticsearch.org/guide/en/elasticsearch/reference/master/search-percolate.html#_percolating_an_existing_document) by id, without needing to send the whole document again
+
+Step 2 can be done right after the index operation returns, as it executes
+internally a get by id, which works in real-time, thus no need to wait nor
+refresh the index.
+

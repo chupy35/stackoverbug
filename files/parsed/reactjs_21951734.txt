@@ -1,0 +1,194 @@
+21951734 react.js custom events for communicating with parent nodes
+
+I'm making and listening for normal DOM `CustomEvent`s to communicate to
+parent nodes:
+
+In child:
+
+    
+    
+      var moveEvent = new CustomEvent('the-graph-group-move', { 
+        detail: {
+          nodes: this.props.nodes,
+          x: deltaX,
+          y: deltaY
+        },
+        bubbles: true
+      });
+      this.getDOMNode().dispatchEvent(moveEvent);
+    
+
+In parent:
+
+    
+    
+    componentDidMount: function () {
+      this.getDOMNode().addEventListener("the-graph-group-move", this.moveGroup);
+    },
+    
+
+This works, but is there a React-specific way that would be better?
+
+As noted above:
+
+> The React way would be to pass callbacks down to children explicitly via
+props — . There's no support for custom events w/ bubbling in React.
+
+The reactive programming abstraction is orthogonal:
+
+> Programming interactive systems by means of the observer pattern is hard and
+error-prone yet is still the implementation standard in many production
+environments. We present an approach to gradually deprecate observers in favor
+of reactive programming abstractions. Several library layers help programmers
+to smoothly migrate existing code from callbacks to a more declarative
+programming model.
+
+The React philosophy is based on the Command pattern instead:
+
+[![enter image description
+here](https://i.stack.imgur.com/UazA2.png)](https://i.stack.imgur.com/UazA2.png)
+
+**References**
+
+  * [Deprecating the Observer Pattern](http://lambda-the-ultimate.org/node/4028)
+  * [Command Pattern: Command History](http://www.cs.mcgill.ca/~hv/classes/CS400/01.hchen/doc/command/command.html)
+  * [Component Interop with React and Custom Elements](http://addyosmani.com/blog/component-interop-with-react-and-custom-elements/)
+  * [Building Redux in TypeScript](http://blog.ng-book.com/introduction-to-redux-with-typescript-and-angular-2/)
+  * [How is Mithril Different from Other Frameworks - Mithril](http://mithril.js.org/comparison.html)
+
+There is another one I found which is quite reasonable as well especially if
+drilling holes from parent to child to child becomes cumbersome already. He
+called it less simple communication. Here's the link:
+
+<https://github.com/ryanflorence/react-training/blob/gh-pages/lessons/04-less-
+simple-communication.md>
+
+A possible solution, if you absolutely _must_ resort to the Observer pattern
+in a ReactJs app you can hijack a normal event. For example, if you want the
+delete key to cause a `<div>` that is marked for deletion, you could have the
+`<div>` listen for a keydown event which will be invoked by a customEvent.
+Trap the keydown on the body and dispatch a `customEvent` keydown event on the
+selected `<div>`. Sharing in case it helps someone.
+
+You could bubble events up through callbacks passed down via contexts:
+[[CodePen]](http://codepen.io/jedwards1211/pen/yOqGxK?editors=1111
+"\[CodePen\]")
+
+    
+    
+    import React, {Component, PropTypes} from 'react';
+    
+    class EventContext extends Component {
+      static contextTypes = {
+        onMyEvent: PropTypes.func
+      };
+      static childContextTypes = {
+        onMyEvent: PropTypes.func.isRequired
+      };
+      static propTypes = {
+        onMyEvent: PropTypes.func.isRequired
+      };
+      getChildContext() {
+        let {onMyEvent} = this.props;
+        return {
+          onMyEvent: (...args) => {
+            // stop propagation if handler returns false
+            if (onMyEvent(...args) !== false) {
+              // bubble the event
+              this.context.onMyEvent && this.context.onMyEvent(...args);
+            }
+          }
+        };
+      }
+      render() {
+        return this.props.children;
+      }
+    }
+    
+    class MyComponent extends Component {
+      static contextTypes = {
+        onMyEvent: PropTypes.func
+      };
+      render() {
+        let {onMyEvent} = this.context;
+        return <button onClick={onMyEvent}>Click me</button>;
+      }
+    }
+    
+    export default <EventContext onMyEvent={e => console.log('grandparent got event: ', e)}>
+      <EventContext onMyEvent={e => console.log('parent got event: ', e)}>
+        <MyComponent/>
+      </EventContext>
+    </EventContext>;
+    
+
+A central store [Redux] that distributes state to clients, that then
+'dispatch' state back up to the store is like an observer pattern too. A way
+of doing publish/subscribe only worse because of explicit (brittle ?) overhead
+connecting props/events paths. To hack down through hierarchy React provides
+context (provider pattern) or observable libraries that stink. Like MobX that
+introduces new decorators @observable, or Vue that introduces new template
+syntax "v-if". Event's are the primary way DOM and javascript event loop work
+anyway, so why not ? I think the satanists did it. Lol
+
+you can write a simple service and then use it
+
+    
+    
+    /** eventsService */
+    module.exports = {
+      callbacks: {},
+    
+      /**
+       * @param {string} eventName
+       * @param {*} data
+       */
+      triggerEvent(eventName, data = null) {
+        if (this.callbacks[eventName]) {
+          Object.keys(this.callbacks[eventName]).forEach((id) => {
+            this.callbacks[eventName][id](data);
+          });
+        }
+      },
+    
+      /**
+       * @param {string} eventName name of event
+       * @param {string} id callback identifier
+       * @param {Function} callback
+       */
+      listenEvent(eventName, id, callback) {
+        this.callbacks[eventName][id] = callback;
+      },
+    
+      /**
+       * @param {string} eventName name of event
+       * @param {string} id callback identifier
+       */
+      unlistenEvent(eventName, id) {
+        delete this.callbacks[eventName][id];
+      },
+    };
+    
+
+example (same for triggering)
+
+    
+    
+    import eventsService from '../../../../services/events';
+    export default class FooterMenu extends Component {
+      componentWillMount() {
+        eventsService
+          .listenEvent('cart', 'footer', this.cartUpdatedListener.bind(this));
+      }
+    
+      componentWillUnmount() {
+        eventsService
+          .unlistenEvent('cart', 'footer');
+      }
+    
+      cartUpdatedListener() {
+        console.log('cart updated');
+      }
+    }
+    
+

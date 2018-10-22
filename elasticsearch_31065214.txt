@@ -1,0 +1,4 @@
+31065214
+Display results based on the duration a customer was present in the shop in elasticsearch
+<p>I have a document which has a start date and end date of when the customer was present in office. I need to sort documents based on the time the customer was present in the shop. How is it possible using elasticsearch?</p>&#xA;
+<p>For this functionality you can use Script Based Sorting, docs can be found <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-sort.html" rel="nofollow">here</a>.</p>&#xA;&#xA;<pre><code>"sort" : {&#xA;        "_script" : {&#xA;            "script" : "doc['fieldName_endDate'].value - doc['fieldName_startDate'].value",&#xA;            "type" : "date",&#xA;            "order" : "asc"&#xA;        }&#xA;    }&#xA;</code></pre>&#xA;&#xA;<p>This will sort the values returned by the rest of the query by the least to most time spent in the shop.</p>&#xA;

@@ -1,0 +1,59 @@
+25060378 elasticsearch sum request by clientip (iis logs)
+
+I want to get the number of request by ip address in the last 5 minutes. I am
+getting the requests with this query
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "range": {
+              "@timestamp": {
+                "from": "now-5m",
+                "to": "now"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+now I want to add the request with the same clientip field, I know I'll need
+to use aggregations but I don't know how exactly to construct the query.
+
+Make sure the the field 'ipaddress' is not tokenized:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                },
+                "filter": {
+                    "range": {
+                        "@timestamp": {
+                            "from": "now-5m",
+                            "to": "now"
+                        }
+                    }
+                }
+            }
+       },
+       "aggs": {
+            "ipaddress": {
+                "terms": {
+                    "field": "ipaddress"
+                }
+            }
+        }
+    }
+    
+

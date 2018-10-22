@@ -1,0 +1,156 @@
+22552973 Elasticsearch sorting with whitespace
+
+I have elastic search index with name **clear** and type **positionTemplate**.
+It contains field called **title**. I had created this index/type using river
+jdbc plugin. I had changed mapping of title field using following api.
+
+    
+    
+     PUT clear/positionTemplate/_mapping
+    {
+        "mappings": {
+            "positionTemplate": {
+                "properties": {
+                    "title": {
+                        "type": "string", 
+                        "index": "not_analyzed"
+                    }
+                }
+            }
+        }
+    }
+    
+
+title filed contains following values :
+
+_"Java Developer"_
+
+_"C Developer"_
+
+_"Ruby Developer"_
+
+_"Java QA"_
+
+_"Ruby QA"_
+
+_"Java Dev"_
+
+while running following query sorting is not proper.
+
+    
+    
+    {
+      "sort" : [{
+        "title" : {"order":"desc"}
+      }], 
+      "fields" : [ "title"]
+    }
+    
+
+output is :
+
+    
+    
+    {
+        "_shards": {
+            "failed": 0,
+            "successful": 5,
+            "total": 5
+        },
+        "hits": {
+            "hits": [
+                {
+                    "_id": "3",
+                    "_index": "clear",
+                    "_score": null,
+                    "_type": "positionTemplate",
+                    "fields": {
+                        "title": [
+                            "Ruby Developer"
+                        ]
+                    },
+                    "sort": [
+                        "ruby"
+                    ]
+                },
+                {
+                    "_id": "5",
+                    "_index": "clear",
+                    "_score": null,
+                    "_type": "positionTemplate",
+                    "fields": {
+                        "title": [
+                            "Ruby QA"
+                        ]
+                    },
+                    "sort": [
+                        "ruby"
+                    ]
+                },
+                {
+                    "_id": "4",
+                    "_index": "clear",
+                    "_score": null,
+                    "_type": "positionTemplate",
+                    "fields": {
+                        "title": [
+                            "Java QA"
+                        ]
+                    },
+                    "sort": [
+                        "qa"
+                    ]
+                },
+                {
+                    "_id": "15",
+                    "_index": "clear",
+                    "_score": null,
+                    "_type": "positionTemplate",
+                    "fields": {
+                        "title": [
+                            "Java Dev"
+                        ]
+                    },
+                    "sort": [
+                        "java"
+                    ]
+                },
+                {
+                    "_id": "1",
+                    "_index": "clear",
+                    "_score": null,
+                    "_type": "positionTemplate",
+                    "fields": {
+                        "title": [
+                            "Java Developer"
+                        ]
+                    },
+                    "sort": [
+                        "java"
+                    ]
+                },
+                {
+                    "_id": "2",
+                    "_index": "clear",
+                    "_score": null,
+                    "_type": "positionTemplate",
+                    "fields": {
+                        "title": [
+                            "C Developer"
+                        ]
+                    },
+                    "sort": [
+                        "developer"
+                    ]
+                }
+            ],
+            "max_score": null,
+            "total": 6
+        },
+        "timed_out": false,
+        "took": 2
+    }
+    
+
+This is wrong. Can somebody guide me how to correct it ?
+

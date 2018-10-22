@@ -1,0 +1,293 @@
+21083422 Search with multi filter
+
+I have a question here. In common shopping cart sites have the function search
+for product with multiple filters. For example I'm searching for sport gear
+with some filters like this:
+
+  * Manufacturer
+
+    * [ **x** ] Nike 
+    * Adidas
+    * Umbro
+  * Options
+
+    * Size
+      * [ **x** ] S
+      * [ **x** ] M
+      * L
+    * Color
+      * [ **x** ] White
+      * Yellow
+      * Red
+      * [ **x** ] Blue
+
+Here's my mapping
+
+    
+    
+    PUT test/product/_mapping
+    {
+        "product":{
+            "properties" : {
+                "name" : {"type" : "string", "store":"yes"},
+                "manufacturer" {"type": "string}
+                "options" : {
+                    "type": "nested"
+                }
+            }
+        }
+    }
+    
+
+Some test data
+
+    
+    
+    POST test/product/1
+    {
+        "name": "Shirt 1",
+        "manufacturer": "Adidas",
+        "options":[
+                {
+                    "Color" : ["Red", "Green"]
+                },
+                {
+                    "Size" : ["S","M","L"]
+                }
+            ],
+        "price":250000
+    }
+    
+    POST test/product/2
+    {
+        "name": "Shirt 2",
+        "manufacturer": "Nike",
+        "options":[
+                {
+                    "Color" : ["Blue", "Green", "White"]
+                },
+                {
+                    "Size" : ["S", "L", "XL"]
+                }
+            ],
+        "price":100000
+    }
+    
+    POST test/product/3
+    {
+        "name": "Shirt 3",
+        "manufacturer": "Umbro",
+        "options": [
+                {
+                    "Color" : ["Red"]
+                },
+                {
+                    "Size" : ["S","XXL"]
+                }
+            ],
+        "price": 300000
+    }
+    
+
+With this query, everything's fine
+
+    
+    
+    POST test/product/_search
+    {
+        "query": {
+            "filtered": {
+               "query": {
+                    "match_all": {}
+               },
+               "filter": {
+                   "bool": {
+                        "must": [
+                           {
+                               "nested": {
+                                  "path": "options",
+                                  "filter": {
+                                      "bool": {
+                                          "must": [ 
+                                             {
+                                                "terms": {
+                                                   "options.Color": [
+                                                      "white"
+                                                   ]
+                                                }
+                                             }
+                                          ]
+                                      }
+                                  }
+                               }
+                           },
+                           {
+                               "term": {
+                                  "manufacturer": "nike"
+                               }
+                           }
+                        ]
+                   }
+               }
+            }
+        }
+    }
+    
+
+But, if I add more condition in Options filter, i get no result
+
+    
+    
+    POST test/product/_search
+    {
+        "query": {
+            "filtered": {
+               "query": {
+                    "match_all": {}
+               },
+               "filter": {
+                   "bool": {
+                        "must": [
+                           {
+                               "nested": {
+                                  "path": "options",
+                                  "filter": {
+                                      "bool": {
+                                          "must": [ 
+                                             {
+                                                "terms": {
+                                                   "options.Color": [
+                                                      "white"
+                                                   ]
+                                                }
+                                             },
+    
+                                             {
+                                                "terms": {
+                                                   "options.Size": [
+                                                      "s"
+                                                   ]
+                                                }
+                                             }
+                                          ]
+                                      }
+                                  }
+                               }
+                           },
+                           {
+                               "term": {
+                                  "manufacturer": "nike"
+                               }
+                           }
+                        ]
+                   }
+               }
+            }
+        }
+    }
+    
+
+I don't know whether i'm wrong in mapping or my query, or can you show me
+what's the best way to create mapping in this scenario. Thank you for all your
+help.
+
+The problem here is the usage of the `nested` type. Your `nested` filter is
+not evaluated over all children altogether but on every child individually.
+Since you do not have a _single_ nested object, that satisfies your filter
+(having both, `Color` and `Size`), you're not getting any results. You have
+two options:
+
+  1. merge those individual nested objects together
+    
+        POST test/product/1
+    {
+        "name": "Shirt 1",
+        "manufacturer": "Adidas",
+        "options":[
+            {
+                "Color" : ["Red", "Green"],
+                "Size" : ["S","M","L"]
+            }
+        ],
+        "price":250000
+    }
+    
+
+Your mapping and query stays the same.
+
+  2. Do not use a `nested` type, but a simple `object` type. You have to change your mapping for `options`:
+    
+        PUT test/product/_mapping
+    {
+        "product":{
+            "properties" : {
+                "options" : {
+                    "type": "object"
+                }
+            }
+        }
+    }
+    
+
+And drop the `nested` filter:
+
+    
+        POST test/product/_search
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "bool": {
+                   "must": [
+                      {
+                         "terms": {
+                            "options.Color": [
+                               "white"
+                            ]
+                         }
+                      },
+                      {
+                         "terms": {
+                            "options.Size": [
+                               "s"
+                            ]
+                         }
+                      },
+                      {
+                         "term": {
+                            "manufacturer": "nike"
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    }
+    
+
+But your data can stay the same.
+
+Nested objects are really for different structured data. If you were to have
+something like
+
+    
+    
+    "options":[
+        {
+            "Color" : "Blue",
+            "Size": "S"
+        },
+        {
+            "Color": "Red",
+            "Size" : "L"
+        }
+    ]
+    
+
+And you want to filter for items, that are both, _Blue_ and _S_ , then you
+would have to use a nested filter.
+

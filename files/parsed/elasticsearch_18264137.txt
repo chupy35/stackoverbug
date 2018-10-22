@@ -1,0 +1,194 @@
+18264137 Elasticsearch query performance
+
+I'm using elasticsearch to index two types of objects -
+
+**Data details**
+
+Contract object ~ 60 properties (Object size - 120 bytes) Risk Item Object ~
+125 properties (Object size - 250 bytes)
+
+Contract is parent of risk item (_parent)
+
+I'm storing 240 million such objects in single index (210 million risk items,
+30 million contracts)
+
+Index size is - 322 gb
+
+**Cluster details**
+
+11 m2.4x.large EC2 boxes [68 gb memory, 1.6 TB storage, 8 cores](1 box is a
+load balancer node with node.data = false) 50 shards 1 replica
+
+**elasticsearch.yml**
+
+    
+    
+    node.data: true
+    http.enabled: false
+    index.number_of_shards: 50
+    index.number_of_replicas: 1
+    index.translog.flush_threshold_ops: 10000
+    index.merge.policy.use_compound_files: false
+    indices.memory.index_buffer_size: 30%
+    index.refresh_interval: 30s
+    index.store.type: mmapfs
+    path.data: /data-xvdf,/data-xvdg
+    
+
+I'm starting the elasticsearch nodes with following command -
+_/home/ec2-user/elasticsearch-0.90.2/bin/elasticsearch -f -Xms30g -Xmx30g_
+
+My problem is that I'm running following query on risk item type and it is
+taking about 10-15 seconds to return data, for 20 records.
+
+I'm running this with a load of 50 concurrent users and a bulk index load of
+about 5000 risk items happening in parallel.
+
+**Query** (With Join parent child)
+
+http://:9200/contractindex/riskitem/_search*
+
+    
+    
+    {
+        "query": {
+            "has_parent": {
+                "parent_type": "contract",
+                "query": {
+                    "range": {
+                        "ContractDate": {
+                            "gte": "2010-01-01"
+                        }
+                    }
+                }
+            }
+        },
+        "filter": {
+            "and": [{
+                "query": {
+                    "bool": {
+                        "must": [{
+                            "query_string": {
+                                "fields": ["RiskItemProperty1"],
+                                "query": "abc"
+                            }
+                        },
+                        {
+                            "query_string": {
+                                "fields": ["RiskItemProperty2"],
+                                "query": "xyz"
+                            }
+                        }]
+                    }
+                }
+            }]
+        }
+    }
+    
+
+Queries from One Table
+
+**Query1** (This query takes around 8 seconds.)
+
+    
+    
+     <!-- language: lang-json -->
+    
+        {
+            "query": {
+                "constant_score": {
+                    "filter": {
+                        "and": [{
+                            "term": {
+                                "CommonCharacteristic_BuildingScheme": "BuildingScheme1"
+                            }
+                        },
+                        {
+                            "term": {
+                                "Address_Admin2Name": "Admin2Name1"
+                            }
+                        }]
+                    }
+                }
+            }
+        }
+    
+    
+    
+    **Query2** (This query takes around 6.5 seconds for Top 10 records ( but has sort on top of it)
+    
+     <!-- language: lang-json -->
+    
+        {
+            "query": {
+                "constant_score": {
+                    "filter": {
+                        "and": [{
+                            "term": {
+                                "Insurer": "Insurer1"
+                            }
+                        },
+                        {
+                            "term": {
+                                "Status": "Status1"
+                            }
+                        }]
+                    }
+                }
+            }
+        }
+    
+
+Can somebody please help me with how I can improve this query performance ?
+
+Have you tried custom routing? Without custom routing, your query needs to
+look in all 50 shards for your request. With custom routing, your query knows
+which shards to search, making queries more performant. More
+[here](http://www.elasticsearch.org/blog/customizing-your-document-routing/).
+
+You can assign custom routing to each bulk item by including a routing value
+with the _routing field, as described in the [bulk api
+docs](http://www.elasticsearch.org/guide/reference/api/bulk/).
+
+We made changes by using bitsets.
+
+We ran 50 concurrent users (Read Only) for an hour. All our queries are
+performing 4 to 5 times faster, except parent child query (query in question)
+it has gone down from 7 seconds to 3 seconds.
+
+I have one more query with has_child in it. Anyone else has any other feedback
+we can further improve this one, or other queries.
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "bool": {
+                        "must": [{
+                            "match": {
+                                "LineOfBusiness": "LOBValue1"
+                            }
+                        }]
+                    }
+                },
+                "filter": {
+                    "has_child": {
+                        "type": "riskitem",
+                        "filter": {
+                            "bool": {
+                                "must": [{
+                                    "term": {
+                                        "Address_Admin1Name": "Admin1Name1"
+                                    }
+                                }]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+

@@ -1,0 +1,86 @@
+18699558 discovery of ec2 on elasticsearch
+
+Here is my elasticsearch configuration (elasticsearch.yml file.
+
+    
+    
+    **cluster:
+      name: demo.elasticsearch.com
+    
+    node:
+      name: node1
+    
+    discovery:
+    
+    type: ec2
+    
+    ec2:
+    
+    groups: elastic-search
+    
+    host_type: private_dns
+    
+    ping_timeout: 5s
+    
+    gateway:
+    
+    type: s3
+    
+    s3:
+    
+    bucket: elastic-search-demo
+    
+    cloud:
+    
+    aws:
+    
+    access_key: A*************4M
+    
+    secret_key: sT********************lmn8
+    
+    region: us-east-1**
+    
+
+I installed elastic search and cloud-aws plugin and I have two instances in
+the same **aws account** in **us-east-1d** with security group **elastic-
+search**. Security group are configured with **9300-9400 ports** enabled for
+**TCP connection**.
+
+When I start elastic search on one instance, it elect itself as a master,
+things are going as desired upto here. **But when I start elastic search on
+another instance, it could not discover first ec2 instance and elect itself as
+a master**.
+
+I did lots of googling but with no help. Please get me out of the problem.
+
+It may be the ports that are causing the problem. Elasticsearch binds to port
+9200 and 9300 by default. If you add those rules to your security group you
+should be set.
+
+First, I would advise to simplify the YAML by using the full namespaces.
+
+Second, You should set the region as: **cloud.aws.region: us-east-1**
+
+Following is my **elasticsearch.yml** as an example:
+
+    
+    
+    cluster.name: elastic-search-test
+    
+    node.name: node-1
+    
+    cloud.aws.access_key: *******
+    
+    cloud.aws.secret_key: *******
+    
+    cloud.aws.region: us-west-2
+    
+    discovery.type: ec2
+    
+    discovery.ec2.groups: security-group-name
+    
+    gateway.type: s3
+    
+    gateway.s3.bucket: elasticsearch-bucket-name
+    
+

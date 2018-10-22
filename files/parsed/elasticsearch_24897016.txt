@@ -1,0 +1,115 @@
+24897016 Elasticsearch: how to filter by summed values in nested objects?
+
+I have the following products structure in the elasticsearch:
+
+    
+    
+    POST /test/products/1
+    {
+      "name": "product1",
+      "sales": [
+        {
+          "quantity": 10,
+          "customer": "customer1",
+          "date": "2014-01-01"
+        },
+        {
+          "quantity": 1,
+          "customer": "customer1",
+          "date": "2014-01-02"
+        },
+        {
+          "quantity": 5,
+          "customer": "customer2",
+          "date": "2013-12-30"
+        }
+      ]
+    }
+    
+    POST /test/products/2
+    {
+      "name": "product2",
+      "sales": [
+        {
+          "quantity": 1,
+          "customer": "customer1",
+          "date": "2014-01-01"
+        },
+        {
+          "quantity": 15,
+          "customer": "customer1",
+          "date": "2014-02-01"
+        },
+        {
+          "quantity": 1,
+          "customer": "customer2",
+          "date": "2014-01-21"
+        }
+      ]
+    }
+    
+
+The `sales` field is nested object. I need to filter products like this: "get
+all products which have total quantity >= 16 and `sales.customer` =
+'customer1'". The total quantity is `sum(sales.quantity)` where
+`sales.customer` = 'customer1'. Therefore the search results should contain
+only 'product2'.
+
+I tried to use `aggs` but I didn't understand how to filter in this case. I
+haven't found any information about it in the elasticsearch documentation. Is
+it possible? I would welcome any ideas, thanks!
+
+First of all be clear what do you want as result? Is it count or query fields?
+Aggregations only gives **count** and for **fields** you need to use filter in
+query. If you want fields then you cant get filter for
+**sum(sales.quantity)>=16** and if you want **count** you can get it using
+**range** aggregation but for that also i think you can use range only in
+elasticsearch document fields not some computed values. The nearest solution i
+can give you is as below
+
+    
+    
+    {
+      "size" : 0,
+      "query" :{
+      "filtered" : {
+        "query" :{  "match_all": {} },
+          "filter" : {
+            "nested": {
+              "path": "sales",
+              "filter" : {"term" : {"sales.customer" : "customer1"}}
+                    }
+            }
+          }
+      },
+      "aggregations" :{
+        "salesNested" : {
+              "nested" : {"path" : "sales"},
+                "aggregations" :{ 
+                    "aggByrange" : {
+                      "numeric_range": {
+                        **"field": "sales.quantity"**,
+                        "ranges": [
+                          {
+                            "from": 16
+                          }]
+                      }
+        }
+      },
+    "aggregations" : {
+      "quantityStats" : {
+        "stats" : {
+          { "field" : "sales.quantity" }
+        }
+      }
+    
+    }
+    }
+    }
+    }
+    
+
+In above query we are using "field": "sales.quantity". For your solution use
+must be able change sales.quantity with sum value of quantityStats aggregation
+which i think elasticsearch dont provide.
+

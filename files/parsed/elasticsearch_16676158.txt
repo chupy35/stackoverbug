@@ -1,0 +1,91 @@
+16676158 ElasticSearch query/search/match
+
+I have inserted 3 records in my ElasticSearch index as follows:
+
+    
+    
+    curl -XPOST 'http://127.0.0.1:9200/geoindex_test/STREET?pretty=1'  -d '
+    { "cityNames" : [ { "language" : "ENG",
+        "name" : "w bridgewater",
+        "raw_name" : "W BRIDGEWATER"
+      },
+      { "language" : "ENG",
+        "name" : "west bridgewater",
+        "raw_name" : "West Bridgewater"
+      }
+    ],
+    "id" : 1,
+      "streetNames" : [ { "language" : "ENG",
+        "name" : "cram rd",
+        "raw_name" : "Cram Rd"
+      } ]
+    }'
+    
+    curl -XPOST 'http://127.0.0.1:9200/geoindex_test/STREET?pretty=1'  -d '
+    { "cityNames" : [ { "language" : "ENG",
+        "name" : "bridgewater corners",
+        "raw_name" : "BRIDGEWATER CORNERS"
+      },
+      { "language" : "ENG",
+        "name" : "bridgewater center",
+        "raw_name" : "Bridgewater Center"
+      }
+    ],
+    "id" : 2,
+    "streetNames" : [ { "language" : "ENG",
+        "name" : "valley view rd",
+        "raw_name" : "Valley View Rd"
+      } ]
+    }'
+    
+    curl -XPOST 'http://127.0.0.1:9200/geoindex_test/STREET?pretty=1'  -d '
+    { "cityNames" : [ { "language" : "ENG",
+        "name" : "bridgewater",
+        "raw_name" : "Bridgewater"
+      },
+      { "language" : "ENG",
+        "name" : "windsor",
+        "raw_name" : "Windsor"
+      }
+    ],
+    "id" : 3,
+    "streetNames" : [ { "language" : "ENG",
+        "name" : "valley view rd",
+        "raw_name" : "Valley View Rd"
+      } ]
+    }'
+    
+
+And I perform a search as follows:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/geoindex_test/STREET/_search?pretty=1'  -d '
+    {
+    "query" : {
+        "match" : { "cityNames.name" : "bridgewater" }
+    }
+    }'
+    
+
+I thought ElasticSearch would return the third record (id == 3) as the best
+match (record 3 is the only exact match to "bridgewater"), but instead it
+returns the record for id 1 (w bridgewater) as the best match. What am I doing
+wrong?
+
+I imagine this is happening because you are using inner objects which
+basically collapse the objects under it, into one for search purposes. So when
+you're querying the search field for Object 1, for example, you're querying
+against ["w bridgewater", "west bridgewater"] and not discrete fields as you
+may imagine.
+
+Since 'bridgewater' appears twice in object 1 and 2 (two name fields) vs once
+in object 3, those items rank higher in the search. Object 1 is ultimately
+picked, because the fields that 'bridgewater' appears in are shorter strings
+than in Object 2 ("w bridgewater" vs "bridgewater corners").
+
+Instead of using inner objects like you're doing, use nested objects instead
+<http://www.elasticsearch.org/guide/reference/mapping/nested-type/>. setting
+the score mode to "max" will then make things match in a more intuitive manner
+for you.
+

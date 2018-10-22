@@ -1,0 +1,143 @@
+22093334 How to make query_string search exact phrase in ElasticSearch
+
+I put 2 documents in Elasticsearch :
+
+    
+    
+    curl -XPUT "http://localhost:9200/vehicles/vehicle/1" -d'
+    {
+        "model": "Classe A"
+    }'
+    
+    curl -XPUT "http://localhost:9200/vehicles/vehicle/2" -d'
+    {
+        "model": "Classe B"
+    }'
+    
+
+Why is this query returns the 2 documents :
+
+    
+    
+    curl -XPOST "http://localhost:9200/vehicles/_search" -d'
+    {
+      "query": {
+        "query_string": {
+          "query": "model:\"Classe A\""
+        }
+      }
+    }'
+    
+
+And this one, only the second document :
+
+    
+    
+    curl -XPOST "http://localhost:9200/vehicles/_search" -d'
+    {
+      "query": {
+        "query_string": {
+          "query": "model:\"Classe B\""
+        }
+      }
+    }'
+    
+
+I want elastic search to match on the exact phrase I pass to the query
+parameter, WITH the whitespace, how can I do that ?
+
+What you need to look at is the
+[analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+analyzers.html) you're using. If you don't specify one Elasticsearch will use
+the [Standard
+Analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html). It is great for the majority of cases with plain text
+input, but doesn't work for the use case you mention.
+
+What the standard analyzer will do is split the words in your string and then
+converts them to lowercase.
+
+If you want to match the whole string "Classe A" and distinguish this from
+"Classe B", you can use the [Keyword
+Analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+keyword-analyzer.html). This will keep the entire field as one string.
+
+Then you can use the match query which will return the results you expect.
+
+Create the mapping:
+
+    
+    
+    PUT vehicles
+    {
+      "mappings": {
+        "vehicle": {
+          "properties": {
+            "model": {
+              "type": "string",
+              "analyzer": "keyword"
+            }
+          }
+        }
+      }
+    }
+    
+
+Perform the query:
+
+    
+    
+    POST vehicles/_search
+    {
+      "query": {
+        "match": {
+          "model": "Classe A"
+        }
+      }
+    }
+    
+
+If you wanted to use the `query_string` query, then you could set the operator
+to `AND`
+
+    
+    
+    POST vehicles/vehicle/_search
+    {
+      "query": {
+        "query_string": {
+          "query": "Classe B",
+          "default_operator": "AND"
+        }
+      }
+    }
+    
+
+Additionally, you can use query_string and escape the quotes will also return
+an exact phrase:
+
+    
+    
+    POST _search
+    {
+        "query": {
+          "query_string": {
+            "query": "\"Classe A\""
+         }
+    }
+    
+
+use match phrase query as mentioned below
+
+    
+    
+    GET /company/employee/_search   
+    {     
+        "query" : {      
+            "match_phrase" : {      
+                "about" : "rock climbing"      
+            }      
+        }      
+    }
+    
+

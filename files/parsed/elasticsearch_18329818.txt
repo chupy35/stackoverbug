@@ -1,0 +1,14 @@
+18329818 How to Resolve search with Stop words
+
+I am implementing an application using elastic search.
+
+Here is the sample of the search query
+
+    
+    
+    queryBuilder.must(QueryBuilders.fuzzyLikeThisFieldQuery("_all").likeText("to"));
+    
+
+When I am trying to search with _"stop words"_ It returns 0 documents.  
+How to overcome this?
+

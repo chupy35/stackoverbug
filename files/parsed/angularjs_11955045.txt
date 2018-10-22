@@ -1,0 +1,68 @@
+11955045 cannot dynamically change page using angular js method
+
+This is the Angular JS function on my page:
+
+    
+    
+    function DateCtrl($scope) {
+    
+            $scope.returndate = function () {
+    
+                return Date.now();
+            }
+    
+        }
+    
+
+The markup is as follows:
+
+    
+    
+    <html ng-app>
+    <body>    
+    <div id = "date" class = "stats" ng-controller = "DateCtrl">
+                <span>Date:</span><div id = "noedate">{{returndate()}}</div>
+        </div>
+    </body>
+    </html>
+    
+
+You would expect the date returned in `#nowdate` to change every second thanks
+to the data-binding, but it does not. Does anyone know what is wrong here?
+
+I would provide a fiddle but jsfiddle does not support angular yet...
+
+The data won't get updated automatically since AngularJS doesn't constantly
+pool for changes but only refreshes templates in response to certain events.
+You can check this post: [How does data binding work in
+AngularJS?](https://stackoverflow.com/questions/9682092/databinding-in-
+angularjs/9693933#9693933) for more info on inner workings of angular.
+
+If you would like to refresh certain value after a given period of time use
+the $timeout service (<http://docs.angularjs.org/api/ng.$timeout>).
+
+Actually it is very easy to do a clock in AngularJS using combination of
+$watch and $timeout:
+
+    
+    
+    $scope.time = new Date();  
+    $scope.$watch('time', function(){
+        $timeout(function(){
+            $scope.time = new Date();
+        },1000);
+    });
+    
+
+Here is the complete jsFillde:
+<http://jsfiddle.net/pkozlowski_opensource/f5ApP/1/>
+
+    
+    
+    var updateTime = function () {
+        $scope.currentTime = new Date();
+        $timeout(updateTime, 1000);
+    };
+    updateTime();
+    
+

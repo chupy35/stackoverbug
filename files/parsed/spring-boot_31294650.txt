@@ -1,0 +1,30 @@
+31294650 load hbm.xml files from multiple jars using spring-boot
+
+My spring-boot project depends on 2 jars (say a.jar, b.jar) each of them
+having a few hbm.xml files. Running app using spring-boot:run, i noticed that
+only hbm xmls from a.jar are loaded but none of b.jar. Is there something that
+needs to be configured on spring.jpa properties? Is there any property to set
+jarFileUrls on persistence unit?
+
+Thanks! V.
+
+for adding some jar file you can add to resource like this
+
+    
+    
+    @Value("classpath*:lib/framework-*.jar") 
+    private Resource[] JAR_RESOURCES;
+    
+    @Value("classpath*:hibernate/**/*.hbm.xml") 
+    private Resource[] HIBERNATE_HBM_RESOURCES; 
+    
+    @Bean
+    public LocalSessionFactoryBean sessionFactory() {
+        LocalSessionFactoryBean sessionFactoryBean = new LocalSessionFactoryBean();
+        sessionFactoryBean.setDataSource(dataSource());
+        sessionFactoryBean.setMappingJarLocations(JAR_RESOURCES);
+        sessionFactoryBean.setMappingLocations(HIBERNATE_HBM_RESOURCES);
+        return sessionFactoryBean;
+    }
+    
+

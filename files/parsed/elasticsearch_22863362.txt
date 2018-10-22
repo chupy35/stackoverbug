@@ -1,0 +1,147 @@
+22863362 Querying with Completion Suggesters in Elasticsearch with Java API
+
+I have my indices created, and mapping type for my 'suggest' field set to
+completion. I can't figure out how to configure the query for completion
+suggestions in elastic-search (Java API)
+
+I'm trying to use this Query to base my implementation off of.
+
+    
+    
+    "song-suggest" : {
+        "text" : "n",
+        "completion" : {
+            "field" : "suggest"
+        }
+    }
+    
+
+Here's what I have so far,
+
+    
+    
+    CompletionSuggestionBuilder compBuilder = new CompletionSuggestionBuilder("complete"); 
+    compBuilder.text("n");
+    compBuilder.field("suggest");
+    
+    SearchResponse searchResponse = localClient.prepareSearch(INDEX_NAME)
+        .setTypes("completion")
+        .setQuery(QueryBuilders.matchAllQuery())
+        .addSuggestion(compBuilder)
+        .execute().actionGet();
+    
+     CompletionSuggestion compSuggestion = searchResponse.getSuggest().getSuggestion("complete");
+    
+
+Am I missing something, doing something wrong? Thanks!
+
+Not sure if this is the best thing to do. But this works for me. Hope it
+helps.
+
+    
+    
+    @Override
+    public List<SuggestionResponse> findSuggestionsFor(String suggestRequest) {
+        CompletionSuggestionBuilder suggestionsBuilder = new CompletionSuggestionBuilder("completeMe");
+        suggestionsBuilder.text(suggestRequest);
+        suggestionsBuilder.field("suggest");
+        SuggestRequestBuilder suggestRequestBuilder =
+                client.prepareSuggest(MUSIC_INDEX).addSuggestion(suggestionsBuilder);
+    
+        logger.debug(suggestRequestBuilder.toString());
+    
+        SuggestResponse suggestResponse = suggestRequestBuilder.execute().actionGet();
+    
+        Iterator<? extends Suggest.Suggestion.Entry.Option> iterator =
+                suggestResponse.getSuggest().getSuggestion("completeMe").iterator().next().getOptions().iterator();
+    
+        List<SuggestionResponse> items = new ArrayList<>();
+        while (iterator.hasNext()) {
+            Suggest.Suggestion.Entry.Option next = iterator.next();
+            items.add(new SuggestionResponse(next.getText().string()));
+        }
+        return items;
+    }
+    
+
+> But I'm running into the error "field "suggest" doesn't have type
+'completion'. My mapping looks like this: code .field("suggest")
+.startObject() .field("type", "completion") .field("index_analyzer","simple")
+.field("search_analyzer","simple") .endObject()
+
+It sounds like, that your mapping is not applied correctly. Did you check it
+out?
+
+Based on the mapping you provided, I think you are missing the **properties**
+around your mapping. Try the following mapping:
+
+    
+    
+    XContentFactory.jsonBuilder().startObject()
+      .startObject("properties")
+        .startObject("suggest")
+          .field("type", "completion")
+        .endObject()
+      .endObject()
+    .endObject()
+    
+
+Btw, SimpleAnalyzer is the default Analyzer for the suggestions. Thus, you
+need not define it explicitly.
+
+    
+    
+    paramsMap = req.getParameterMap();
+    
+    String prefix = getParam("prefix");     
+    
+    if (prefix == null) {
+        EndpointUtil.badRequest("Autocomplete EndPoint: prefix parameter is missing", resp);
+        return;
+    }
+    
+    SearchRequest searchRequest;
+    SearchSourceBuilder searchSourceBuilder; 
+    
+    searchRequest = new SearchRequest("section");
+    searchSourceBuilder = new SearchSourceBuilder();
+    searchSourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
+    searchSourceBuilder.from(0);
+    searchSourceBuilder.size(MAX_HITS);     
+    
+    CompletionSuggestionBuilder suggestionBuilder = new CompletionSuggestionBuilder("text.completion")
+            .prefix(prefix, Fuzziness.AUTO).size(MAX_HITS);            
+    
+    SuggestBuilder suggestBuilder  = new SuggestBuilder();
+    
+    suggestBuilder.addSuggestion(SUGGEST_NAME, suggestionBuilder);
+    
+    searchSourceBuilder.suggest(suggestBuilder);
+    
+    searchRequest.source(searchSourceBuilder);      
+    
+    SearchResponse searchResponse = getElasticClient().search(searchRequest);   
+    
+    Suggest suggest = searchResponse.getSuggest();
+    
+    List<Document> results = new ArrayList<Document>();     
+    
+      Suggest.Suggestion<Suggest.Suggestion.Entry<Suggest.Suggestion.Entry.Option>> suggestion 
+        = suggest.getSuggestion(SUGGEST_NAME);
+    
+        List<Suggest.Suggestion.Entry<Suggest.Suggestion.Entry.Option>> list = suggestion.getEntries();
+        for(Suggest.Suggestion.Entry<Suggest.Suggestion.Entry.Option> entry :list) {
+            List<Suggest.Suggestion.Entry.Option> options = entry.getOptions();
+            for(Suggest.Suggestion.Entry.Option option : options) {
+    
+                Document doc = new Document();
+    
+                doc.append("text",option.getText().toString());                 
+    
+                results.add(doc);
+            }
+        }    
+    
+    sendJsonResult(results, resp);                  
+    
+

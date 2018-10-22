@@ -1,0 +1,4 @@
+32481163
+What is the value range of _score (relevance) in ES function_score?
+<p>While trying to use <code>function_score</code> with <code>boost_mode: "sum"</code> (because it makes it easier to trace different contributions), I want to normalise query relevance's effect on overall document score, but for that I need to know what values can it take. At first I assumed <code>(0, 1)</code>, but it's clearly not so as I also see scores above <code>1.0</code>.</p>&#xA;
+<p>It depends on the query that you are wrapping and the number of records in the index. The way lucene calculates the score is <a href="https://lucene.apache.org/core/5_3_0/core/org/apache/lucene/search/package-summary.html#package_description" rel="nofollow">quite complicated</a> and it's difficult to predict the range in a general case. I would recommend using <code>multiply</code> as a <code>boost_mode</code> instead of <code>sum</code>, it typically produces better results.</p>&#xA;

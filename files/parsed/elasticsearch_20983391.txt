@@ -1,0 +1,141 @@
+20983391 Why does elasticsearch fail to return a result in this specific
+scenario
+
+I am banging my head against the desk trying to figure this out. When
+searching the field customer.FirstName on a record where the first name is
+"Willa" I get results back for "W", "WI", "WIL", "WILLA", but NOT **"WILL"**.
+For example, the following works:
+
+    
+    
+    curl -XPOST "http://.../someindex/_search?pretty=true" -d'
+    {
+       "query": {
+       "query_string": {
+         "query": "will",
+         "fields": [
+            "FirstName"
+         ]
+        }
+       },
+       "script_fields": {
+       "terms": {
+         "script": "doc[field].values",
+         "params": {
+            "field": "customer.FirstName"
+         }
+       }
+      }
+    }'
+    
+
+and the result of the above is:
+
+    
+    
+    {
+    "took": 0,
+    "timed_out": false,
+    "_shards": {
+      "total": 2,
+      "successful": 2,
+      "failed": 0
+    },
+    "hits": {
+      "total": 1,
+      "max_score": 1.8629173,
+      "hits": [
+         {
+            "_index": "someindex",
+            "_type": "customer",
+            "_id": "585B1F34-5822-4859-802D-E2218D1E6FCF",
+            "_score": 1.8629173,
+            "fields": {
+               "terms": [
+                  "w",
+                  "wi",
+                  "wil",
+                  "will",
+                  "willa"
+               ]
+            }
+         }
+      ]
+     }
+    }
+    
+
+However, the following doesn't return any results:
+
+    
+    
+    curl -XPOST "http://.../someindex/_search?pretty=true" -d'
+    {
+       "query": {
+       "query_string": {
+         "query": "willa",
+         "fields": [
+            "FirstName"
+         ]
+        }
+       },
+       "script_fields": {
+       "terms": {
+         "script": "doc[field].values",
+         "params": {
+            "field": "customer.FirstName"
+         }
+       }
+      }
+    }'
+    
+
+This is how customer.FirstName Willa is indexed:
+
+    
+    
+    GET /devpac2/_analyze?field=customer.FirstName&text=Willa
+    
+    {
+    "tokens": [
+      {
+         "token": "w",
+         "start_offset": 0,
+         "end_offset": 1,
+         "type": "word",
+         "position": 1
+      },
+      {
+         "token": "wi",
+         "start_offset": 0,
+         "end_offset": 2,
+         "type": "word",
+         "position": 2
+      },
+      {
+         "token": "wil",
+         "start_offset": 0,
+         "end_offset": 3,
+         "type": "word",
+         "position": 3
+      },
+      {
+         "token": "will",
+         "start_offset": 0,
+         "end_offset": 4,
+         "type": "word",
+         "position": 4
+      },
+      {
+         "token": "willa",
+         "start_offset": 0,
+         "end_offset": 5,
+         "type": "word",
+         "position": 5
+      }
+    ]
+    }
+    
+
+What am I doing wrong?
+

@@ -1,0 +1,29 @@
+10113864 Different boost values for different indexes
+
+Using ElasticSearch, I run queries across several indexes. But I want the
+results coming from different indexes to have different weights (~ different
+"boost factor" in ES parlance, I think).
+
+The goal is to tweak the ranking of query results, on a per-index **and** per-
+query basis. I want a soft preference of results from chosen indexes, not a
+hard yes/no filter on indexes.
+
+Example:
+
+    
+    
+    Query results, 3 hits:
+    
+    1. doc A, from index Z, score 0.7
+    2. doc B, from index Y, score 0.6
+    3. doc C, from index Y, score 0.65
+    
+
+I want to boost all results from index Y (docs B and C) so they get a higher
+score. Different queries require different index weights. How do I do that in
+the query DSL syntax?
+
+Never mind, found out that ES supports that out of the box:
+
+<http://www.elasticsearch.org/guide/reference/api/search/index-boost.html>
+

@@ -1,0 +1,118 @@
+14053657 Elastic search nested match_phrase issue
+
+We are doing match_phrase query on nested objects, where nested object has a
+string value only.
+
+We intended to find string phrase occurrences.
+
+Lets suppose,
+
+1) Mapping is as follows.
+
+    
+    
+    "attr": {
+                    "type": "nested",
+                    "properties": {
+                        "attr": {
+                            "type": "multi_field",
+                            "fields": {
+                                "attr": { "type": "string", "index": "analyzed", "include_in_all": true, "analyzer": "keyword" },
+                                "untouched": { "type": "string", "index": "analyzed", "include_in_all": false, "analyzer": "not_analyzed" }
+                            }
+                        }
+                    }
+                }
+    
+
+2) Data is like.
+
+Object A:
+
+    
+    
+    "attr": [
+        {
+            "attr": "beverage"
+        },
+        {
+            "attr": "apple wine"
+        }
+    ]
+    
+
+Object B:
+
+    
+    
+    "attr": [
+        {
+            "attr": "beverage"
+        },
+        {
+            "attr": "apple"
+        },
+        {
+            "attr": "wine"
+        }
+    ]
+    
+
+3) Therefore, on query like
+
+    
+    
+    {
+        "query": {
+            "match": {
+                "_all": {
+                    "query": "apple wine",
+                    "type": "phrase"
+                    }
+                }
+            }
+        }
+    
+
+We are expecting only Object A, but unfortunately Object B is also coming.
+
+Look forward to your suggestions please.
+
+In your case, separate array values should have large gaps in their offsets to
+avoid phrase matching.  There is a default configurable gap between instances
+of the same field, but the default value for this gap is 0.
+
+You should change it in the field mapping:
+
+    
+    
+    "attr": { "type": "string", 
+    "index": "analyzed", 
+    "include_in_all": true, 
+    "analyzer": "keyword", 
+    "position_offset_gap": 100 
+    }
+    
+
+You will also need to tell the query to search all terms in one nested doc:
+
+    
+    
+    "query": {
+      "nested": {
+        "path": "attr",
+        "query": {
+          "match": {
+            "attr": {
+              "query": "apple wine",
+              "operator": "and"
+            }
+          }
+        }
+      }
+    }
+    
+
+A good source of information is <http://www.spacevatican.org/2012/6/3/fun-
+with-elasticsearch-s-children-and-nested-documents/>
+

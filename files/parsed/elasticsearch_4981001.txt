@@ -1,0 +1,116 @@
+4981001 Why ElasticSearch is not finding my term
+
+I just installed and testing elastic search it looks great and i need to know
+some thing i have an configuration file
+
+`elasticsearch.json` in `config` directory
+
+    
+    
+    {    
+    "network" : {
+        "host" : "127.0.0.1"
+    },
+    "index" : {
+        "number_of_shards": 3,
+        "number_of_replicas": 1,
+        "refresh_interval" : "2s",        
+        "analysis" : {
+            "analyzer" : {                
+                "index_analyzer" : {                    
+                    "tokenizer" : "nGram",
+                    "filter" : ["lowercase"]
+                },
+                "search_analyzer" : {                                                    
+                    "tokenizer" : "nGram",
+                    "filter" : ["lowercase"]
+                }
+            },                               
+            "// you'll need lucene dep for this: filter" : {                
+                "snowball": {
+                    "type" : "snowball",
+                    "language" : "English"
+                }
+            }
+        }
+    }
+    
+    }
+    
+
+and i have inserted an doc that contains a word `searching` if i search for
+keyword `search` it says nothing found...
+
+wont it stem before indexing or i missed some thing in config ....
+
+How looks your query?
+
+your config does not look good. try:
+
+    
+    
+     ...
+    "index_analyzer" : {                    
+       "tokenizer" : "nGram",
+       "filter" : ["lowercase", "snowball"]
+    },
+     "search_analyzer" : {                                                    
+        "tokenizer" : "nGram",
+        "filter" : ["lowercase", "snowball"]
+    }
+    },
+    "filter" : {
+                    "snowball": {
+                        "type" : "snowball",
+                        "language" : "English"
+                    }
+                }
+    
+
+I've had trouble overriding the "default_search" and "default_index" analyzer
+as well.
+
+This works though.  You can add "index_analyzer" to default all string fields
+with unspecified analyzers within a type, if need be.
+
+    
+    
+    curl -XDELETE localhost:9200/twitter
+    
+    curl -XPOST localhost:9200/twitter -d '
+    {"index": 
+      { "number_of_shards": 1,
+        "analysis": {
+           "filter": {
+                    "snowball": {
+                        "type" : "snowball",
+                        "language" : "English"
+                    }
+                     },
+           "analyzer": { "a2" : {
+                        "type":"custom",
+                        "tokenizer": "standard",
+                        "filter": ["lowercase", "snowball"]
+                        }
+                      }
+         }
+      }
+    }
+    }'
+    
+    curl -XPUT localhost:9200/twitter/tweet/_mapping -d '{
+        "tweet" : {
+            "date_formats" : ["yyyy-MM-dd", "dd-MM-yyyy"],
+            "properties" : {
+                "user": {"type":"string"},
+                "message" : {"type" : "string", "analyzer":"a2"}
+            }
+        }}'
+    
+    curl -XPUT http://localhost:9200/twitter/tweet/1 -d '{ "user": "kimchy", "post_date": "2009-11-15T13:12:00", "message": "Trying out searching teaching, so far so good?" }'
+    
+    curl -XGET localhost:9200/twitter/tweet/_search?q=message:search 
+    
+    curl -XGET localhost:9200/twitter/tweet/_search?q=message:try 
+    
+

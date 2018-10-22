@@ -1,0 +1,5 @@
+30304311
+Importance of ? in ES query
+<p>how the query URL is formed in elastic search and why we have a ? as below.Does this ? have any importance.Sample =” /kibana-int/dashboard/log-analytics-s?1431600189554</p>&#xA;
+<p><code>1431600189554</code> appears to be a timestamp (UNIX timestamp w/milliseconds), likely used to prevent caching of requests. It's not necessary for ElasticSearch (which will ignore it entirely), but it means the browser treats every request as a new URL and fetches new data.</p>&#xA;
+<p>The "?" states that the rest of the URL will be parameters. As an example it's often used with the parameter "pretty" in ElasticSearch, when you query a mapping (like <a href="http://localhost:8080/" rel="nofollow">http://localhost:8080/</a>/_mapping?pretty). The "pretty" argument forces the return to be formatted in a way that is eye-friendly.</p>&#xA;&#xA;<p>As a side note, the "&amp;" character is used to separate arguments. For exemple <a href="http://localhost:8080/" rel="nofollow">http://localhost:8080/</a>/?lastname=foo&amp;firstname=bar</p>&#xA;

@@ -1,0 +1,30 @@
+25123780 ElasticSearch: how to combine match phrase prefix with terms prefix?
+
+ElasticSearch: Which query can be used for the following result: input query:
+term1, terms2 result: match term1, term2, as with match phrase prefix; match
+term1 as a prefix, match term2 as a prefix?
+
+You can use 'bool' queries to combine multiple terms. Here is the reference
+link
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-query.html>
+
+An example query of what you want to do is :
+
+    
+    
+    {
+      "bool" : {
+    
+        "must" : [
+            {
+                "prefix" : { "term1" : "prefix2" }
+            },
+            {
+                "prefix" : { "term2" : "prefix2" }
+            }
+        ]
+      }
+    }
+    
+

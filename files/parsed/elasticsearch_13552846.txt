@@ -1,0 +1,40 @@
+13552846 multi_match for _search in elasticsearch is returning all items in my
+index
+
+Here's my query:
+
+    
+    
+    {
+      "query": {
+        "multi_match": {
+          "use_dis_max": false,
+          "query": "xxxinvalidqueryxxx",
+          "fields": [
+            "Title",
+            "IsOriginalContent",
+            "TextContent"
+          ]
+        }
+      },
+      "filter": {},
+      "from": 0,
+      "size": 5,
+      "sort": [
+        {
+          "_score": "desc"
+        }
+      ]
+    }
+    
+
+However, no matter what query I enter, it returns all items in my index. Why
+is this?
+
+Because `IsOriginalContent` is a boolean field. No idea why, but when I remove
+it, everything works correctly. It's as if searching a boolean field for text
+always returns 'true' with some very low score.
+
+When I remove any boolean fields from the field list, queries work as
+expected.
+

@@ -1,0 +1,72 @@
+22442817 elasticsearch: indexing & searching arabic text
+
+When I put the following things into elasticsearch-1.0.1 I expect the search
+queries to return the posts with id 200 and 201. But I get nothing returned.
+Hits:0.
+
+What am I doing wrong? I'm searching exactly for what I put in, but get
+nothing out... (here's the test code for download:
+<http://petoria.de/tmp/arabictest.sh>).
+
+But please keep in mind: I want to use the Arabic analyzer, because I want to
+develop my own analyzer later.
+
+Best, Koem
+
+    
+    
+    curl -XPOST localhost:9200/posts -d '{
+      "settings" : {
+        "number_of_shards" : 1
+      }
+    }'
+    
+    curl -XPOST localhost:9200/posts/post/_mapping -d '
+    {
+      "post" : {
+        "properties" : {
+          "arabic_text" : { "type" : "string", "index" : "analyzed", "store" : true, "analyzer" : "arabic" },
+          "english_text" : { "type" : "string", "index" : "analyzed", "store" : true, "analyzer" : "english" }
+        }
+      }
+    }'
+    
+    curl -XPUT 'http://localhost:9200/posts/post/200' -d '{
+        "english_text" : "palestinian1",
+        "arabic_text" : "فلسطينيه"
+    }'
+    
+    curl -XPUT 'http://localhost:9200/posts/post/201' -d '{
+        "english_text" : "palestinian2",
+        "arabic_text" : "الفلسطينية"
+    }'
+    
+    search for palestinian1
+    curl -XGET 'http://localhost:9200/posts/post/_search' -d '{
+        "query": {
+            "query_string" : {
+                "analyzer" : "arabic",
+                "query" : "فلسطينيه"
+            }
+        }
+    }'
+    
+    search for palestinian2
+    curl -XGET 'http://localhost:9200/posts/post/_search' -d '{
+        "query": {
+            "query_string" : {
+                "analyzer" : "arabic",
+                "query" : "الفلسطينية"
+            }
+        }
+    }'
+    
+
+Just add the encoding to your URL, you can do it by specifying the "Content-
+Type" header as bellow:
+
+    
+    
+    Content-Type:text/html;charset=UTF-8
+    
+

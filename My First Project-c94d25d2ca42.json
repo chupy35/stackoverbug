@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "gifted-concept-220200",
+  "private_key_id": "c94d25d2ca42b6fb9b9dccde68f2083e74015694",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC2MaNerw9988kV\not3QtaoVx+KUmgmafJ9p7r1Lc1hiRO49evjHROeAeUQWnOqyfUAKu09r1QswDX0b\naChRxavzWeU7T/1yJKoPQWSPmv6v33ttVMcvfPw+Hd6+oZ2ekOGxK75ew2C1tylM\nXUbi9LLNzIgiCya2NRr6tOlDtW+FfGANmSyM9JHnvKxmzDGuUdY4Upf3Ow00+mAd\niV0lq5O9hddHHI485XOavUEMwQOfvkTyWyK5nQs55ySoYJ7jdbWKmKuYZT+DqN+S\nqOTwQcOctw59+zeX2Np8jvKj9qHozn3gWUctE9atwmeg2eeYbhQVKi0fqFLXCaaO\nyRdJSx/TAgMBAAECggEAEkZfr7NO54BY2YMQ+CAGDnySkqXyHqfaHvhjzmSkfJQ+\nHWFEq6A9ZFqa5Msak4q9WMDkZ4Q4GhAlo2Z1h4uUrX/aiXItkZHHPmkocBXI7tUz\nfopJbHmp8i/G1EebwCL3hcZF0yA1MXpMzyxwBtB/+uVFe7yzRlrZ+O8aksBpOPH5\nk+NCIs2deJzNXppnc8FShOCh9Jm4NYke3Mr7f9fmc51tINCYb+SVxpCfmC8enr78\nOHEWF957Dph1ryMTLF6tFlNCVkU0seRlXXIFsxXWg2nmNdp43RQLJ02uKvJfoKJM\nha0eGZTdzDj76qy7UKGY+fRVf7IzjL8OU7r2Lq1ZuQKBgQDv5EwBKOM7bXhW181L\nDxSTskhyyZ2O8YCSr7WzysuQbjDOP/rwGkPhm8FvLZuMSrjJDZCiH9Ohz7begQUM\n5RYpUNMqkc9yZXvh6F6ziuLVR9nDpgYK4KN99UqcmIYXVtDj0Ss9dWTtlV2ZTPLm\ntb8JsrG56hqqFeaR7NTuVUeBzQKBgQDCbYX/8NglO0JSpePilCY1LyoPKonSQRZg\ntz2qrEA68JMy3pbTvbpxJeX+DcXG9pzET8GW52rSTIutC2fj5mPaR+hLIjNkmnQA\nGU1NgkI+1JUN5N+PJ9/5zoN71YwJ8L4Q944onHnoLuKw7Qcoc1/VEBSYSDFhS6xu\nPIVym+QIHwKBgQDBAIUhvbqsGlPiUrdJdzWP6rUdHRaVZbmSyqk+oJ8McYr0tUb4\nG7mXbs++2gu2YHuwzigaN8719X7kHxtoF3uv++YY7rzfBcUYqPJgMxJyk98g6Jcd\n80O2WD4SJShk6KUhVS0bwjJUb4KhjuYyNfEgJVOWB0Iyq3IY31kk8xmX1QKBgQCg\nD8xuLRe0Zvmt0rYt9SsTQ7XLcIiv2DeU/aW92TqzixSTn13qCVrxBXM3WJ1GtAXR\nM5u7IN73LF8c4bPwkd4IeIRLPmey3di7sBjMw3zH/viKzK4jS39/Rz1FeENmd5Px\noeudkVxnAhpL74aiDYGKhUd/KofEgqj8w8RU2vO6nwKBgBOn0+FwO3bhPMjIT7FX\nR0yls2jpi0pFTNwkb1FCknCnO0U5wvGef3X3UKACVQbb02Zxo+G4x8o+CSBkvBdG\nPSl0ei3bvermWiliAT/BMXk6VFE+ni/whPJfhGfWdl2geR6VRrCzsPR2wk1NdDrN\nGk+LiZ3lJ0+rgksp7vlkVjEs\n-----END PRIVATE KEY-----\n",
+  "client_email": "group-assignment@gifted-concept-220200.iam.gserviceaccount.com",
+  "client_id": "112942114197050547452",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/group-assignment%40gifted-concept-220200.iam.gserviceaccount.com"
+}

@@ -1,0 +1,63 @@
+8583344 Elastic Search limit results
+
+In MySQL I can do something like:
+
+    
+    
+      SELECT id FROM table WHERE field = 'foo' LIMIT 5
+    
+
+If the table has 10,000 rows, then this query is way way faster than if I left
+out the LIMIT part.
+
+In ElasticSearch, I've got the following:
+
+    
+    
+     {
+        "query":{
+           "fuzzy_like_this_field":{
+              "body":{
+                 "like_text":"REALLY LONG (snip) TEXT HERE",
+                 "max_query_terms":1,
+                 "min_similarity":0.95,
+                 "ignore_tf":true
+              }
+           }
+        }
+     }
+    
+
+When I run this search, it takes a few seconds, whereas mysql can return
+results for the same query in far, far less time.
+
+If I pass in the size parameter (set to 1), it successfully only returns 1
+result, but the query itself isn't any faster than if I had set the size to
+unlimited and returned all the results. I suspect the query is being run in
+its entirety and only 1 result is being returned after the query is done
+processing. This means the "size" attribute is useless for my purposes.
+
+Is there any way to have my search stop searching as soon as it finds a single
+record that matches the fuzzy search, rather than processing every record in
+the index before returning a response? Am I misunderstanding something more
+fundamental about this?
+
+Thanks in advance.
+
+You are correct the query is being ran entirely. Queries by default return
+data sorted by score, so your query is going to score each document. The docs
+state that the [fuzzy
+query](http://www.elasticsearch.org/guide/reference/query-dsl/fuzzy-
+query.html) isn't going to scale well, so might want to consider other
+queries.
+
+A [limit filter](http://www.elasticsearch.org/guide/reference/query-dsl/limit-
+filter.html) might give you similar behavior to what your looking for.
+
+> A limit filter limits the number of documents (per shard) to execute on
+
+To replicate mysql `field='foo'` try using a [term
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/term-
+filter.html). You should use filters when you don't care about scoring, they
+are faster and cache-able.
+

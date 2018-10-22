@@ -1,0 +1,34 @@
+21401779 Is elastic search data access sync or async?
+
+As i am new to elastic search.how will elasticsearch work in concurrency.How
+search work and write/update/delete work in one node.Every request is
+processed one by one or it wil work simutaneously.
+
+    
+    
+     will it support transaction ??
+    
+
+Thanks in advance..!
+
+CRUD requests happen in parallel within a single shard (you can have multiple
+shards on a single node). Transactions are not supported.
+
+A bulk request (multiple CRUD requests in a single request) and processed
+serially on a single shard, but you can have multiple bulk requests processed
+in parallel on a single shard. They don't support transactions either. The
+success or failure of one request within a bulk request doesn't affect the
+others.
+
+To ensure that one update doesn't overwrite changes from another,
+Elasticsearch provides optimistic concurrency control: you specify the
+`version` number of the doc you want to update. If the current `version` is
+different, then the update will fail and you can take the appropriate action.
+
+See
+[versioning](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html#index-versioning) and the `retry_on_conflict` parameter on the
+[update
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+update.html).
+

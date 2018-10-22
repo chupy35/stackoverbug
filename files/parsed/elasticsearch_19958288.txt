@@ -1,0 +1,8 @@
+19958288 ElasticSearch: get new records
+
+I have a script that runs periodically, and on each run I want it to get the
+records that were added to the DB since the last run. How can I achieve this?
+
+I prefer not to change anything in the way records are added to the DB if I
+don't have to.
+

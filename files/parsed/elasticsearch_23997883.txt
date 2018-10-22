@@ -1,0 +1,16 @@
+23997883 Elasticsearch - query_string, _all fields, lower score for particular
+field
+
+I'm looking for a way to lower the score for matches in one field in a
+`query_string` search with the `default_field` set to `_all`. Any help would
+be appreciated!
+
+My current query looks something like this (assuming the user entered two
+keywords, foo and bar): ` { "query":{ "bool":{ "must":[ { "query_string":{
+"analyzer":"whitespace", "default_field":"_all", "query":"foo~ AND bar~" } } ]
+} } } ` Assuming some data like this: ` { prop: 'foo is here', prop2: 'bar is
+there', lessImportant: '' }, { prop: '', prop2: 'foo is bar', lessImportant:
+'' }, { prop: '', prop2: '', lessImportant: 'bar is foo' } ` I need a way to
+make sure that documents that have a match in `lessImportant` have a lower
+score than matches in other fields, so that #2 is always returned before #3.
+

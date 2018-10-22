@@ -1,0 +1,118 @@
+22894818 Whats wrong with this geo_shape elasticsearch query?
+
+I am trying to do a geo_shape query for document with a location (See example
+document below) and I am getting NullPointerException when trying to execute
+it with ElasticSearch via the Chrome Addon "Sense". The exact results are at
+the bottom of this question...
+
+Any help on getting the right geo_shape query to work would really be
+appreciated.
+
+**Query throwing exception**
+
+    
+    
+    {
+       "query": {         
+         "geo_shape": {
+            "location": {
+               "shape": {
+                  "type": "polygon", 
+                  "coordinates": [[-87.6363976, 41.8772528], [-87.6363976, 41.8902152],[-87.62131840000001, 41.8902152], [-87.62131840000001, 41.8772528], [-87.6363976, 41.8772528]]
+               }
+            }
+    
+          }
+    
+        }
+     }
+    
+
+_**Example Document_**
+
+    
+    
+    {
+        "id": 1483,
+        "name": "Independance Day Movie day",
+        "location": [
+                  41.9527,
+                  -87.725
+               ]
+    }
+    
+
+_**Exact Results from Sense_**
+
+    
+    
+    {
+    "error": "SearchPhaseExecutionException[Failed to execute phase [query_fetch], all shards failed; shardFailures {[qFv-xNqxSI2oATfvmnVo8w][dev][0]: SearchParseException[[dev][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n   \"query\": { \n       \"geo_shape\": {\n          \"location\": {\n             \"shape\": {\n                \"type\": \"polygon\", \n                \"coordinates\": [[-87.6363976, 41.8772528], [-87.6363976, 41.8902152],[-87.62131840000001, 41.8902152], [-87.62131840000001, 41.8772528], [-87.6363976, 41.8772528]]\n             }\n          }\n          \n       \n       }\n        \n   \n   }\n}\n]]]; nested: NullPointerException; }]",
+    "status": 400
+    }
+    
+
+There's two things wrong here. First, your `location` field should be an
+object that has a `type` and `coordinates` field, which I expect should be:
+
+    
+    
+    "location": {
+      "type" : "point",
+      "coordinates" : [ 41.9527, -87.725 ]
+    }
+    
+
+Note that using the array format, you are specifying them as (X, Y) or
+(longitude, latitude).
+
+Secondly, your query is very close to being correct, but it requires an extra
+level of an array for the
+[polygon](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+geo-shape-
+type.html#_ulink_url_http_www_geojson_org_geojson_spec_html_id4_polygon_ulink):
+
+    
+    
+    {
+      "query": {         
+        "geo_shape": {
+          "location": {
+            "shape": {
+              "type": "polygon", 
+              "coordinates": [
+                  [[-87.6363976, 41.8772528], [-87.6363976, 41.8902152],
+                   [-87.62131840000001, 41.8902152], [-87.62131840000001, 41.8772528],
+                   [-87.6363976, 41.8772528]]
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+
+The purpose of the extra layer of nesting is that it allows inner polygons to
+be specified for things like holes. Also, your values in your polygon will
+_not_ contain the point that you are searching for, and the (X, Y) values are
+reversed for one of them regardless.
+
+Just in case you have not already done so, then you are also required to set
+the GeoShape mapping in order for this to work (where `TYPE_NAME` would be the
+specific `index`'s `type`, such as `curl -XGET localhost:9200/index/type`):
+
+    
+    
+    {
+      "mappings" : {
+        "TYPE_NAME" : {
+          "properties" : {
+            "id" : { "type" : "long" },
+            "name" : { "type" : "string" },
+            "location" : { "type" : "geo_shape" }
+          }
+        }
+      }
+    }
+    
+

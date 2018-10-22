@@ -1,0 +1,4 @@
+33292079
+Index document maintaining spaces between words in elasticsearch
+<p>I have a text document in ElasticSearch 1.5 that may have words with many spaces in between them. I want to keep those spaces.  However, when I index the multiple spaces are removed (even though I have the field mapped as "index":"not_analyzed").  Is there a way to keep the spaces?</p>&#xA;
+<p>Then it's something wrong with your mapping. Use <code>GET /index_name/_mapping</code> and search for the field that you are interested in (the one that you want to keep the spaces).</p>&#xA;&#xA;<p>That field should have <code>"index":"not_analyzed"</code> in its definition. If it doesn't then you know something's wrong with the mapping.</p>&#xA;

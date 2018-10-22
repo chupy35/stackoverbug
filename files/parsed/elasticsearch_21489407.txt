@@ -1,0 +1,56 @@
+21489407 Boost rank for special type of document
+
+I have an index with 2 types of document: `District` and `Street`. I would
+like to boost rank of `District` documents.
+
+Is there any way to do that without the `script` option?
+
+You can use a `custom_filters_score` to boost documents matching a filter, and
+your filter can be a `type`-filter.
+
+Here's a runnable example you can play with:
+<https://www.found.no/play/gist/8744808>
+
+    
+    
+    #!/bin/bash
+    
+    export ELASTICSEARCH_ENDPOINT="http://localhost:9200"
+    
+    # Index documents
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_bulk?refresh=true" -d '
+    {"index":{"_index":"play","_type":"district"}}
+    {"title":"there"}
+    {"index":{"_index":"play","_type":"street"}}
+    {"title":"there"}
+    '
+    
+    # Do searches
+    
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_search?pretty" -d '
+    {
+        "query": {
+            "custom_filters_score": {
+                "query": {
+                    "match": {
+                        "title": {
+                            "query": "there"
+                        }
+                    }
+                },
+                "filters": [
+                    {
+                        "boost": 2,
+                        "filter": {
+                            "type": {
+                                "value": "district"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    '
+    
+

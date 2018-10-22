@@ -1,0 +1,84 @@
+19850154 Override search requirement in Elasticsearch
+
+We search on the following fields in our index:
+
+  * individual_name _(string)_
+  * organisation_name _(string)_
+  * profile _(string)_
+  * locations _(string)_
+  * nationwide _(boolean)_
+
+If a user searches for "optometrist" in "Hamilton", and an optometrist in our
+index has listed themselves as "nationwide" (but not specifically in
+Hamilton), desired behaviour is that the optometrist would show up with the
+Hamilton results - effectively ignoring the location requirement.
+
+We're currently running a `multi_match` query, an example of which is below.
+
+    
+    
+    {
+        "query": {
+            "filtered" : {
+                "query" : {
+                    "multi_match": {
+                        "query": "optometrist",
+                        "zero_terms_query": "all",
+                        "operator": "and",
+                        "fields": [
+                            "individual_name^1.2",
+                            "organisation_name^1.5",
+                            "profile",
+                            "accreditations"
+                        ]
+                    }
+                },
+                "filter": {
+                    "and": [{
+                        "term": {
+                            "locations" : "hamilton"
+                        }
+                    }],
+                }
+            }
+        }
+    }
+    
+
+How can this be modified so documents with `"nationwide": "yes"` are returned
+for this query, regardless of location?
+
+I've tried an `or` query under the `and`, but of course that ignored the
+`multi_match`.
+
+I think this will give you the desired results:
+
+    
+    
+    {
+        "query": {
+            "filtered" : {
+                "query" : {
+                    "multi_match": {
+                        "query": "optometrist",
+                        "zero_terms_query": "all",
+                        "operator": "and",
+                        "fields": [
+                            "individual_name^1.2",
+                            "organisation_name^1.5",
+                            "profile",
+                            "accreditations"
+                        ]
+                    }
+                },
+                "filter": {
+                    "or": [
+                            {"term": {"locations" : "hamilton"}},
+                            {'term' : {'nationwide' : 'yes'}}        
+                     ],
+                }
+            }
+        }
+    }
+    
+

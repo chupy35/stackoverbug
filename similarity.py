@@ -1,19 +1,31 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
-# from sklearn.metrics import jaccard_similarity_score
-from scipy import spatial
+import os
+import unirest
+# These code snippets use an open-source library. http://unirest.io/python
+for filename in os.listdir('/home/chupy35/polymtl/dataminning/assigment/finalex/springboot/files/parsed/'):
+    f = open('/home/chupy35/polymtl/dataminning/assigment/finalex/springboot/files/parsed/' + filename, 'r')
+    greaded = f.read().replace('\n', ' ')
+    gcsv = filename.split('_')
+    gproject = gcsv[0]
+    gbugid = gcsv[1].split('.')
+    gbugid = gbugid[0]
 
-def tfidf (text):
-	vectorizer = TfidfVectorizer(tokenizer=None, min_df=1)
-	tfidf = TfidfVectorizer(tokenizer=lambda i:i, lowercase=False)
-	result_train = tfidf.fit_transform(text)
-	final = result_train.toarray()
-	return final
-
-
-def cosine_similarity (array1, array2):
-	return 1 - spatial.distance.cosine(array1, array2)
-
-# def jaccard_similarity (array1, array2):
-# 	return jaccard_similarity_score (array1, array2)
-
-
+    for filename in os.listdir('/home/chupy35/polymtl/dataminning/assigment/finalex/springboot/files/comparing/'):
+        csv = filename.split('_')
+        project = csv[0]
+        sbugid = csv[1].split('.')
+        sbugid = sbugid[0]
+        fy = open('/home/chupy35/polymtl/dataminning/assigment/finalex/springboot/files/comparing/' + filename, 'r')
+        readedy = fy.read().replace('\n', ' ')
+        response = unirest.post("https://twinword-text-similarity-v1.p.mashape.com/similarity/",
+        #response = unirest.post("https://rxnlp-core.p.mashape.com/computeSimilarity",
+          headers={
+            "X-Mashape-Key": "tHqjP9Ll4amshbsKSmIxyaYOUnRsp1DoHPAjsngXK0YWTGoqCD",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json"
+          },
+          params={
+            "text1": greaded,
+            "text2": readedy
+          }
+        )
+        print gbugid + ';' + sbugid + ';'  +  gproject + ';' + project + ';' + str(response.body['similarity'])

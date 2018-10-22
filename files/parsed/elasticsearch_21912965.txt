@@ -1,0 +1,103 @@
+21912965 Mapping an associative array in Elasticsearch
+
+I'm relatively new to elasticsearch and I would like to map one of my field to
+an `associative array` structure.
+
+**What I currently Have :**
+
+One product of type `product` in the index `products`:
+
+    
+    
+    {
+        "name":"Nexus 10",
+        "category":"Tablets",
+        "interests": {
+            "1":30,
+            "3":70
+        }
+    }
+    
+
+As you can see, the field `interests` is an associative array. The key is a
+`User ID` and the value is `the number of times the user talked about this
+product`.
+
+Dynamic mapping provided me with :
+
+    
+    
+    {
+       "products":{
+          "mappings":{
+             "product":{
+                "properties":{
+                   "category":{
+                      "type":"string"
+                   },
+                   "interests":{
+                      "properties":{
+                         "1":{
+                            "type":"long"
+                         },
+                         "3":{
+                            "type":"long"
+                         },
+                      }
+                   },
+                   "name":{
+                      "type":"string"
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+**What I want :**
+
+Since I'm going to have lots of entries in the `interests` field, I don't want
+the dynamic mapping to map each ID.
+
+The idea is to be able to look for a specific `user ID` in the `interests`
+field so that I can boost the score of the result depending on the number of
+times this particular user talked about this product.
+
+I would like to be able to map this kind of structure.
+
+Do you have any idea how to achieve that?
+
+Thanks,
+
+You will need to change your object definitions.
+
+Having _keys_ based on what's actually _values_ is problematic, as it will
+lead to an ever-growing mapping and thus cluster state. It'll also lead to
+quirky searches.
+
+This is a common enough question/issue that I dedicated a section to it in my
+article on [Troubleshooting Elasticsearch searches, for
+Beginners](https://www.found.no/foundation/beginner-troubleshooting/#keyvalue-
+woes).
+
+What you probably want to do is to either use nested documents, or parent-
+child-relations. If you update the counts very often, you'd want to use
+parent-child, as nested documents will cause reindexing of the entire thing.
+Nested doc will be faster search time, though, and you'll very likely want to
+throttle the updates somehow anyway.
+
+If you structure the documents like this, you can easily use nested mappings,
+and you won't end up with one field per user.
+
+    
+    
+    name: Nexus 10
+    category: Tablets
+    interests: 
+        - user_id: 1
+          mentions: 30
+        - user_id: 3
+          mentions: 70
+    
+

@@ -1,0 +1,37 @@
+21295957 ElasticSearch Range within a list
+
+I have a list of datetimes in a document in a field called eventDateTimes. I
+want to know if the document has a an eventDate greater or equal to a search
+date.
+
+    
+    
+    "eventDateTimes": [
+                  "2014-03-04T23:25:48",
+                  "2014-05-06T00:00:05",
+                  "2014-06-05T00:00:05",
+                  "2014-07-01T00:00:05",
+               ]
+    
+
+If your data is stored as a `date` in Elasticsearch, you can simply use a
+range filter:
+
+    
+    
+    curl -XGET "http://localhost:9200/date_range/test/_search" -d'
+    {
+        "query": {
+            "filtered": {
+               "filter": {
+                   "range": {
+                      "eventDateTimes": {
+                         "from": "2014-03-04T23:25:48"
+                      }
+                   }
+               }
+            }
+        }
+    }'
+    
+

@@ -1,0 +1,286 @@
+25483668 How to move a document to a different id
+
+I want to move a document to a new `id` so that it becomes available at
+another `url` in the document API. There are two ways to do this:
+
+1
+
+  * Delete the document at the old id
+  * Create the document with the new id
+
+2
+
+  * Create the document with the new id
+  * Delete the document with the old id
+
+Method 1 can result in the document not being returned in searches. Method 2
+can result in the document being returned more than once in searches.
+
+Is there any way to solve this?
+
+Unfortunately, there's no way to make 'bulk' requests atomic in ElasticSearch.
+Have you considered having a searchable id field separate from _id? Then you
+can simply run an update on that document by updating the 'id' property.
+
+There is one feature in ES that might be a solution, but I have not yet tried
+it yet. ES lets you map the _id field to a property field in the document.
+Doing so allows you to search on the property as if you are querying the id's
+directly. I do not know what will happen if you try to update the mapped
+field. You can find more info here:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+id-field.html>
+
+A bit more involved, but if you are going to do this on a regular basis you
+could use index aliases. Basically you would change your application to use an
+index alias as a level of abstraction. You would then create a new index, load
+all of your existing documents and make the id changes you want to make.
+Finally you would change the index alias to point to the new index - this will
+happen atomically so that there is no downtime.
+
+A similar process is described here (it's focused on changing mappings but
+document changes can be handled too):
+
+<http://www.elasticsearch.org/blog/changing-mapping-with-zero-downtime/>
+
+Some more info on index aliases:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+aliases.html>
+
+When you create (index) or delete a document, this is only reflected in
+searches after the index has been refreshed. So in practice both your methods
+have the same result: Until the index is refreshed
+
+  * the old document will be returned in searches but will not be available using the document API (GET /indexname/type/id)
+  * the new document will be available using the document API but not show up in searches.
+
+As you do the index and delete operations in quick succession, perhaps even in
+a single bulk request, the ordering of the operations does not matter much. By
+default, the refresh interval is one second, so the discrepancy will remain
+for up to that time. You can force a refresh immediately by issuing a refresh
+command on the index:
+
+    
+    
+    curl -XPOST http://127.0.0.1:9200/testidx/_refresh
+    
+
+An illustration of the sequence of events is provided in the last section
+below.
+
+A refresh can also be forced after a bulk request by adding the URL parameter
+`refresh=true`. So if you really need to change the ID of a document, I'd do
+it as follows:
+
+  1. Optionally disable automatic index refreshing
+  2. Issue a bulk request to
+    1. CREATE new doc
+    2. DELETE old doc
+    3. REFRESH index
+  3. Re-enable automatic index refresh (if disabled in 1.)
+
+Example:
+
+To move document from ID 77 to ID 99:
+
+    
+    
+    curl -XPOST localhost:9200/testidx/foo/_bulk?refresh=true --data-binary @bulk.json
+    
+
+Where the file `bulk.json` contains something like
+
+    
+    
+    {"index": {"_id": "123"}}
+    { ... old document source ... }
+    {"delete": {"_id": "99"}}
+    
+
+However, do you really need to change the ID, or can you engineer around that
+requirement? Perhaps don't use the document API this way, but instead include
+e.g., a `"path"` field in every document and make a URL scheme based on that
+(based on the search API). Then you could move (change the URL path) a
+document by updating the document with a new `"path"` field.
+
+## Search index refresh illustration
+
+First add doc 77 and see it shows up in search:
+
+    
+    
+    + curl -XPUT 'http://127.0.0.1:9200/testidx/foo/77' -d '{"boo": "baa"}'
+    {
+      "_index" : "testidx",
+      "_type" : "foo",
+      "_id" : "77",
+      "_version" : 1,
+      "created" : true
+    }
+    
+    + curl -XPOST http://127.0.0.1:9200/testidx/_refresh
+    {"_shards":{"total":10,"successful":5,"failed":0}}
+    
+    + curl -XGET 'http://127.0.0.1:9200/testidx/foo/_search'
+    {
+      "took" : 1,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 1,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "testidx",
+          "_type" : "foo",
+          "_id" : "77",
+          "_score" : 1.0,
+          "_source":{"boo": "baa"}
+        } ]
+      }
+    }
+    
+    + curl -XPUT 'http://127.0.0.1:9200/testidx/_settings' -d '{"settings": { "index.refresh_interval": "-1"}}'
+    {
+      "acknowledged" : true
+    }
+    
+
+Then add a new doc 99:
+
+    
+    
+    + curl -XPUT 'http://127.0.0.1:9200/testidx/foo/99' -d '{"boo": "baa"}'
+    {
+      "_index" : "testidx",
+      "_type" : "foo",
+      "_id" : "99",
+      "_version" : 1,
+      "created" : true
+    }
+    
+
+99 does not yet show up in search:
+
+    
+    
+    + curl -XGET 'http://127.0.0.1:9200/testidx/foo/_search'
+    {
+      "took" : 0,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 1,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "testidx",
+          "_type" : "foo",
+          "_id" : "77",
+          "_score" : 1.0,
+          "_source":{"boo": "baa"}
+        } ]
+      }
+    }
+    
+
+... but is there in the document API:
+
+    
+    
+    + curl -XGET 'http://127.0.0.1:9200/testidx/foo/99'
+    {
+      "_index" : "testidx",
+      "_type" : "foo",
+      "_id" : "99",
+      "_version" : 1,
+      "found" : true,
+      "_source":{"boo": "baa"}
+    }
+    
+
+After deleting 77, the search still shows 77 (but not 99):
+
+    
+    
+    + curl -XDELETE 'http://127.0.0.1:9200/testidx/foo/77'
+    {
+      "found" : true,
+      "_index" : "testidx",
+      "_type" : "foo",
+      "_id" : "77",
+      "_version" : 2
+    }
+    
+    + curl -XGET 'http://127.0.0.1:9200/testidx/foo/_search'
+    {
+      "took" : 0,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 1,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "testidx",
+          "_type" : "foo",
+          "_id" : "77",
+          "_score" : 1.0,
+          "_source":{"boo": "baa"}
+        } ]
+      }
+    
+
+But the document API no longer has 77:
+
+    
+    
+    + curl -XGET 'http://127.0.0.1:9200/testidx/foo/77'
+    {
+      "_index" : "testidx",
+      "_type" : "foo",
+      "_id" : "77",
+      "found" : false
+    }
+    
+
+But after a refresh, the search results reflect the current contents:
+
+    
+    
+    + curl -XPOST http://127.0.0.1:9200/testidx/_refresh
+    {"_shards":{"total":10,"successful":5,"failed":0}}
+    
+    + curl -XGET 'http://127.0.0.1:9200/testidx/foo/_search'
+    {
+      "took" : 1,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 1,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "testidx",
+          "_type" : "foo",
+          "_id" : "99",
+          "_score" : 1.0,
+          "_source":{"boo": "baa"}
+        } ]
+      }
+    }
+    
+

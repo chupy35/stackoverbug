@@ -1,0 +1,23 @@
+24340279 Clear all deleted data in Elasticsearch
+
+I'm new to ES, so the question can be somehow stupid, but:
+
+I was experimenting with ES, creating index, putting some data there (1Mio
+records), and deleting it after and creating the same (with thу same name) It
+seems that ES is not actually deleting the data in Index (via curl DELETE) as
+the disk space is not freed after all the deletes - for now 1Mio records seem
+to take 40Gb of disk space)
+
+Is there any way to delete the deleted data totally so it will actually free
+space?
+
+If its just for experimentation a quick dirty way would be to delete your data
+directory.
+
+Another way to reclaim disk space is to run this command
+
+    
+    
+    curl -XPOST 'http://localhost:9200/_optimize?only_expunge_deletes=true'
+    
+

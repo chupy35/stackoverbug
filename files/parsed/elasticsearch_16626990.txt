@@ -1,0 +1,54 @@
+16626990 ElasticSearch: mappings for fields that are sorted often
+
+Suppose I have a field "epoch_date" that will be sorted often when I do
+Elastic Search queries. How should I map this field? Right now, I just have
+stored: yes. Should I index it even though this field will not count towards
+the relevancy scoring? What should I add to this field if I intend to sort on
+this field often, so it will be more efficient?
+
+    
+    
+    {
+        "tweet" : {
+            "properties" : {
+                "epoch_date" : {
+                    "type" : "integer",
+                    "store" : "yes"
+                }
+            }
+        }
+    }
+    
+
+An index is used for efficient sorting. So YES, you want to create an index
+for the field.
+
+As to needing it to be "more efficient", I'd kindly advise you to first check
+your results and see if they're fast enough. I don't see a reason beforehand
+(with the limited info you provided) to think it wouldn't be efficient.
+
+If you intend to filter on the field as well (date-ranges?) be sure to use
+filters instead of queries whenever you feel the filters used will be used
+often. This because filters can be efficiently cached.
+
+There's nothing you need to change to sort on the field given your mapping.
+You can only sort on a field if it's indexed, and the default is
+`"index":"yes"` for numeric or dates. You can not set a numeric type to
+`analyzed`, since there's no text to analyze. Also, better to use the date
+type for a date instead of the integer.
+
+Sorting can be memory expensive if your field you are sorting on has a lot of
+unique terms. Just make sure you have enough memory for it. Also, keep in mind
+that sorting on a specific field you throw away the relevance ranking, which
+is a big part of what a search engine is all about.
+
+Whether you want to store the field too doesn't have anything to do with
+sorting, but just with the way you retrieve it in order to return it together
+with your search results. If you use the
+[`_source`](http://www.elasticsearch.org/guide/reference/mapping/source-
+field/) field (default behaviour) there's no reason to store specific fields.
+If you ask for specific fields using the
+[`fields`](http://www.elasticsearch.org/guide/reference/api/search/fields/)
+option when querying, then the stored fields would be retrieved directly from
+lucene rather than extracted from the `_source` field parsing the json.
+

@@ -1,0 +1,186 @@
+24511238 Elasticsearch autocompletion mapping and suggestion with mongoDB
+
+I have an issue with the autocompletion feature of elastic search. It is
+working with my postgresql mapping but not with my mongodb one. Maybe it is
+because my completion field is not a primary one.
+
+Here is the mapping :
+
+    
+    
+    {
+        "mappings" : {
+          "customer" : {
+            "properties" : {
+              "cd" : {
+                "properties" : {
+                  "EAN" : {
+                    "type" : "string"
+                  },
+                  "ab" : {
+                    "type" : "string"
+                  },
+                  "ad3" : {
+                    "type" : "string"
+                  },
+                  "cc" : {
+                    "type" : "string"
+                  },
+                  "cit" : {
+                    "type" : "string"
+                  },
+                  "civ" : {
+                    "type" : "string"
+                  },
+                  "ctry" : {
+                    "type" : "string"
+                  },
+                  "dob" : {
+                    "type" : "string"
+                  },
+                  "ew" : {
+                    "type" : "long"
+                  },
+                  "fn" : {
+                    "type" : "string"
+                  },
+                  "lvst" : {
+                    "type" : "string"
+                  },
+                  "mn" : {
+                    "type" : "string"
+                  },
+                  "name" : {
+                    "type" : "completion"
+                  },
+                  "pc" : {
+                    "type" : "string"
+                  },
+                  "pdc" : {
+                    "type" : "string"
+                  },
+                  "stat" : {
+                    "type" : "string"
+                  },
+                  "tb" : {
+                    "type" : "string"
+                  },
+                  "zc" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "cid" : {
+                "type" : "string"
+              },
+              "off" : {
+                "properties" : {
+                  "ol" : {
+                    "properties" : {
+                      "cnt" : {
+                        "type" : "long"
+                      },
+                      "desc" : {
+                        "type" : "string"
+                      },
+                      "ed" : {
+                        "type" : "string"
+                      },
+                      "ot" : {
+                        "type" : "long"
+                      },
+                      "sc" : {
+                        "type" : "long"
+                      },
+                      "sd" : {
+                        "type" : "string"
+                      },
+                      "title" : {
+                        "type" : "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "rec" : {
+                "properties" : {
+                  "rc" : {
+                    "type" : "long"
+                  },
+                  "rl" : {
+                    "type" : "long"
+                  }
+                }
+              },
+              "rst" : {
+                "properties" : {
+                  "pc" : {
+                    "type" : "long"
+                  },
+                  "pl" : {
+                    "type" : "long"
+                  }
+                }
+              },
+              "sh" : {
+                "properties" : {
+                  "cnt" : {
+                    "type" : "long"
+                  },
+                  "res" : {
+                    "type" : "string"
+                  },
+                  "ttl" : {
+                    "properties" : {
+                      "date" : {
+                        "type" : "string"
+                      },
+                      "pl" : {
+                        "type" : "long"
+                      },
+                      "sta" : {
+                        "type" : "long"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }'
+    
+
+and this is my query :
+
+    
+    
+    curl -X POST localhost:9200/retail_crm_demo/_suggest -d '
+    {
+      "retail_crm_demo" : {
+        "text" : "du",
+        "completion" : {
+          "field" : "name"
+        }
+      }
+    }'
+    
+
+I have another issue, the river is crashing when a field with completion type
+is trying to save null data, do you know how to avoid this problem ?
+
+Thanking you in advance !!
+
+Would you explain, how and when "river is crashing"? I can store a record in
+your index data:
+
+    
+    
+    POST /retail_crm_demo/customer
+    {
+        "pc" : "pc1"
+    }
+    
+
+and I have no problem.
+

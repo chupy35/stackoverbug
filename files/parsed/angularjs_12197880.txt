@@ -1,0 +1,270 @@
+12197880 AngularJS: How to make angular load script inside ng-include?
+
+Hey I am building a web page with angular. The problem is that there are
+somethings already build without angular and I have to include them as well
+
+The problem is this.
+
+I have something like this in my main.html:
+
+    
+    
+    <ngInclude src="partial.html">
+    </ngInclude>
+    
+
+And my partial.html has something like this
+
+    
+    
+    <h2> heading 1 <h2>
+    <script type="text/javascript" src="static/js/partial.js">
+    </script>
+    
+
+And my partial.js has nothing to do with angularjs. nginclude works and I can
+see the html, but I can not see the javascript file being loaded at all. I
+know how to use firebug/ chrome-dev-tool, but I can not even see the network
+request being made. What am I doing wrong?
+
+I knwo angular has some special meaning to script tag. Can I override it?
+
+Short answer: AngularJS ("jqlite") doesn't support this. Include jQuery on
+your page (before including Angular), and it should work. See
+<https://groups.google.com/d/topic/angular/H4haaMePJU0/discussion>
+
+This won't work anymore from 1.2.0-rc1. See [this
+issue](https://github.com/angular/angular.js/issues/3756) for more about it,
+in which I posted a comment describing a quick workaround. I'll share it here
+as well :
+
+    
+    
+    // Quick fix : replace the script tag you want to load by a <div load-script></div>.
+    // Then write a loadScript directive that creates your script tag and appends it to your div.
+    // Took me one minute.
+    
+    // This means that in your view, instead of :
+    <script src="/path/to/my/file.js"></script>
+    
+    // You'll have :
+    <div ng-load-script></div>
+    
+    // And then write a directive like :
+    angular.module('myModule', []).directive('loadScript', [function() {
+        return function(scope, element, attrs) {
+            angular.element('<script src="/path/to/my/file.js"></script>').appendTo(element);
+        }
+    }]);
+    
+
+Not the best solution ever, but hey, neither is putting script tags in
+subsequent views. In my case I have to do this is order to use
+Facebook/Twitter/etc. widgets.
+
+I tried neemzy's approach, but it didn't work for me using 1.2.0-rc.3. The
+script tag would be inserted into the DOM, but the javascript path would not
+be loaded. I suspect it was because the javascript i was trying to load was
+from a different domain/protocol.  So I took a different approach, and this is
+what I came up with, using google maps as an example:
+([Gist](https://gist.github.com/neilsoult/7255583))
+
+    
+    
+    angular.module('testApp', []).
+        directive('lazyLoad', ['$window', '$q', function ($window, $q) {
+            function load_script() {
+                var s = document.createElement('script'); // use global document since Angular's $document is weak
+                s.src = 'https://maps.googleapis.com/maps/api/js?sensor=false&callback=initialize';
+                document.body.appendChild(s);
+            }
+            function lazyLoadApi(key) {
+                var deferred = $q.defer();
+                $window.initialize = function () {
+                    deferred.resolve();
+                };
+                // thanks to Emil Stenström: http://friendlybit.com/js/lazy-loading-asyncronous-javascript/
+                if ($window.attachEvent) {  
+                    $window.attachEvent('onload', load_script); 
+                } else {
+                    $window.addEventListener('load', load_script, false);
+                }
+                return deferred.promise;
+            }
+            return {
+                restrict: 'E',
+                link: function (scope, element, attrs) { // function content is optional
+                // in this example, it shows how and when the promises are resolved
+                    if ($window.google && $window.google.maps) {
+                        console.log('gmaps already loaded');
+                    } else {
+                        lazyLoadApi().then(function () {
+                            console.log('promise resolved');
+                            if ($window.google && $window.google.maps) {
+                                console.log('gmaps loaded');
+                            } else {
+                                console.log('gmaps not loaded');
+                            }
+                        }, function () {
+                            console.log('promise rejected');
+                        });
+                    }
+                }
+            };
+        }]);
+    
+
+I hope it's helpful for someone.
+
+The accepted answer won't work from 1.2.0-rc1+ ([Github
+issue](https://github.com/angular/angular.js/issues/3756)).
+
+Here's a quick fix created by
+[endorama](https://gist.github.com/endorama/7369006):
+
+    
+    
+    /*global angular */
+    (function (ng) {
+      'use strict';
+    
+      var app = ng.module('ngLoadScript', []);
+    
+      app.directive('script', function() {
+        return {
+          restrict: 'E',
+          scope: false,
+          link: function(scope, elem, attr) {
+            if (attr.type === 'text/javascript-lazy') {
+              var code = elem.text();
+              var f = new Function(code);
+              f();
+            }
+          }
+        };
+      });
+    
+    }(angular));
+    
+
+Simply add this file, load `ngLoadScript` module as application dependency and
+use `type="text/javascript-lazy"` as type for script you which to load lazily
+in partials:
+
+    
+    
+    <script type="text/javascript-lazy">
+      console.log("It works!");
+    </script>
+    
+
+Unfortunately all the answers in this post didn't work for me. I kept getting
+following error.
+
+> Failed to execute 'write' on 'Document': It isn't possible to write into a
+document from an asynchronously-loaded external script unless it is explicitly
+opened.
+
+I found out that this happens if you use some 3rd party widgets (demandforce
+in my case) that also call additional external JavaScript files and try to
+insert HTML. Looking at the console and the JavaScript code, I noticed
+multiple lines like this:
+
+    
+    
+    document.write("<script type='text/javascript' "..."'></script>");
+    
+
+I used 3rd party JavaScript files (htmlParser.js and postscribe.js) from:
+<https://github.com/krux/postscribe>. That solved the problem in this post and
+fixed the above error at the same time.
+
+(This was a quick and dirty way around under the tight deadline I have now. I
+am not comfortable with using 3rd party JavaScript library however. I hope
+someone can come up with a cleaner and better way.)
+
+I tried using Google reCAPTCHA explicitly. Here is the example:
+
+    
+    
+    // put somewhere in your index.html
+    <script type="text/javascript">
+    var onloadCallback = function() {
+      grecaptcha.render('your-recaptcha-element', {
+        'sitekey' : '6Ldcfv8SAAAAAB1DwJTM6T7qcJhVqhqtss_HzS3z'
+      });
+    };
+    
+    
+    
+    //link function of Angularjs directive
+    link: function (scope, element, attrs) {
+      ...
+      var domElem = '<script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>';
+      $('#your-recaptcha-element').append($compile(domElem)(scope));
+    }
+    
+
+[ocLazyLoad](https://github.com/ocombe/ocLazyLoad) allows to lazily load
+scripts in the templates/views via routers (e.g. ui-router). Here is a
+[sniplet](https://github.com/ocombe/ocLazyLoad#works-well-with-your-router)
+
+    
+    
+    $stateProvider.state('parent', {
+        url: "/",
+        resolve: {
+            loadMyService: ['$ocLazyLoad', function($ocLazyLoad) {
+                 return $ocLazyLoad.load('js/ServiceTest.js');
+            }]
+        }
+    })
+    .state('parent.child', {
+        resolve: {
+            test: ['loadMyService', '$ServiceTest', function(loadMyService, $ServiceTest) {
+                // you can use your service
+                $ServiceTest.doSomething();
+            }]
+        }
+    });  
+    
+
+To dynamically load recaptcha from a `ui-view` I use the following method:
+
+In `application.js`:
+
+    
+    
+        .directive('script', function($parse, $rootScope, $compile) {
+        return {
+            restrict: 'E',
+            terminal: true,
+            link: function(scope, element, attr) {
+                if (attr.ngSrc) {
+                     var domElem = '<script src="'+attr.ngSrc+'" async defer></script>';
+                     $(element).append($compile(domElem)(scope));
+    
+    
+                }
+            }
+        };
+    });
+    
+
+In `myPartial.client.view.html`:
+
+    
+    
+     <script type="application/javascript" ng-src="http://www.google.com/recaptcha/api.js?render=explicit&onload=vcRecaptchaApiLoaded"></script>
+    
+
+I used this method to load a script file dynamically (inside a controller).
+
+    
+    
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = "https://maps.googleapis.com/maps/api/js";
+    document.body.appendChild(script);
+    
+

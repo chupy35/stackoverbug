@@ -1,0 +1,20 @@
+12646238 Pitfalls of using memory storage of index with local gateway
+
+I read <http://www.elasticsearch.org/guide/reference/index-modules/store.html>
+and want to change my settings to load indexes into memory vs disk but on that
+page it says
+
+"When using a local gateway (the default), file system storage with no in
+memory storage is required to maintain index consistency. This is required
+since the local gateway constructs its state from the local index state of
+each node."
+
+We only have one node running right now, so I'm wondering if I can still do it
+to get a performance improvement. Just wanted to see if there are some real
+ramifications to doing this that I'm not considering.
+
+If you will create an index with memory store and local gateway this index
+will disappear after the next cluster restart. I think what you are looking
+for is [file system store with memory
+caching](https://github.com/elasticsearch/elasticsearch/issues/82).
+

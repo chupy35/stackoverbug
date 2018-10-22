@@ -1,0 +1,4 @@
+34054944
+elasticsearch migration plugin: no useful data in response
+<p>I have the migration plugin installed, can can see by doing a <code>plugin -l</code> command that it is installed.</p>&#xA;&#xA;<p>When I hit it, however: <code>http://localhost:9200/_plugin/migration</code></p>&#xA;&#xA;<p>The response is rather... thin:</p>&#xA;&#xA;<pre><code>&lt;head&gt;&lt;meta http-equiv="refresh" content="0; URL=/_plugin/migration/&gt;&lt;/head&gt;&#xA;</code></pre>&#xA;&#xA;<p>What am I missing?</p>&#xA;
+<p>Ahhh, you need the trailing backslash...</p>&#xA;&#xA;<pre><code>http://localhost:9200/_plugin/migration/&#xA;</code></pre>&#xA;&#xA;<p>Also, curl doesn't work well for it, use a browser.</p>&#xA;&#xA;<p>The problem is that the docs here:</p>&#xA;&#xA;<p><a href="https://github.com/elastic/elasticsearch-migration" rel="nofollow">https://github.com/elastic/elasticsearch-migration</a></p>&#xA;&#xA;<p>Are missing the trailing backslash...</p>&#xA;

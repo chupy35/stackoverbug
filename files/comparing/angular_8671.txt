@@ -1,0 +1,2 @@
+b'Inconsistent behaviour of $watchGroup'
+b"Sometimes $watchGroup and $watchCollection produce different results. Here is [plunker](http://plnkr.co/edit/4PIkevPy5Gzhe1zWzct8), that reproduces this issue. Look at third item in results list and you'll see the difference between $watchGroup and $watchCollection output. May be it is by design, but it looks rather strange to me.\n"

@@ -1,0 +1,10 @@
+12894708 Logging of errors in Angular partials
+
+I heard it is possible to receive the error messages of expressions, etc. in
+AngularJS partials. However, I can't find any information on that. Does anyone
+have a hint?
+
+Have you looked at the
+[$exceptionHandler](http://docs.angularjs.org/api/ng.%24exceptionHandler)?
+[Here](http://jsfiddle.net/Fj95g/1/) is a simple usage
+

@@ -1,0 +1,24 @@
+28333181 Spring boot yml configuration
+
+With Spring Boot, you can specify the following in a `application.yml` to
+configure settings for jpa/hibernate:
+
+    
+    
+    spring:
+      jpa:
+        hibernate:
+          ddlAuto: validate
+          namingStrategy: org.hibernate.cfg.EJB3NamingStrategy
+        show-sql: false
+    
+
+My question: is there a page/doc that lists out all the different configs that
+can be defined in the application.yml? (i.e. Where does it say I can configure
+jpa/hibernate by the above example?)
+
+There is a section in the official documention:
+
+<http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-
+application-properties>
+

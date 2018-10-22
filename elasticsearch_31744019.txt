@@ -1,0 +1,5 @@
+31744019
+Remove ElasticSearch on Unbuntu
+<p>Can anyone help me on how to remove ElasticSearch or fully clear ElasticSearch on Ubuntu or how i can re-install ElasticSearch without any problems?</p>&#xA;&#xA;<p>thanks</p>&#xA;
+<p>Also, if you want to just test ES, consider using Docker, you can test elasticsearch with a single line!</p>&#xA;
+<p>How did you install it in the first place? If you used a package manager like apt then you can use that to remove it.</p>&#xA;&#xA;<p>To do it manually, you need to find all the folders where binaries or configuration or data files live and delete those. Stop the elasticsearch service, run a find / -name "<em>elasticsearch</em>" and delete those folders.</p>&#xA;

@@ -1,0 +1,16 @@
+16813900 ElasticSearch: I want to get count with group by
+
+I have the following type on ElasticSearch: { bundle_id: 11141 bundle_name:
+bla_bla country: India }
+
+I want to perform the following query (I'll describe it in SQL):
+
+select count(distinct bundle_id) from my_type where county in('india', 'usa')
+
+Thanks!!
+
+Have a look at [Terms
+Aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html#search-aggregations-bucket-terms-
+aggregation). This is what you are looking for.
+

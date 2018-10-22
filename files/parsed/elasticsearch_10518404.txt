@@ -1,0 +1,130 @@
+10518404 In ElasticSearch should we use default_field in query String for
+nGram analyzer
+
+i have created my index and mapping by this JSON
+
+    
+    
+    // 1st Mapping
+        http://localhost:9200/hdm/entities/_mapping
+        {
+                "entities" : {
+                    "properties": {
+                        "name": { "type": "string", "boost": 2.0, "analyzer": "snowball" },
+                        "description": { "type": "string", "analyzer": "nGram" }
+                    }
+                }
+            }
+    // 2nd Mapping
+        http://localhost:9200/hdm/products/_mapping
+        {
+            "products": {
+                "_parent": { "type": "entities" },
+                "properties": {
+                    "name": { "type": "string", "boost": 2.0, "analyzer": "snowball" },
+                    "code": { "type": "string", "analyzer": "snowball" },
+                    "segment": { "type": "string", "analyzer": "snowball" },
+                    "description": { "type": "string", "analyzer": "snowball" }
+                }
+            }
+        }
+    
+
+now i have indexed some docs in this index using the JSON
+
+    
+    
+        http://localhost:9200/hdm/entities/100
+        {
+            "name":"Entity 001",
+            "description":"this is the company or an organization which provides the whole medicine, tablets injunction for the problem of human being those noting worth gaining was ever gained without effort
+    
+    ",
+            "itype":"entities"
+        }
+    
+        http://localhost:9200/hdm/products/101?parent=100
+        {
+            "name":"biorich",
+            "description":"the tablet para is used to rectify the person from the all types of pain in the body, kingston , car, bat, ball, description of the products",
+            "code":"COD19202",  
+            "segment":"SEG1022",
+            "itype":"products"
+        }
+    
+
+for search i used this JSON
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "bool": {
+              "should": [
+                {
+                  "has_child": {
+                    "type": "products",
+                    "query": {
+                      "query_string": {
+                        "query": "tab"
+                      }
+                    }
+                  }
+                },
+                {
+                  "query_string": {
+                    "query": "tablet"
+                  }
+                }
+              ]
+            }
+          },
+          "filter": {
+            "or": [
+              {
+                "term": {
+                  "itype": "entities"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+i didn't get the result but i changed the query string like this then i got
+the result
+
+    
+    
+          "query_string": {
+            "default_field" : "description"
+            "query": "tablet"
+          }
+    
+
+could you please confirm me, should we mention the default_field in the
+querystring to get nGram analyzer result? my analyzer configuration is as
+follows
+
+    
+    
+    index.analysis.analyzer.mynGram.type: custom
+    index.analysis.analyzer.mynGram.tokenizer: standard
+    index.analysis.analyzer.mynGram.filter: [lowercase, mynGramFilter]
+    index.analysis.filter.mynGramFilter.type: nGram
+    index.analysis.filter.mynGramFilter.min_gram: 1
+    index.analysis.filter.mynGramFilter.max_gram: 10
+    
+
+When `"default_field"` is not specified in the query, elasticsearch is using
+special `[_all](http://www.elasticsearch.org/guide/reference/mapping/all-
+field.html)` field to perform the search. Since you didn't change the default
+analyzer nor specified an analyzer for the `_all` field in your mapping,
+searches against the `_all` field are performed using
+[standard](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/standard-analyzer.html) analyzer.
+

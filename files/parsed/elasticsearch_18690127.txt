@@ -1,0 +1,61 @@
+18690127 How can I get results that don't fully match using ElasticSearch?
+
+If a user types
+
+    
+    
+    jewelr
+    
+
+I want to get results for
+
+    
+    
+    jewelry
+    
+
+I am using a multi_match query.
+
+You could use EdgeNGram tokenizer:
+
+<http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/edgengram-tokenizer/>
+
+Specify an index time analyzer using this,
+
+    
+    
+    "analysis": {
+        "filter": {
+            "fulltext_ngrams": {
+                "side": "front",
+                "max_gram": 15,
+                "min_gram": 3,
+                "type": "edgeNGram"
+            }
+        }, 
+        "analyzer": {  
+            "fulltext_index": {
+                "type": "custom",
+                "filter": [
+                    "standard",
+                    "lowercase",
+                    "asciifolding",
+                    "fulltext_ngrams"
+                ],
+                "type": "custom",
+                "tokenizer": "standard"
+        }
+    }
+    
+
+Then either specify as default index analyzer, or for a specific field
+mapping.
+
+When indexing a field with value jewelry, with a 3/15 EdgeNGram, all
+combinations will be stored:
+
+jew jewe jewel jewelr jewelry
+
+Then a search for jewelr will get a match in that document.
+

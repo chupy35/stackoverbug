@@ -1,0 +1,183 @@
+30374316 Spring Boot java.lang.NoClassDefFoundError: javax/servlet/Filter
+
+I Started a new project with Spring Boot 1.2.3. I'm getting error
+
+    
+    
+    java.lang.NoClassDefFoundError: javax/servlet/Filter
+    
+
+Gradle Dependencies:
+
+    
+    
+    dependencies {
+        compile("org.springframework.boot:spring-boot-starter-actuator")
+        compile("org.springframework.boot:spring-boot-starter-data-jpa")
+        compile("org.springframework.boot:spring-boot-starter-security")
+        compile("org.springframework.boot:spring-boot-starter-thymeleaf")
+        compile("org.springframework.boot:spring-boot-starter-web")
+        compile("org.codehaus.groovy:groovy")
+        compile("com.h2database:h2")
+        compile("org.thymeleaf.extras:thymeleaf-extras-springsecurity3")
+    
+        providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
+        testCompile("org.springframework.boot:spring-boot-starter-test")
+    
+        compile 'org.webjars:jquery:2.1.4'
+        compile 'org.webjars:bootstrap:3.3.4'
+    }
+    
+
+Here is the full stack trace
+
+    
+    
+    Exception in thread "main" java.lang.NoClassDefFoundError: javax/servlet/Filter
+        at java.lang.ClassLoader.defineClass1(Native Method)
+        at java.lang.ClassLoader.defineClass(ClassLoader.java:800)
+        at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+        at java.net.URLClassLoader.defineClass(URLClassLoader.java:449)
+        at java.net.URLClassLoader.access$100(URLClassLoader.java:71)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:361)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:425)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:308)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:358)
+        at java.lang.ClassLoader.defineClass1(Native Method)
+        at java.lang.ClassLoader.defineClass(ClassLoader.java:800)
+        at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+        at java.net.URLClassLoader.defineClass(URLClassLoader.java:449)
+        at java.net.URLClassLoader.access$100(URLClassLoader.java:71)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:361)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:425)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:308)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:358)
+        at java.lang.Class.getDeclaredMethods0(Native Method)
+        at java.lang.Class.privateGetDeclaredMethods(Class.java:2570)
+        at java.lang.Class.getMethod0(Class.java:2813)
+        at java.lang.Class.getMethod(Class.java:1663)
+        at com.intellij.rt.execution.application.AppMain.main(AppMain.java:125)
+    Caused by: java.lang.ClassNotFoundException: javax.servlet.Filter
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:366)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:425)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:308)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:358)
+        ... 29 more
+    
+    Process finished with exit code 1
+    
+
+That looks like you tried to add the libraries `servlet.jar` or `servlet-
+api.jar` into your project `/lib/` folder, but Tomcat already should provide
+you with those libraries. Remove them from your project and classpath. Search
+for that anywhere in your project or classpath and remove it.
+
+    
+    
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
+    
+
+This should be
+
+    
+    
+    compile("org.springframework.boot:spring-boot-starter-tomcat")
+    
+
+for the maven users, comment the scope provided in the following dependency:
+
+    
+    
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <!--<scope>provided</scope>-->
+        </dependency>
+    
+
+**UPDATE**
+
+As feed.me mentioned you have to uncomment the provided part depending on what
+kind of app you are deploying.
+
+Here is a useful link with the details:  <http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#build-tool-plugins-maven-packaging>
+
+It's interesting things with IDE (IntelliJ in this case):
+
+  * if you leave default, i.e. **don't declare** _spring-boot-starter-tomcat_ as **provided** , a _spring-boot-maven-plugin_ (SBMP) put tomcat's jars to your war -> and you'll probably get errors deploying this war to container (there could be a versions conflict)
+
+  * else you'll get classpath with **no compile dependency** on _tomcat-embed_ (SBMP will build executable war/jar with _provided deps_ included anyway)
+
+  *     * intelliJ hornestly doesn't see _provided deps_ at runtime (they are not in classpath) when you run its SpringBoot _run configuration_.
+  *     * and with no tomcat-embed you can't run Spring-Boot with embedded servlet container.
+
+There is some tricky workaround: put tomcat's jars to classpath of your idea-
+module via UI: `File->Project Structure->(Libraries or Modules/Dependencies
+tab)` .
+
+  * tomcat-embed-core
+  * tomcat-embed-el
+  * tomcat-embed-websocket
+  * tomcat-embed-logging-juli
+
+## Better solution for `maven` case
+
+Instead of adding module dependencies in Idea, it is better to declare maven
+profile with compile scope of _spring-boot-starter-tomcat_ lib.
+
+    
+    
+    <profiles>
+        <profile>
+            <id>embed-tomcat</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-tomcat</artifactId>
+                    <scope>compile</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+    
+
+while `spring-boot-starter-tomcat` was declared _provided_ in
+`<dependencies/>`, **making this profile active** in IDE allow you to launch
+build with embedded tomcat.
+
+The configuration [here](https://discuss.gradle.org/t/provided-dependencies-
+with-spring-boot-the-war-plugin-and-intellij-idea/8761/8) is working for me:
+
+    
+    
+    configurations {
+        customProvidedRuntime
+    }
+    
+    dependencies {
+        compile(
+            // Spring Boot dependencies
+        )
+    
+        customProvidedRuntime('org.springframework.boot:spring-boot-starter-tomcat')
+    }
+    
+    war {
+        classpath = files(configurations.runtime.minus(configurations.customProvidedRuntime))
+    }
+    
+    springBoot {
+        providedConfiguration = "customProvidedRuntime"
+    }
+    
+

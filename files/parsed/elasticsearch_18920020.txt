@@ -1,0 +1,105 @@
+18920020 Elasticsearch error when creating index
+
+I am getting the following error when trying to create an index:
+
+    
+    
+    {"error":"IndexCreationException[[myindex] failed to create index]; nested: NoClassDefFoundError[Could not initialize class org.elasticsearch.index.codec.postingsformat.PostingFormats]; ","status":500}
+    
+
+When I do
+
+    
+    
+    curl http://localhost:9200 
+    
+
+I get:
+
+    
+    
+    {
+    "ok" : true,
+    "status" : 200,
+    "name" : "Shamrock",
+    "version" : {
+        "number" : "0.90.5",
+        "build_hash" : "c8714e8e0620b62638f660f6144831792b9dedee",
+        "build_timestamp" : "2013-09-17T12:50:20Z",
+        "build_snapshot" : false,
+        "lucene_version" : "4.4"
+    },
+    "tagline" : "You Know, for Search"
+    }
+    
+
+When I do
+
+    
+    
+    java -version
+    
+
+I get
+
+    
+    
+    java version "1.7.0_13"
+    Java(TM) SE Runtime Environment (build 1.7.0_13-b20)
+    Java HotSpot(TM) 64-Bit Server VM (build 23.7-b01, mixed mode)
+    
+
+When I do
+
+    
+    
+    echo "$JAVA_HOME"
+    
+
+I get
+
+    
+    
+    /usr/local/jdk
+    
+
+Here is the elasticsearch.log
+
+    
+    
+    [2013-09-19 22:27:04,637][INFO ][node                     ] [Iron Lad] {0.90.0.Beta1}[15738]: initializing ...
+    [2013-09-19 22:27:04,646][INFO ][plugins                  ] [Iron Lad] loaded [], sites []
+    [2013-09-19 22:27:07,170][INFO ][node                     ] [Iron Lad] {0.90.0.Beta1}[15738]: initialized
+    [2013-09-19 22:27:07,170][INFO ][node                     ] [Iron Lad] {0.90.0.Beta1}[15738]: starting ...
+    [2013-09-19 22:27:07,333][INFO ][transport                ] [Iron Lad] bound_address {inet[/0.0.0.0:9301]}, publish_address {inet[/66.66.66.66:9301]}
+    [2013-09-19 22:27:10,407][INFO ][cluster.service          ] [Iron Lad] new_master [Iron Lad][Nl9geV2WQICQRPCjZbGg5w][inet[/66.66.66.66:9301]], reason: zen-disco-join (elected_as_master)
+    [2013-09-19 22:27:10,434][INFO ][discovery                ] [Iron Lad] elasticsearch/Nl9geV2WQICQRPCjZbGg5w
+    [2013-09-19 22:27:10,495][INFO ][http                     ] [Iron Lad] bound_address {inet[/0.0.0.0:9201]}, publish_address {inet[/66.66.66.66:9201]}
+    [2013-09-19 22:27:10,495][INFO ][node                     ] [Iron Lad] {0.90.0.Beta1}[15738]: started
+    [2013-09-19 22:27:10,501][INFO ][gateway                  ] [Iron Lad] recovered [0] indices into cluster_state
+    [2013-09-19 22:29:32,668][INFO ][node                     ] [Iron Lad] {0.90.0.Beta1}[15738]: stopping ...
+    [2013-09-19 22:29:32,703][INFO ][node                     ] [Iron Lad] {0.90.0.Beta1}[15738]: stopped
+    [2013-09-19 22:29:32,704][INFO ][node                     ] [Iron Lad] {0.90.0.Beta1}[15738]: closing ...
+    [2013-09-19 22:29:32,733][INFO ][node                     ] [Iron Lad] {0.90.0.Beta1}[15738]: closed
+    [2013-09-19 22:29:34,985][INFO ][node                     ] [Worthington, Warren III] {0.90.0.Beta1}[16047]: initializing ...
+    [2013-09-19 22:29:34,991][INFO ][plugins                  ] [Worthington, Warren III] loaded [], sites []
+    [2013-09-19 22:29:37,492][INFO ][node                     ] [Worthington, Warren III] {0.90.0.Beta1}[16047]: initialized
+    [2013-09-19 22:29:37,492][INFO ][node                     ] [Worthington, Warren III] {0.90.0.Beta1}[16047]: starting ...
+    [2013-09-19 22:29:37,576][INFO ][transport                ] [Worthington, Warren III] bound_address {inet[/0.0.0.0:9301]}, publish_address {inet[/66.66.66.66:9301]}
+    [2013-09-19 22:29:40,613][INFO ][cluster.service          ] [Worthington, Warren III] new_master [Worthington, Warren III][-VnBhd4JTKe3Vg0PGqGKcg][inet[/66.66.66.66:9301]], reason: zen-disco-join (elected_as_master)
+    [2013-09-19 22:29:40,655][INFO ][discovery                ] [Worthington, Warren III] elasticsearch/-VnBhd4JTKe3Vg0PGqGKcg
+    [2013-09-19 22:29:40,717][INFO ][http                     ] [Worthington, Warren III] bound_address {inet[/0.0.0.0:9201]}, publish_address {inet[/66.66.66.66:9201]}
+    [2013-09-19 22:29:40,717][INFO ][node                     ] [Worthington, Warren III] {0.90.0.Beta1}[16047]: started
+    [2013-09-19 22:29:40,721][INFO ][gateway                  ] [Worthington, Warren III] recovered [0] indices into cluster_state
+    
+
+Any thoughts or ideas would be greatly appreciated.
+
+I found there were multiple elastic search nodes running. I ended up stopping
+all of them and then started one up using /etc/init.d/elasticsearch start.
+
+Keep in mind you need to install the init.d script by following the
+instructions at:
+
+<http://www.elasticsearch.org/guide/reference/setup/installation/>
+

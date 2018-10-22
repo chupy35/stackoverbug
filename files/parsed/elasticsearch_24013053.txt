@@ -1,0 +1,25 @@
+24013053 add child document without existing parent doc in elastic search
+
+When I index a child document without an existing parent document (I am
+passing random parent id) it works without error and indexes child document. I
+expect it to give an error so I could check whether parent doc exist or not.
+How will I prevent it to be indexed without proper parent document?
+
+It's how ElasticSearch actually works (as far as undestand it). It doesn't
+have reference constaints. ElasticSearch is not an RDBMS that makes a huge
+focus on a referential integrity. ES makes focus on the performace,
+availability, etc - the kind of things for which you have to sacrifice
+integraty to some extent, as ensuring integraty is in most cases a costly
+thing. ES is often seen (and sometimes actually used) as an object-oriented
+NoSQL data source. And for NoSQL DBs lacking of referencial integraty is a
+common thing.
+
+You can read more about this for example here -
+<https://www.found.no/foundation/elasticsearch-as-nosql/>
+
+> Most relational databases also let you specify constraints to define what is
+and isn’t consistent. For example, referential integrity and uniqueness can be
+enforced. You can require that the sum of account movements must be positive
+and so on. Document oriented databases tend not to do this, and Elasticsearch
+is no different.
+

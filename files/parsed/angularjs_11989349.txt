@@ -1,0 +1,77 @@
+11989349 How to bring data back from model to controller
+
+I have an array of objects... for a concrete example, let's call the array
+`People`, where each `person` has a `uniqueID`, a `name` and a `tagline`.
+
+I'm using the foreach templating to display a list of these people, like so:
+
+    
+    
+    <ul>
+        <li ng-repeat="person in People">
+            {{person.name}}: {{person.tagline}}
+            ...
+    
+
+Simple enough to take the data from the controller and sync it into the model.
+
+Now, I want to click on a person and do something complicated with their
+information. Like so:
+
+    
+    
+    <ul ng-controller="myCtrl">
+        <li ng-repeat="person in People" ng-click="clickHandler($event)">
+            ...
+    
+
+Right now, I have access to the DOM element like this:
+
+    
+    
+    $scope.clickHandler = function($event) {
+        var domElement = $event.currentTarget;
+            ...
+    
+
+But, how do I get the data from the relevant `person` object (the one that was
+clicked on), so that I can possibly look at their `uniqueID` (which is not
+stored in the DOM)?
+
+Whenever you use ng-repeat you should remember that it creates a new scope.
+This scope inherits from the parent scope. But for each item in ng-repeat a
+new scope is created.
+
+In order to access this scope you will also have to introduce a controller
+which will work along with that scope. So you would have to do
+
+    
+    
+     <li ng-repeat="person in People" ng-click="clickHandler($event)" ng-controller="PersonController">
+     ...
+    
+
+In your javascript
+
+    
+    
+    function PersonController($scope){
+      //In here you will be able to access the person from "person in People"
+    
+      $scope.clickHandler = function($event){
+        console.log($scope.person);    
+      }
+    }
+    
+
+It is this scope that will have the person variable. Now, you could also
+declare a clickHandler here.
+
+You should note that for each person in People a new scope will be created as
+well as a new Controller (PersonController ). And in your person controller
+you will be able to access and manipulate your person to your hearts content.
+
+Try defining `$scope.clickHandler` on a parent controller and `ng-
+click="clickHandler(person)"`, with this you will use the parent scope and
+don't need to instancie one controller for each row
+

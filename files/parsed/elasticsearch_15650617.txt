@@ -1,0 +1,22 @@
+15650617 Set the index field to be not_analyzed and then do wildcard query,
+does it appear low performance?
+
+Set the index field to be not_analyzed and then do wildcard query, does it
+appear low performance? ......Are there any issue to lead it appear low
+performance????
+
+Yes. Wildcard queries are not very efficient.
+
+The inverted index works very well because there is an entry in it for every
+term that you want to search on. However, your wildcard queries are not using
+the inverted index as it is intended.
+
+For instance, if you search on `"foo*"` it has to find all terms in the
+inverted index that begin with `"foo"`, then search on all of them. That can
+be very slow and memory intensive.
+
+If you know that you want to do wildcard searches, then you should analyze
+your data accordingly. Use an ngram or edge-ngram tokenizer to analyze your
+field, in order to index partial matches. This will allow the inverted index
+to function as intended.
+

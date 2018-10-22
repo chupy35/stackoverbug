@@ -1,0 +1,37 @@
+18663884 How can I get fuzzy results sorted by relevance using ElasticSearch?
+
+Baiscally if I search for something like
+
+    
+    
+    neckla
+    
+
+I want to get results for necklace. When i did a fuzzy search, I got results
+for food and others (basically it wasn't filtering properly) although the
+necklace result was there.
+
+Any advice?
+
+Have you adjusted the min_similarity parameter in your fuzzy query? Increasing
+the min_similarity may filter out the food and only return the necklace.
+
+    
+    
+    {
+        "fuzzy" : { 
+            "jewelry" : {
+                "value" : "neckla",
+                "boost" : 1.0,
+                "min_similarity" : 0.8,
+                "prefix_length" : 0
+            }
+        }
+    }
+    
+
+As mentioned in the [answer to this
+question](https://stackoverflow.com/questions/18690127/how-can-i-get-results-
+that-dont-fully-match-using-elasticsearch), an edgeNGram filter may be your
+best bet here.
+

@@ -1,0 +1,74 @@
+15789114 Elasticsearch: Query avoiding defined analyzer / using another
+analyzer
+
+I have a question regarding to ElasticSearch queries. I have a field called
+“name” that is defined with an analyzer from the phonetic plugin.
+
+    
+    
+      "name" : {
+          "type" : "string",
+          "store" : "yes",
+          "index" : "analyzed",
+          "analyzer" : "soundsAnalyzer",
+          "boost" : 10.0
+      },
+    
+
+Everything works fine so far! However I have a certain query on this field
+where I wanna get exact matches rather than similar sounded matches. I tried
+to accomplish this by using a term query as well as a text query. The term
+query doesn’t return any result at all and I have no glue why. By using the
+text query and defining another analyzer I get also nothing. I've tried the
+following query:
+
+    
+    
+    {
+      "query": {
+        "text": {
+          "documents.name": {
+            "query": "England",
+            "analyzer": "plainAnalyzer"
+          }
+        }
+      }
+    }
+    
+
+So my question, how can I accomplish avoiding the defined analyzer in the
+mapping just for this certain query to get exact matches? TIA
+
+You will have to index this field twice - one time with `soundsAnalyzer` and
+another using `plainAnalyzer`. You can achieve this using
+[multi_field](http://www.elasticsearch.org/guide/reference/mapping/multi-
+field-type/) type:
+
+    
+    
+    "name" : {
+        "type" : "multi_field",
+        "fields" : {
+            "name" : {"type" : "string", "store" : "yes", "index" : "analyzed", "analyzer" : "soundsAnalyzer", "boost" : 10.0},
+            "plain" : {"type" : "string", "index" : "analyzed", "analyzer" : "plainAnalyzer"}
+        }
+    }
+    
+
+All current queries that are using `soundsAnalyzer` will remain the same. In
+queries that require `plainAnalyzer` you can use `name.plain` instead of
+`name`:
+
+    
+    
+    {
+      "query": {
+        "text": {
+          "documents.name.plain": {
+            "query": "England"
+          }
+        }
+      }
+    }
+    
+

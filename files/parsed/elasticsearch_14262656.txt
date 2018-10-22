@@ -1,0 +1,28 @@
+14262656 How to cause ElasticSearch to reject child index attempts for non-
+existent parents?
+
+The default behavior of ElasticSearch when indexing a child document
+underneath a parent ID, is to index the child document regardless of whether
+the parent document actually exists or not.
+
+The child document will go into the index with the parent_id set to the parent
+specified, despite the fact that there is no parent document present in the
+index.
+
+I have searched the ES documentation (and source code to some degree) but
+cannot seem to find an obvious way to change this behavior.
+
+I would like to cause ES to reject a child index attempt if the parent ID does
+not exist.
+
+I am trying to avoid hack solutions like clean up jobs, additional queries
+etc... These are a last resort if there is truly no proper way to achieve
+this.
+
+After working with Elasticsearch for a while I've found that there are a
+number of default behaviors that I don't like and I've built up a framework to
+enforce the behaviors I'd rather have. I understand your desire to be able to
+set a flag or option to prevent orphan child inserts, but I think you will
+have to to wrap your inserts with a query and test to achieve what you're
+trying to do.
+

@@ -1,0 +1,31 @@
+24638105 ElasticSearch and Master/Slave Configuration
+
+I am new to ElasticSearch and I am wondering if it is actually possible setup
+a configuration like this:
+
+  1. I have 10 slave nodes that contain the same data at a specific time (Time-0)
+
+  2. I write a totally new set of data to the "master" (this set of data it is supposed to replace totally the data of the 10 slaves, not just updating)
+
+  3. I switch off the master and the 10 slaves have the new set of data (replacing the data at Time-0)
+
+If it is possible, any hints?
+
+This is possible, but not really in the master/slave mindset you are thinking
+of.
+
+You'd accomplish this with index aliases:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+aliases.html>
+
+1) Index "current" with an index alias called "live"
+
+2) Index "new" that you write your data to. Use an index alias "beta" to
+generalize.
+
+3) Perform and atomic index alias swap which points the "live" alias at the
+"new" index.
+
+You can further play tricks with replica counts, so that before the swap, the
+new index gets replicas on all the servers.
+

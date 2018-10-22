@@ -1,0 +1,83 @@
+23286490 ElasticSearch custom score script does not preserve array ordering
+
+I am using ElasticSearch with a function_score property to retrieve documents
+sorted by createdOn. The createdOn field is stored as an Array representing
+date values, i.e.
+
+    
+    
+    "createdOn": [ 2014, 4, 24, 22, 11, 47 ]
+    
+
+Where createdOn[0] is year, createdOn[1] is month, createdOn[2] is day, etc. I
+am testing the following query, which should return documents scored by year.
+However, the doc['createdOn'] array does not preserve the value of the
+elements. In this query, doc['createdOn'].values[0] returns 4, not 2014.
+
+    
+    
+    POST /example/1
+    {
+      name:"apple",
+      createdOn: [2014, 8, 22, 5, 12, 32]
+    }
+    
+    POST /example/2
+    {
+      name:"apple",
+      createdOn: [2011, 8, 22, 5, 12, 32]
+    }
+    
+    POST /example/3
+    {
+      name:"apple",
+      createdOn: [2013, 8, 22, 5, 12, 32]
+    }
+    
+    POST /example/_search
+    {
+      "query":
+      {
+        "function_score": {
+          "boost_mode": "replace",
+          "query": { 
+            "match_all": {}
+          },
+          "script_score" : {
+              "script": "doc['createdOn'].values[0]"
+          }
+        }
+      }
+    }
+    
+
+It appears that this is due to the way ElasticSearch caches data:
+<http://elasticsearch-users.115913.n3.nabble.com/Accessing-array-field-within-
+Native-Plugin-td4042848.html>:
+
+The only apparent solution other than using the source method (which is slow),
+is to use nested queries. Any ideas on how I could rewrite my query using
+nested queries? It seems like the only efficient way to sort this query by
+year.
+
+> The docFieldDoubles method gets it's values from the in memory structures of
+the field data cache. This is done for performance. The field data cache is
+not loaded from source of the document (because this will be slow) but from
+the lucene index, where the values are sorted (for lookup speed). The get api
+does work based on the original document source which is why you see those
+values in order (note- ES doesn't the parse the source for the get api, it
+just gives you back what you've put in it).
+
+>
+
+> You can access the original document (which will be parsed) using the
+SourceLookup (available from the source method) but it will be slow as it
+needs to go to disk for every document.
+
+>
+
+> I'm not sure about the exact semantics of what you are trying to achieve,
+but did you try looking at nested objects? those allow you to store a list of
+object in a why that keeps values together, like [{ "key": "k1" , "value" :
+"v1"},...].
+

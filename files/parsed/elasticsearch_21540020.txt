@@ -1,0 +1,137 @@
+21540020 How to map array of nested types
+
+I want to define an index that has an array of nested types. However whenever
+I insert a document I can't get any results doing a nested query.
+
+I have the following mapping defined:
+
+    
+    
+     curl -XPUT http://localhost:9200/test/product/_mapping -d '{
+        "product": {
+           "properties": {
+              "properties": {
+                 "type": "nested"
+              }
+           }
+        }
+     }'
+    
+
+But when I add an item:
+
+    
+    
+      curl -XPUT http://localhost:9200/test/product/1432008 -d '{
+         "properties": [
+            {
+               "data_type": 0,
+               "id": 19,
+               "name": "Vendor",
+               "value": "TEST TEST",
+               "value_id": 16577846
+            }
+         ]
+      }'
+    
+
+I get the following:
+
+    
+    
+     {
+        "test": {
+           "product": {
+              "properties": {
+                 "properties": {
+                    "type": "nested",
+                    "properties": {
+                       "data_type": {
+                          "type": "long"
+                       },
+                       "id": {
+                          "type": "long"
+                       },
+                       "name": {
+                          "type": "string"
+                       },
+                       "value": {
+                          "type": "string"
+                       },
+                       "value_id": {
+                          "type": "long"
+                       }
+                    }
+                 }
+              }
+           }
+        }
+     }
+    
+
+Which actually looks correct. However I get 0 hits for the following:
+
+    
+    
+     curl -XGET http://localhost:9200/test/product/_search -d '
+     {
+       "query": {
+         "filtered": {
+           "query": {"match_all": {}},
+           "filter": {
+             "nested": {
+               "path": "properties",
+               "query":{
+                 "filtered": {
+                   "query": { "match_all": {}},
+                   "filter": {
+                     "and": [
+                       {"term": {"properties.name": "vendor"}},
+                       {"term": {"properties.value": "test test"}}
+                     ]
+                   }
+                 }
+               }
+             }
+           }
+         }
+       }
+     }'
+    
+
+Anyone know what I am doing wrong?
+
+Try this,
+
+    
+    
+     curl -XGET http://localhost:9200/test/product/_search -d '
+     {
+       "query": {
+         "filtered": {
+           "query": {"match_all": {}},
+           "filter": {
+             "nested": {
+               "path": "properties",
+               "query":{
+                 "filtered": {
+                   "query": { "match_all": {}},
+                   "filter": {
+                     "and": [
+                       {"term": {"name": "Vendor"}},
+                       {"term": {"value": "TEST"}}
+                     ]
+                   }
+                 }
+               }
+             }
+           }
+         }
+       }
+     }'
+    
+
+I realized what is going on here. In my example above I changed it a bit to
+hide business details. I left out that the term filter had a value with a
+space in it "test test". The space got. Me. Thanks for your help.
+

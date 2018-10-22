@@ -1,0 +1,65 @@
+12929659 Doing search in elasticsearch
+
+I prepare query object and do search in elasticsearch.
+
+For making query object, I give key and their value.
+
+Problem is, when key and value is like "brand":"Men's Wear" then In this case
+elasticsearch is unable to give me related docs. I think problem is with comma
+or may be space. everything is fine if I use other json property for key and
+value (having no space and comma like "priority":"high")
+
+Any help please!
+
+Update:
+
+no match query still not working! one more problem i found in creating search
+query. query i am using is:
+
+    
+    
+    var qryObj1 = {
+                           "query" : {
+                            "text" : {"name":"Tom"}
+                        }
+                    };     
+    
+
+This will return all docs having name Tom. Now I want to get all docs having
+name Tom and profession is developer. So, here modified one:
+
+    
+    
+    qryObj1 = {
+                        "query" : {
+                            "text" : {"name":"Tom","profession":"developer"}
+                        },"operator" : "and"
+    
+                    };     
+    
+
+but search result is old one. any help!
+
+Sounds like you are using TermQuery, aren't you?
+
+TermQuery are not analyzed so they don't match with your analyzed content.
+
+Try with a [MatchQuery](http://www.elasticsearch.org/guide/reference/query-
+dsl/match-query.html). It should work.
+
+You need to use boolean query
+<http://www.elasticsearch.org/guide/reference/query-dsl/bool-query.html>
+
+Here you can ask ES to take AND or OR of various queries
+
+    
+    
+    "bool" : {
+        "must" : [
+                        "text" : {"name":"Tom"},
+                        "text" : {"profession":"developer"}
+        ]
+    
+
+}
+

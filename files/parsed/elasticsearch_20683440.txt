@@ -1,0 +1,91 @@
+20683440 ElasticSearch gives error about queue size
+
+> RemoteTransportException[[Death][inet[/172.18.0.9:9300]][bulk/shard]];
+nested: EsRejectedExecutionException[rejected execution (queue capacity 50) on
+org.elasticsearch.action.support.replication.TransportShardReplicationOperationAction$AsyncShardOperationAction$1@12ae9af];
+
+Does this mean I'm doing too many operations in one bulk at one time, or too
+many bulks in a row, or what? Is there a setting I should be increasing or
+something I should be doing differently?
+
+One thread suggests "I think you need to increase your
+'threadpool.bulk.queue_size' (and possibly 'threadpool.index.queue_size')
+setting due to recent defaults." However, I don't want to arbitrarily increase
+a setting without understanding the fault.
+
+You want to up the number of bulk threads available in the thread pool. ES
+sets aside threads in several named pools for use on various tasks. These
+pools have a few settings; type, size, and queue size.
+
+from the docs:
+
+> The queue_size allows to control the size of the queue of pending requests
+that have no threads to execute them. By default, it is set to -1 which means
+its unbounded. When a request comes in and the queue is full, it will abort
+the request.
+
+To me that means you have more bulk requests queued up waiting for a thread
+from the pool to execute one of them than your current queue size. The
+documentation seems to indicate the queue size is defaulted to both -1 (the
+text above says that) and 50 (the call out for bulk in the doc says that). You
+could [take a look at the
+source](https://github.com/elasticsearch/elasticsearch) to be sure for your
+version of es OR set the higher number and see if your bulk issues simply go
+away.
+
+[ES thread pool settings
+doco](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+threadpool.html)
+
+I lack the reputation to reply to the comment as a comment.
+
+It's not exactly the number of bulk requests made, it is actually the total
+number of shards that will be updated on a given node by the bulk calls. This
+means the contents of the actual bulk operations inside the bulk request
+actually matter. For instance, if you have a single node, with a single index,
+running on an 8 core box, with 60 shards and you issue a bulk request that has
+indexing operations that affects all 60 shards, you will get this error
+message with a single bulk request.
+
+If anyone wants to change this, you can see the splitting happening inside of
+org.elasticsearch.action.bulk.TransportBulkAction.executeBulk() near the
+comment "go over all the request and create a ShardId". The individual
+requests happen a few lines down around line 293 on version 1.2.1.
+
+elasticsearch 1.3.4
+
+our system 8 core * 2
+
+4 bulk worker each insert 300,000 message per 1 min => 20,000 per sec
+
+i'm also that exception! then set config
+
+    
+    
+    elasticsearch.yml
+    
+    threadpool.bulk.type: fixed
+    threadpool.bulk.size: 8                 # availableProcessors
+    threadpool.bulk.queue_size: 500
+    
+    source
+    
+    BulkRequestBuilder bulkRequest = es.getClient().prepareBulk();
+    
+    bulkRequest.setReplicationType  (ReplicationType.ASYNC).setConsistencyLevel(WriteConsistencyLevel.ONE);
+    
+    loop begin
+    bulkRequest.add(es.getClient().prepareIndex(esIndexName, esTypeName).setSource(document.getBytes    ("UTF-8")));
+    loop end
+    
+    BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+    
+
+4core => bulk.size 4
+
+then no error
+
+I was having this issue and my solution ended up being increasing `ulimit -Sn`
+and `ulimit Hn` for the elasticsearch user. I went from 1024 (default) to
+99999 and things cleaned right up.
+

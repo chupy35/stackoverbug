@@ -1,0 +1,119 @@
+10583013 Why Elasticsearch "not_analyzed" field is split into terms?
+
+I have the following field in my mapping definition:
+
+    
+    
+    ...
+    "my_field": {
+      "type": "string",
+      "index":"not_analyzed"
+    }
+    ...
+    
+
+When I index a document with value of `my_field = 'test-some-another'` that
+value is split into 3 terms: `test`, `some`, `another`.
+
+What am I doing wrong?
+
+I created the following index:
+
+    
+    
+    curl -XPUT localhost:9200/my_index -d '{
+       "index": {
+        "settings": {
+          "number_of_shards": 5,
+          "number_of_replicas": 2
+        },
+        "mappings": {
+          "my_type": {
+            "_all": {
+              "enabled": false
+            },
+            "_source": {
+              "compressed": true
+            },
+            "properties": {
+              "my_field": {
+                "type": "string",
+                "index": "not_analyzed"
+              }
+            }
+          }
+        }
+      }
+    }'
+    
+
+Then I index the following document:
+
+    
+    
+    curl -XPOST localhost:9200/my_index/my_type -d '{
+      "my_field": "test-some-another"
+    }'
+    
+
+Then I use the plugin <https://github.com/jprante/elasticsearch-index-
+termlist> with the following API: ` curl -XGET
+localhost:9200/my_index/_termlist ` That gives me the following response: `
+
+    
+    
+    {"ok":true,"_shards":{"total":5,"successful":5,"failed":0},"terms": ["test","some","another"]}
+    
+
+`
+
+Verify that mapping is actually getting set by running:
+
+`curl localhost:9200/my_index/_mapping?pretty=true`
+
+The command that creates the index seems to be incorrect. It shouldn't contain
+`"index" : {` as a root element. Try this:
+
+    
+    
+    curl -XPUT localhost:9200/my_index -d '{
+      "settings": {
+        "number_of_shards": 5,
+        "number_of_replicas": 2
+      },
+      "mappings": {
+        "my_type": {
+          "_all": {
+            "enabled": false
+          },
+          "_source": {
+            "compressed": true
+          },
+          "properties": {
+            "my_field": {
+              "type": "string",
+              "index": "not_analyzed"
+            }
+          }
+        }
+      }
+    }'  
+    
+
+In ElasticSearch a field is indexed when it goes within the inverted index,
+the data structure that lucene uses to provide its great and fast full text
+search capabilities. If you want to search on a field, you do have to index
+it. When you index a field you can decide whether you want to index it as it
+is, or you want to analyze it, which means deciding a tokenizer to apply to
+it, which will generate a list of tokens (words) and a list of token filters
+that can modify the generated tokens (even add or delete some). The way you
+index a field affects how you can search on it. If you index a field but don't
+analyze it, and its text is composed of multiple words, you'll be able to find
+that document only searching for that exact specific text, whitespaces
+included.
+
+You can have fields that you only want to search on, and never show: indexed
+and not stored (default in lucene). You can have fields that you want to
+search on and also retrieve: indexed and stored. You can have fields that you
+don't want to search on, but you do want to retrieve to show them.
+

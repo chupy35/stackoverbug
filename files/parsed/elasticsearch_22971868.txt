@@ -1,0 +1,64 @@
+22971868 Best setup for querying DateTime entries in ElasticSearch?
+
+I'm building an application that periodically queries system resource usage
+and records the data into ElasticSearch. I want to eventually show this
+information as a graph for a given time period. Note that generally users will
+want to view statistics for a set time period -
+
+  * The current day
+  * The current month
+  * The current year
+
+Because of this, I've been trying to think of the most efficient way of
+storing the data into ElasticSearch for optimized search speeds. Obviously
+each entry has a separate DateTime field (down to the millisecond), but
+searches will be much faster if I can perform a query only for specific
+indices.
+
+My plan is to set the index as the current day (i.e. `2014_04_09`). According
+to
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+aliases.html), you can link multiple indices to a single alias. In this case,
+I would set an alias on the above for `2014_04` as well as `2014`. The idea
+behind this being I can perform a search on the `2014_04` index and this will
+automatically search all of the individual indexed days in April. Will this
+work and, if so, is it optimal?
+
+Has anyone else had a similar experience with DateTime queries in
+ElasticSearch? Thanks!
+
+I would read the entirety of this
+[article](https://www.found.no/foundation/sizing-elasticsearch/#timestamped-
+data) to give you some more insight, it does touch on Elasticsearch and
+Timestamped data. Hope this helps.
+
+As you are kind of getting at in your comments, it makes a lot more sense to
+combine these into one index because it's the same information and it will
+make future queries _much_ simpler.
+
+By making an index daily, monthly, and yearly, then you are going to have to
+triple index your document _or_ come up with complicated logic to control the
+aliasing that is, in my opinion, not worth it while creating a huge amount of
+indices (one per day). If you are doing this for logging, then logstash will
+obviously be a better answer, as noted by Nate. It's probably worth noting in
+that case that you can [turn off indices
+("close")](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+open-close.html) when they are not providing any value, and they will
+therefore not have any negative impact beyond taking up disk space.
+
+Off the topic of logging, to create `N` indices will inherently result in
+multiple shards (at least `N`). Adding too [many shards will unnecessarily
+slow things down](https://stackoverflow.com/a/15705989/706724) when a single
+one will suffice. To do the work with aliasing will create frequent
+maintenance as you add additional indices.
+
+By combining these into one index, you can easily perform analytics on demand
+with high performance _and_ you can more easily scale Elasticsearch across
+multiple nodes when the time comes. Usefully, you will almost certainly find
+more complicated _aggregations_ down the road and you will likely benefit from
+the simpler indexing.
+
+You will receive updates that apply to your filter as they come in even if it
+is cached. This can be easily proven by generating a simple filter, running
+it, and then adding something else within its expected result set.
+

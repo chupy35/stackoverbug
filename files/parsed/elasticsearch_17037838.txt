@@ -1,0 +1,51 @@
+17037838 Which subquery matched out of my compound query?
+
+I have a nested query like this
+
+    
+    
+    {  
+    "fields" : ["title","wordCount"],
+    "query":{
+        "bool":{
+    
+                "should":[
+            {
+                "match":{
+                    "title":{
+                        "query": searchTerm,
+                        "operator": "and"    
+                    }
+                }
+            },
+                    {
+                        "match_phrase" :{
+    
+                            "postHtml":{
+    
+                            "query" : searchTerm,
+                            "slop" : 1    
+                         }
+    
+                        }        
+                    },
+                    {
+                        "match":{
+                            "caption" : searchTerm
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+Is there a way know if there is a match on caption or postHtml?
+
+You can wrap each query into a [named
+filter](http://www.elasticsearch.org/guide/reference/api/search/named-
+filters/); elasticsearch will give you back the name of the filters that
+matched.
+
+Have a look at [this](https://stackoverflow.com/a/15198481/633239) example.
+

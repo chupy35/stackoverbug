@@ -1,0 +1,40 @@
+23243873 Automatically add analyzer to property when indexing
+
+So I followed
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/ngrams-
+compound-words.html) tutorial on how to set up Partial Word Searching using
+ngrams for compound words. In the mapping when creating the index they
+specify:
+
+    
+    
+    "mappings": {
+            "my_type": {
+                "properties": {
+                    "text": {
+                        "type":     "string",
+                        "analyzer": "trigrams" 
+                    }
+                }
+            }
+        }
+    
+
+So how would I allow elasticsearch to add that `"analyzer": "trigram"`
+property to a new field when I index a document. Lets say I have a new
+property called `homeNumber` how would I set it too.
+
+    
+    
+    "homeNumber": {
+              "type": "string",
+              "analyzer": "trigrams" 
+     }
+    
+
+Using the [Mapping
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+put-mapping.html), eg. in the first sense example under "mapping" on the
+[page](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/ngrams-
+compound-words.html) you linked.
+

@@ -1,0 +1,63 @@
+24651596 ElasticSearch bulk insert/update operation
+
+I am not sure if I am using correctly the `upsert` operation in bulk indexing.
+
+My request is:
+
+    
+    
+    { "update": {"_id": "610946100"}}\n
+    {"doc": {"id":"610946100","uri":"/0/0/1/6/4/0/610946100.xml"}, "doc_as_upsert" : true}\n
+    
+
+and url is: `http://localhost:9200/anIndex/aType/_bulk`
+
+I guess I missed something in the
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html) but I still can't find how to make this operation.
+
+What I want is to **create the above document in the index or update it if
+exists.**
+
+The only thing I see that differs between your request and the [Bulk
+Documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html#docs-bulk) is that the examples have the index and type defined in
+the update action. So based on this I would try adding those values like the
+following.
+
+    
+    
+    {"update": {"_id": "610946100", "_type": "aType", "_index": "anIndex"}}\n
+    {"doc": {"uri":"/0/0/1/6/4/0/610946100.xml"}, "doc_as_upsert" : true}\n
+    
+
+Additionally since you are specifying the document `_id` in the update
+command, I would remove it from the partial document, or mark it as `_id`.
+(You were missing the underscore)
+
+If you add records in the index via the bulk API as
+
+    
+    
+    { "create": {"_id": "someId"}}\n
+    {"id":"someId","uri":"/0/1/3/2/1/0511912310/511912310.xml"}\n
+    
+
+then if the id already exists in the index you will get an exception. If you
+want to either add or **replace** a document (depending on whether it exists
+or not), you should do the request as
+
+    
+    
+    { "index": {"_id": "someId"}}\n
+    {"id":"someId","uri":"/0/1/3/2/1/0511912310/511912310.xml"}\n
+    
+
+> create will fail if a document with the same index and type exists already,
+whereas index will add or replace a document as necessary
+
+>
+
+> <https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-
+bulk.html> version 5.3
+

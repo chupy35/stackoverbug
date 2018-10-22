@@ -1,0 +1,130 @@
+12685185 Angular JS update input field after change
+
+I'm trying to build a simple calculator in Angular in which I can override the
+total if I want. I have this part working but when I then go back to enter in
+a number in fields one or two the total isn't updated in the field.
+
+Here is my jsfiddle <http://jsfiddle.net/YUza7/2/>
+
+The form
+
+    
+    
+    <div ng-app>
+      <h2>Calculate</h2>
+    
+      <div ng-controller="TodoCtrl">
+        <form>
+            <li>Number 1: <input type="text" ng-model="one">  
+            <li>Number 2: <input type="text" ng-model="two">
+            <li>Total <input type="text" value="{{total()}}">       
+            {{total()}}
+        </form>
+      </div>
+    </div>
+    
+
+The javascript
+
+    
+    
+    function TodoCtrl($scope) {
+        $scope.total = function(){
+            return $scope.one * $scope.two;
+        };
+    }
+    
+
+I'm guessing that when you enter a value into the totals field that value
+expression somehow gets overwritten.
+
+However, you can take an alternative approach: Create a field for the total
+value and when either `one` or `two` changes update that field.
+
+    
+    
+    <li>Total <input type="text" ng-model="total">{{total}}</li>
+    
+
+And change the javascript:
+
+    
+    
+    function TodoCtrl($scope) {
+        $scope.$watch('one * two', function (value) {
+            $scope.total = value;
+        });
+    }
+    
+
+Example fiddle [here](http://jsfiddle.net/YUza7/8/).
+
+You can add `ng-change` directive to input fields. Have a look at the docs
+[example](http://docs.angularjs.org/api/ng.directive%3angChange).
+
+Create a directive and put a watch on it.
+
+    
+    
+    app.directive("myApp", function(){
+    link:function(scope){
+    
+        function:getTotal(){
+        ..do your maths here
+    
+        }
+        scope.$watch('one', getTotals());
+        scope.$watch('two', getTotals());
+       }
+    
+
+})
+
+You just need to correct the format of your html
+
+    
+    
+    <form>
+        <li>Number 1: <input type="text" ng-model="one"/> </li>
+        <li>Number 2: <input type="text" ng-model="two"/> </li>
+            <li>Total <input type="text" value="{{total()}}"/>  </li>      
+        {{total()}}
+    
+    </form>
+    
+
+<http://jsfiddle.net/YUza7/105/>
+
+I wrote a directive you can use to bind an ng-model to any expression you
+want. Whenever the expression changes the model is set to the new value.
+
+    
+    
+     module.directive('boundModel', function() {
+          return {
+            require: 'ngModel',
+            link: function(scope, elem, attrs, ngModel) {
+              var boundModel$watcher = scope.$watch(attrs.boundModel, function(newValue, oldValue) {
+                if(newValue != oldValue) {
+                  ngModel.$setViewValue(newValue);
+                  ngModel.$render();
+                }
+              });
+    
+              // When $destroy is fired stop watching the change.
+              // If you don't, and you come back on your state
+              // you'll have two watcher watching the same properties
+              scope.$on('$destroy', function() {
+                  boundModel$watcher();
+              });
+            }
+        });
+    
+
+You can use it in your templates like this:
+
+    
+    
+     <li>Total<input type="text" ng-model="total" bound-model="one * two"></li>      
+    
+

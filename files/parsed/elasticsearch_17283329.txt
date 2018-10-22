@@ -1,0 +1,47 @@
+17283329 different field according to categories
+
+im trying to use elasticsearch to search through products. If product is a car
+for instance, it will have some field like "color", "brand", "model", "km",
+... If it is clothes, it will only have "color", "size", ... I would like to
+index all this info in elastic to be able then to search cars with km between
+aaa km and bbb km, and / or xxxx model, same for clothes or any other
+products.
+
+how can I create such field(s) in elasticsearch ? I want all products to be in
+same index, so user can search through all products, but also if user search a
+type a product, then he should be able to specify some more details according
+to this kind of product.
+
+I was thinking about array field, but does that mean that all products will
+have all fields corresponding to all type of products even if some fields are
+not relevant with some products (ie clothes will have km field ??) ? Or is it
+possible on indexing to put just info needed corresponding to each product ?
+
+thanks
+
+You could use types. Create a type called car with fields color, brand, model,
+k etc. and then a type called cloth with fields color, size, etc.
+
+A single index can have many types. The following two links might help you in
+this:
+
+  1. [Creating indices](http://www.elasticsearch.org/guide/reference/api/admin-indices-create-index/)
+
+  2. [Creating types and mapping to the index](http://www.elasticsearch.org/guide/reference/api/admin-indices-put-mapping/)
+
+You could easily search across types so that you could issue a search like
+this to return all documents form all types within that index:
+
+    
+    
+    curl -XGET http://localhost:9200/_search?pretty=true -d '{"query":{"matchAll":{}}}'
+    
+
+Additional information - [Searching across
+types](http://www.elasticsearch.org/guide/reference/api/search/indices-types/)
+
+Having an array field is not a good idea since you would not be utilizing the
+ability of elasticsearch to index semi structured documents.
+
+All the best.
+

@@ -1,0 +1,39 @@
+23248359 ElasticSearch mapping dates
+
+First time using ElasticSearch, I'm having trouble indexing a document due to
+the mapping of dates.
+
+in my DB dates are `DATETIME` and look like this `2014-02-04 14:04:39`. I'm
+trying to parse this in ElasticSearch but it's telling me that
+
+`[Invalid format: \"2014-02-04 14:04:39\" is malformed at \" 14:04:39\"]`
+
+I've tried setting the format quite a few different ways:
+
+    
+    
+    'date_added' => array(
+            'type' => 'date',
+            'format' => 'yyyy-MM-dd HH:mm:ss'
+            )
+    
+
+and also like this:
+
+`yyyy-MM-ddTHH:mm:ss`
+
+`yyyy-MM-ddTHH:mm:ssZZ`
+
+What is the correct format for this?
+
+In mapping, configure the field to date and also the format you need.. For
+syntax refer
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#date>
+
+The date format that are supported by elasticsearch refer the following link..
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+date-format.html>
+

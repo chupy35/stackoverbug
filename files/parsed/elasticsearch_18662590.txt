@@ -1,0 +1,172 @@
+18662590 Elasticsearch Dynamic Templates not working with Nested Documents
+
+I Really thought I had this working, but I'm actually having issues. I have a
+dynamic template set up to match nested documents. I set up my mappings like
+so:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/test/' -d '{
+        "mappings": {
+            "Item": {
+                "dynamic_templates": [
+                    {
+                        "metadata_template": {
+                            "match_mapping_type": "string",
+                            "path_match": "metadata.*",
+                            "mapping": {
+                                "type": "multi_field",
+                                "fields": {
+                                    "{name}": {
+                                        "type": "{dynamic_type}",
+                                        "index": "analyzed"
+                                    },
+                                    "standard": {
+                                        "type": "{dynamic_type}",
+                                        "index": "analyzed",
+                                        "analyzer" : "standard"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "settings": {
+            "analysis": {
+                "filter": {
+                    "my_ngram": {
+                        "max_gram": 10,
+                        "min_gram": 1,
+                        "type": "nGram"
+                    },
+                    "lb_stemmer": {
+                        "type": "stemmer",
+                        "name": "english"
+                    }
+                },
+                "analyzer": {
+                    "default_index": {
+                        "filter": [
+                            "standard",
+                            "lowercase",
+                            "asciifolding",
+                            "my_ngram"
+                        ],
+                        "type": "custom",
+                        "tokenizer": "keyword"
+                    },
+                    "default_search": {
+                        "filter": [
+                            "standard",
+                            "lowercase"
+                        ],
+                        "type": "custom",
+                        "tokenizer": "standard"
+                    }
+                }
+            }
+        }
+    }'
+    
+
+My expectation is that all fields that start with "metadata." should be stored
+in an analyzed field and in an unanalyzed field with the suffix ".standard".
+Am I completely misunderstanding this?
+
+I add an item:
+
+    
+    
+    curl -XPUT localhost:9200/test/Item/1 -d '{
+                               "name" : "test", 
+                               "metadata" : {
+                                    "strange_tag" : "CLEAN_2C_abcdefghij_07MAY2005_AB" 
+                                    }
+                                }'
+    
+
+This query works great:
+
+    
+    
+    {
+        "query": {
+            "match": {
+                "metadata.strange_tag": {
+                    "query": "CLEAN_2C_abcdefghij_07MAY2005_AB",
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+    
+
+But the searching for the word CLEAN, or clean doesn't return any results. I
+expect that field to have gone through the ngram tokenizer. Anyone have a
+suggestion for what I'm doing wrong?
+
+Looks l like I was incorrectly creating my NGRAM analyzer. Here is a working
+example:
+
+    
+    
+    curl -XDELETE 'localhost:9200/test'
+    
+        curl -XPUT 'localhost:9200/test' -d '{
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "my_ngram_analyzer": {
+                        "tokenizer": "my_ngram_tokenizer",
+                        "filter": [
+                            "standard",
+                            "lowercase",
+                            "asciifolding"
+                        ]
+                    }
+                },
+                "tokenizer": {
+                    "my_ngram_tokenizer": {
+                        "type": "nGram",
+                        "min_gram": "2",
+                        "max_gram": "3",
+                        "token_chars": [
+                            "letter",
+                            "digit"
+                        ]
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "Item": {
+                "dynamic_templates": [
+                    {
+                        "metadata_template": {
+                            "match_mapping_type": "string",
+                            "path_match": "*",
+                            "mapping": {
+                                "type": "multi_field",
+                                "fields": {
+                                    "{name}": {
+                                        "type": "{dynamic_type}",
+                                        "index": "analyzed",
+                                        "analyzer" : "my_ngram_analyzer"
+                                    },
+                                    "standard": {
+                                        "type": "{dynamic_type}",
+                                        "index": "analyzed",
+                                        "analyzer": "standard"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }'
+    
+

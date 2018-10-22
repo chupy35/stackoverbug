@@ -1,0 +1,172 @@
+20896317 ElasticSearch edgeNGram
+
+I have the following settings and analyzer:
+
+    
+    
+    put /tests
+    {
+    "settings": {
+        "analysis": {
+             "analyzer": {
+                 "standardWithEdgeNGram": {
+                     "tokenizer": "standard",
+                     "filter": ["lowercase", "edgeNGram"]
+                 }
+             },
+             "tokenizer": {
+                 "standard": {
+                     "type": "standard"
+                 }
+             },
+             "filter": {
+                 "lowercase": {
+                    "type": "lowercase"
+                },
+                "edgeNGram": {
+                    "type": "edgeNGram",
+                    "min_gram": 2,
+                    "max_gram": 15,
+                    "token_chars": ["letter", "digit"]
+                }
+            }
+        }
+    },
+    "mappings": {
+        "test": {
+            "_all": {
+                "analyzer": "standardWithEdgeNGram"
+            },
+            "properties": {
+                "Name": {
+                    "type": "string",
+                    "analyzer": "standardWithEdgeNGram"
+                }
+            }
+       }
+    }
+    }
+    
+
+And I posted the following data into it:
+
+    
+    
+    POST /tests/test
+    {
+        "Name": "JACKSON v. FRENKEL"
+    }
+    
+
+And here is my query:
+
+    
+    
+    GET /tests/test/_search
+    {
+        "query": {
+            "match": {
+               "Name": "jax"
+            }
+        }
+    }
+    
+
+And I got this result:
+
+    
+    
+    {
+        "took": 2,
+        "timed_out": false,
+        "_shards": {
+        "total": 1,
+        "successful": 1,
+        "failed": 0
+    },
+    "hits": {
+        "total": 1,
+        "max_score": 0.19178301,
+        "hits": [
+            {
+                "_index": "tests",
+                "_type": "test",
+                "_id": "lfOxb_5bS86_CMumo_ZLoA",
+                "_score": 0.19178301,
+                "_source": {
+                    "Name": "JACKSON v. FRENKEL"
+                }
+            }
+        ]
+    }
+    }
+    
+
+Can someone explain to me that there is no "jax" anywhere in the "Name", and
+it still gets the match?
+
+Thanks in advance
+
+A
+[`match`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-match-query.html) query performs analysis on its given value. By default,
+`"jax"` is being analyzed with `standardWithEdgeNGram`, which includes n-gram
+analysis permuting it into `["ja", "ax"]`, the first of which matches the
+`"ja"` from the analyzed `"JACKSON v. FRENKEL"`.
+
+If you don't want this behavior you can specify a different analyzer to
+`match`, using the `analyzer` field, for example
+[`keyword`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+keyword-analyzer.html):
+
+    
+    
+    GET /tests/test/_search
+    {
+        "query": {
+            "match": {
+               "Name": "jax",
+               "analyzer" : "keyword"
+            }
+        }
+    }
+    
+
+In ES 1.3.2 the below query gave an error
+
+    
+    
+    GET /tests/test/_search
+    {
+        "query": {
+        "match": {
+           "Name": "jax",
+           "analyzer" : "keyword"
+           }
+      }
+    }
+    
+
+Error : query parsed in simplified form, with direct field name, but included
+more options than just the field name, possibly use its 'options' form, with
+'query' element?]; }] status: 400
+
+I fixed the issue as
+[below](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html):
+
+    
+    
+    {
+       "query": {
+           "query_string": {
+                "fields": [
+                "Name"
+                 ],
+            "query": "jax",
+                "analyzer": "simple"
+            }
+        }
+    }
+    
+

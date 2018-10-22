@@ -1,0 +1,31 @@
+12917691 Elastic search, unique query result
+
+Imagine the following data :
+
+    
+    
+    data: [
+      {  A: 1
+         B: 1
+         C: 1
+      }
+      {  A: 1
+         B: 1
+         C: 2
+      }
+      {  A: 3
+         B: 1
+         C: 23
+      }
+      ... 
+    ]
+    
+
+When I query, I would like to receive every data that has its value B as 1,
+but I don't want them to share the same A value. In other words I would like
+my query result to contain unique A values. So in this example I would have
+either C = 2, 23 or C = 1, 23. Is this achievable in elastic search ?
+
+After a long research, I have learned that, there is no way to achieve this as
+of now. Elastic search does not support such an operation.
+

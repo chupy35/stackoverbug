@@ -1,0 +1,3 @@
+34262326
+elasticsearch read timeout, seems to have too many shards?
+<p>I'm using both elasticsearch 1.4.4/2.1.0 with cluster of 5 hosts on AWS. In the config file, I've set index shard num to 10.  </p>&#xA;&#xA;<p>So here comes the strange behavior: I created a index everyday, and when there's about 400 shards or more, the whole cluster returns Read Timeout when using Buik index API.<br>&#xA;If I delete some indices, the timeout error disappeared. </p>&#xA;&#xA;<p>Anyone meets similar problem? This is really a big obstacle for storing more data</p>&#xA;

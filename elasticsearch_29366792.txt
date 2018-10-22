@@ -1,0 +1,3 @@
+29366792
+Water mark warning in elasticsearch
+<p>I have been seeing lots of error as follows:</p>&#xA;&#xA;<pre><code>"[2015-03-29 14:58:25,485][WARN ][cluster.routing.allocation.decider] [Tess-One] high disk watermark [10%] exceeded on [jhQ1qG09T_WtMeAgDj1RbQ][Tess-One] free: 3.7gb[3.1%], shards will be relocated away from this node"&#xA;</code></pre>&#xA;&#xA;<p>What does this mean? Where can I get more information on this?</p>&#xA;

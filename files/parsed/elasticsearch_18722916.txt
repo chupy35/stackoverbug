@@ -1,0 +1,16 @@
+18722916 Elasticsearch how to index text files using the command line
+
+I started playing with Elasticsearch. I want to create index for a textfile. I
+mean that I have multiple text files in a folder. I want to create index on
+these text files so that I can perform text search on these files. Is there a
+way to do this using command line or . Please guide me with an example.
+
+yes, you can by using the FS river + mapper attachment plugin. [Here is a
+link](https://github.com/dadoonet/fsriver) to the source page.
+
+I ran a few tests with it a little while ago. It works fine. Be aware though,
+that the file has to be local for this to work (even if you can mount a remote
+file to a local path).
+
+Hope this helps.
+

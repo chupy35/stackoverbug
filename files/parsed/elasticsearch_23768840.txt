@@ -1,0 +1,77 @@
+23768840 Autocomplete and suggester combination for Elastic Search
+
+I am trying to make an elastic search autocomplete and suggest. I will be used
+for searching for company names. It works OK but the suggest is only performed
+on the beginning to the company name. ( E.G. Sports Company inc. will only be
+shown for searches starting like 'sports' and not 'company'). I have read
+theat the autocomplete is for prefixes, but I want it to work on all words.
+
+My question is how to go about using either; suggest, autocomplete, filters,
+tokenizers to get get it working. I understand that they all have influences
+on results, but what has more and what has less. I find the docs quite hard to
+understand.
+
+I also, would like to know the best way to go about searching all words in a
+company name vs prefix only.
+
+Settings:
+
+    
+    
+    {
+        "settings" : {
+            "analysis" : {
+                "char_filter" : {
+                    "-_to_space" : {
+                        "type" : "mapping",
+                        "mappings" : [ "-=>", ".=>" ]
+                    }
+                },
+                "filter" : {
+                    "company_stopwords" : {
+                        "type" : "stop",
+                        "stopwords" : [ "the", "a", "." ]
+                    }
+                },
+                "analyzer" : {
+                    "company_analyzer" : {
+                        "type" : "custom",
+                        "char_filter" : [ "html_strip", "-_to_space" ],
+                        "tokenizer" : "standard",
+                        "filter" : [ "lowercase", "company_stopwords" ]
+                    }
+                }
+            },
+            "number_of_replicas" : 0
+        }
+    }
+    
+
+Mappings
+
+    
+    
+    {
+        "properties" : {
+            "name" : { 
+                "type" : "string"
+            },
+            "suggest" : {
+                "type" : "completion",
+                "index_analyzer" : "simple",
+                "search_analyzer" : "company_analyzer",
+                "payloads" : "true"
+            },
+            "activated" : { 
+                "type" : "integer"
+            },
+            "banned" : { 
+                "type" : "integer"
+            },
+            "disabled" : { 
+                "type" : "integer"
+            }
+        }
+    }
+    
+

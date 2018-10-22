@@ -1,0 +1,15 @@
+31550636 Spring Boot safety of application.properties
+
+is it safe to put in file application.properties security data, for example
+connection to my DB. for Example:
+
+    
+    
+    db.driver: org.postgresql.Driver
+    db.url: jdbc:postgresql://localhost:5432/test
+    db.username: postgres
+    db.password: root
+    
+
+With safe I mean that data inside that file are not visible from web.
+

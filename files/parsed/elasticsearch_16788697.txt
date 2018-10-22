@@ -1,0 +1,34 @@
+16788697 configuring elastic search index
+
+I was exploring the documentation and Q&A regarding on how to configure an
+index in ES. At some point I get really confused. I found two different
+versions/ways (?) on how to do it, but I can't seem to find what the
+difference is.
+
+(1) this one: [Elasticsearch: Constructing mappings for Java
+Client](https://stackoverflow.com/questions/12727690/elasticsearch-
+constructing-mappings-for-java-client) which seems to be one yml file that
+contains all the definitions for the index _bookshelf_ (in the given example)
+
+(2) a definition of a tweet:
+<http://www.elasticsearch.org/guide/reference/mapping/object-type/> (JSON)
+
+to me, (1) seems to be more conclusive. but anyway, what confuses me is that
+(1) has _mappings_ defined, and (2) has _properties_ \- what is the
+difference? what is the correct/better way of defining fields for types of an
+index?
+
+They're both kinda the same really. 1. Is just being fed to a client which
+will eventually just output a JSON file that **looks like** 2\.
+
+The reason 2 looks odd to you is because its documenting/demonstrating a
+specific type of mapping, not telling you how to create index mappings.
+
+If you're using an [elasticsearch
+client](http://www.elasticsearch.org/guide/clients/) then consult the
+documentation for how they want you to specify mappings, if you want to
+interface with elasticsearch using REST commands directly then [read this
+documentation](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+create-index/), (read it anyway to understand how to construct mappings in
+general)
+

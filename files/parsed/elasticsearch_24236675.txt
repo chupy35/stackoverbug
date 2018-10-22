@@ -1,0 +1,83 @@
+24236675 Sequential browsing of an elasticsearch index
+
+I am building a system that uses Elasticsearch to store and retrieve library
+catalogue data. One thing I've been asked for is a browse interface.
+
+Here's a definition of what this is:
+
+  * The user does a search, for example "Author starts with" and they supply "Smith" 
+  * The system puts them into the middle of a list of authors, at or near the position of the first one that starts with "Smith", so they might see:
+
+>
+
+>         Smart, Murray
+
+>         Smart, Murray J.
+
+>         Smeaton, Duncan
+
+>         Smieliauskas, Wally
+
+>         Smillie, John
+
+>         Smith Milway, Katie <-- this being the first actual search result
+
+>         Smith, A. M. C.
+
+>         Smith, Andrew
+
+>         Smith, Andrew M. C.
+
+>         etc.
+
+>  
+
+  * The one with the marker is the one actually searched for, but you can see the ones around it according to the sort order, _including ones that don't actually match the query._
+  * These will be paged, so having ~20 or so results per page. If the user pages back, they head towards the start of the alphabet, if they page forwards they will go onward.
+  * Each result shown will have a count beside it showing how many results (i.e. catalogue items) are associated with that author.
+  * Clicking on a result takes you to everything by that author (this and everything beyond it is fairly easy and mostly implemented already.)
+
+I'm wondering if anyone has any good ideas on how to approach this. At this
+stage, I don't care too much about handling searches that aren't "field starts
+with" searches, as exactly how that will be done is currently up in the air
+and I'll deal with it when the time comes.
+
+Here's what I'm thinking, but there are serious issues with it:
+
+  * All the fields that are going to be browsed are faceted
+  * I get a list of all the facets for that field, search through it to find the starting point, and handle the paging manually in code.
+  * This has the big problem that I might be fetching hundreds of thousands of terms and processing them, which won't be quick.
+
+  * In retrospect, it's no different to loading all the values into its own index and fetching all them in sorted order.
+
+I'm open to any options here, whether I can somehow jump into the middle of a
+large set of facets like the query "from" field, or if I should instead put
+everything into another index specifically for this purpose (though I don't
+know how I'd structure and query it), or something else.
+
+From what I can see, my ideal solution would be that I can specify the facet
+field, tell ES that I want to start at the one that starts with "Smith", and
+it displays from around there, then I have the ability to say "go 20 back",
+but I'm not sure that this is possible.
+
+You can see an example of the sort of thing I'm talking about in action here:
+<http://hollisclassic.harvard.edu/> \- put in Smith as "Author (last name
+first)", and it gives you a (terribly ugly looking) browse list.
+
+Any thoughts?
+
+On:
+
+> The one with the marker is the one actually searched for, but you can see
+the ones around it according to the sort order, including ones that don't
+actually match the query.
+
+I had a similar requirement: "Show the user how many records we would have
+found if the search-conditions were more relaxed". I solved this by doing two
+searches (one exact, one more relaxed), as the performance of ES is so good
+that doing one or two searches does not matter. The time gets eaten up in the
+displaying (in my case) and not in the search.
+
+Still you would need to merge these two results in you application to generate
+one list to display.
+

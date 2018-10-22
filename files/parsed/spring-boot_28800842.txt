@@ -1,0 +1,52 @@
+28800842 Spring Boot - Any shortcuts for setting TaskExecutor?
+
+Just wanted to check in to see if anyone had a faster way to set the
+TaskExecutor for Spring MVC within spring boot (using auto configuration).
+This is what I have so far:
+
+    
+    
+    @Bean
+    protected ThreadPoolTaskExecutor mvcTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setThreadNamePrefix("my-mvc-task-executor-");
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(200);
+        return executor;
+    }
+    
+    @Bean
+    protected WebMvcConfigurer webMvcConfigurer() {
+        return new WebMvcConfigurerAdapter() {
+            @Override
+            public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+                configurer.setTaskExecutor(mvcTaskExecutor());
+            }
+        };
+    }
+    
+
+Does anyone have a better/faster way to do this?
+
+-Joshua
+
+One way to achieve this is to use Spring's ConcurrentTaskExceptor class. This
+class acts as adapter between Spring's TaskExecutor and JDK's Executor.
+
+    
+    
+    @Bean
+    protected WebMvcConfigurer webMvcConfigurer() {
+        return new WebMvcConfigurerAdapter() {
+            @Override
+            public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+                configurer.setTaskExecutor(new ConcurrentTaskExecutor(Executors.newFixedThreadPool(5)));
+            }
+        };
+    }
+    
+
+One problem with above is that you can't specify maximum pool size. But you
+can always create a new factory method, `createThreadPool(int core, int max)`
+to get you configurable thread pools.
+

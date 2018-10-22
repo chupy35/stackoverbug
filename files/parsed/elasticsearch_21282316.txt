@@ -1,0 +1,48 @@
+21282316 Filter Elasticsearch
+
+How do I filter fields within an array that is inside of an object?
+
+Sample:
+
+    
+    
+    {
+      _index: "consult",
+      _type: "user",
+      _id: "TlgRL71xRyq-0guJTGA9WQ",
+      _score: 1,
+      _source: {
+        token: "1113",
+        userlist: [
+          {
+            id: "1",
+            nome: "Mark"
+          },
+          {
+            id: "2",
+            nome: "Joe"
+          }
+        ]
+      }
+    }
+    
+
+You can access the object's properties by using a fully qualified path (e.g.
+"dot notation"). For example, here is a Term filter looking for a specific id
+value:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+               "filter": {
+                   "term": {
+                      "userlist.id": 1
+                   }
+               }
+            }
+        }
+    }
+    
+

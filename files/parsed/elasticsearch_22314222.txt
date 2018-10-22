@@ -1,0 +1,88 @@
+22314222 Elasticsearch - Query by parent id
+
+I have three document types with the following mappings with Parent/Child
+relationships. I have omitted other properties as I thought they are not
+relevant to the question.
+
+    
+    
+       "mappings": {
+         "Parent": {            
+            },
+         "Child": {
+            "_parent": {
+               "type": "Parent"
+            },
+            "_routing": {
+               "required": true
+            }             
+         },
+         "GrandChild": {
+            "_parent": {
+               "type": "Child"
+            },
+            "_routing": {
+               "required": true
+            }             
+         }
+      }
+    
+
+I'm using java api to insert documents to the index. Before indexing a
+document, existing documents with the same ids needs to removed to avoid
+duplicates. Parent's Id and Child's Id are stored externally. First all
+"GrandChild" documents are deleted using a term query on its parent id (which
+is an id of type "Child" in this case). There are no errors but the
+"GrandChild" docs are not getting deleted.
+
+By running the following term query using the chrome plugin Sense, I found out
+that the problem is in the term query. It doesn't return hits. Parent, Child
+and GrandChild have the same routing value which is set to the id of Parent.
+This is the query I tried.
+
+    
+    
+    POST /myindex/GrandChild/_search?routing=DFC0E8CD59EBC00EC2DDC9A0FF5D1F2DB272B2449680824CCE60B6864568D498
+    {
+        "query" : {
+            "term" : { "_parent" : "//id/of/doc/of/type/Child" }
+        }
+    }
+    
+
+When I try to search for a "Child" document using its parent id, it works. I
+get a "Child" using the following query.
+
+    
+    
+    POST /myindex/Child/_search?routing=DFC0E8CD59EBC00EC2DDC9A0FF5D1F2DB272B2449680824CCE60B6864568D498
+    {
+        "query" : {
+            "term" : { "_parent" : "DFC0E8CD59EBC00EC2DDC9A0FF5D1F2DB272B2449680824CCE60B6864568D498" }
+        }
+    } 
+    
+
+What could I be doing wrong in the "GrandChild" search?
+
+Any help is appreciated. Thanks.
+
+Got an answer for the question from elasticsearch mailing list
+<https://groups.google.com/forum/#!topic/elasticsearch/d_aZejNMBD8>
+
+There is an open issue for this here:
+<https://github.com/elasticsearch/elasticsearch/issues/5399>
+
+**Edit :** As shown in the Github issue the way to perform your query is to
+prefix the ID by the parent type :
+
+    
+    
+    POST /myindex/GrandChild/_search?routing=DFC0E8CD59EBC00EC2DDC9A0FF5D1F2DB272B2449680824CCE60B6864568D498    
+    {
+        "query" : {
+            "term" : { "_parent" : "Child#//id/of/doc/of/type/Child" }
+        }
+    }
+    
+

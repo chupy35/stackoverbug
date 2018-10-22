@@ -1,0 +1,178 @@
+13077320 AngularJS - Trigger when radio button is selected
+
+I searched and tried many ng-xxxx kind of options but couldn't find the one..
+I just want to call some function in the controller when radio button is
+selected.
+
+So it might be similar to following..(Of course, below code is not working)
+
+    
+    
+    <input type="radio" ng-model="value" value="one" ng-click="checkStuff()"/>
+    
+
+Is there any way to achieve what I want?
+
+Should use ngChange instead of ngClick if trigger source is not from click.
+
+Is the below what you want ? what exactly doesn't work in your case ?
+
+    
+    
+    var myApp = angular.module('myApp', []);
+    
+    function MyCtrl($scope) {
+        $scope.value = "none" ;
+        $scope.isChecked = false;
+        $scope.checkStuff = function () {
+            $scope.isChecked = !$scope.isChecked;
+        }
+    }
+    
+    
+    <div ng-controller="MyCtrl">
+        <input type="radio" ng-model="value" value="one" ng-change="checkStuff()" />
+        <span> {{value}} isCheck:{{isChecked}} </span>
+    </div>   
+    
+
+There are at least 2 different methods of invoking functions on radio button
+selection:
+
+1) Using `ng-change` directive:
+
+    
+    
+    <input type="radio" ng-model="value" value="foo" ng-change='newValue(value)'>
+    
+
+and then, in a controller:
+
+    
+    
+    $scope.newValue = function(value) {
+         console.log(value);
+    }
+    
+
+Here is the jsFiddle: <http://jsfiddle.net/ZPcSe/5/>
+
+2) Watching the model for changes. This doesn't require anything special on
+the input level:
+
+    
+    
+    <input type="radio" ng-model="value" value="foo">
+    
+
+but in a controller one would have:
+
+    
+    
+    $scope.$watch('value', function(value) {
+           console.log(value);
+     });
+    
+
+And the jsFiddle: <http://jsfiddle.net/vDTRp/2/>
+
+Knowing more about your the use case would help to propose an adequate
+solution.
+
+Another approach is using `Object.defineProperty` to set `value`as a getter
+setter property in the controller scope, then each change on the value
+property will trigger a function specified in the setter:
+
+The HTML file:
+
+    
+    
+    <input type="radio" ng-model="value" value="one"/>
+    <input type="radio" ng-model="value" value="two"/>
+    <input type="radio" ng-model="value" value="three"/>
+    
+
+The javascript file:
+
+    
+    
+    var _value = null;
+    Object.defineProperty($scope, 'value', {
+      get: function () {
+        return _value;
+      },         
+      set: function (value) {
+        _value = value;
+        someFunction();
+      }
+    });
+    
+
+see this [plunker](http://plnkr.co/edit/tf27iTBfyeJighNT8hMp?p=preview) for
+the implementation
+
+In newer versions of angular (I'm using 1.3) you can basically set the model
+and the value and the double binding do all the work this example works like a
+charm:
+
+    
+    
+    angular.module('radioExample', []).controller('ExampleController', ['$scope', function($scope) {
+      $scope.color = {
+        name: 'blue'
+      };
+    }]);
+    
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+    <html>
+    <body ng-app="radioExample">
+    <form name="myForm" ng-controller="ExampleController">
+      <input type="radio" ng-model="color.name" value="red">  Red <br/>
+      <input type="radio" ng-model="color.name" value="green"> Green <br/>
+      <input type="radio" ng-model="color.name" value="blue"> Blue <br/>
+      <tt>color = {{color.name}}</tt><br/>
+     </form>
+      </body>
+    </html>
+
+i prefer to use ng-value with ng-if,  [ng-value] will handle trigger changes
+
+    
+    
+    <input type="radio"  name="isStudent" ng-model="isStudent" ng-value="true" />
+    
+    //to show and hide input by removing it from the DOM, that's make me secure from malicious data
+    
+    <input type="text" ng-if="isStudent"  name="textForStudent" ng-model="job">
+    
+
+For dynamic values!
+
+    
+    
+    <div class="col-md-4" ng-repeat="(k, v) in tiposAcesso">
+        <label class="control-label">
+            <input type="radio" name="tipoAcesso" ng-model="userLogin.tipoAcesso" value="{{k}}" ng-change="changeTipoAcesso(k)" />              
+            <span ng-bind="v"></span>
+        </label>
+    </div>
+    
+
+in controller
+
+    
+    
+    $scope.changeTipoAcesso = function(value) {
+        console.log(value);
+    };
+    
+    
+    
+     <form name="myForm" ng-submit="submitForm()">
+       <label data-ng-repeat="i in [1,2,3]"><input type="radio" name="test" ng-model="$parent.radioValue" value="{{i}}"/>{{i}}</label>
+       <div>currently selected: {{radioValue}}</div>
+       <button type="submit">Submit</button>
+    </form>
+    
+

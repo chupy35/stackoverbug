@@ -1,0 +1,31 @@
+24293901 How to configure spring boot through annotations in order to have
+something similar to  in web.xml?
+
+How to configure spring boot through annotations in order to have something
+similar to in web.xml?
+
+    
+    
+    <jsp-config>
+        <jsp-property-group>
+            <url-pattern>*.jsp</url-pattern>
+            <url-pattern>*.jspf</url-pattern>
+            <page-encoding>UTF-8</page-encoding>
+            <scripting-invalid>false</scripting-invalid>
+            <include-prelude>/WEB-INF/jsp/base.jspf</include-prelude>
+            <trim-directive-whitespaces>true</trim-directive-whitespaces>
+            <default-content-type>text/html</default-content-type>
+        </jsp-property-group>
+    </jsp-config>
+    
+
+I don't think there is a Java API for that stuff. You can still use web.xml
+with Spring Boot.
+
+I think Dave gave a pretty straight forward answer - that is - there is no
+Java API defined by the Servlet spec for configuring JSPs and if you must use
+it with Spring Boot you just need to use web.xml which Spring Boot perfectly
+supports. This sounds pretty clear to me.
+
+Cheers.
+

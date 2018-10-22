@@ -1,0 +1,87 @@
+24326268 Emulating google search with elasticsearch (fuzzy, phrase, handle
+sloppy queries) -- am I doing it right?
+
+We are replacing google site search with elastic and trying to match all the
+functionality (prefix searches, phrase searches, fuzzy search + spell
+correction, multilingual). After a few tries I've got a decent solution which
+combines match_phrase_prefix, query_string, and (demoted) fuzzy_like_this. I'm
+hoping there is an easier way to do this?
+
+Below is my settings for dutch and an example query.
+
+    
+    
+    "settings":{
+        "analysis":{
+            "filter":{
+                "nl_stop_filter":{
+                    "stopwords":[
+                        "_dutch_"
+                    ],
+                    "type":"stop"
+                },
+                "nl_stem_filter":{
+                    "type":"stemmer",
+                    "name":"dutch"
+                }
+            },
+            "analyzer":{
+                "article_analyzer":{
+                    "filter":[
+                        "icu_normalizer",
+                        "nl_stop_filter",
+                        "icu_folding"
+                    ],
+                    "type":"custom",
+                    "tokenizer":"icu_tokenizer"
+                }
+            }
+        }
+    }
+    
+
+query:
+
+    
+    
+    "query": {
+        "filtered": {
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "match_phrase_prefix": {
+                                "_all": "je telefoon nummer"
+                            }
+                        },
+                        {
+                            "query_string": {
+                                "query": "je telefoon nummer"
+                            }
+                        },
+                        {
+                            "fuzzy_like_this": {
+                                "like_text": "je telefoon nummer",
+                                "fuzziness": "AUTO",
+                                "boost": 0.5
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "highlight": {
+        "fields": {
+            "title": {
+                "fragment_size": 300,
+                "number_of_fragments": 1
+            },
+            "body": {
+                "fragment_size": 150,
+                "number_of_fragments": 2
+            }
+        }
+    }
+    
+

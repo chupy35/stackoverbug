@@ -1,0 +1,24 @@
+23904655 Elasticsearch field is analyzed despite template is configured to not
+analyze field
+
+My logstash template looks like this -
+<https://gist.github.com/gauravarora/5e84f6c95ab83e563502>
+
+There are two fields, zone and username that I have set as `not_analyzed` yet
+they continue to be analyzed and show as analyzed when I view the index
+mapping. I have dropped the index multiple times in the hopes that it will
+pick up the new template but the fields are always analyzed.
+
+The index is dynamically created daily so I cannot set the mapping in the
+index itself.
+
+Is there something wrong with my template?
+
+Edit: I tried this config also -
+<https://gist.github.com/gauravarora/359d71999ed811ae56c6> but doesn't work
+either.
+
+It turns out that I had renamed the index from logstash-* to something-* and
+the template was only applied to indexes matching logstash- _. Changing the
+template to match something-_ fixed everything.
+

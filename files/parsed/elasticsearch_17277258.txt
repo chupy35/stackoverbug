@@ -1,0 +1,110 @@
+17277258 Getting ElasticSearch facets to treat multi-word field content as an
+atomic term
+
+I'm using ElasticSearch and am wondering if I can use faceting to retrieve
+some stats on my results, more specifically, the most mentioned people in my
+results. I already have a field that contains that information. But right now,
+my facet results break the data in that field by term when I would like to
+group it by multiple words.
+
+Ie: if the user searches for John, I would like to get data such as
+
+    
+    
+       {
+        [...]
+        "facets" : {
+    
+            "topPeople" : {
+            "_type" : "terms",
+            "missing" : 0,
+            "total" : 1739884,
+            "other" : 1705319,
+            "terms" : [ {
+               "term" : "John Smith",
+               "count" : 13954
+              }, {
+               "term" : "John Snow",
+               "count" : 1432
+              }, {
+               "term" : "John Baird",
+               "count" : 770
+              }]
+           }
+       }
+    
+
+Instead, ElasticSearch breaks the results by term and returns something like
+this:
+
+    
+    
+       {
+        [...]
+        "facets" : {
+    
+            "topPeople" : {
+            "_type" : "terms",
+            "missing" : 0,
+            "total" : 1739884,
+            "other" : 1705319,
+            "terms" : [ {
+               "term" : "John",
+               "count" : 1739884
+              }, {
+               "term" : "Smith",
+               "count" : 13954
+              }, {
+               "term" : "Snow",
+               "count" : 1432
+              }]
+           }
+       }
+    
+
+I read somewhere that if I set the index to not be analyzed, ElasticSearch
+should return the complete string of words. However, I still want the user to
+be able to search on the field. I would like to avoid duplicating the field to
+have a non-analyzed one. Is there any way to get grouping per field with
+ElasticSearch?
+
+I am currently using the following facet query:
+
+    
+    
+    {
+     "query" : {
+       [...]
+     },
+     "facets" : {
+       "topPeople" : {
+         "terms" : {
+            "field" : "people",
+            "size" : 3
+          }
+        }
+      }
+    }
+    
+
+You're on the right track. You need an index which is not analyzed in order to
+do what you're asking, but you don't need to sacrifice how the user searches
+on the field. The answer here (for versions < 1.x) is the [Multi Field
+Type](http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/mapping-
+multi-field-type.html). For your example, you'll want your mapping to look
+something like this:
+
+    
+    
+        "topPeople" : {
+            "type" : "multi_field",
+            "fields" : {
+                "topPeople" : {"type" : "string", "index" : "analyzed"},
+                "raw" : {"type" : "string", "index" : "not_analyzed"}
+            }
+        }
+    
+
+When you search, you can continue to search on `topPeople`, but when you
+facet, you'll facet on `topPeople.raw`.
+

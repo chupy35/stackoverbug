@@ -1,0 +1,66 @@
+23150670 elasticsearch match vs term query
+
+I use the match query search for "request.method": "GET":
+
+    
+    
+        {
+          "query": {
+            "filtered": {
+              "query": {
+                "match": {
+                  "request.method": "GET"
+                }
+              },
+              "filter": {
+                "bool": {
+                  "must": [
+    ...
+    
+
+As expected, the Match query can get the results, as shown below:
+
+![enter image description here](https://i.stack.imgur.com/BYWHi.png)
+
+But the question is when using the Term query, there is no results.
+
+Update the query to change the "match" to "term", and keep the other part
+remain the same:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "term": {
+              "request.method": "GET"
+            }
+          },
+          "filter": {
+            "bool": {
+              "must": [
+    ...
+    
+
+I think the Term query is the "not analyzed" version of the Match query. As
+shown in above picture, there is at least one record has "request.method"
+equal to "GET". Why there is no results for the above-mentioned Term query?
+Thank you.
+
+![enter image description here](https://i.stack.imgur.com/KGW9o.png)
+
+Assuming you are using the [Standard
+Analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html) `GET` becomes `get` when stored in the index. The
+source document will still have the original "GET".
+
+The `match` query will apply the same standard analyzer to the search term and
+will therefore match what is stored in the index. The `term` query does not
+apply any analyzers to the search term, so will only look for that exact term
+in the inverted index.
+
+To use the term query in your example, change the upper case "GET" to lower
+case "get" or change your mapping so the request.method field is set to
+`not_analyzed`.
+

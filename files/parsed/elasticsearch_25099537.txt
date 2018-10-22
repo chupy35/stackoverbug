@@ -1,0 +1,70 @@
+25099537 Elasticsearch: [filtered] query does not support [highlight]
+
+I am new to Elasticsearch. I have a filtered query as follows
+
+    
+    
+    {
+        "query": {
+            "filtered" : {
+                "query" : {
+                    "term" : {
+                        "title" : "crime"
+                    }
+                },
+                "highlight" : {
+                    "fields" : {
+                        "title" : {}
+                    }
+                },
+                "filter" : {
+                    "term" : { "year" : 1961 }
+                }
+            }
+        }
+    }
+    
+
+When I tried this query and got the error:
+
+    
+    
+    [filtered] query does not support [highlight]
+    
+
+Does filtered query support highlight? If not, how can I achieve highlight in
+query with filters? I have to use filters.
+
+Thanks and regards!
+
+The `"highlight"` parameter should go at the same level as the `"query"`
+parameter, not embedded within it. In your case it should look something like
+this:
+
+    
+    
+    {
+        "query": {
+            "filtered" : {
+                "query" : {
+                    "term" : {
+                        "title" : "crime"
+                    }
+                },
+                "filter" : {
+                    "term" : { "year" : 1961 }
+                }
+            }
+        },
+        "highlight" : {
+            "fields" : {
+                "title" : {}
+            }
+        }
+    }
+    
+
+  * [Highlighting reference](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html)
+
+  * [Highlights problems with a filtered query](http://elasticsearch-users.115913.n3.nabble.com/Highlights-problems-with-a-filtered-query-td2679140.html)
+

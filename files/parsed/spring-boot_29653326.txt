@@ -1,0 +1,111 @@
+29653326 Spring boot application slow because of jsp compilation
+
+I'm working with spring boot 1.2.2. It's a standard web application using jsp
+and run as an executable war : Java -jar myapp.war.
+
+When I run this application on my desktop, everything is fine. However, it's
+really slow on a server we use (Debian).
+
+I've collected some thread dumps and I see something weird. It seems the
+application has some troubles compiling jsp (See stacktraces below).
+
+It seems jsp are always recompiled.  Does anyone know what would be the
+problem ?
+
+    
+    
+    "http-nio-8443-exec-8" #50 daemon prio=5 os_prio=0 tid=0x000000000288f800 nid=0x7452 runnable [0x00007fd611adc000]
+    java.lang.Thread.State: RUNNABLE
+    at java.lang.Throwable.fillInStackTrace(Native Method)
+    at java.lang.Throwable.fillInStackTrace(Throwable.java:783)
+    - locked <0x00000000ec2eb250> (a java.io.FileNotFoundException)
+    at java.lang.Throwable.<init>(Throwable.java:265)
+    at java.lang.Exception.<init>(Exception.java:66)
+    at java.io.IOException.<init>(IOException.java:58)
+    at java.io.FileNotFoundException.<init>(FileNotFoundException.java:64)
+    at org.springframework.boot.loader.jar.JarURLConnection.throwFileNotFound(JarURLConnection.java:118)
+    at org.springframework.boot.loader.jar.JarURLConnection.connect(JarURLConnection.java:107)
+    at org.springframework.boot.loader.jar.JarURLConnection.getInputStream(JarURLConnection.java:175)
+    at sun.misc.URLClassPath$Loader.findResource(URLClassPath.java:516)
+    at sun.misc.URLClassPath.findResource(URLClassPath.java:176)
+    at java.net.URLClassLoader$2.run(URLClassLoader.java:557)
+    at java.net.URLClassLoader$2.run(URLClassLoader.java:555)
+    at java.security.AccessController.doPrivileged(Native Method)
+    at java.net.URLClassLoader.findResource(URLClassLoader.java:554)
+    at org.springframework.boot.loader.LaunchedURLClassLoader.findResource(LaunchedURLClassLoader.java:78)
+    at org.springframework.boot.loader.LaunchedURLClassLoader.getResource(LaunchedURLClassLoader.java:69)
+    at java.net.URLClassLoader.getResourceAsStream(URLClassLoader.java:232)
+    at org.apache.catalina.loader.WebappClassLoaderBase.getResourceAsStream(WebappClassLoaderBase.java:1096)
+    at org.apache.jasper.servlet.JasperLoader.getResourceAsStream(JasperLoader.java:142)
+    at org.apache.jasper.compiler.JDTCompiler$1.findType(JDTCompiler.java:197)
+    at org.apache.jasper.compiler.JDTCompiler$1.findType(JDTCompiler.java:182)
+    at org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment.askForType(LookupEnvironment.java:158)
+    at org.eclipse.jdt.internal.compiler.lookup.PackageBinding.getType(PackageBinding.java:145)
+    at org.eclipse.jdt.internal.compiler.lookup.Scope.findType(Scope.java:2038)
+    at org.eclipse.jdt.internal.compiler.lookup.Scope.getTypeOrPackage(Scope.java:3350)
+    at org.eclipse.jdt.internal.compiler.lookup.Scope.getBinding(Scope.java:2304)
+    at org.eclipse.jdt.internal.compiler.ast.SingleNameReference.resolveType(SingleNameReference.java:979)
+    at org.eclipse.jdt.internal.compiler.ast.MessageSend.resolveType(MessageSend.java:602)
+    at org.eclipse.jdt.internal.compiler.ast.MessageSend.resolveType(MessageSend.java:648)
+    at org.eclipse.jdt.internal.compiler.ast.Expression.resolve(Expression.java:1020)
+    at org.eclipse.jdt.internal.compiler.ast.Block.resolve(Block.java:119)
+    at org.eclipse.jdt.internal.compiler.ast.Initializer.resolve(Initializer.java:121)
+    at org.eclipse.jdt.internal.compiler.ast.TypeDeclaration.resolve(TypeDeclaration.java:1143)
+    at org.eclipse.jdt.internal.compiler.ast.TypeDeclaration.resolve(TypeDeclaration.java:1320)
+    at org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration.resolve(CompilationUnitDeclaration.java:587)
+    at org.eclipse.jdt.internal.compiler.Compiler.process(Compiler.java:770)
+    at org.eclipse.jdt.internal.compiler.Compiler.compile(Compiler.java:470)
+    at org.apache.jasper.compiler.JDTCompiler.generateClass(JDTCompiler.java:440)
+    at org.apache.jasper.compiler.Compiler.compile(Compiler.java:361)
+    at org.apache.jasper.compiler.Compiler.compile(Compiler.java:336)
+    at org.apache.jasper.compiler.Compiler.compile(Compiler.java:323)
+    at org.apache.jasper.JspCompilationContext.compile(JspCompilationContext.java:570)
+    at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:356)
+    - locked <0x00000000c6648440> (a org.apache.jasper.servlet.JspServletWrapper)
+    at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:396)
+    at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:340)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:725)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:291)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+    at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+    
+
+Tomcat's `JspServlet` is running in development mode. See [this
+issue](https://github.com/spring-projects/spring-boot/issues/2825) for further
+details.
+
+You can work around the problem by adding the following bean to your
+application:
+
+    
+    
+    @Bean
+    public EmbeddedServletContainerCustomizer servletContainerCustomizer() {
+        return new EmbeddedServletContainerCustomizer() {
+    
+            @Override
+            public void customize(ConfigurableEmbeddedServletContainer container) {
+                if (container instanceof TomcatEmbeddedServletContainerFactory) {
+                    customizeTomcat((TomcatEmbeddedServletContainerFactory)container); 
+                }
+            }
+    
+            private void customizeTomcat(TomcatEmbeddedServletContainerFactory tomcatFactory) {
+                tomcatFactory.addContextCustomizers(new TomcatContextCustomizer() {
+    
+                    @Override
+                    public void customize(Context context) {
+                        Container jsp = context.findChild("jsp");
+                        if (jsp instanceof Wrapper) {
+                            ((Wrapper)jsp).addInitParameter("development", "false");
+                        }
+    
+                    }
+    
+                });
+            }
+    
+        };
+    }
+    
+

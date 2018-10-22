@@ -1,0 +1,88 @@
+13147435 query string in $resource url
+
+my service has to use a query string due to limitations on the server that
+runs classic ASP:
+
+    
+    
+    angular
+      .module('myServices', ['ng', 'ngResource'])
+      .factory('Item', ['$resource',
+         function ($resource) {
+             return $resource('/api/?p=item/:id');
+         }]);
+    
+
+and I want to add extra query string parameters to it:
+
+    
+    
+    Item.query({test: 123}, on_success, on_error);
+    
+
+but the resulting url is
+
+    
+    
+    /api/?p=item?test=123
+    
+
+apparently there is a bug, but how to get around it?
+
+EDIT: filed this at <https://github.com/angular/angular.js/issues/1511>
+
+You can use resource parameters. If you haven't specified placeholders in the
+path, they would automatically be converted into query string params. Like
+that:
+
+    
+    
+    angular
+        .module('myServices', ['ng', 'ngResource'])
+        .factory('Item', [
+             '$resource',
+             function ($resource) {
+                 return $resource('/api');
+         }]);
+    
+    Item.query({p: 'item/1'});
+    
+
+This would result in a request to `/api?p=item/1`.
+
+P.S.
+
+I suppose you already know that, but you don't like it. But I still think this
+is the correct way in your case. Considering the bad API design you are
+dealing with that back-end you could wrap the AngularJS resources with another
+service which does this for you.
+
+    
+    
+    var deferred = $q.defer();
+    api.api_name.query({
+        'param':param_value
+    },
+        function(response) {
+            deferred.resolve(response);
+        },
+        function(response) {
+            deferred.reject(response);
+        }
+    );
+    //
+    angular
+        .module('module_name')
+        .factory('api',function($resource){
+            var api_var={};
+            api_var.api_name = $resource('url?param_key=:param', {
+                param: '@param'
+            }, {
+                'query': {
+                    method: 'get'
+                }
+            });
+            return api_var;
+        });
+    
+

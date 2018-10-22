@@ -1,0 +1,128 @@
+24720578 elasticsearch query for fields that contain multiple unique values
+
+I have a field that has values in it like this:
+
+    
+    
+    sourceTypes: ["book", cartoon"]
+    
+
+**How can I query for items where sourceTypes are both?**
+
+    
+    
+    {
+      "query": {
+        "constant_score": {
+          "filter": {
+            "and": [
+              {
+                "script": {
+                  "script": "doc['sourceTypes'].values[0] = \"cartoon\""
+                }
+              },
+              {
+                "script": {
+                  "script": "doc['sourceTypes'].values[1] = \"book\""
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+With the above query, I get this: Query Failed [Failed to execute main
+query]]; nested: UnsupportedOperationException[modifying list opertations are
+not implemented]; }]
+
+and with this query:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": {
+                "feeds.sourceTypes": "[\"cartoon\", \"book\"]"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+I get no errors but return null.
+
+**UPDATE: I found that this works for me.**
+
+    
+    
+    {
+      "query": {
+        "match_phrase": {
+          "sourceTypes": "cartoon book"
+        }
+      }
+    }
+    
+
+**Is there a more performant way to do it?**
+
+Updating to add mappings:
+
+    
+    
+    "sourceTypes": {
+        "type": "string"
+    }
+    
+
+and a partial document:
+
+    
+    
+    sourceTypes: [
+        "book",
+        "cartoon"
+    ]
+    
+
+What I really want to do is get all the documents where sourceTypes aren't the
+same. So if it's book and magazine, I want it. If it's book, book, I don't
+want it.
+
+Thanks!
+
+As far as I understood your question, you have an array field **sourceTypes**
+that you want to query. You can use **term query** for that provided the field
+is **not_analyzed**. A sample query can look like this:
+
+    
+    
+      "query" : { 
+        "bool" : {
+          "must" : [
+            {
+              "term" : {"sourceTypes" : "book"}
+            }, 
+            { 
+              "term" :{"sourceTypes" : "cartoon"}
+            }
+          ], 
+          "must_not" : [], 
+          "should" :   []
+        }
+      }
+    
+
+The above query will make sure that only those documents are returned where
+**sourceTypes** field contain both **book** and **cartoon**.  I hope it solves
+your problem. If not. please let me know.
+
+Thanks
+

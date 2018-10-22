@@ -1,0 +1,381 @@
+12603914 Reset form to pristine state (AngularJS 1.0.x)
+
+A function to reset form fields to pristine state (reset dirty state) is on
+the roadmap for AngularJS 1.1.x. Unfortunately such a function is missing from
+the current stable release.
+
+**What is the best way to reset all form fields to their initial pristine
+state for AngularJS 1.0.x.?**
+
+I would like to know if this is fixable with a directive or other simple
+workaround. I prefer a solution without having to touch the original AngularJS
+sources. To clarify and demonstrate the problem, a link to JSFiddle.
+<http://jsfiddle.net/juurlink/FWGxG/7/>
+
+Desired feature is on the **Roadmap** \-
+<http://blog.angularjs.org/2012/07/angularjs-10-12-roadmap.html>  
+**Feature request** \- <https://github.com/angular/angular.js/issues/856>  
+Proposed solution **Pull request** \-
+<https://github.com/angular/angular.js/pull/1127>  
+  
+
+## Updated with possible workaround
+
+**Good enough workaround?**
+
+I just figured out I can recompile the HTML part and put it back into the DOM.
+It works and it's fine for a temporarily solution, but also as @blesh
+mentioned in the comments:
+
+_Controllers should be used for business logic only, not for DOM!_
+
+    
+    
+    <div id="myform">
+      <form class="form-horizontal" name="form">
+      </form>
+    </div>
+    
+
+And in my Controller on `resetForm()`:
+
+  * Save the original untouched HTML 
+  * Recompile the saved original HTML
+  * Remove the current form from the DOM
+  * Insert the new compiled template into the DOM
+
+The JavaScript:
+
+    
+    
+    var pristineFormTemplate = $('#myform').html();
+    $scope.resetForm = function () {
+        $('#myform').empty().append($compile(pristineFormTemplate)($scope));
+    }
+    
+
+Your form fields should be linked to a variable within your $scope. You can
+reset the form by resetting the variables. It should probably be a single
+object like $scope.form.
+
+Lets say you have a simple form for a user.
+
+    
+    
+    app.controller('Ctrl', function Ctrl($scope){
+      var defaultForm = {
+        first_name : "",
+        last_name : "",
+        address: "",
+        email: ""
+      };
+      $scope.resetForm = function(){
+        $scope.form = defaultForm;
+      };
+    });
+    
+
+This will work great as long as your html looks like:
+
+    
+    
+    <form>
+      <input ng-model="form.first_name"/>
+      <input ng-model="form.last_name"/>
+      <input ng-model="form.address"/>
+      <input ng-model="form.email"/>
+      <button ng-click="resetForm()">Reset Form</button>
+    </form>
+    
+
+Maybe I'm not understanding the issue here, so if this does not address your
+question, could you explain why exactly?
+
+EDIT... I'm removing my old answer, as it was not adequate.
+
+I actually just ran into this issue myself and here was my solution: I made an
+extension method for angular. I did so by following a bit of what
+$scope.form.$setValidity() was doing (in reverse)...
+
+**[Here's a plnkr demo of it in action](http://plnkr.co/edit/j0COYl)**
+
+Here's the helper method I made. It's a hack, but it works:
+
+    
+    
+    angular.resetForm = function (scope, formName, defaults) {
+        $('form[name=' + formName + '], form[name=' + formName + '] .ng-dirty').removeClass('ng-dirty').addClass('ng-pristine');
+        var form = scope[formName];
+        form.$dirty = false;
+        form.$pristine = true;
+        for(var field in form) {
+          if(form[field].$pristine === false) {
+            form[field].$pristine = true;
+          }
+          if(form[field].$dirty === true) {
+            form[field].$dirty = false;
+          }
+        }
+        for(var d in defaults) {
+          scope[d] = defaults[d];
+        }
+    };
+    
+
+Hopefully this is helpful to someone.
+
+# Solution without a workaround
+
+I came up with a solution which uses AngularJS without any workaround. The
+trick here is to use AngularJS ability to have more than one directive with
+the same name.
+
+As others mentioned there is actually a pull request
+(<https://github.com/angular/angular.js/pull/1127>) which made it into the
+AngularJS 1.1.x branch which allows forms to be reset. The commit to this pull
+request alters the ngModel and form/ngForm directives (I would have liked to
+add a link but Stackoverflow doesn't want me to add more than two links).
+
+We can now define our own ngModel and form/ngForm directives and extend them
+with the functionality provided in the pull request.
+
+I have wrapped these directives in a AngularJS module named resettableForm.
+All you have to do is to include this module to your project and your
+AngularJS version 1.0.x behaves as if it was an Angular 1.1.x version in this
+regard.
+
+''Once you update to 1.1.x you don't even have to update your code, just
+remove the module and you are done!''
+
+This module also passes all tests added to the 1.1.x branch for the form reset
+functionality.
+
+You can see the module working in an example in a jsFiddle
+(<http://jsfiddle.net/jupiter/7jwZR/1/>) I created.
+
+## Step 1: Include the resettableform module in your project
+
+    
+    
+    (function(angular) {
+    
+    // Copied from AngluarJS
+    function indexOf(array, obj) {
+      if (array.indexOf) return array.indexOf(obj);
+    
+      for ( var i = 0; i < array.length; i++) {
+        if (obj === array[i]) return i;
+      }
+      return -1;
+    }
+    
+    // Copied from AngularJS
+    function arrayRemove(array, value) {
+      var index = indexOf(array, value);
+      if (index >=0)
+        array.splice(index, 1);
+      return value;
+    }
+    
+    // Copied from AngularJS
+    var PRISTINE_CLASS = 'ng-pristine';
+    var DIRTY_CLASS = 'ng-dirty';
+    
+    var formDirectiveFactory = function(isNgForm) {
+        return function() {
+            var formDirective = {
+                restrict: 'E',
+                require: ['form'],
+                compile: function() {
+                    return {
+                        pre: function(scope, element, attrs, ctrls) {
+                            var form = ctrls[0];
+                            var $addControl = form.$addControl;
+                            var $removeControl = form.$removeControl;
+                            var controls = [];
+                            form.$addControl = function(control) {
+                                controls.push(control);
+                                $addControl.apply(this, arguments);
+                            }
+                            form.$removeControl = function(control) {
+                                arrayRemove(controls, control);
+                                $removeControl.apply(this, arguments);
+                            }
+                            form.$setPristine = function() {
+                                element.removeClass(DIRTY_CLASS).addClass(PRISTINE_CLASS);
+                                form.$dirty = false;
+                                form.$pristine = true;
+                                angular.forEach(controls, function(control) {
+                                    control.$setPristine();
+                                });
+                            }
+                        },
+                    };
+                },
+            };
+            return isNgForm ? angular.extend(angular.copy(formDirective), {restrict: 'EAC'}) : formDirective;
+        };
+    }
+    var ngFormDirective = formDirectiveFactory(true);
+    var formDirective = formDirectiveFactory();
+    angular.module('resettableForm', []).
+        directive('ngForm', ngFormDirective).
+        directive('form', formDirective).
+        directive('ngModel', function() {
+            return {
+                require: ['ngModel'],
+                link: function(scope, element, attrs, ctrls) {
+                    var control = ctrls[0];
+                    control.$setPristine = function() {
+                        this.$dirty = false;
+                        this.$pristine = true;
+                        element.removeClass(DIRTY_CLASS).addClass(PRISTINE_CLASS);
+                    }
+                },
+            };
+        });
+    })(angular);
+    
+
+## Step 2: Provide a method on your controller which resets the model
+
+Please be aware that you must reset the model when you reset the form. In your
+controller you can write:
+
+    
+    
+    var myApp = angular.module('myApp', ['resettableForm']);
+    
+    function MyCtrl($scope) {
+        $scope.reset = function() {
+            $scope.form.$setPristine();
+            $scope.model = '';
+        };
+    }
+    
+
+## Step 3: Include this method in your HTML template
+
+    
+    
+    <div ng-app="myApp">
+    <div ng-controller="MyCtrl">
+    <form name="form">
+        <input name="requiredField" ng-model="model.requiredField" required/> (Required, but no other validators)
+        <p ng-show="form.requiredField.$errror.required">Field is required</p>
+        <button ng-click="reset()">Reset form</button>
+    </form>
+    <p>Pristine: {{form.$pristine}}</p>
+    </div>
+    </dvi>
+    
+
+I think it's worth mentioning that in later versions of Angular (e.g. 1.1.5),
+you can call `$setPristine` on the form.
+
+    
+    
+    $scope.formName.$setPristine(true)
+    
+
+This will set all the form controls to pristine state as well.
+
+[FormController.$setPristine](http://docs.angularjs.org/api/ng.directive:form.FormController#$setPristine)
+
+Here I have found a solution for putting the from to its pristine state.
+
+    
+    
+    var def = {
+        name: '',
+        password: '',
+        email: '',
+        mobile: ''
+    };
+    
+    $scope.submited = false;
+    
+    $scope.regd = function (user) {
+        if ($scope.user.$valid) {
+            $http.post('saveUser', user).success(function (d) {
+                angular.extend($scope.user, def);
+                $scope.user.$setPristine(true);
+                $scope.user.submited = false;
+            }).error(function (e) {});
+        } else {
+            $scope.user.submited = true;
+        }
+    };
+    
+
+Just write
+**[angular.extends(src,dst)](http://docs.angularjs.org/api/angular.extend)**
+,so that your original object is just extends the blank object, which will
+appear as blank and rest all are default.
+
+Using an external directive and a lot of jquery
+
+    
+    
+    app.controller('a', function($scope) {
+        $scope.caca = function() {
+            $scope.$emit('resetForm');
+        }
+    });
+    
+    app.directive('form', function() {
+        return {
+            restrict: 'E',
+            link: function(scope, iElem) {
+                scope.$on('resetForm', function() {
+                    iElem.find('[ng-model]').andSelf().add('[ng-form]').each(function(i, elem) {
+                        var target = $(elem).addClass('ng-pristine').removeClass('ng-dirty');
+                        var control = target.controller('ngModel') || target.controller('form');
+                        control.$pristine = true;
+                        control.$dirty = false;
+                    });
+                });
+            }
+        };
+    });
+    
+
+<http://jsfiddle.net/pPbzz/2/>
+
+The easy way: just pass the form into the controller function. Below the form
+"myForm" is referenced by **this** , which is equivalent to $scope.
+
+    
+    
+    <div ng-controller="MyController as mc">
+        <ng-form name="myform">
+            <input ng-model="mc.myFormValues.name" type="text" required>
+            <button ng-click="mc.doSometing(this.myform)" type="submit" 
+                    ng-disabled="myform.$invalid||myform.$pristine">Do It!</button>
+        </ng-form>
+    </div>
+    
+
+The Controller:
+
+    
+    
+    function MyController(MyService) {
+        var self = this;
+        self.myFormValues = {
+            name: 'Chris'
+        };
+        self.doSomething = function (form) {
+            var aform = form;
+            MyService.saveSomething(self.myFromValues)
+                .then(function (result) {
+                    ...
+                    aform.$setPristine();
+                }).catch(function (e) {
+                    ...
+                aform.$setDirty();
+            })
+        }
+    }
+    
+

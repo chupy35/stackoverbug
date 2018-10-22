@@ -1,0 +1,64 @@
+13803063 elasticsearch multiple types and indexes in query
+
+i have a query like this, its in php, using the elastica library
+
+    
+    
+    $queryDefinition = [
+            'query' => [
+                'bool' => [
+                    'must' => [
+                        [
+                            'query_string' => [
+                                'default_field' => '_all',
+                                'query' => $term
+                            ]
+                        ]
+                    ],
+                    'must_not' => [],
+                    'should' => []
+                ]
+            ],
+            //'from' => 0,
+            //'size' => 50,
+            'sort' => [],
+            'facets' => [
+                'types' => [
+                        'terms' => ['field' => '_type']
+                    ]
+                ]
+        ];
+    
+
+i know you can run a query against multiple indices and types, using the REST
+api.
+
+i would like to run the above query against variable count of types and
+indices. is it possible to do with the json query style?
+
+if not how do i translate that query to REST style?
+
+thanks
+
+Here is an example for curl - where sales is my index and order is my type (if
+you need mutiple type, use comma seperated values like
+../sales/order,order1/_search ..), i used 3 field from my data i.e. id, name
+and status, and query string on name like 'shoh'
+
+    
+    
+    curl -XGET 'localhost:9200/sales/order/_search?pretty=1' -d '
+    {
+      "query":
+      {
+         "bool":
+         {
+           "must":[{"query_string":{"query":"shoh*"}}]
+         }
+     },
+     "fields":["id","name"],
+     "facets":{"Facet Result":{"terms":{"field":"status"}}}
+    }
+    '
+    
+

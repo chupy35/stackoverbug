@@ -1,0 +1,46 @@
+19773881 Elasticsearch strange behaviour for queries straight after insertion
+
+I am writing some integration tests for an app that uses Elasticsearch and I
+am experiencing a strange behaviour. If I insert a document and I query
+straight after that, I get different results every time.  I suspect that,
+albeit the insertion itself will return, the indexing itself doesn't take
+place synchronously and, because of that, the query will experiment a race
+condition with unpredictable results.
+
+_If this is the case:_ is there a way to synchronize, so that when I run my
+queries, I know that they are ready and successful???
+
+More details: I am using elasticsearch embedded and the query is a simple
+filter. The only odd thing is that I am using template files for the document
+model.
+
+EDIT: I even tried to GET the document by ID after insertion, but the queries
+still return random results (unless I put a thread Sleep to wait some
+seconds).
+
+From the [Elasticsearch docs for the index
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html):
+
+> refresh
+
+>
+
+> To refresh the index immediately after the operation occurs, so that the
+document appears in search results immediately, the refresh parameter can be
+set to true. Setting this option to true should ONLY be done after careful
+thought and verification that it does not lead to poor performance, both from
+an indexing and a search standpoint. Note, getting a document using the get
+API is completely realtime.
+
+That's why my queries were returning weird results. Because indexing was
+sometimes not yet completed. Also, it is possible to do a refresh not as part
+of an insertion, [using the `_refresh`
+endpoint](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+refresh.html):
+
+    
+    
+    $ curl -XPOST 'http://localhost:9200/twitter/_refresh'
+    
+

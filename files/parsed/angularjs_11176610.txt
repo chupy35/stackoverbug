@@ -1,0 +1,108 @@
+11176610 Write a custom "editable" directive with angularjs
+
+I'm studying angularjs, and I want to write a custom "editable" directive,
+which can make a normal html element "editable":
+
+When user clicks it, it will show a text input or textarea to let user edit
+the content, and there is also a "update" and "cancel" button besides. User
+can click the "update" button or press "Ctrl+enter" to submit the modified
+content, or click "cancel" or press "escape" to cancel the modification.
+
+The "editable" signature looks like:
+
+    
+    
+    <div editable 
+         e-trigger="click|dblclick"       /* use click or dblclick to trigger the action */
+         e-update-url="http://xxx/xxx"    /* when submitting, the data will PUT to this url */
+         e-singleline="true|false"        /* if ture, use text input, otherwise textarea */
+         ng-model="name">                 /* the corresponding model name */
+    {{name}}
+    </div>
+    
+
+I've create a live demo here: <http://jsfiddle.net/Freewind/KRduz/>, you can
+just update it.
+
+I am new to Angular myself, and hope you would get the a working example with
+your fiddle. Meanwhile, John Lindquist has an excellent video where he
+explains how to create a markdown tag to embed an editor. Which has details on
+how to make an editable and preview regions with angular directives.
+
+  * [Part 2](http://youtu.be/nKJDHnXaKTY)
+
+  * [Part 1](http://youtu.be/A6wq16Ow5Ec)
+
+I started by making an example which works. I guess it should not be too much
+work to turn it into a directive with all the options you want.
+
+My thought is - don't try to do too much in one directive, perhaps it can be
+achieved with quite a few smaller directives.
+
+<http://jsfiddle.net/Saulzar/rueHv/>
+
+First I'd watch the John Lindquist angularjs videos that bsr posted - they are
+very good. Then, I'd check out the directive I threw together below.
+
+    
+    
+    .directive('editable', function() {
+        var editTemplate = '<input type="text" ng-model="inputValue" \
+            ng-show="inEditMode" ng-dblclick="switchToViewMode()" \
+            class="form-control input-sm">';
+        var viewTemplate = '<div ng-hide="inEditMode" \
+            ng-dblclick="switchToEditMode()">{{ value }}</div>';
+        return {
+            restrict: 'E',
+            scope: {
+                value: '=ngModel',
+                bindAttr: '='
+            },
+            controller: function($scope) {
+                $scope.inputValue = $scope.value;
+            },
+            replace: true,
+            compile: function(tElement, tAttrs, transclude) {
+                tElement.html(editTemplate);
+                tElement.append(viewTemplate);
+    
+                return function(scope, element, attrs) {
+                    scope.inEditMode = false;
+    
+                    scope.switchToViewMode = function() {
+                        scope.inEditMode = false;
+                        scope.value = scope.inputValue;
+                    }
+                    scope.switchToEditMode = function() {
+                        scope.inEditMode = true;
+                    }
+                    scope.toggleMode = function() {
+                        scope.inEditMode = !scope.inEditMode;
+                    }
+    
+                    element.bind("keydown keypress", function(event) {
+                        if (event.keyCode === 13) {
+                            scope.$apply(function() {
+                                scope.switchToViewMode();
+                            });
+                        }
+                    });
+                }
+            }
+        }
+    })
+    
+
+This is exactly how it should be done IMO. Here's all you need to do to
+include an editable:
+
+    
+    
+    <editable ng-model="name"></editable>
+    
+
+Good to go.
+
+Please have a look on angular-xeditable: <http://vitalets.github.io/angular-
+xeditable>
+

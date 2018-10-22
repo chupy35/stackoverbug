@@ -1,0 +1,46 @@
+12800546 How to apply changes in angularjs (ng-show)?
+
+I have form
+
+    
+    
+    <form ng-controller="SessionController" name="login_form">
+      <div class="hide" ng-show='invalid_credentials'>Invalid email/pass</div>
+      <input type="submit" value="Login" ng-click='login()'>
+    </form>
+    
+
+Controller:
+
+    
+    
+    utApp.controller('SessionController', ($scope, $cookieStore, ClientService) ->
+      $scope.login = ->
+        ...
+        if something
+          $scope.invalid_credentials = true
+          return
+    
+
+on some conditions `$scope.invalid_credentials` is getting set to true, but
+div with error message is not being shown. How to show it?
+
+Angular doesn't re-check the value of your `invalid_credentials` variable.
+Using a function as your `ng-show` argument should work.
+
+The accepted answer will work... However, what you really needed to do is use
+$scope.$apply
+
+    
+    
+    utApp.controller "SessionController", ($scope, $cookieStore, ClientService) ->
+      $scope.login = ->
+        if something
+          $scope.$apply (s) ->
+            s.invalid_credentials = true
+    
+
+Generally, when you update the scope, and it doesn't update the UI... it's
+because you need to use
+[$apply](http://docs.angularjs.org/api/ng.%24rootScope.Scope#%24apply).
+

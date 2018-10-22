@@ -1,0 +1,64 @@
+18220883 Is there a way to exclude a field in an Elasticsearch query
+
+I know to use the fields setting to include just the fields I want in a search
+<http://www.elasticsearch.org/guide/reference/api/search/fields/>
+
+... but I was wondering if I could do the opposite ... somehow specify one or
+two fields that I don't want included in the query results (like an
+attachment, for example). It just seems painful to have to type out all the
+fields I want minus one or two, when I could just specify fields to exclude
+
+Did you see the documentation for ‛partial‛ on the same page you linked in
+your question? That allows you to do what you want, albeit only on ‛_source‛
+fields I believe. See
+<http://www.elasticsearch.org/guide/reference/api/search/fields/>
+
+> When loading data from `_source`, `partial` fields can be used to use
+wildcards to control what part of the `_source` will be loaded based on
+`include` and `exclude` patterns.
+
+>
+
+> Both `include` and `exclude` support multiple patterns:
+
+    
+    
+    {
+        "query" : {
+            "match_all" : {}
+        },
+        "partial_fields" : {
+            "partial1" : {
+                "include" : ["obj1.obj2.*", "obj1.obj4.*"],
+                "exclude" : "obj1.obj3.*"
+            }
+        }
+    }
+    
+
+You can use Source Filtering (Tested in v. 1.6 and v. 1.7):
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-source-filtering.html>
+
+    
+    
+    {
+        "_source": {
+            "include": [ "obj1.*", "obj2.*" ],
+            "exclude": [ "*.description" ]
+        },
+        "query" : {
+            "term" : { "user" : "kimchy" }
+        }
+    }
+    
+
+You can also use it in GET request:
+
+    
+    
+    curl "localhost:9200/myindex/mytype/66a8f299870b4cab?_source_exclude=file._content&pretty"
+    
+
+The previous example exclude the file content in an attachment field.
+

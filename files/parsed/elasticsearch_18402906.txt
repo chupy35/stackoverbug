@@ -1,0 +1,15 @@
+18402906 available security roles in elasticsearch-jetty plugin
+
+I am using elasticsearch-jetty plugin and trying to use it for the
+authentication of elasticsearch access.  I am wandering which security roles
+are available for users specified in realms.properties. I couldn't find
+definite list. I saw in examples usage of: admin, readwrite and read-only. Are
+there any other and where can I specify new ones?
+
+I have just found that roles are defined inside of jetty-restrict-*.xml files,
+depending on which is used. For default jetty-restrict-all.xml file, only
+"readwrite" role is defined, but for jetty-restrict-write.xml role "admin" is
+also used.
+
+That is also the place where other roles can be defined.
+

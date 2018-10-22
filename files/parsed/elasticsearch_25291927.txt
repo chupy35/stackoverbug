@@ -1,0 +1,155 @@
+25291927 How to run _update elasticsearch with external script
+
+I want to run example update
+
+    
+    
+    curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+        "script" : "ctx._source.text = \"some text\""
+    }'
+    
+
+(<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+update.html>), but got error
+`{"error":"ElasticsearchIllegalArgumentException[failed to execute script];
+nested: ScriptException[dynamic scripting for [mvel] disabled];
+","status":400}`.
+
+From this page
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html>, I found out that I need to place my script (I called it
+`demorun.groovy`) and run it by name. I did that, and now try to reference as
+
+    
+    
+    curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+        "script" : "demorun.groovy"
+    }'
+    
+
+But still get same error.  I suppose that reference it wrong. How to pass
+_update with external script?
+
+My demorun.groovy:
+
+    
+    
+    ctx._source.text = \"some text\"
+    
+
+The error message you are receiving indicates that dynamic scripting is
+disabled, which is the default setting. You need to enable to get scripting to
+work:
+
+> **Enabling dynamic scripting**
+
+>
+
+> We recommend running Elasticsearch behind an application or proxy, which
+protects Elasticsearch from the outside world. If users are allowed to run
+dynamic scripts (even in a search request), then they have the same access to
+your box as the user that Elasticsearch is running as. For this reason dynamic
+scripting is allowed only for sandboxed languages by default.
+
+>
+
+> First, you should not run Elasticsearch as the root user, as this would
+allow a script to access or do anything on your server, without limitations.
+Second, you should not expose Elasticsearch directly to users, but instead
+have a proxy application inbetween. If you do intend to expose Elasticsearch
+directly to your users, then you have to decide whether you trust them enough
+to run scripts on your box or not. If you do, you can enable dynamic scripting
+by adding the following setting to the config/elasticsearch.yml file on every
+node:
+
+>
+
+> script.disable_dynamic: false
+
+>
+
+> While this still allows execution of named scripts provided in the config,
+or native Java scripts registered through plugins, it also allows users to run
+arbitrary scripts via the API. Instead of sending the name of the file as the
+script, the body of the script can be sent instead.
+
+>
+
+> There are three possible configuration values for the script.disable_dynamic
+setting, the default value is sandbox:
+
+>
+
+> true: all dynamic scripting is disabled, scripts must be placed in the
+config/scripts directory.
+
+>
+
+> false: all dynamic scripting is enabled, scripts may be sent as strings in
+requests.
+
+>
+
+> sandbox: scripts may be sent as strings for languages that are sandboxed.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html>
+
+The problem with the ES request above is that it's using the wrong format.
+
+**Dynamic scripting** (i.e. inline scripting):
+
+    
+    
+    curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+      "script" : "ctx._source.text = \"some text\""
+    }'
+    
+
+**Static scripting** (i.e. offline scripting):
+
+    
+    
+    curl -XPOST 'localhost:9200/test/type1/1/_update' -d '{
+      "script" : {
+        "lang": "groovy",
+        "script_file": "some-name",
+        "params": {
+          "foo": "some text"
+        }
+      }
+    }'
+    
+
+And you are supposed to put
+
+    
+    
+    ctx._source.text = foo
+    
+
+into `.../elasticsearch/config/scripts/some-name.groovy` to reproduce almost
+the same functionality. Actually, much better because you don't need to open
+up ES to dynamic scripting, and you get arguments passing.
+
+I encountered this same issue and resolved it by adding the following code to
+the elasticsearch.yml file in config folder:
+
+`script.disable_dynamic: false`
+
+In elasticsearch 2.0, `script.disable_dynamic: false` not work, because:
+
+> Exception in thread "main" java.lang.IllegalArgumentException:
+script.disable_dynamic is not a supported setting, replac e with fine-grained
+script settings. Dynamic scripts can be enabled for all languages and all
+operations by replacing `script.disable_dynamic: false` with `s cript.inline:
+on` and `script.indexed: on` in elasticsearch.yml
+
+as error says , you need set below in `elasticsearch.yml`:
+
+    
+    
+    script.inline: on
+    script.indexed: on
+    
+

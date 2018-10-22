@@ -1,0 +1,43 @@
+13634377 How to get the current score of a document before calculating custom
+score
+
+I am creating a custom script in Java for scoring documents. I am looking to
+try and get the document's score prior to going into the custom scorer.
+
+In mvel it seems that you can just do: "_score * doc['my_numeric_field'].value
+/ pow(param1, param2)"
+
+and _score will just give you the score. I don't see any effective way of
+getting the score with the Java API.
+
+Note: I've tried doc().getScore() and that seems to always give a null pointer
+exception.
+
+Bonus: How would I be able to get other document fields such as _boost or
+_index?
+
+The native script equivalent of "_score * doc['my_numeric_field'].value /
+pow(param1, param2)" would be:
+
+    
+    
+    @Override
+    public float runAsFloat() {
+        return score() * doc().numeric("my_numeric_field").getFloatValue() / divider;
+    }
+    
+
+you can calculate `pow(param1, param2)` in the factory method since it doesn't
+change between `runAsFloat()` executions.
+
+If `_index` field is
+[enabled](http://www.elasticsearch.org/guide/reference/mapping/index-
+field.html), it can be accessed like this:
+
+    
+    
+    doc().field("_index").getStringValue()
+    
+
+I would recommend using query time boosting instead of index time boosting.
+

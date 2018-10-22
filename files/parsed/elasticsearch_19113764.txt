@@ -1,0 +1,37 @@
+19113764 Can ElasticSearch return elements of an array of a single document?
+
+With a document like:
+
+    
+    
+    {
+        "obj1" : [
+            {
+                "name" : "blue",
+                "count" : 4
+            },
+            {
+                "name" : "green",
+                "count" : 6
+            }
+        ]
+    }
+    
+
+Is it possible to query for a `obj1.name = "blue"` to obtain the matching
+element of the array, not the document?:
+
+    
+    
+    {
+        "name" : "blue",
+        "count" : 4
+    }
+    
+
+Thanks in advance!
+
+I think it is not possible now. But there is open
+[issue](https://github.com/elasticsearch/elasticsearch/issues/3022) for
+returning nested inner objects.
+

@@ -1,0 +1,69 @@
+23815993 Cannot access doc['field'].value in ElasticSearch aggregation script
+
+With the following query:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "filter": [],
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "query_string": {
+                    "fields": [
+                      "title"
+                    ],
+                    "query": "test"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "aggs": {
+        "my_field": {
+          "terms": {
+            "field": "my_field.name.raw",
+            "script": "doc['title'].value"
+          }
+        }
+      }
+    }
+    
+
+I get the following error:
+
+> QueryPhaseExecutionException[[index_name][2]:
+query[title:test],from[0],size[10]: Query Failed [Failed to execute main
+query]]; nested: PropertyAccessException[[Error: doc['title'].value: null]
+[Near : {... doc['title'].value ....}] ^ [Line: 1, Column: 1]]; nested:
+InvocationTargetException; nested: ArrayIndexOutOfBoundsException;
+
+I also try using `_source.title`, `doc.get('title').value`, and other
+combinations of the `doc['field']` syntax - none are working for me. Is there
+a special nuance for using `script` within an aggregation? Am I missing
+something obvious?
+
+This fails on both ES 1.1.1 and 1.2.0.
+
+Looks like I can answer my own question. From [the
+docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations.html#_values_source):
+
+> When both field and script settings are configured for the aggregation, the
+script will be treated as a value script. While normal scripts are evaluated
+on a document level (i.e. the script has access to all the data associated
+with the document), value scripts are evaluated on the value level. In this
+mode, the values are extracted from the configured field and the script is
+used to apply a "transformation" over these value/s.
+
+I was specifying a "field" param, meaning I was dealing with a value script.
+
+I also [asked this question on the ES Google
+Group](https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!topic/elasticsearch/k1uq2z5Uox0),
+and provided the same feedback there.
+

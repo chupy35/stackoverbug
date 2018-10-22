@@ -1,0 +1,33 @@
+16194177 Elasticsearch date field: epoch millis input, string output?
+
+Steps: 1\. Define a date field in a mapping.  
+2\. Insert a epoch millisecond (long) value into that field.
+
+Can elastic search returns a string value (yyyy-MM-ddTHH:mm:SS) of that field
+for a search?
+
+I don't have the code to hand, but in my testing I believe I managed to do the
+following:
+
+I used the date formatter on the field and the query fields definition to do
+this:
+
+`curl -XGET
+'http://localhost:9200/twitter/tweet/1?fields=title,date_field.date_time'`
+
+using the date formats specified here:
+<http://www.elasticsearch.org/guide/reference/mapping/date-format/>
+
+If you want a full document returned, this may be onerous. In which case is it
+possible to use an alias 'view' mapping to get the result to return
+differently from your primary mapping? Possibly this has become a half-answer.
+
+From what I understand of the date-format documentation of ElasticSearch, it
+will always accept a milliseconds-since-epoch input next to input in the
+format given by the format, and it will produce a String output using the
+(first) format given. If you don't provide a format, then the
+"date_optional_time" format will be used (yyyy-MM-dd’T'HH:mm:ss.SSSZZ).
+
+If the time zone in there is a problem for you, you'd need to give
+ElasticSearch your intended format.
+

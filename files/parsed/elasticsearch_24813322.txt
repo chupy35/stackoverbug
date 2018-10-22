@@ -1,0 +1,91 @@
+24813322 Elasticsearch: how does match query work?
+
+I am new to Elasticsearch and am confused by how match query works. I have
+this mapping:
+
+    
+    
+    {
+        "product": {
+            "properties": {
+                "condition" : { "type" : "string", "store" : "yes", "index": "analyzed"}
+            }
+        }
+    }
+    
+
+I bulk imported the following documents
+
+    
+    
+    { "index": {"_index": "myindex", "_type": "product", "_id": "1"}}
+    { "condition": "All Quiet on the Western Front"}
+    { "index": {"_index": "myindex", "_type": "product", "_id": "2"}}
+    { "condition": "All Quieter on the Western Front"}
+    { "index": {"_index": "myindex", "_type": "product", "_id": "3"}}
+    { "condition": "All Quietest on the Western Frontline"}
+    
+
+I verified that all documents are loaded successfully. Then I do a match
+query:
+
+    
+    
+    {
+        "query" : {
+            "match" : {
+                "condition" : "quiet"
+            }
+        }
+    }
+    
+
+It only returns the #1 document. I am confused here. Why does it not return
+all three documents? What query should I use to return the three documents
+because they all have "quiet" root word in the field?
+
+Thanks and regards.
+
+Your problem is you are using the default analyzer in Elasticsearch which does
+not stem (e.g. break words down to their stem, like "quiet" from "quieter" or
+"quietest").
+
+If you want to stem then the most straightforward thing to do is to use the
+Snowball analyzer instead. Please note that you need to use this analyzer both
+for indexing AND for querying otherwise you won't match on stems.
+
+> **snowball analyzer**
+
+>
+
+> An analyzer of type snowball that uses the standard tokenizer, with standard
+filter, lowercase filter, stop filter, and snowball filter.
+
+>
+
+> The Snowball Analyzer is a stemming analyzer from Lucene that is originally
+based on the snowball project from snowball.tartarus.org.
+
+>
+
+> Sample usage:
+
+    
+    
+    {
+        "index" : {
+            "analysis" : {
+                "analyzer" : {
+                    "my_analyzer" : {
+                        "type" : "snowball",
+                        "language" : "English"
+                    }
+                }
+            }
+        }
+    }
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+snowball-analyzer.html>
+

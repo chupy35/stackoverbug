@@ -1,0 +1,26 @@
+19577675 Elasticsearch: Turn off logging for a single local node
+
+I have a single local node which I'm initializing and connecting to with
+
+    
+    
+    node = NodeBuilder.nodeBuilder ().local (true).node ();
+    node.start ();
+    Settings settings = ImmutableSettings.settingsBuilder ()
+                .put ("node.local", "true").build ();
+    client = new TransportClient (settings)
+                .addTransportAddress (new LocalTransportAddress ("1"));
+    
+
+When I use the client, there's a massive amount of debug logging that's
+outputted. Is there any way to disable to the logging?
+
+I believe you can control the logging via the config/logging.yml file for
+elasticsearch.
+
+It uses log4j, so just include a log4j, so just include a `log4j.properties`
+file to control the logging level.
+
+For example you can have it contain only this line `log4j.rootLogger=ERROR,
+stdout` to only output errors
+

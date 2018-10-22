@@ -1,0 +1,92 @@
+17059041 fancy/efficient way of checking if a document exists at elasticsearch
+
+What is the most efficient way oof testing if a document with an _id exists?
+
+I could obviously do:
+
+    
+    
+    curl -XGET localhost:9200/my_index/my_doctype/<_id>?fields=_id'.
+    
+
+Or I could go with: [How do I check for duplicate data on
+ElasticSearch?](https://stackoverflow.com/questions/14300533/how-do-i-check-
+for-duplicate-data-on-elasticsearch) and send an empty document, I guess.
+
+Anything more efficient?
+
+I would just use the [get
+api](http://www.elasticsearch.org/guide/reference/api/get/) which returns a
+404 if the object doesn't exist, otherwise the object itself. If you use the
+Java API you'll find an `isExists` method in the `GetResponse` object.
+
+If the `_id` field you are referring to is not included in your documents,
+saying `fields=_id` wouldn't give you back either the `_source` nor any
+specific field under `fields`. But you would get back the `_id` in the header
+of the response anyway.
+
+If you are using the REST api you can use the following:
+
+`curl -XHEAD 'http://localhost:9200/twitter/tweet/1`
+
+it won't return the document back but just 404 if not found, 200 otherwise.
+The body of the response will also contain the exists flag too, with the same
+meaning.
+
+What's interesting is that using the HEAD method maps to a get request
+internally, that's why it's not directly exposed to the Java API, but you can
+obtain the same behaviour creating a `GetRequest` with the following code:
+
+    
+    
+    GetRequest getRequest = new GetRequest("index", "type", "id");
+    // don't get any fields back...
+    getRequest.fields(new String[0]);
+    
+
+You can use the HTTP HEAD verb to retrieve the headers only.
+
+    
+    
+    curl -XHEAD --dump-header - localhost:9200/index/type/doc
+    
+
+It will provide you with either 200 or 404 without any part of the document
+body.
+
+If on a version prior to `2.1`, you can use the "Search Exists API".
+
+An example:
+
+Search the twitter index for a tweet type by the user "kimchy"
+
+    
+    
+    $ curl -XGET 'http://localhost:9200/twitter/tweet/_search/exists?q=user:kimchy'
+    
+
+The response body will contain a true or false if there are any tweets by that
+user:
+
+    
+    
+    {
+      "exists" : true
+    } 
+    
+
+You can also send the query in the request body like so (POST or GET both
+work):
+
+    
+    
+    curl -XGET 'http://localhost:9200/twitter/tweet/_search/exists' -d '
+    {
+        "query" : {
+        "term" : { "user" : "kimchy" }
+        }
+    }'
+    
+
+The response will be the same.
+

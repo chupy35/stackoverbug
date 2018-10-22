@@ -1,0 +1,71 @@
+23646502 Elastic Search - Multi Word Exact Match
+
+I want to adjust the following query so it exactly matches multiple words.
+Whenever I try this it seems to tokenize the strings and then search. How can
+I specify for a particular substring that it must be an exact match?
+
+    
+    
+    {
+        "query": {
+            "query_string": {
+                "query": "string OR string2 OR this is my multi word string",
+                "fields": ["title","description"]
+             }
+         }
+    }
+    
+
+My mapping is as follows:
+
+    
+    
+    {
+        "indexname": {
+           "properties": {
+              "title": {
+              "type": "multi_field",
+              "fields": {
+                     "title": {"type": "string"},
+                     "original": {"type" : "string", "index" : "not_analyzed"}
+              }
+           },
+           "location": {
+               "type": "geo_point"
+           }
+        }
+    }
+    
+
+By default the QuerySring and match queries are analyzed.So use terms
+query.unfortunately we cannot use multiple fields in term query.So use bool
+query for that.Please try bellow query..
+
+    
+    
+     {
+     "query": {
+      "bool": {
+         "must": [
+            {
+               "term": {
+                  "title": {
+                     "value": "string OR string2 OR this is my multi word string"
+                  }
+               }
+            },
+            {
+               "term": {
+                  "description": {
+                     "value": "string OR string2 OR this is my multi word string"
+                  }
+               }
+            }
+         ]
+      }
+     }
+    }
+    
+
+HOpe it helps..!
+

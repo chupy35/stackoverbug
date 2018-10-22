@@ -1,0 +1,50 @@
+12996138 find the trigger button by ng-submit
+
+how do i find the trigger button in **_form_** by **_ng-submit_** and get
+attribut in this button
+
+    
+    
+    <form ng-submit="submit()" ng-controller="Ctrl">
+      <input type="submit" att1="A" att2="B" value="Edit" />
+      <input type="submit" att1="C" att2="D" value="Delete" />
+    </form>
+    
+    <script>
+      function Ctrl($scope) {
+        $scope.submit = function() {
+          alert(this.att1)
+          alert(this.att2)
+        }
+      }
+    </script>
+    
+
+You can use ng-click to change values on your scope prior to submission
+
+    
+    
+    <form ng-submit="submit()" ng-controller="Ctrl">
+      <input type="submit" ng-click="setAtts('A', 'B')" value="Edit" />
+      <input type="submit" ng-click="setAtts('C', 'D')" value="Delete" />
+    </form>
+    
+    <script>
+      function Ctrl($scope) {
+        $scope.submit = function() {
+          alert($scope.att1);
+          alert($scope.att2);
+        };
+    
+        $scope.setAtts = function(a1, a2) {
+          $scope.att1 = a1;
+          $scope.att2 = a2;
+        };
+      }
+    </script>
+    
+
+Edit: As a side note `$event` will not work for ng-submit, if you're
+interested in using `$event.target` (which probably shouldn't be done from a
+controller anyhow)
+

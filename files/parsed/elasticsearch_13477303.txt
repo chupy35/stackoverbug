@@ -1,0 +1,77 @@
+13477303 Multiple nodes in ElasticSearch
+
+How can I have multiple nodes in my ElasticSearch? I'm using the following in
+elasticsearch.yml but only the last node starts, and the browser complains:
+`The page at file://localhost/ says: undefined`.
+
+    
+    
+    node.name: "No Data"
+    node.master: true
+    node.data: false
+    
+    node.name: "Data One"
+    node.master: false
+    node.data: true
+    
+    node.name: "Data Two"
+    node.master: false
+    node.data: true
+    
+
+I think the simplest way to do it is by specifying these parameters on the
+command line. To start three nodes you just need to run the following three
+commands in elasticsearch home directory:
+
+    
+    
+    $ bin/elasticsearch -Des.node.data=false -Des.node.master=true -Des.node.name=NoData
+    $ bin/elasticsearch -Des.node.data=true -Des.node.master=false -Des.node.name=DataOne
+    $ bin/elasticsearch -Des.node.data=true -Des.node.master=false -Des.node.name=DataTwo
+    
+
+Another solution is to create 3 different config files and start three nodes
+with `-Des.config=path-to-config-file` parameter.
+
+First off, you should be trying to access elasticsearch using
+`[http://localhost:9200/][1]`, if you are using the default port bindings.
+
+I would set up your master node to also be a data node, there is no reason not
+to. If you are trying to start 3 nodes on a single machine. But, starting 3
+nodes all on the same machine doesn't make sense as anything other than an
+experiment. What are you trying to accomplish?
+
+In windows for 6.x version, command attributes change to
+
+    
+    
+    elasticsearch -EsomeYamlPropety=someValue
+    
+
+First You need change an elasticsearch.yml properties to:
+
+    
+    
+    http.port: 9200-9299
+    transport.tcp.port: 9300-9399
+    node.max_local_storage_nodes: 2
+    
+
+Because You cant run nodes on single port, and when I try to use command with
+argument _-Ehttp.port=9201_ nodes were cant see each other and were creating
+two different clusters with the same name.
+
+Run the first node by a standard command:
+
+    
+    
+    .\bin\elasticsearch
+    
+
+Run the second node by command with attributes:
+
+    
+    
+    .\bin\elasticsearch -Enode.name=NodeTwo -Enode.master=false
+    
+

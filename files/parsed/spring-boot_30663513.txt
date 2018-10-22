@@ -1,0 +1,63 @@
+30663513 Spring Boot MessageSourceAutoConfiguration
+
+I have a problem or possibly I found a bug in Spring Boot. I am not sure at
+the moment. I have a project with the following dependencies
+
+  * spring-boot-starter-thymeleaf
+  * spring-boot-starter-web
+  * spring-boot-starter-actuator
+  * spring-boot-starter-mail
+  * spring-cloud-starter-bus-amqp
+  * spring-cloud-starter-config
+  * spring-cloud-starter-eureka
+
+I want to use a messageSource in my Thymeleaf templates and so I set the
+following in my application.yml:
+
+    
+    
+    spring:
+      messages:
+        basename: de/mycompany/messages/message
+    
+
+and placed a message.properties and a message_de.properties in the above
+package. But the replacing did not work. So I debugged
+MessageSourceAutoConfiguration and found, that the
+@Conditional(ResourceBundleCondition.class) did work. It found my Resources
+and returned true. So I let print the debug report and found, that it says
+
+    
+    
+    MessageSourceAutoConfiguration
+          - Bundle found for spring.messages.basename: de/mycompany/messages/message (MessageSourceAutoConfiguration.ResourceBundleCondition)
+          - @ConditionalOnMissingBean (types: org.springframework.context.MessageSource; SearchStrategy: all) found the following [messageSource] (OnBeanCondition)
+    
+
+So there is another messageSource Bean already defined, but i wondered where
+it did come from. So i investigated further and found the following log
+output:
+
+    
+    
+    AnnotationConfigEmbeddedWebApplicationContext : Unable to locate MessageSource with name 'messageSource': using default [org.springframework.context.support.DelegatingMessageSource@60df7989]
+    
+
+In fact it comes from the class AbstractApplicationContext in method
+initMessageSource (around line 622). There it checks for a bean with name
+"messageSource" and if it doesn't find one, it creates the above mentioned
+DelegatingMessageSource.
+
+Am I missing something? Do I have to do something to get the
+MessageSourceAutoConfiguration happen before this AbstractApplicationContext
+stuff? Or is this really a bug?
+
+For myself I fixed it by simply creating the messageSource myself as a @Bean,
+but using the AutoConfiguration would be far smarter :)
+
+Greetings Christian
+
+Turns out this is a bug, hopefully it gets resolved soon, tracked here:
+
+<https://github.com/spring-cloud/spring-cloud-commons/issues/29>
+

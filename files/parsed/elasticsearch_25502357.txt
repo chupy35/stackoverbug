@@ -1,0 +1,14 @@
+25502357 How can I query maximum values in records in Elasticsearch?
+
+I need to get all records in Elasticsearch which matches my criteria which is
+like the following query:
+
+    
+    
+    SELECT * FROM table_x AS px
+    WHERE version = (
+        SELECT MAX(version) FROM table_x
+        WHERE type=px.type
+    ) AND title LIKE '%title%'
+    
+

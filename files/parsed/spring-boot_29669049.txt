@@ -1,0 +1,105 @@
+29669049 logback.xml is evaluated before application.yml is
+
+I'm building a web application using spring-boot 1.2.2.RELEASE.
+
+I want to configure the logback output according to the value of the property
+"spring.profiles.active".
+
+That property is defined in application.yml and lockback configuration is
+described in logback.xml.
+
+But I found logback.xml is evaluated before application.yml is evaluated.
+
+How can I start a SpringApplication reading application.yml before
+logback.xml?
+
+Here is my Application.java.
+
+    
+    
+    /**
+     * Application.java --
+     */
+    package my.project;
+    
+    import org.springframework.boot.autoconfigure.SpringBootApplication;
+    import org.springframework.boot.builder.SpringApplicationBuilder;
+    
+    @SpringBootApplication
+    public class Application {
+    
+        public static void main(String[] args) {
+            new SpringApplicationBuilder(Application.class).run(args);
+        }
+    
+    }
+    
+
+When I write the logback.xml in some bad format like this,
+
+    
+    
+    <?xml version="1.0" encoding="UTF-8"?>
+    aaa
+    
+
+Spring-boot reports an error which shows logback.xml is read in the
+constructor of SpringApplicationBuilder.
+
+    
+    
+    ERROR in ch.qos.logback.core.joran.event.SaxEventRecorder@449b193b - XML_PARSING - Parsing fatal error on line 2 and column 1 org.xml.sax.SAXParseException; lineNumber: 2; columnNumber: 1;
+            [snip]
+            at      at org.apache.commons.logging.impl.SLF4JLogFactory.getInstance(SLF4JLogFactory.java:155)
+            at      at org.apache.commons.logging.impl.SLF4JLogFactory.getInstance(SLF4JLogFactory.java:132)
+            at      at org.apache.commons.logging.LogFactory.getLog(LogFactory.java:275)
+            at      at org.springframework.boot.SpringApplication.<init>(SpringApplication.java:160)
+            at      at org.springframework.boot.builder.SpringApplicationBuilder.createSpringApplication(SpringApplicationBuilder.java:96)
+            at      at org.springframework.boot.builder.SpringApplicationBuilder.<init>(SpringApplicationBuilder.java:84)
+            at      at my.project.Application.main(Application.java:13)
+            [snip]
+    
+
+On the other hand, when I put the application.yml in some bad format by adding
+tab character, Spring-boot reports an error which shows it is read in the
+method 'run'.
+
+    
+    
+    Caused by: while scanning for the next token
+    found character          '\t(TAB)' that cannot start any token. (Do not use \t(TAB) for indentation)
+     in 'reader', line 1, column 1:
+            [snip]
+            at org.springframework.boot.context.config.ConfigFileApplicationListener.onApplicationEvent(ConfigFileApplicationListener.java:126)
+            at org.springframework.context.event.SimpleApplicationEventMulticaster.invokeListener(SimpleApplicationEventMulticaster.java:151)
+            at org.springframework.context.event.SimpleApplicationEventMulticaster.multicastEvent(SimpleApplicationEventMulticaster.java:128)
+            at org.springframework.boot.context.event.EventPublishingRunListener.publishEvent(EventPublishingRunListener.java:100)
+            at org.springframework.boot.context.event.EventPublishingRunListener.environmentPrepared(EventPublishingRunListener.java:59)
+            at org.springframework.boot.SpringApplication.run(SpringApplication.java:285)
+            at org.springframework.boot.builder.SpringApplicationBuilder.run(SpringApplicationBuilder.java:139)
+            at my.project.Application.main(Application.java:13)
+    
+
+> How can I start a SpringApplication reading application.yml before
+logback.xml
+
+You can't.
+
+The Logback configuration is read very early so that logging is available for
+the rest of the initialisation process. There's then a second stage where
+Logback is reconfigured based on some of the configuration in
+`application.yml`.
+
+Logging frameworks don't understand `application.yml` or Spring's Environment
+so certain properties are copied over the system properties which you can then
+reference in your Logback configuration. Those properties are `logging.file`
+and `logging.path` which are copied to `LOGGING_FILE` and `LOGGING_PATH`
+respectively. See the [Spring Boot
+documentation](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#boot-features-custom-log-
+configuration) for some more information.
+
+There's also an [open issue](https://github.com/spring-projects/spring-
+boot/issues/1788) to allow more of the logging configuration to be performed
+in `application.yml`.
+

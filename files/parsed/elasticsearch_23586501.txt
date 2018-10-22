@@ -1,0 +1,37 @@
+23586501 elasticsearch find posts by comments
+
+I'm trying to write a query that finds articles based on their comments.
+
+So if a user is trying to find "chocolates"
+
+    
+    
+    {
+      type: "article",
+      id: "myArticle1",
+      title: "something about brown food"
+    }
+    
+    {
+      body: "I love chocolates!",
+      type:"comment",
+      commentOf: "myArticle1"
+    }
+    
+
+In this example I have both documents in the same index and I'm trying to get
+the "myArticle1" document via the comment matching chocolates in body. How do
+I do this? Is it with the top_children query?
+
+You can use the parent-child in ES to achieve this:
+
+  1. Define the parent (article) and child (comment)
+  2. Index data. You should know how to index child data as it will difference from normal (need to specify parent in the index request)
+  3. Use `has_child` query to query for `article` that matched some fields in `comment`
+
+I wrote a full working sample script for it:
+<https://gist.github.com/tintin04/efa66047358dac66461b>
+
+You can run it to test and send me your feedback. I guess you're new to ES and
+parent-child relationship in ES.
+

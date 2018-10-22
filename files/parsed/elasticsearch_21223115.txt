@@ -1,0 +1,63 @@
+21223115 Search keys using regexp in Elasticsearch
+
+Below is my document and I want to search values "availability" using regular
+expressions like this:
+
+    
+    
+    "regexp" : { 
+        "availability": {
+        "value": "2014-*-10"
+        }
+    }
+    
+
+My document:
+
+    
+    
+    {
+       "_index": "testing",
+       "_type": "test",
+       "_id": "1",
+       "_version": 1,
+       "exists": true,
+       "_source": {
+          "id": 1,
+          "title": "Test",
+          "availability": {
+             "2014-02-15": {
+                ["1", "2"]
+             },
+             "2014-02-14": {
+                ["1", "2", "3"]
+             },
+             "2014-03-15": {
+                ["1"]
+             },
+             "2014-03-14": {
+                ["1", "2", "3"]
+             }
+          }
+       }
+    }
+    
+
+How can I search for keys as it works (regex) for normal values (not arrays)?
+
+The solution is to use "default_field" with * wildcard like this or similar
+combination:
+
+    
+    
+    {
+       "query" : {
+            "query_string": {
+                "default_field": "availability.2014-*-13.*",
+                "query": "1"
+            }
+    
+        }
+    }
+    
+

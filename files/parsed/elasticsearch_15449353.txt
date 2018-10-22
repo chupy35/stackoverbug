@@ -1,0 +1,33 @@
+15449353 Elastic Search data lost/erased/removed
+
+I indexed around 50000 videos in elastic search, but when it reaches around
+52000 , all data was erased. Well that was really weird for me, i had not set
+any Heap size or min or max size memory size for ES so they were defaut i.e
+256m min and 1g max and my total size of the document is 304mb. I have not
+changed anything else from default as i am still like in a learning stag of
+elastic search so any idea what could be the reason?
+
+Thanks
+
+Lucene under the hood is highly resilient.
+
+IMHO the only reasons of such a deletion come from the user himself. Someone
+on your Network probably send a delete command such as:
+
+    
+    
+    curl -XDELETE localhost:9200
+    
+
+You should add more details on your configuration here.
+
+  * How do you send docs? 
+  * What does your elasticsearch.yml looks like?
+  * How many nodes in your cluster?
+
+dadoonet is probably right about the delete request. Another thing that could
+potentially happen is if you were using the default data path then the
+Elasticsearch data was being stored in the elasticsearch folder itself. If
+someone deployed a new version of elasticsearch on top of the existing one,
+then you would lose data.
+

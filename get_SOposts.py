@@ -1,5 +1,6 @@
 from google.cloud import bigquery
 import io
+import html2text
 
 """
 How to run:
@@ -16,7 +17,7 @@ How to run:
 # key file. All clients in google-cloud-python have this helper.
 #clx00-\x7fient = bigquery.Client.from_service_account_json('/home/chupy35/polymtl/dataminning/assigment/test2/stackoverbug/chupytestcom-dfe002fa9cf6.json')
 
-tags = "angular"
+tags = "reactjs"
 #, "ruby-on-rails", "netty", "elasticsearch","spring-boot",  "tensorflow", "reactjs", "angularjs"]
 
 client = bigquery.Client()
@@ -24,12 +25,11 @@ allResults = []
 tmpResult = []
 
 i = 0
-for tag in tags:
-	tmpResult = []
+tmpResult = []
 
-	get_SOPosts = "SELECT p.Id, p.ParentId, p.Title, p.Body, p.CreationDate, p.Tags FROM `sotorrent-org.2018_09_23.Posts` as p  WHERE p.Tags LIKE '<"+ tag +">' AND p.ParentId IS NULL ORDER BY p.Id ASC;"
-	query_job = client.query(get_SOPosts)
-	results = query_job.result()
+get_SOPosts = "SELECT p.Id, p.ParentId, p.Title, p.Body, p.CreationDate, p.Tags FROM `sotorrent-org.2018_09_23.Posts` as p  WHERE p.Tags LIKE '<"+ tags +">' AND p.ParentId IS NULL ORDER BY p.Id ASC;"
+query_job = client.query(get_SOPosts)
+results = query_job.result()
 
 for row in results:
 
@@ -42,6 +42,7 @@ for row in results:
 
     for comment in results_comments:
         complete_post = complete_post + "\n" + comment.Body.encode("utf-8")
+
     f = open(tags + "_" + str(row.Id) + '.txt', 'w')
     f.write(complete_post)
     #print "Post id: ", row.Id

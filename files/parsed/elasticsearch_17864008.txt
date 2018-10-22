@@ -1,0 +1,72 @@
+17864008 Trying to replicate across two remote servers
+
+I have two Elastic Search on different VPSs with their own host names and I
+haven't been able to get them to replicate to each other. They are both
+version 0.90.2.
+
+My settings are:
+
+    
+    
+    cluster.name: mycluster
+    name.name: "nodeA"
+    node.master: true
+    node.data: true
+    index.number_of_shards: 5
+    index.number_of_replicas: 1
+    discovery.zen.ping.multicast.enabled: false
+    discovery.zen.ping.unicast.hosts: ["nodeB.example.com"]
+    
+
+and:
+
+    
+    
+    cluster.name: mycluster
+    name.name: "nodeB"
+    node.master: false
+    node.data: true
+    index.number_of_shards: 5
+    index.number_of_replicas: 1
+    discovery.zen.ping.multicast.enabled: false
+    discovery.zen.ping.unicast.hosts: ["nodeA.example.com"]
+    
+
+When I attempt to start the nodeB instance the result is:
+
+    
+    
+    [INFO ][discovery.zen] [nodeB] 
+    failed to send join request to master 
+    [[nodeA][IZFgtrTPSISQR7VklS3www][inet[/*.*.*.*:9300]]{master=true}],
+    reason [org.elasticsearch.ElasticSearchTimeoutException:
+    Timeout waiting for task.]
+    
+
+So communication is there because nodeB knows the others name is 'nodeA', but
+what I am I missing or what can I check?
+
+**UPDATE:**
+
+Unfortunately this turned out to be a server issue on nodeB and had nothing to
+do with ES.
+
+For the record, the above settings work fine and the unicast setting for nodeA
+is pointless as nodeB is not a master only nodeB needs to know about nodeA.
+
+**UPDATED:**
+
+Make the following in both config files:
+
+    
+    
+    discovery.zen.ping.unicast.hosts: ["master_node_ip"]
+    
+
+* * *
+
+~~If provided settings above is the all of it. Then you should add cluster
+name to your settings.~~
+
+~~`cluster.name: my_cool_cluster_name`~~
+

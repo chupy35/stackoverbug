@@ -1,0 +1,79 @@
+20730387 Render sub-component error using React.js
+
+I'm following the React.js Facebook from [this
+tutorial](http://facebook.github.io/react/docs/tutorial.html). I added a more
+LikeButton component here:
+
+    
+    
+    var LikeButton = React.createClass({
+    getInitialState: function() {
+      return {liked: this.props.liked, id: this.props.id};
+    },
+    handleClick: function(event) {
+      // post to server using ajax here
+      this.setState({liked: !this.state.liked, id: this.prop.id});
+    },
+    render: function() {
+    var text = this.state.liked ? 'like' : 'unlike';
+    return (
+      <p onClick={this.handleClick}>
+        You {text} this. Click to toggle.
+      </p>
+    );
+    }});
+    
+
+and then i put the component inside the comment block:
+
+    
+    
+    var CommentList = React.createClass({
+      render: function() {
+        var commentNodes = this.props.data.map(function (comment) {
+          return <div>
+          <Comment author={comment.author}>
+          {comment.content}</Comment><LikeButton liked={comment.liked} id={comment.id} / </div>;
+        }); 
+    
+
+At last i use setInterval in CommentBox to realtime update using polling.
+
+    
+    
+    var CommentBox = React.createClass({
+        componentDidMount: function() {
+        this.loadCommentsFromServer();
+        setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+      }
+    React.renderComponent(
+      <CommentBox url='comments.json' pollInterval={3000}/>,
+      document.getElementById('content')
+    );
+    
+
+When i click like, the LikeButton component could render correctly, but when
+using setInterval, in server side, i manually changed the liked attribute of a
+comment, but the LikeButton component couldn't render correctly. Do you know
+how to fix the problem ? Thank you very much.
+
+You have to persist on server side you are only setting the state so change
+your handleClick function like this using
+[**`axios`**](https://github.com/mzabriskie/axios/)
+
+    
+    
+    handleClick: function(event) {
+      // post to server using ajax here
+      this.setState({liked: !this.state.liked, id: this.prop.id});
+      liked = this.state.liked;
+      id = this.prop.id;
+      axios.post('/YOUR_LIKE_UNLIKE_API_END_POINT', {
+        liked: liked,
+        id: id
+      }).catch(function (error) {
+        this.setState({liked: !this.state.liked, id: this.prop.id});
+      });
+    },
+    
+

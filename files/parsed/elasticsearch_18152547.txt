@@ -1,0 +1,92 @@
+18152547 Custom_Filters_Score with Nested Object and Script
+
+I'm trying to use a value in a nested object to boost my rank based on the
+[custom_filters_score](http://www.elasticsearch.org/guide/reference/query-
+dsl/custom-filters-score-query/) method. So, a match is not required, but if
+it does, it will boost the rank. Normally, one can hardcode a boost, but I'd
+like to use a [script
+field](http://www.elasticsearch.org/guide/reference/modules/scripting/) based
+on the value in the nested document that would have matched.
+
+If I hardcode a value, say 1000, I can see the impact on the score. However,
+it's as though ES is unable to make sense of popularity key as it gives it
+gives it no boost.
+
+Documents look like so with search_terms being type=nested, simple two keys
+and two values:
+
+    
+    
+    {
+    "name":"colorful light blue things that make developers wild"
+    "search_terms":[
+        {
+            "a_term":"colorful",
+            "popularity":33433
+        },
+        {
+            "a_term":"light blue",
+            "popularity":343
+        }
+    ]
+    "other_keys":"stuff"
+    }
+    
+
+Here is the example the custom_filters_score query
+
+    
+    
+    {
+        "query":{
+            "custom_filters_score":{
+            --query:{} would be here--
+            ,"filters":[
+                {
+                    "filter":{
+                        "nested":{
+                            "path":"search_terms"
+                            ,"query": {
+                                "match": {
+                                    "a_term": "light blue"
+                                }
+                            }
+                        }
+                    },
+                    --here is my problem area
+                    "script":"doc['search_terms.popularity'].value"
+                    -- this would work, hard coded value
+                    "script":"1000"           
+                 }
+             ]
+         }    
+     }
+    
+
+You should access nested documents fields while iterating over them. In your
+query you are trying to access nested field outside the nested query. Try
+something like this:
+
+    
+    
+    "query": {
+       "nested": {
+          "score_mode": "total",
+          "path": "search_terms",
+          "query": {
+              "function_score": {
+                  "query": {
+                      "match": {
+                          "a_term": "light blue"
+                      }
+                   },
+                  "script_score": {
+                      "script": "doc['search_terms.popularity'].value"
+                  },
+                  "boost_mode": "replace"
+              }
+          }
+       }
+    }
+    
+

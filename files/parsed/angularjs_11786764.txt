@@ -1,0 +1,65 @@
+11786764 Track to see when a view changes in angularjs
+
+Does anyone know how to make angular fire an event when the view has changed?
+Or right when a view is requested and downloaded? I'm trying to add loading
+animations for when pages change.
+
+Take a look at [this
+thread](https://groups.google.com/d/topic/angular/OroP1DBE6AA/discussion) it
+looks like the `$httpProvider.responseInterceptors` are a good place to add
+this type of thing.
+
+[This fiddle](http://jsfiddle.net/zdam/dBR2r/) shows a good example on where
+to add code to start/stop a spinner for ajax requests. [This
+fiddle](http://jsfiddle.net/dBR2r/8/) is similar but actually shows and hides
+a 'Loading...' div.
+
+If you only want to show a spinner when views change you can limit your
+start/stop code to when `content-type` equals `text/html` similar to what
+[this post](https://groups.google.com/d/msg/angular/OroP1DBE6AA/YZ7BuhKI8eMJ)
+shows with `application/json`.
+
+Note: in my tests it looks like the `headersGetter()['Content-Type']` in the
+`spinnerFunction` is omitted when retrieving my .html files whereas it is
+populated when making service calls.
+
+I think a much simpler, adaptable approach would be to use the AngularJS
+`$http.pendingRequests.length` call. It returns the pending ajax call count.
+So when it reaches `0`, you're page is done loading.
+
+You could create a directive that inserts a loading div (scrim) on any element
+and then waits for all ajax calls to resolve and then removes your spinner.
+
+Here's the meat of the code to make your AngularJS directive:
+
+    
+    
+            // Prepend the loading div to the dom element that this directive is applied.
+            var scrim = $('<div id="loading"></div>');
+            $(scrim).prependTo(domElement);
+    
+            /**
+             * returns the number of active ajax requests (angular + jquery)
+             * $.active returns the count of jQuery specific unresolved ajax calls. It becomes 0 if
+             * there are no calls to be made or when calls become finished.
+             * @return number of active requests.
+             */
+            function totalActiveAjaxRequests() {
+                return ($http.pendingRequests.length + $.active);
+            }
+    
+            /**
+             * Check for completion of pending Ajax requests. When they're done,
+             * remove the loading screen and show the page data.
+             */
+            scope.$watch(totalActiveAjaxRequests, function whenActiveAjaxRequestsChange() {
+                if(totalActiveAjaxRequests() === 0){
+                    $log.log("done loading ajax requests");
+                    $(scrim).remove();
+                    $(domElement).css("position", "inherit");
+                }
+            });
+    
+
+Please note, $.active is undocumented.
+

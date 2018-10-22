@@ -1,0 +1,72 @@
+12508967 Check tree - pass parametr to not check children
+
+I have this code <http://plnkr.co/edit/kiH0Ge?p=preview>
+
+    
+    
+    <!doctype html>
+    <html ng-app="plunker" >
+    <head>
+      <meta charset="utf-8">
+      <title>AngularJS Plunker</title>
+      <link rel="stylesheet" href="style.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.js"></script>
+      <script src="app.js"></script>
+    </head>
+    <body ng-controller="MainCtrl">
+      <choice-tree ng-model="myTree" children="true"></choice-tree>
+      <hr />
+      $scope.myTree = {{myTree | json}}
+    </body>
+    </html>
+    
+
+I've added parametr checkChildren
+
+    
+    
+    <choice-tree ng-model="myTree" checkChildren="true"></choice-tree>
+    
+
+Then in check directive I want to run function conditionally
+
+    
+    
+    if(scope.checkChildren === 'true') 
+       checkChildren(choice);
+    
+
+But it doesn't work.
+
+I know there is isolated scope, but how to build tree then.
+
+If my understanding is correct, I think it is a simple typo. With a little
+modification, it seems to be working: <http://plnkr.co/edit/BJqsl3>
+
+You want to check bool value, e.g. `scope.checkChildren === true` not against
+`'true'`
+
+## [edit] It seems I did not understand the spec correctly
+
+If I remove the `if` statement which I pointed out above, and call
+`checkChildren()`, it works. Is this what you intend? Plunk is updated
+accordingly.
+
+Now everything works <http://plnkr.co/edit/5lLGIQ?p=preview>
+
+I just changed children to withchildren and this (crucial)
+
+    
+    
+    $compile('<choice-tree ng-model="choice.children" children="{{children}}"></choice-tree>')(scope);
+    
+
+to
+
+    
+    
+    $compile('<choice-tree ng-model="choice.children" withchildren="'+scope.withchildren+'"></choice-tree>')(scope);
+    
+
+<http://plnkr.co/edit/5lLGIQ?p=preview>
+

@@ -1,0 +1,26 @@
+24435888 elasticsearch: find the newest elements, return "asc"
+
+Using Elasticsearch in Go, I need to search for the newest last X elements,
+ordered by time.
+
+I think having something like this will accomplish the goal:
+
+    
+    
+    "query": {"constant_score": {}},
+    "sort": {"time": {"order": "desc"}},
+    "size": X
+    
+
+However, this would return the newest elements in reverse order, wouldn't it?
+
+Is there a way to return the newest X elements in ascending order?
+
+This request will give you the oldest elements matching the query.
+
+To achieve your goal, you could make a count query (ordering not needed) and
+then a desc sorted request with the start parameter set to count-X. This
+solution is ugly and very inefficient.
+
+You'd be a lot better off desc sorting the results in your Go app.
+

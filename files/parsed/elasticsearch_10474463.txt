@@ -1,0 +1,93 @@
+10474463 elasticsearch: get only the elements that has a certain non-empty key
+from the url
+
+I'de like to filter the results of an elasticsearch query and retrieve only
+those that have a non-empty field
+
+For example. giving the following data
+
+    
+    
+    {
+      total: 4912,
+      max_score: 1,
+      hits: [
+    {
+      {
+        _index: "gcba",
+        _type: "bafici",
+        _id: "5a93472b-5db4-4ff9-8c8a-d13158e72d5f-62",
+        _score: 1,
+        _source: {
+          id_film: "23",
+          title: "great film",
+        }
+      },
+      {
+        _index: "gcba",
+        _type: "bafici",
+        _id: "2732fbf4-4e55-4794-8e98-e5d5fa6a0419-40",
+        _score: 1,
+        _source: {
+          name: "conference",
+          [...]
+        }
+      }
+    }
+    
+
+I'd like to issue something like
+
+    
+    
+    .../_search?from=1&size=100&q=id_film:'*'
+    
+
+to get only those elements with an id_film value
+
+ES will only return documents that have that particular field by default when
+doing a wildcard query:
+
+    
+    
+    % curl -XPUT http://localhost:9200/foo/bar/1 -d '{"id":1,"id_film":23}'
+    {"ok":true,"_index":"foo","_type":"bar","_id":"1","_version":1}%
+    
+    % curl -XPUT http://localhost:9200/foo/bar/2 -d '{"id":2,"foo":23}'
+    {"ok":true,"_index":"foo","_type":"bar","_id":"2","_version":1}%
+    
+    % curl "http://localhost:9200/foo/_search?q=id_film:*&pretty=true"
+    {
+      "took" : 2,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 1,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "foo",
+          "_type" : "bar",
+          "_id" : "1",
+          "_score" : 1.0, "_source" : {"id":1,"id_film":23}
+        } ]
+      }
+    }%
+    
+
+You can also use the exists (or missing) filters. See here:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-exists-filter.html>
+
+Only thing is, it's a filter, not a query. To get it working with the search
+method, you need a query of match_all and exists as the filter. (or, use a
+constant_score query with this filter specified within it)
+
+The docs for the new [Exists
+Query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-exists-query.html) have good illustrations.
+

@@ -1,0 +1,73 @@
+23800201 Elastic Search Error in Executing query
+
+I tried executing following query using elastic search
+
+    
+    
+    http://192.168.110.127:9200/testingrepo/logfiles/_search?pretty
+    
+    
+    
+    {
+        "query" : {
+            "filtered" : {
+                     'query': {
+                                'query_string': {
+                                            'query': 'request: WORD'
+                                  }
+                       },
+                "filter" : {
+                    "range" : {
+                        "date" : {
+                            "gte" : 1400376899.0,
+                            "lte"  : 1400722499.0
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+but i am getting an error
+
+    
+    
+    {
+       "error": "SearchPhaseExecutionException[Failed to execute phase [query], all shards failed; shardFailures {[BKeGm20mTPyDPn1iIipjrg][testingrepo][3]: SearchParseException[[testingrepo][3]: from[-1],size[-1]: Parse Failure [Failed to parse source [{ "query" : { "filtered" : { 'query': { 'query_string': { 'query': "request:WORD" } }, "filter" : { "range" : { "date" : { "gte" : 1400376899.0, "lte" : 1400722499.0 } } } } } }]]]; nested: QueryParsingException[[testingrepo] Failed to parse]; nested: JsonParseException[Unexpected character (''' (code 39)): was expecting either valid name character (for unquoted name) or double-quote (for quoted) to start field name at [Source: [B@21668a99; line: 4, column: 14]]; }{[BKeGm20mTPyDPn1iIipjrg][testingrepo][0]: SearchParseException[[testingrepo][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{ "query" : { "filtered" : { 'query': { 'query_string': { 'query': "request:WORD" } }, "filter" : { "range" : { "date" : { "gte" : 1400376899.0, "lte" : 1400722499.0 } } } } } }]]];
+    
+
+i am not sure what is going wrong. tried various combination Same Query work
+in pyelasticsearch client.
+
+Query parsing error is generated because of "\n" and whitespace characters.
+You need to remove line breaks and whitespaces in order to use this query from
+command line with CURL for example.
+
+You need to replace the single quotes `'` in the `filtered` query section with
+double quotes `"`. That is the reason for the error you are receiving. Try
+this:
+
+    
+    
+    {
+        "query" : {
+            "filtered" : {
+                     "query": {
+                                "query_string": {
+                                            "query": "request: WORD"
+                                  }
+                       },
+                "filter" : {
+                    "range" : {
+                        "date" : {
+                            "gte" : 1400376899.0,
+                            "lte"  : 1400722499.0
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+

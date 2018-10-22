@@ -1,0 +1,106 @@
+24952912 Count the number of documents of a type in index against a second
+index
+
+In Elasticsearch, assume that I have two indices `my_users` and
+`user_actions`. Furthermore, assume that some of my users have a field
+`vipID`. I want to count the number of user actions of type `climb` that we
+carried out by users that have (a non-empty) `vipID` field.
+
+On one hand, I know how to filter the users that have the `vipID` field:
+
+    
+    
+    curl localhost:8080/my_users/_search
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "exists": {
+              "field": "vipID"
+            }
+          }
+        }
+      }
+    }
+    
+
+On the other hand, I know how to find all the climb actions carried out by
+user 1 and 2 (i.e. has `userID` field that equals either `1` or `2`):
+
+    
+    
+    curl localhost:8080/users_actions/climb/_search
+    {
+      "query": {
+        "constant_score": {
+          "filter": {
+            "terms": {
+              "adUserId": [
+                "1",
+                "2"
+              ]
+            }
+          },
+          "boost": 1.2
+        }
+      }
+    }
+    
+
+I don't know how to do both? How can I plug into the second query the
+`asUserId` from the first query.
+
+## Edit:
+
+The above is merely a minimal example. Based on the comment I scripted the
+task. However, in the real case, I have thousands of users and I get an
+`Argument list too long` error from `curl`.
+
+In the mapping for `my_users`, specify `user_actions` as child documents.
+Index them with `userID` as `parentID`. Then you can have a query on parent
+and filter the results with `has_child` filter. Something like this:
+
+    
+    
+    curl localhost:8080/my_users/_search
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "match_all": {}
+             },
+             "filter": {
+                "and": [
+                   {
+                      "exists": {
+                         "field": "vipID"
+                      }
+                   },
+                   {
+                      "has_child": {
+                         "type": "user_actions",
+                         "query": {
+                            "constant_score": {
+                               "filter": {
+                                  "terms": {
+                                     "adUserId": [
+                                        "1",
+                                        "2"
+                                     ]
+                                  }
+                               },
+                               "boost": 1.2
+                            }
+                         }
+                      }
+                   }
+                ]
+             }
+          }
+       }
+    }
+    
+

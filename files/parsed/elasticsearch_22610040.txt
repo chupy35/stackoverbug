@@ -1,0 +1,99 @@
+22610040 elasticsearch search with/without spaces
+
+Good day, I created a searchable index based on phonetics (in Example 2
+fields: with indexing on metaphone and ngram). How do I configure the index to
+not take into account the gaps in sentences like this: "4gb" and "4 gb"?
+
+    
+    
+    PUT product_name
+    {
+       "settings": {
+          "index": {
+             "number_of_shards": 1,
+             "number_of_replicas": 0,
+             "analysis": {
+                "analyzer": {
+                   "ngram_index": {
+                      "tokenizer": "standard",
+                      "filter": [
+                         "standard",
+                         "lowercase",
+                         "index_ngram",
+                         "stopwords",
+                         "synonym"
+                      ]
+                   },
+    
+                    "meta_index": {
+                        "filter":["standard","lowercase","my_metaphone","stopwords", "synonym"],
+                          "type":"custom",
+                          "tokenizer":"standard"
+                    }
+                },
+                "filter": {
+                   "index_ngram": {
+                      "type": "nGram",
+                      "min_gram": 3,
+                      "max_gram": 15
+                   },     
+                   "my_metaphone" : {
+                        "type" : "phonetic",
+                        "encoder" : "metaphone",
+                        "replace" : true
+                    },
+                   "synonym" : {
+                        "type" : "synonym",
+                        "synonyms" : [
+                                                        "i-pod, i pod => ipod",
+                            "universe, cosmos",
+                            "1, I, i",
+                            "2, II, ii",
+                            "3, III, iii",
+                            "4, IV, iv",
+                            "5, V, v",
+                            "6, VI, vi",
+                            "7, VII, vii",
+                            "8, VIII, viii",
+                            "9, IX, ix",
+                            "10, X, x",
+                            "s4, sIV",
+                            "4 gb, 4gb"
+    
+                        ]
+                    },
+                   "stopwords": {
+                      "type": "stop",
+                      "stopwords": "algúnalguna, algunasЭ
+                   }
+                }
+             }
+          }
+       },
+       "mappings": {
+          "products": {
+             "properties": {
+                "Name": {
+                   "type": "multi_field",
+                   "fields": {
+                      "Name": {
+                         "type": "string"
+                      },
+                      "NGram_name": {
+                          "type": "string",
+                         "index_analyzer": "ngram_index",
+                         "search_analyzer": "ngram_index"
+                      },
+                      "Meta_name": {
+                          "type": "string",
+                         "index_analyzer": "meta_index",
+                         "search_analyzer": "meta_index"
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+

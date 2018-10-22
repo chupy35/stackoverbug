@@ -1,0 +1,76 @@
+20266072 Elastic search returning no results
+
+I have Elasticsearch demonstrating counterintuitive behaviour. This is
+reproducible with the following steps
+
+1) Add a document
+
+    
+    
+    curl -XPUT 'http://myelasticseach:1234/anindex/atype/1' -d '
+    {
+      obj1: 
+      {
+        foo : "bar"
+      },
+      obj2 : 
+      {
+        baz : "qux"
+      }
+    }'
+    
+
+2) Search for 'bar'. I expect and get 1 result
+
+    
+    
+    curl -XGET 'http://myelasticseach:1234/anindex/_search?q=bar'
+    
+
+3) Search for 'qux'. I expect and get 1 result
+
+    
+    
+    curl -XGET 'http://myelasticseach:1234/anindex/_search?q=qux'
+    
+
+4) Update document
+
+    
+    
+    curl -XPUT 'http://myelasticseach:1234/anindex/atype/1' -d '
+    {
+      atype: 
+      {
+        foo : "bar"
+      },
+      obj2 : 
+      {
+        baz : "qux"
+      }
+    }'
+    
+
+5) Search for 'bar'. I expect and get 1 result
+
+    
+    
+    curl -XGET 'http://myelasticseach:1234/anindex/_search?q=bar'
+    
+
+6) Sarch for 'qux'. I expect 1 result, but get 0???
+
+    
+    
+    curl -XGET 'http://myelasticseach:1234/anindex/_search?q=qux'
+    
+
+Why when the nested object in the document has a key matching the type of the
+document can I no longer get results from the rest of the objects with keys
+that do not match the type.
+
+This is a known issue in elasticsearch 0.90.0.
+
+See 'Wrong mapping using a nested object with same name as its type'
+<https://github.com/elasticsearch/elasticsearch/issues/3005>
+

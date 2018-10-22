@@ -1,0 +1,4 @@
+26133241
+React renderComponent Requires DOMElement
+<p>One of the JSX supported attributes is the html tag: &#xA;<a href="http://facebook.github.io/react/docs/tags-and-attributes.html" rel="nofollow">http://facebook.github.io/react/docs/tags-and-attributes.html</a></p>&#xA;&#xA;<p>However, when using React.renderComponent, a DOMelement is required as a container. So when rendering JSX with an html tag, what DOMelement should be used as a container?</p>&#xA;
+<p>You can use "document".</p>&#xA;&#xA;<p>like this:</p>&#xA;&#xA;<pre><code>react.renderComponent(&lt;App /&gt;, document);&#xA;</code></pre>&#xA;

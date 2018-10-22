@@ -1,0 +1,79 @@
+23336971 search for a certain text between within a range of a certain
+timestamp with Elasticsearch
+
+I have worked with Elasticsearch and have done some research on the Internet
+how to query data with a certain text and how to query data within a range of
+timestamp, using Elasticsearch PHP Client API. Now I would like to combine
+these two queries in one. Lets say search for a certain text and within a
+range of a certain timestamp. Can someone please tell me how to do that using
+Elasticsearch PHP Client API? Thanks in advanced! I have searched on the
+Internet but still cannot combine these two queries in one :-(
+
+Here is an example of a bool query, the logic here is that the record must
+fall within a date range and should also contain the text in the `textfield`
+field. **You could have both query conditions within the must clause.**
+
+    
+    
+    {
+        "from": 0,
+        "size": 20,
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "datefield": {
+                                "gte": "from",
+                                "lte": "to"
+                            }
+                        }
+                    }
+                ],
+                "should": [
+                    {
+                        "match": {
+                            "textfield": {
+                                "query": "Name",
+                                "boost": 10
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+**UPDATE - OR MUST HAVE BOTH**
+
+    
+    
+    {
+        "from": 0,
+        "size": 20,
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "datefield": {
+                                "gte": "from",
+                                "lte": "to"
+                            }
+                        }
+                    },
+                    {
+                        "match": {
+                            "textfield": {
+                                "query": "Name",
+                                "boost": 10
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+

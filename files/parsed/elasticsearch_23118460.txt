@@ -1,0 +1,75 @@
+23118460 Filter by terms in an array
+
+I'm trying to filter by terms within an array on elasticsearch documents. This
+is what the documents look like:
+
+    
+    
+    {
+        "name": "Foo",
+        "id": 10,
+        "industries": ["Tech", "Fashion"],
+        ...
+    }
+    
+
+But for the various filter-based queries I try, I've gotten zero results.
+e.g.:
+
+    
+    
+    $ curl -XGET 'http://localhost:9200/_search?pretty=true' -d '
+    {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "terms": {
+                                "industries": ["Tech"],
+                                "execution": "or"
+                            }
+                        }]
+                    }
+                },
+                "query": {"match_all": {}}
+            }
+        },
+        "from": 0,
+        "size": 20
+    }
+    '
+    
+
+I've tried about a dozen different queries against various simplifications and
+filter clauses, e.g. here's a simplified one:
+
+    
+    
+    $ curl -XGET 'http://localhost:9200/_search?pretty=true' -d '
+    {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "terms": {
+                        "industries": ["Tech"],
+                        "execution": "or"
+                    }
+                }
+            }
+    
+        },
+        "from": 0,
+        "size": 20
+    }
+    '
+    
+
+What am I missing here?
+
+What analyzer are you using for the industries field? If you are using the
+default, it will actually lower case and split your stings, which would
+explain why your filters aren't picking those documents up (e.g., it's looking
+for "Tech" when only "tech" exists). If you set the mapping to not_analyzed
+(or use the multi fields option), that might solve your problem.
+

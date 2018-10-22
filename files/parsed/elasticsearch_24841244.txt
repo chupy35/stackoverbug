@@ -1,0 +1,30 @@
+24841244 Elasticsearch and fast changed data
+
+I have an index with 1mln documents.
+
+    
+    
+    "mappings" : {
+        "direct" : {
+            "_source" : { "enabled" : true },
+            "properties" : {
+                "post" : { "type" : "integer", "index" : "analyzed", "store" : false},
+                "author" : { "type" : "integer", "index" : "analyzed", "store" : false},
+                "views_number" : { "type" : "integer", "index" : "not_analyzed" , "store" : false}
+            }
+        }
+    }
+    
+
+And I want to change `views_number` every time someone visit the page with an
+`post`. I suggest, that this mapping is not good, as we need to reindex entire
+document each time. And it's very slow. Is there better solutions for this
+case?
+
+You could use the parent/child feature in Elasticsearch and make `post` a
+child of `direct`. that will make updating the `post` object quicker as you
+only need to update the individual 'post' document. Have a look at this blog
+post:
+
+<http://www.elasticsearch.org/blog/managing-relations-inside-elasticsearch/>
+

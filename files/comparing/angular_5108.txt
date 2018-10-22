@@ -1,0 +1,2 @@
+b'fix(ngSanitize): prefer textContent to innerText to avoid layout thrashing'
+b"innerText depends on styling as it doesn't display hidden elements.\nTherefore, it's better to use textContent not to cause unnecessary\nreflows. However, IE<9 don't support textContent so the innerText\nfallback is necessary. Note that we need to check for undefine\nand not just reverse the order of these two since for an empty string\ninnerText would still be checked and a reflow would occur.\n\nFix #4720.\n"

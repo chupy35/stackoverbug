@@ -1,0 +1,171 @@
+12645720 How is modularity mitigated in AngularJS?
+
+I've been playing with the seed app for AngularJS and I noticed that most
+dependencies (controllers, directive, filters, services) for the app are
+loaded up front. I was wondering how to modularize an Angular app into smaller
+bytes, where dependencies aren't loaded unless required.
+
+For example, if I had a large application that had a cart, add/edit shipping
+address, search results, product details, product lists, etc... A user on a
+shopping site may never encounter any of these views, but it looks like (from
+the seed app) that the code for these all views are loaded in at startup.
+
+How is modularity mitigated in AngularJS?
+
+This question about modularity is being asked quite often here on SO and the
+google group. I'm not part of core team but my understanding is the following
+one:
+
+  1. You can easily load partials (HTML/templates fragments) on demand by including them (ngInclude) or referencing them in directives / routes. So at least you don't need to download all the partials up-front (although you might want to do so, see the other question here: [Is there a way to make AngularJS load partials in the beginning and not at when needed?](https://stackoverflow.com/questions/12346690))
+
+  2. When it comes to JavaScript (controller, directives, filters etc. - basically everything that is defined in AngularJs modules) I believe that there is no, as of today, support for on-demand load of modules in AngularJS. This issue closed by the core team is an evidence of this: <https://github.com/angular/angular.js/issues/1382>
+
+Lack of the on-demand load of AngularJS modules might sound like a big
+limitation, but:
+
+  * when it comes to performance one can't be sure till things are measured; so I would suggest simply measuring if this is a real problem for you
+  * usually code written with AngularJS is really small, I mean, really small. This small code base minified and gzipped might result in a really small artifact to download
+
+Now, since this question is coming back so often I'm sure that the AngularJS
+team is aware of this. In fact I saw some experimental commits recently (
+<https://github.com/mhevery/angular.js/commit/1d674d5bfc47d18dc4a14ee0feffe4d1f77ea23b#L0R396>
+) suggesting that the support might be in progress (or at least there are some
+experiments with it).
+
+I've been playing lately with require modules and angular and I've implemented
+lazy loading of partials and controllers.
+
+It can be easily done without any modifications to Angular sources (version
+1.0.2).
+
+Repository: <https://github.com/matys84pl/angularjs-requirejs-lazy-
+controllers> .
+
+There is also an implementation that uses yepnope
+(<https://github.com/cmelion/angular-yepnope>) made by Charles Fulnecky.
+
+All we need is put this code in our application config, as that:
+
+    
+    
+      application.config [
+        "$provide", "$compileProvider", "$controllerProvider", "$routeProvider"
+        , ($provide, $compileProvider, $controllerProvider, $routeProvider) ->
+    
+          application.controller = $controllerProvider.register
+          application.provider = $provide.provider
+          application.service = $provide.service
+          application.factory = $provide.factory
+          application.constant = $provide.constant
+          application.value = $provide.value
+          application.directive = -> $compileProvider.directive.apply application, arguments
+    
+          _when = $routeProvider.when
+    
+          $routeProvider.when = (path, route) ->
+            loaded = off
+            route.resolve = new Object unless route.resolve
+            route.resolve[route.controller] = [
+              "$q",
+              ($q) ->
+    
+                return loaded if loaded
+    
+                defer = $q.defer()
+    
+                require [
+                  route.controllerUrl
+                ], (requiredController) ->
+                  defer.resolve()
+                  loaded = on
+    
+                defer.promise
+            ]
+    
+            _when.call $routeProvider, path, route
+    
+
+For use add require our components in modules where we need ( provider,
+constant, directive etc ). Like that:
+
+    
+    
+    define [
+      "application"
+      "services/someService"
+    ], (
+      application
+    ) ->
+    
+      application.controller "chartController", [
+        "$scope", "chart", "someService"
+        , ($scope, chart, someService) ->
+    
+          $scope.title = chart.data.title
+    
+          $scope.message = chart.data.message
+    
+      ]
+    
+
+someService.coffee file:
+
+    
+    
+    define [
+      "application"
+    ], (
+      application
+    ) ->
+    
+      application.service "someService", ->
+    
+        @name = "Vlad"
+    
+
+And add to controllerUrl our path to controller for routing:
+
+    
+    
+      application.config [
+        "$routeProvider"
+        , ($routeProvider) ->
+    
+          $routeProvider
+    
+            .when "/table",
+              templateUrl: "views/table.html"
+              controller: "tableController"
+              controllerUrl: "controllers/tableController"
+              resolve:
+                table: ($http) ->
+                  $http
+                    type: "GET"
+                    url: "app/data/table.json"
+      ]
+    
+
+tableController.coffee file:
+
+    
+    
+    define [
+      "application"
+      "services/someService"
+    ], (
+      application
+    ) ->
+    
+      application.controller "tableController", [
+        "$scope", "table"
+        , ($scope, table) ->
+    
+          $scope.title = table.data.title
+    
+          $scope.users = table.data.users
+    
+      ]
+    
+
+And all components have "lazy" load in place where our need.
+

@@ -1,0 +1,4 @@
+30321234
+using alert in elasticsearch with java API?
+<p>I have data written into Elasticsearch in near real time and i want to be alerted when that data matches certain patterns, ElastAlert is the tool for doing this. However i want to use alert with java API, it's possible ?</p>&#xA;
+<p>To implement Alert when data match specific queries you should use the Percolator.</p>&#xA;&#xA;<p>It allows you to store some queries and you can either alert or tag the document as you please.</p>&#xA;&#xA;<p>SEE : <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-percolate.html" rel="nofollow">https://www.elastic.co/guide/en/elasticsearch/reference/current/search-percolate.html</a></p>&#xA;

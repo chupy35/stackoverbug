@@ -1,0 +1,4 @@
+32293233
+How Can I get all the analyzer which my elasticsearch support?
+<p>How can I Get All analyzer which my elasticsearch support?</p>&#xA;&#xA;<p>Is there any API for find out that?</p>&#xA;
+<p>Unfortunately there is no a way to retrieve all analyzers that Elasticsearch&#xA;supports via the API. (I do think you may want to open a github issue to add&#xA;that feature however).</p>&#xA;&#xA;<p>The list of supported analyzers can be found in the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-analyzers.html" rel="nofollow">Elasticsearch reference&#xA;documentation on analyzers</a>.</p>&#xA;

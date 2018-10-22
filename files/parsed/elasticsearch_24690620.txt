@@ -1,0 +1,53 @@
+24690620 "Node Discovery Disabled" in Elastic Search
+
+I used below Java code on UBUNTU and I am getting "Node Discovery Disabled".
+Because of this I am not able move forward.
+
+Could anyone please help me out solving this problem.
+
+    
+    
+        public static JestClient JestConfiguration(){
+    
+        // Configuration
+        ClientConfig client = new ClientConfig.Builder("http://localhost:9200")
+                                  .multiThreaded(true).build();
+    
+        System.out.println("\nclient configured via:- "+client);
+    
+        // Construct a new Jest client according to configuration via factory
+    
+        JestClientFactory factory = new JestClientFactory();
+        factory.setClientConfig(client);
+        System.out.println("\nJestClientFactory Via:-"+factory);
+    
+        JestClient jestClient = factory.getObject();
+        System.out.println("\njestClient via:-"+jestClient);
+    
+        //jestClient.shutdownClient();
+        return jestClient;
+        }
+    
+
+I am not sure what version you are using. I am using 0.1.2 and the factory I
+have only has a _setHttpClientConfig_ method. So I used the
+**HttpClientConfig** instead, which extends **ClientConfig**. That point
+aside, the builder has two methods you'll want:
+
+  * discoveryEnabled 
+  * discoveryFrequency
+
+These set node node discovery and how frequently to poll.
+
+    
+    
+    HttpClientConfig httpClientConfig = new HttpClientConfig.Builder("http://localhost:9200") 
+            .discoveryEnabled(true)
+            .discoveryFrequency(10l, TimeUnit.SECONDS)
+            .multiThreaded(true)
+            .build();
+    
+    JestClientFactory factory = new JestClientFactory();
+    factory.setHttpClientConfig(httpClientConfig);
+    
+

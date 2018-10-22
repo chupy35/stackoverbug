@@ -1,0 +1,26 @@
+22725382 In elasticsearch I'm trying to delete all items that exactly match
+and it doesn't work
+
+I have FIELDNAME mapped to "not_analyzed"
+
+`curl -XDELETE "http://127.0.0.1:9200/data/_query" -d' { "query": [ { "match":
+{ "FIELDNAME": "Exact Match Text" }}] }' `
+
+WHat am I doing wrong?
+
+Your [match
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-match-query.html) should not be an array, but rather an object:
+
+    
+    
+    curl -XDELETE "http://127.0.0.1:9200/data/_query -d \
+    '{
+      "query" : {
+        "match" : {
+          "FIELDNAME" : "Exact Match Text"
+        }
+      }
+    }'
+    
+

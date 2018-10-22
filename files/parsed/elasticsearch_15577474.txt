@@ -1,0 +1,216 @@
+15577474 Combined non-Nested and Nested Query in Elasticsearch
+
+I want to use ES for a book search. So I decided to put the author name and
+title (as a nested document) into the index as follows:
+
+    
+    
+    curl -XPUT localhost:9200/library/search_books/1 -d'{
+      "author": "one",
+      "books": [
+        {
+          "title": "two",
+        },
+        {
+          "title": "three",
+        }
+      ]
+    }'
+    
+
+What I don't get is:  How do I need to structure the search query to find only
+book two when searching for "one two" and find nothing when searching for "two
+three" and all books when searching for "one"?
+
+Perhaps something like this?
+
+    
+    
+    {
+      "query":{
+        "bool":{
+          "must":[
+            {
+              "term":{
+                "author":"one"
+              }
+            },
+            {
+              "nested":{
+                "path":"books",
+                "query":{
+                  "term":{
+                    "books.title":"two"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+That query basically says that a document Must have `author: one` and
+`books.title: two`. You can reconfigure that query easily. For example, if you
+just want to search for authors, remove the nested part. If you want a
+different book, change the nested, etc etc.
+
+This assumes you are using the actual [Nested
+documents](http://www.elasticsearch.org/guide/reference/mapping/nested-
+type.html), and not inner objects. For inner objects you can just use fully
+qualified paths without the special nested query.
+
+**Edit1** : You could perhaps accomplish this with clever boosting at index
+time, although it will only be an approximate solution. If "author" is boosted
+heavily, it will sort higher than matches to just the title, even if the title
+matches both parts of the query. You could then use a min_score cutoff to
+prevent those from displaying.
+
+Its only a loose approximation, since some may creep through. It may also do
+strange things to the general sorting between "correct" matches.
+
+**Edit2:** Updated using query_string to expose a "single input" option:
+
+    
+    
+    {
+      "query":{
+        "query_string" : {
+          "query" : "+author:one +books.title:two"
+        }
+      }
+    }
+    
+
+That's assuming you are using default "inner objects". If you have real Nested
+types, the query_string becomes much, much more complex:
+
+    
+    
+    {
+      "query":{
+        "query_string" : {
+          "query" : "+author:one +BlockJoinQuery (filtered(books.title:two)->cache(_type:__books))"
+        }
+      }
+    }
+    
+
+**Huge Disclaimer** I did not test either of these two query_strings, so they
+may not be exactly correct. But they show that the Lucene syntax is not overly
+friendly.
+
+* * *
+
+## Edit3 - This is my best idea:
+
+After thinking about it, your best solution may be indexing a special field
+that concatenates the author and the book title. Something like this:
+
+    
+    
+    {
+      "author": "one",
+      "books": [
+        {
+          "title": "two",
+        },
+        {
+          "title": "three",
+        }
+      ],
+      "author_book": [ "one two", "one three" ]
+    }
+    
+
+Then at search time, you can do exact Term matches on `author_book`:
+
+    
+    
+    {
+      "query" : {
+        "term" : {
+          "author_book" : "one two"
+        }
+      }
+    }
+    
+
+I found the answer in this post: [Fun With Elasticsearch's Children and Nested
+Documents](http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-
+children-and-nested-documents/). A nested Document is the key. The mapping:
+
+    
+    
+    {
+      "book":{
+        "properties": {
+          "tags": { "type": "multi_field",
+            "fields": {
+                "tags": { "type": "string", "store":"yes", "index": "analyzed" },
+                "facet": { "type": "string", "store":"yes", "index": "not_analyzed" }
+            }
+          },
+          "editions": { "type": "nested", 
+            "properties": {
+              "title_author": { "type": "string", "store": "yes", "index": "analyzed" },
+              "title": { "type": "string", "store": "yes", "index": "analyzed" }
+            }
+          }
+        }
+      }
+    }
+    
+
+The document:
+
+    
+    
+    "tags": ["novel", "crime"],
+      "editions": [
+        {
+          "title": "two",
+          "title_author": "two one"
+        },
+        {
+          "title": "three",
+          "title_author": "three one"
+        }
+      ]
+    
+
+Now I can search like:
+
+    
+    
+    {
+    
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "nested": {
+                "path": "editions",
+                "query": {
+                  "match": {
+                    "editions.title_author": {
+                      "query": "one two",
+                      "operator": "and"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+And if searched for "two three" I would not get a match. I would get one with
+"one two" or "one three". In version 1.1.0 there will be another option with a
+multi_match query and the option cross_fields which would allow not to repeat
+the title and only add the author name to each nested document. That would
+keep the index smaller.
+

@@ -1,0 +1,106 @@
+24470852 Reactjs with LinkedStateMixin and select with multiple options
+
+Using Reactjs, I want to have a single handleChange method handling the
+modifications of all my form elements.
+
+I understand that the
+[LinkedStateMixin](http://facebook.github.io/react/docs/two-way-binding-
+helpers.html) exists for this reason, and that I should use
+
+    
+    
+    render: function() {
+        return <select multiple={{ true }} valueLink={this.linkState('value')}>...options...</select>;
+      }
+    
+
+to bind the status of my select element.
+
+But it seems that this way of doing things does not work with multiple selects
+: the state.value is updated but with only one value (when I select 2 options,
+I can see React update the DOM and it systematically removes one of the
+selection).
+
+So my question is : is LinkedStateMixin a dead-end for this use case ? How do
+you handle this select-multiple use case ?
+
+The root problem is that `.value` for select elements with the `multiple`
+attribute only returns the value of the first selected option element it
+contains. So, when the ValueLink mixin calls `event.target.value` to get the
+`select`'s new value, it doesn't return the required array to make the `value`
+property work.
+
+You could build a little wrapper around `select` to make this work; here's my
+version ([plus a JSFiddle example](http://jsfiddle.net/BinaryMuse/wQ4MP/)):
+
+    
+    
+    // A select element that supports `multiple` and `valueLink` correctly
+    var BetterSelect = React.createClass({
+      render: function() {
+        if (this.props.valueLink) {
+          return this.transferPropsTo(
+            <select value={this.props.valueLink.value}
+                    valueLink={null} onChange={this.handleChange}>
+              {this.props.children}
+            </select>
+          );
+        } else {
+          return this.transferPropsTo(
+            <select onChange={this.handleChange}>
+              {this.props.children}
+            </select>
+          );
+        }
+      },
+    
+      handleChange: function(e) {
+        var selectedValue;
+        if (this.props.multiple) {
+          // We have to iterate the `options` elements
+          // to figure out which ones are selected.
+          selectedValue = [];
+          var options = e.target.options;
+          for (var i = 0, l = options.length; i < l; i++) {
+            if (options[i].selected) {
+              selectedValue.push(options[i].value);
+            }
+          }
+        } else {
+          selectedValue = e.target.value;
+        }
+    
+        // Fire onChange manually if it exists since we overwrote it
+        this.props.onChange && this.props.onChange(e);
+    
+        // Finally, manually take care of any valueLink passed
+        if (this.props.valueLink) {
+          this.props.valueLink.requestChange(selectedValue);
+        }
+      }
+    });
+    
+    
+    // Let's try it out:
+    var Application = React.createClass({
+      mixins: [React.addons.LinkedStateMixin],
+    
+      getInitialState: function() {
+        return { value: ['Apples', 'Oranges'] };
+      },
+    
+      render: function() {
+        return (
+          <div>
+            <pre>{JSON.stringify(this.state.value)}</pre>
+            <BetterSelect multiple valueLink={this.linkState('value')}>
+              <option value='Apples'>Apples</option>
+              <option value='Bananas'>Bananas</option>
+              <option value='Oranges'>Oranges</option>
+            </BetterSelect>
+          </div>
+        );
+      }
+    });
+    
+

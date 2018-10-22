@@ -1,0 +1,92 @@
+17103047 Why do I need "store":"yes" in elasticsearch?
+
+I really don't understand why in [core types
+link](http://www.elasticsearch.org/guide/reference/mapping/core-types/) it
+says in the attributes descriptions (for a number, for example):
+
+  1. store - Set to yes to store actual field in the index, no to not store it. Defaults to no (note, **the JSON document itself is stored, and it can be retrieved from it** )
+  2. index - Set to no if the value should not be indexed. In this case, store should be set to yes, since if it’s not indexed and not stored, **there is nothing to do with it**
+
+The two bold parts seem to contradict. If `"index":"no", "store":"no"` I could
+still get the value from the source. This could be a good use if I have a
+field containing a URL for example. No?
+
+I had a little experiment, where I had two mappings, in one a field was set to
+`"store":"yes"` and in the other to `"store":"no"`.
+
+In both cases I could still specify in my query:
+
+    
+    
+    {"query":{"match_all":{}}, "fields":["my_test_field"]}
+    
+
+and I got the same answer, returning the field.
+
+I thought that if `"store"` is set to `"no"` it would mean I could not
+retreive the specific field, but had to get the whole `_source` and parse it
+on the client side.
+
+So, what benefit is there in setting `"store"` to `"yes"`? Is it only relevant
+if I exclude the field from the `"_source"` field explicitly?
+
+> I thought that if "store" is set to "no" it would mean I could not retrieve
+the specific field, but had to get the whole _source and parse it on the
+client side.
+
+That's exactly what elasticsearch does for you when a field is not stored
+(default) and the `_source` field is enabled (default too).
+
+You usually send a field to elasticsearch because you either want to search on
+it, or retrieve it. But it's true that if you don't store the field explicitly
+and you don't disable the source you can still retrieve the field using the
+`_source`. This means that in some cases it might actually make sense to have
+a field that is not indexed nor stored.
+
+When you store a field, that's done in the underlying lucene. Lucene is an
+inverted index, that allows for fast full-text search and gives back document
+ids given text queries. Beyond the inverted index Lucene has some kind of
+storage where the field values can be stored in order to be retrieved given a
+document id. You usually store in lucene the fields that you want to return as
+search results. Elasticsearch doesn't require to store every field that you
+want to return because it always stores by default every document that you
+send to it, thus it's always able to return everything you sent to it as
+search result.
+
+In just a few cases it might be useful to store fields explicitly in lucene:
+when the `_source` field is disabled, or when we want to avoid parsing it,
+even if the parsing is done automatically by elasticsearch. Keep in mind
+though that retrieving many stored fields from lucene might require one disk
+seek per field while with retrieving only the `_source` from lucene and
+parsing it in order to retrieve the needed fields is just a single disk seek
+and just faster in most of the cases.
+
+By default in elasticsearch, the _source (the document one indexed) is stored.
+This means when you search, you can get the actual document source back.
+Moreover, elasticsearch will automatically extract fields / objects from the
+_source and return them if you explicitly ask for it (as well as possibly use
+it in other components, like highlighting).
+
+You can specify that a specific field is also stored. This means that the data
+for that field will be stored "on its own". Meaning that if you ask for
+"field1" (which is stored), elasticsearch will identify that its stored, and
+load it from the index instead of getting it from the _source (assuming
+_source is enabled).
+
+When do you want to enable storing specific fields? Most times, you don't.
+Fetching the _source is fast and extracting it is fast as well. If you have
+very large documents, where the cost of storing the _source, or the cost of
+parsing the _source is high, you can explicitly map some fields to be stored
+instead.
+
+Note, there is a cost of retrieving each stored field. So, for example, if you
+have a json with 10 fields with reasonable size, and you map all of them as
+stored, and ask for all of them, this means loading each one (more disk
+seeks), compared to just loading the _source (which is one field, possibly
+compressed).
+
+**I got this answer on below link answered by shay.banon you can read this
+whole thread for getting good understanding about it**. [enter link
+description here](http://elasticsearch-users.115913.n3.nabble.com/What-does-
+it-mean-to-quot-store-quot-a-field-td3514176.html)
+

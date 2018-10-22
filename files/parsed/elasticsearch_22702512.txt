@@ -1,0 +1,79 @@
+22702512 How to filter fields returned after search in elasticsearch?
+
+Assuming I have a documents indexed like the following:
+
+    
+    
+    {
+        category: "fruits",
+        items: [
+            {
+                name: "Apple",
+                shape: "Round",
+                color: "red"
+            },
+            {
+                ...
+            }
+        ]
+    }
+    
+
+Assuming I want to search across all the fields but only return either:
+
+  1. `items` field only
+  2. `items` field, but only the `name` and `shape` fields (not the `color` field in the list)
+
+You can filter in/out fields from the `source` (entire document) by specifying
+the reserved [`_source`
+field](http://www.elasticsearch.org/guide/en/elasticsearch/reference/master/search-
+request-source-filtering.html):
+
+To only retrieve the `items`, then specify a filter like so:
+
+    
+    
+    {
+        "_source" : "items.*",
+        "query" : ...
+    }
+    
+
+To retrieve the specific `items` of interest, then there are multiple ways,
+but if you know them all (rather than needing wildcard _exclude_ support):
+
+    
+    
+    {
+        "_source" : [ "items.name", "items.shape" ],
+        "query" : ...
+    }
+    
+
+Alternatively, if it wasn't so simple:
+
+    
+    
+    {
+        "_source" : {
+            "include" : [ "items.*" ],
+            "exclude" : [ "items.color" ]
+        }
+        "query" : ...
+    }
+    
+
+This gives the most flexibility.
+
+You can restrict using field in query.. Like
+
+    
+    
+       {
+        Query:{
+                     Bla bla bla
+                     }, 
+       Fields :["items . name", "items.shape"] 
+         } 
+    
+

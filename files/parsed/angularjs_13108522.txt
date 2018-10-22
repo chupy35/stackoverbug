@@ -1,0 +1,91 @@
+13108522 Angularjs depending on parent scope
+
+While building an application using AngularJs I asked my self if the following
+is good practice
+
+I have "AppController" and every other controller is child of it.
+AppController has something like this.
+
+    
+    
+    $scope.layout = { sidebar: false, searchbar: true};
+    
+
+Now, child controllers should be able to change these values:
+
+    
+    
+    $rootScope.sidebar = true; 
+    
+
+In this case, my child module is totally dependent on root controller and if I
+want this child controller works inside some other application I have to make
+sure parent controller of that other app always have $scope.layout object. Is
+this good practice? Would it be better to build layout module used by both,
+parent and child controllers? Like code bellow:
+
+    
+    
+    angular.module("app.ui", [])
+      .factory("Layout", [function(){
+         var _sidebar = false;
+         var searchbar = true;
+    
+    
+         var sidebar = function(flag){
+            if(flag !== undefined) _sidebar = flag;
+            return _sidebar;
+         }
+    
+         var searchbar = function(flag){
+            if(flag !== undefined) _searchbar = flag;
+            return _searchbar;
+         }
+    
+    return {
+       sidebar : sidebar,
+       searchbar : searchbar
+    }
+    }])
+    
+
+Whilst there may be other architectural approaches to what you want to do
+(e.g. look into the documentation on the _scope_ property of directive
+declarations and its facilities for binding specific properties in the parent
+scope using @, = and  &), generally Services are indeed a good option for
+sharing access to common data. You could simplify it a bit, if you don't have
+extra logic that must happen when the values are updated:
+
+    
+    
+    angular.module("app.ui", [])
+    
+    .service("Layout", function() {
+      this.sidebar = false;
+      this.searchbar = true;
+    })
+    
+
+If you inject this service into your controllers and add it to their scope,
+you can update it and listen for changes like this:
+
+    
+    
+    .controller("AppCtl", function($scope, Layout) {
+      $scope.Layout = Layout;
+    
+      // Method called by a search button, say
+      $scope.search = function() {
+        Layout.searchbar = true;
+      }
+    
+      $scope.$watch("Layout.searchbar", function(newVal, oldVal) {
+        // Do something in this scope if value has been changed from elsewhere
+      });
+    
+    });
+    
+
+You can try this approach where you create a directive which triggers the
+scroll on click. [Plunker](http://embed.plnkr.co/mjGE9GOQFUzGzQqYVFAw/preview)
+

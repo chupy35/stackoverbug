@@ -1,0 +1,39 @@
+24839317 how to keep *only* longest term produced by PathHierarchy tokenizer
+in ElasticSearch?
+
+I need to use PathHierarchy tokenizer during indexing stage. (so I could
+generate terms like "a", "a/b", "a/b/c".
+
+But during search stage I would like to only keep the longest term ("a/b/c").
+I need this because Kibana uses query_string type of queries so the
+query_string itself is analyzesed.
+
+(question regarding Kibana queries is here: [do the queries for values
+analyzed with hierarchical path work correctly in Kibana and
+ElasticSearch?](https://stackoverflow.com/questions/24833983/do-the-queries-
+for-values-analyzed-with-hierarchical-path-work-correctly-in-kiba))
+
+is it possible to create a custom analyzer which will use path_hierarchy
+tokenizer and then will apply a filter which will only keep the longest term?
+
+You can use a different analyser for indexing and searching. Maybe this
+mapping can help you:
+
+    
+    
+    PUT /myindex
+    {
+      "mappings": {
+        "mytype":{
+          "properties": {
+            "path": {
+              "type": "string",
+              "index_analyzer": " path_hierarchy",
+              "search_analyzer": "keyword"
+            }
+          }
+        }
+      }
+    }
+    
+

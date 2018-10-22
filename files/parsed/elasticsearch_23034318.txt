@@ -1,0 +1,23 @@
+23034318 How to handle html encoded text in Elastic search?
+
+In one of our applications, we mainly work with html encoded text on which we
+want to search. I could strip the html tags before adding the document to
+Elastic search (I have a field with the complete text containing the html tags
+and one without, the stripped version).
+
+I was wondering whether there is a standard analyzer available so that I do
+not have to strip the html tags "myself", beforehand ...
+
+Hope somebody can be of assistance ...
+
+The [html_strip char
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+htmlstrip-charfilter.html) should help:
+
+example :
+
+    
+    
+    curl -XPOST "http://<server>/_analyze?tokenizer=standard&char_filters=html_strip&text='This%20is%20a%20%3Cb%3EDOCUMENT%3C%2Fb%3E%20with%20html'"
+    
+

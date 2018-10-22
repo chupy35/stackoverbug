@@ -1,0 +1,15 @@
+23585760 elasticsearch query how do i give priority to newer documents?
+
+I have documents stored with their created date:
+
+    
+    
+    {
+      created: 1394822042952
+    }
+    
+
+I want to boost newer ones. What type of query do I use?
+
+Thanks.
+

@@ -1,0 +1,143 @@
+24799187 Elasticsearch aggregations with object type fields
+
+I am trying to figure something out :
+
+Here's an example of a document that contains object properties, and then
+trying to do simple terms aggregations.
+<https://gist.github.com/BAmine/80e1be219d2ac272561a>
+
+    
+    
+    {
+      "took": 2,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+    },
+      "hits": {
+        "total": 1,
+        "max_score": 0,
+        "hits": []
+      },
+    "aggregations": {
+       "test": {
+          "buckets": [
+             {
+                "key": "canine",
+                "doc_count": 1,
+                "test2": {
+                   "buckets": [
+                      {
+                         "key": "cat",
+                         "doc_count": 1
+                      },
+                      {
+                         "key": "dog",
+                         "doc_count": 1
+                      },
+                      {
+                         "key": "tiger",
+                         "doc_count": 1
+                      },
+                      {
+                         "key": "wolf",
+                         "doc_count": 1
+                      }
+                   ]
+                }
+             },
+             {
+                "key": "feline",
+                "doc_count": 1,
+                "test2": {
+                   "buckets": [
+                      {
+                         "key": "cat",
+                         "doc_count": 1
+                      },
+                      {
+                         "key": "dog",
+                         "doc_count": 1
+                      },
+                      {
+                         "key": "tiger",
+                         "doc_count": 1
+                      },
+                      {
+                         "key": "wolf",
+                         "doc_count": 1
+                      }
+                   ]
+                }
+             }
+          ]
+       }
+    }
+    
+
+}
+
+The question is : How can I avoid getting, in my sub-aggregations, buckets
+whose keys do not belong to the parent aggregation's keys ( example : `cat`
+and `tiger` are not in the property whose label is `canine`) ? Is there a way
+to do this without using nested properties ?
+
+Thank you !
+
+The problem is that you have one document for both the animals. And that's why
+you will get all the four animals. I suggest another approach instead. Create
+2 documents, 1 each for every item in the animals array.
+
+And try on similar lines and you will get your result.
+
+**Why are you not getting the result?** Aggregations framework gets the only
+document, and finds the occurrences of `animals.label`. It finds two, `canine`
+and `feline` and it outputs both. Further, there is another aggregation within
+the previous aggregation that wants to aggregate the key
+`animals.names.label`. Now there is just one document, which has both the keys
+of type `animals.label` and then for each key, the document has all the four
+values for key `animals.names.label`. So ES is right. The problem is that the
+item in animals must be independently identifiable as a document. And then
+aggs framework will be able to consider it as a container and your intention
+to aggregate `animals.names.label` inside `animals.label`. This is exactly
+what will happen when you will split the document into two documents.
+
+Another thing that you can try is working with [Nested
+Types](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+nested-type.html). To understand why nested types may help, [read this
+article](http://www.elasticsearch.org/blog/managing-relations-inside-
+elasticsearch/).
+
+To have this work with the data as is; you could set the animals field's type
+to nested:
+
+    
+    
+    "animals":{
+        "type": "nested",
+        "properties": {
+            "label" : { "type" : "string"},
+            "names":{
+              "properties":{
+                "label" : {"type" : "string"}
+              }
+            }
+        }
+    
+
+This allows you to make requests of that part of the document as separate
+objects. You could then use two filter aggregations within nested
+aggregations, one filtering for label == feline and the other for label ==
+canine, you could then use aggregations within these that would give you the
+two separate lists.
+
+This solution would have the drawback of having to add another nested filter
+aggregation for each new class of animals you add later.
+
+the solution @vadik suggested seems superior to me, as there doesn't seem to
+be anything about these lists that requires them to be in the same document.
+If there is, you could make them be in separate documents with a common
+parent.
+

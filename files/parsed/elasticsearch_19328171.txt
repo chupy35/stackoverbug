@@ -1,0 +1,99 @@
+19328171 Unable to start two ElasticSearch nodes using unicast on windows
+
+I am trying to start two ElasticSearch nodes on windows. If I use multicast,
+then the nodes start up properly. However, I am getting an exception when
+attempting to use unicast.
+
+My settings are:
+
+    
+    
+    cluster.name: mycluster
+    name.name: NODE1
+    node.master: true
+    node.data: true
+    index.number_of_shards: 5
+    index.number_of_replicas: 1
+    discovery.zen.ping.multicast.enabled: false
+    discovery.zen.ping.unicast.hosts: ["node2:9200"]
+    
+
+and
+
+    
+    
+    cluster.name: mycluster
+    name.name: NODE2
+    node.master: false # tried true as well
+    node.data: true
+    index.number_of_shards: 5
+    index.number_of_replicas: 1
+    discovery.zen.ping.multicast.enabled: false
+    discovery.zen.ping.unicast.hosts: ["node1:9200"]
+    
+
+I can successfully start ES on node1 but when I attempt to start ES on node2,
+I get the following exception in node1:
+
+    
+    
+    [2013-10-11 15:04:02,307][WARN ][http.netty               ] [NODE1] Caught exception while handling client http traffic, closing connection [id: 0x4061b93e, /10.241.2.96:58768 :> /10.241.1.70:9200]
+    java.lang.IllegalArgumentException: empty text
+    at org.elasticsearch.common.netty.handler.codec.http.HttpVersion.<init>(HttpVersion.java:97)
+      at org.elasticsearch.common.netty.handler.codec.http.HttpVersion.valueOf(HttpVersion.java:62)
+      at org.elasticsearch.common.netty.handler.codec.http.HttpRequestDecoder.createMessage(HttpRequestDecoder.java:75)
+      at org.elasticsearch.common.netty.handler.codec.http.HttpMessageDecoder.decode(HttpMessageDecoder.java:189)
+      at org.elasticsearch.common.netty.handler.codec.http.HttpMessageDecoder.decode(HttpMessageDecoder.java:101)
+      at org.elasticsearch.common.netty.handler.codec.replay.ReplayingDecoder.callDecode(ReplayingDecoder.java:500)
+      at org.elasticsearch.common.netty.handler.codec.replay.ReplayingDecoder.cleanup(ReplayingDecoder.java:554)
+      at org.elasticsearch.common.netty.handler.codec.frame.FrameDecoder.channelDisconnected(FrameDecoder.java:365)
+      at org.elasticsearch.common.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.java:102)
+      at org.elasticsearch.common.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:564)
+      at org.elasticsearch.common.netty.channel.DefaultChannelPipeline$DefaultChannelHandlerContext.sendUpstream(DefaultChannelPipeline.java:791)
+      at org.elasticsearch.common.netty.OpenChannelsHandler.handleUpstream(OpenChannelsHandler.java:74)
+      at org.elasticsearch.common.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:564)
+      at org.elasticsearch.common.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:559)
+    ...
+    
+
+My environment:
+
+    
+    
+    Elastic Search Version on both node1 and node2: 0.90.3
+    Java version: 
+        java version "1.7.0"
+        Java(TM) SE Runtime Environment (build 1.7.0-b147)
+        Java HotSpot(TM) 64-Bit Server VM (build 21.0-b17, mixed mode)
+    
+
+Any ideas what's happening here?
+
+Thanks, Eric
+
+The mistake I made was setting the port of the other nodes to 9200. I am no
+expert on this (as you can tell by my question) but I think the 9200 is the
+port which the clients should use to interact with the search engine; but that
+the other ES instances use a different port by default (perhaps 9300). By
+changing:
+
+    
+    
+    discovery.zen.ping.unicast.hosts: ["node1:9200"]
+    
+
+to:
+
+    
+    
+    discovery.zen.ping.unicast.hosts: ["node1"]
+    
+
+things work fine for me.
+
+9200 is the data port
+
+unicast discovery happens from a control port 9300....
+
+<http://people.mozilla.org/~wkahngreene/elastic/guide/reference/modules/transport.html>
+

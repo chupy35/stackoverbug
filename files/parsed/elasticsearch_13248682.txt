@@ -1,0 +1,41 @@
+13248682 How to do Phrase search in Elastic search?
+
+I am using Elastic search, and not able to do **phrase search** on the
+attributes on which custom analyzer is applied.
+
+Custom analyzer is mentioned as:
+
+    
+    
+    "settings" : {
+            "analysis.analyzer.string_lowercase.type" : "custom",
+            "analysis.analyzer.string_lowercase.tokenizer" : "keyword",
+            "analysis.analyzer.string_lowercase.filter" : "lowercase"
+    }
+    
+
+Attribute value is like : "into the puddle, out of the puddle", or could be
+any String.
+
+I have tried using following:
+
+    
+    
+    1) **(Not worked)** QueryBuilders.queryString("*into the puddle*").autoGeneratePhraseQueries(true).defaultOperator(Operator.AND);
+    
+    2) **(Not worked)** QueryBuilders.matchPhraseQuery(attribute, "into the puddle");
+    
+    3) **(Not worked)** QueryBuilders.queryString("*into the puddle*").autoGeneratePhraseQueries(true).defaultOperator(Operator.AND).analyzeWildcard(true);
+    
+
+But, fortunately try 1, works fine with the nested objects.
+
+    
+    
+    FilterBuilders.nestedFilter(attribute, queryString("*into the puddle*").field(attribute)
+                                    .defaultOperator(Operator.AND).analyzeWildcard(true));
+    
+
+1) - 3) seem to be missing a field and therefore are searching the _all field,
+which I would guess is indexed using standard analyzer.
+

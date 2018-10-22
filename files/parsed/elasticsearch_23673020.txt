@@ -1,0 +1,66 @@
+23673020 Elasticsearch: custom scoring with tags
+
+I have documents of the following form:
+
+    
+    
+    {
+        "content": "lorem ipsum...",
+        "tags": [
+            { "tag": "red", weight: 3 },
+            { "tag": "green", weight: 1 },
+        ]
+    }
+    
+
+I want to search for documents with a full-text search and change the score
+depending on tag matches.
+
+Assume I am searching for the phrase `ipsum` and the tag `red`. The text
+search would yield a score of, say, `2` for the above document. The document
+also has a tag `red` with weight `3`, so I want the score to be multiplied by
+this weight for a resulting score of `6`.
+
+My current approach is to use a `script_score`:
+
+    
+    
+    {
+      "query": {
+        "function_score": {
+          "query": {
+            "match": { ... }
+          },
+          "functions": [
+            {
+              "filter": {
+                "nested": {
+                  "path": "tags",
+                  "filter": {
+                    "term": {
+                      "key": "red"
+                    }
+                  }
+                }
+              },
+              "script_score": {
+                "script": "_score * doc['tags']['red'].weight"
+              }
+            },
+            {
+              "script_score": {
+                "script": "_score"
+              }
+            }
+          ],
+          "score_mode": "first"
+        }
+      }
+    }
+    
+
+The part that's not working is `"script": "_score *
+doc['tags']['red'].weight"`.
+
+How would I need to write the script to access the weight?
+

@@ -1,0 +1,194 @@
+24945500 Finding most similar arrays of integers in elasticsearch
+
+REWRITTEN:
+
+In my project I have images. Each image have 5 tags from range [1,10]. I used
+Elasticsearch to upload these tags:
+
+I have these documents loaded into elasticsearch in index "my_project" with
+type "img":
+
+    
+    
+    curl -XPUT 'http://localhost:9200/my_project/img/1' -d '
+     {"tags": [1,4,6,7,9]}
+    '
+    
+
+Other example documents I upload:
+
+    
+    
+    {"tags": [1,4,6,7]}
+    {"tags": [2,3,5,6]}
+    {"tags": [1,2,3,8]}
+    
+
+In my application, vectors are much longer, but with fixed number of unique
+elements. And I have like 20M of these documents.
+
+Now I want to find similar documents for given vector. Vectors are more
+similar when they have more common tags. So for example I want to find most
+similar document for integer vector `[1,2,3,7]`. The best match should be last
+example document `{"tags": [1,2,3,8]}`, since they share 3 common values in
+their tags, `[1,2,3]`, more common values than with any other vectors.
+
+So here are my problems. If I upload documents with above CURL command, I get
+this mapping:
+
+    
+    
+    {
+      "my_project" : {
+        "mappings" : {
+          "img" : {
+            "properties" : {
+              "tags" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+But I think that correct mapping should use integers instead of strings. How
+can I make correct explicit mapping for this type of data?
+
+Now I want to search documents with above similarity algorithm. How can I get
+100 most similar documents of above type with similarity algorithm explained
+above? If I convert these vectors into string with whitespace-separated
+numbers, I would be able to use boolean query with should statements for this
+search, but I think that using arrays of integers should be faster. Can you
+tell me, how can I construct that search query for elasticsearch?
+
+* * *
+
+## My solution so far
+
+Basic solution I use now is to convert integer array into string. So I save
+documents as:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/my_project/img/1' -d '
+     {"tags": "1 4 6 7 9"}
+    ' 
+    
+
+and then basically search for string `"1 2 3"`. While this works somehow, I
+think that it would be more correct and faster to save array of integers as
+array of integers, not strings. Is it possible to work with arrays of integers
+in elasticsearch as with arrays of integers? Maybe my approach with strings is
+best and can't/don't have to use integer arrays explicitly in elasticsearch.
+
+You can achive what you want with a [function score
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html) that uses the [Euclidian
+distance](http://en.wikipedia.org/wiki/Euclidean_distance) formula.
+
+Remove you current mapping and index the documments:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/my_project/img/1' -d '
+    {
+        "tags": {
+            "tag1": 1,
+            "tag2": 4,
+            "tag3": 6,
+            "tag4": 7
+        }
+    }'
+    
+    curl -XPUT 'http://localhost:9200/my_project/img/2' -d '
+    {
+        "tags": {
+            "tag1": 2,
+            "tag2": 3,
+            "tag3": 5,
+            "tag4": 6
+         }
+     }'
+    
+     curl -XPUT 'http://localhost:9200/my_project/img/3' -d '
+     {
+         "tags": {
+            "tag1": 1,
+            "tag2": 2,
+            "tag3": 3,
+            "tag4": 8
+         }
+     }'
+    
+
+Stop Elasticsearch and create a script file called 'euclidian_distance.mvel'
+in `$ES_HOME/config/scripts` and add this script.
+
+    
+    
+    _score * pow(sqrt(pow(doc['tags.tag1'].value - param1, 2)) + sqrt(pow(doc['tags.tag2'].value - param2, 2)) + sqrt(pow(doc['tags.tag3'].value - param3, 2)) + sqrt(pow(doc['tags.tag4'].value - param4, 2)), -1)
+    
+
+Restart Elastisearch and run this query:
+
+    
+    
+    curl -XPOST 'http://localhost:9200/my_project/' -d '
+    {
+        "query": {
+            "function_score": {
+                "query": {
+                    "match_all": {}
+             },
+             "script_score": {
+                 "script": "euclidian_distance",
+                 "params": {
+                     "param1": 1,
+                     "param2": 2,
+                     "param3": 3,
+                     "param4": 7
+                 }
+             }
+          }
+       }
+    }
+    
+
+The tags object with the values `1,2,3,8` will be returned first.
+
+I'd take a look at this discussion from last year on the Elasticsearch mailing
+list from last year. Another ES user was trying to do exactly what you are
+trying to do, match array elements and sort by similarity. In his case his
+array members were "one", "two", "three" etc but it's pretty much identical:
+
+<http://elasticsearch-users.115913.n3.nabble.com/Similarity-score-in-array-
+td4041674.html>
+
+The problem as noted in the discussion is nothing is going to get you exactly
+what you want out of the box. Your approach to using the array members (either
+string or integer, I think both will be fine) will get you close, but will
+likely have some differences from what you are seeking to achieve. The reason
+is that the default similarity scoring mechanism in Elasticsearch (and
+Lucene/Solr too) is TF/IDF:
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/relevance-
+intro.html>
+
+TF/IDF may be quite close and depending upon use case may give you the same
+results, but won't be guaranteed to do so. A tag that appears very frequently
+(let's say "1" had twice the frequency of "2") will change the weighting for
+each term such that you may not get exactly what you are looking for.
+
+If you need your exact scoring/similarity algorithm I believe you will need to
+custom score it. As you've discovered a custom scoring script will not scale
+well as that script is going to be run for each and every document, so it's
+not too fast to begin with and will decay in response time in a linear
+fashion.
+
+Personally I'd probably experiment with some of the similarity modules that
+Elasticsearch provides, like BM25:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-similarity.html>
+

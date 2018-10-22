@@ -1,0 +1,101 @@
+16883383 elasticsearch search hits empty when results are found
+
+I have a problem with a nested query in elasticsearch. I'm building a complex
+nested query via the java api to run a filtered query over my index. The
+results get back from elasticsearch indicate that there is 1 match ([total:1,
+took:79ms]), but this is not returning any "hits" as part of the response.
+
+    
+    
+    def response = client.search(request).actionGet()
+    def searchHits = response.hits() // <--- this is empty
+    
+    result.total = searchHits.totalHits() // <--- this is populated with one
+    result.took = response.getTook()
+    
+
+Running the exact same query via curl or a rest client correctly brings back
+the entire matching document. As such I know the query is constructed
+correctly in both circumstances.
+
+The size and from parameters are both set to the defaults, which should be
+returning documents.
+
+If I move the nested query into the filter section the, I get the same
+matching document, but the hits() object is populated.
+
+The query itself is below
+
+    
+    
+    {
+      "filtered" : {
+        "query" : {
+          "bool" : {
+        "must" : [ {
+          "nested" : {
+            "query" : {
+              "bool" : {
+                "must_not" : {
+                  "bool" : {
+                    "must" : [ {
+                      "range" : {
+                        "nested.from" : {
+                          "from" : "2013-06-01T23:00:14.343Z",
+                          "to" : "2013-06-02T23:00:14.343Z",
+                          "include_lower" : true,
+                          "include_upper" : true
+                        }
+                      }
+                    }, {
+                      "term" : {
+                        "nested.status" : "accepted"
+                      }
+                    } ]
+                  }
+                },
+                "should" : [ {
+                  "bool" : {
+                    "must" : [ {
+                      "range" : {
+                        "nested.from" : {
+                          "from" : "2013-06-01T23:00:14.343Z",
+                          "to" : "2013-06-02T23:00:14.343Z",
+                          "include_lower" : true,
+                          "include_upper" : true
+                        }
+                      }
+                    }, {
+                      "term" : {
+                        "nested.status" : "saved"
+                      }
+                    } ]
+                  }
+                } ]
+              }
+            },
+            "path" : "nested"
+          }
+        } ]
+          }
+        } ]
+      }
+    },
+    "filter" : {
+      "and" : {
+        "filters" : [ {
+          "type" : {
+            "value" : "user"
+          }
+        }]
+          }
+        }
+      }
+    }
+    
+
+fixed - upgraded to a new version of elasticsearch.
+
+Seems like version 0.20.x and below don't like nested queries built using the
+java api.
+

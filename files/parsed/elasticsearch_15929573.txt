@@ -1,0 +1,37 @@
+15929573 How to stop a ongoing import in elasticsearch
+
+I have setup a jdbc river wiht oneshot strategy and successfuly imported my DB
+data.
+
+But when I restart the server it's begin to reindex all data again.
+
+How can I stop this process ?
+
+When river is done, you can just delete it from the _river index using this
+command:
+
+    
+    
+    curl -XDELETE localhost:9200/_river/you_river_name
+    
+
+You can close the river and then re-open at a later point of time:
+
+    
+    
+    POST _river/_close
+    
+
+To open:
+
+    
+    
+    POST _river/_open
+    
+
+Note: I have executed these from sense where my cluster ip is : localhost:9200
+
+**Update**
+
+DELETE _river will do.
+

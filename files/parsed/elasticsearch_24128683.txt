@@ -1,0 +1,116 @@
+24128683 Combining and with or conditions
+
+I stuck with a query which has to combine some conditions.
+
+this properties of the catalog are the following
+
+  * _id:integer
+  * parentID: integer
+  * path: string
+  * level: integer
+
+i have absolutely no clue how to combine them, so that the query returns what
+I need.
+
+  * a) _id has to be one of a given list (`"_id": ["7","10"]`) OR
+  * b) parentID has to be of a given integer (`"_parentID": "1"`) OR
+  * c) path has to match a special pattern (`"regexp": {"path": "/foobar.*"}`) AND level has be between two integer (`"range": {"level": {"gte": 2, "lte": 3 } }`)
+
+Additionaly all entries have to be from one defined catalog
+
+I will not write down all my attempts. I tried to use bool query with must and
+should, but this does not apply c):
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "filter": {
+            "bool": {
+              "must": [
+                {
+                  "type": {
+                    "value": "category"
+                  }
+                }
+              ],
+              "should": [
+                {
+                  "regexp": {
+                    "path": "/foobar.*"
+                  }
+                },
+                {
+                  "range": {
+                    "level": {
+                      "gte": 2,
+                      "lte": 3
+                    }
+                  }
+                },
+                {
+                  "term": {
+                    "_id": [
+                      "7",
+                      "10"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+
+what is the best way to combine and and or conditions? i am kind of lost.
+
+I think this should be pretty darn close to what you need.
+
+    
+    
+    GET devdev/alert/_search
+    {
+        "filter": {
+            "or": {
+               "filters": [
+                  {
+                       "terms": {
+                          "_id": [
+                             "eee75eJpRua4HasVzz0PeA",
+                             "VALUE2"
+                          ]
+                       }
+                  },
+                  {
+                   "term": {
+                      "_parentID": "SE.SE.0000"
+                   }   
+                  },
+                  {
+                   "and": {
+                         "filters": [
+                            {
+                                "term": {
+                                   "regexp": "foobar"
+                                }
+                            },
+                            {
+                             "range": {
+                                "level": {
+                                   "from":  2,
+                                   "to": 3
+                                }
+                             }   
+                            }
+                         ]
+                      }   
+                  }
+               ]
+            }
+        }
+    }
+    
+

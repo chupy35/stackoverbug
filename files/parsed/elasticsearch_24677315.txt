@@ -1,0 +1,28 @@
+24677315 elastic search: how to query_string with insensitive case?
+
+Right now I'm using query_string to search in some fields of text.
+
+The problem is that I cannot find documents with capital letters, I know that
+this is something that must be configured in the moment of creating the index.
+But is it possible to search text with insensitive case even if I didn't
+configure that in the settings?.
+
+Yeah, you can use custom analyzer that you want for `query_string`, This will
+ensure that the string you pass in will be analyzed with the one you provided.
+In your case, you should use the analyzer which converts the passed string to
+lowercase (for eg. `standard`)
+
+    
+    
+    {
+       "query_string" : {"query" : "ABC", analyzer: "standard"}
+    }
+    
+
+Ref:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html>
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html>
+

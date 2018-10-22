@@ -1,0 +1,136 @@
+12262067 AngularJS - Templates : ngInclude directive
+
+My templates contain JS, as they are called JS is not executed, you have an
+idea please.
+
+For example in my JS file script.js, i have methods that apply to HTML
+elements in my templtes and it does not work, an idea please.
+
+Example :
+
+index.html
+
+    
+    
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+    </head>
+    <body ng-app>
+        <ng-include src="'header.html'"></ng-include>
+        <script src="angular.js"></script>
+        <script src="jquery.js"></script>
+        <script src="script.js"></script>
+    </body>
+    </html>
+    
+
+header.html
+
+    
+    
+    <div id="header">
+    <div id="logo">AngularJs</div>
+    <div id="nav"></div>
+    </div>
+    
+
+script.js
+
+    
+    
+    $(document).ready(function(){
+        $('#nav').html('<ul><li><a href="">Link<a></li></ul>');
+    });
+    
+
+The script execute well, I feel it does not find the element div#nav.
+
+Sorry, I read wrong a part of your question, my mistake.
+
+The DOM ready statement of jQuery will probably not work correctly. What you
+can do is on your ngInclude tag add a onload="FUNCTION_NAME" that contains the
+DOM edition you indicated inside the script.js
+
+For more information have a look at the documentation here:
+<http://code.angularjs.org/1.0.1/docs-1.0.1/api/ng.directive:ngInclude>
+
+\--- Old Post ---
+
+@YoussefElMontaser, you don't have to put the quotes on the ngInclude:
+
+    
+    
+    <ng-include src="header.html"></ng-include>
+    
+
+probably that is what is wrong with your script not going forward. Let me know
+if that worked.
+
+I found the solution:
+
+<http://jsfiddle.net/esjeY/>
+
+**HTML**
+
+    
+    
+    <div ng-app="">
+        <div ng-controller="Ctrl">
+            <select ng-model="template" ng-options="t.name for t in templates">
+                <option value="">(blank)</option>
+            </select>
+            url of the template: <tt>{{template.url}}</tt>
+        </div>
+        <div ng-include src="template.url" onload='myFunction()'></div>
+    </div>
+    
+
+**JS**
+
+    
+    
+    function Ctrl($scope) {
+    
+        $scope.templates = [{
+            name: 'template1.html',
+            url: 'template1.html'
+        }, {
+            name: 'template2.html',
+            url: 'template2.html'
+        }];
+    
+        $scope.template = $scope.templates[0];
+    
+        $scope.myFunction = function() {
+    
+            $('#tpl2').addClass('red');            
+        }
+    }
+    
+
+@guiligan : Thanks for your help.
+
+The solution provided by Youssef can be made "more Angular", and it will not
+require jQuery:
+
+    
+    
+    <!-- template2.html -->
+    <script type="text/ng-template" id="template2.html">
+        <p ng-class="color">Content of template2.html</p>
+    </script>
+    
+    $scope.myFunction = function() {
+        $scope.color = 'red';
+    }
+    
+
+<http://jsfiddle.net/mrajcok/MfHa6/>
+
+In the Angular world, we try to change model properties (e.g., $scope.color)
+and let the view update automatically. We try to not look up elements by ID or
+jQuery selectors, and we try to avoid DOM manipulation in the controller --
+e.g., $('#tpl2').addClass('red');
+

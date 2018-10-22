@@ -1,0 +1,74 @@
+14951434 filtering results in ElasticSearch
+
+I have an ElasticSearch query that is coming up as being malformed, just not
+sure what it is I am doing wrong (no doubt somethign very obvious!)
+
+the query looks like this:
+
+    
+    
+    { "query":
+    { "filtered":
+        { "query":
+            { "field":
+                { "product":"prodA or prodB" 
+                } 
+            }, 
+            "filter":
+                { 
+                    "userid":"username" 
+                } 
+        } 
+    }, 
+    "size":10, "from":0 
+    }
+    
+
+If I leave out the filter section, the query works just fine, so It must be
+something to do with the way I am using the filter option.
+
+    
+    
+    { "query":
+    { "filtered":
+        { "query":
+            { "field":
+                { "product":"prodA or prodB" 
+                } 
+            }
+    
+        } 
+    }, 
+    "size":10, "from":0 
+    }
+    
+
+How do I need to format this query to make it work?
+
+You need to specify what kind of filter you want to use, like you do with the
+query when you choose the filtered one. [Term
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/term-
+filter.html)?
+
+    
+    
+    { 
+        "query": { 
+            "filtered": { 
+                "query": { 
+                    "field":{ 
+                        "product":"prodA or prodB" 
+                    } 
+                }, 
+                "filter": {
+                    "term" : { 
+                        "userid":"username" 
+                    }                           
+                } 
+            } 
+        }, 
+        "size":10, 
+        "from":0 
+    }
+    
+

@@ -1,0 +1,102 @@
+28449589 Define ParameterizableViewController to auto redirect path url with
+view
+
+I'm using spring boot 1.2.1 and I would like to configure a
+ParameterizableViewController like I was doing in xml style :
+
+for example before I was doing :
+
+    
+    
+    <mvc:view-controller path="/ie7"/>
+    
+
+That code redirects an url like <http://mywebsite.com/mycontext/ie7> to a jsp
+placed in /WEB-INF/views/ie7.jsp without creating a controller directly.
+
+I would like to do the same thing with spring boot. After checking on the net
+I had this in my config file :
+
+    
+    
+    @Bean(name = "ie7Controller")
+    public ParameterizableViewController getIe7ControllerView() {
+        ParameterizableViewController viewController = new ParameterizableViewController();
+        viewController.setViewName("ie7");
+        return viewController;
+    }
+    
+
+In my application.properties I configure the view like this :
+
+    
+    
+    spring.view.prefix=/WEB-INF/views/
+    spring.view.suffix=.jsp
+    
+
+I try to add also :
+
+    
+    
+     @Bean
+    public InternalResourceViewResolver getViewResolver() {
+        InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+        viewResolver.setPrefix("/WEB-INF/views/");
+        viewResolver.setSuffix(".jsp");
+        return viewResolver;
+    }
+    
+
+But when I try <http://mywebsite.com/mycontext/ie7> I got a 404. Here is the
+logs I got :
+
+During app launch :
+
+    
+    
+    Rejected bean name 'ie7Controller': no URL paths identified
+    
+
+When I try to call the page :
+
+    
+    
+    2015-02-11 09:01:42.693 DEBUG 1160 --- [nio-8080-exec-2]      o.s.web.servlet.DispatcherServlet        : DispatcherServlet with name    'dispatcherServlet' processing GET request for [/stdapps/ie7]
+    2015-02-11 09:01:42.699 DEBUG 1160 --- [nio-8080-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Looking up handler method for path /ie7
+    2015-02-11 09:01:42.704 DEBUG 1160 --- [nio-8080-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Did not find handler method for [/ie7]
+    2015-02-11 09:01:42.706 DEBUG 1160 --- [nio-8080-exec-2] o.s.w.s.handler.SimpleUrlHandlerMapping  : Matching patterns for request [/ie7] are [/**]
+    2015-02-11 09:01:42.708 DEBUG 1160 --- [nio-8080-exec-2] o.s.w.s.handler.SimpleUrlHandlerMapping  : URI Template variables for request [/ie7] are {}
+    2015-02-11 09:01:42.712 DEBUG 1160 --- [nio-8080-exec-2] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapping [/ie7] to HandlerExecutionChain with handler [ResourceHttpRequestHandler [locations=[ServletContext resource [/], class path resource [META-INF/resources/], class path resource [resources/], class path resource [static/], class path resource [public/]], resolvers=[org.springframework.web.servlet.resource.PathResourceResolver@39689892]]] and 1 interceptor
+    2015-02-11 09:01:42.714 DEBUG 1160 --- [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Last-Modified value for [/stdapps/ie7] is: -1
+    
+
+do I miss something ? I feel like I need to specify and url somewhere, I try
+to add @RequestMapping(value="ie7") with @Bean(name = "ie7Controller") with no
+luck
+
+thanks for your help
+
+If I understand your requirement correctly then the following code should do
+the trick:
+
+    
+    
+    @Configuration
+    @ComponentScan
+    @EnableAutoConfiguration
+    @EnableWebMvc
+    public class Application extends WebMvcConfigurerAdapter {
+    
+        public static void main(String[] args) {
+            SpringApplication.run(Application.class, args);
+        }
+    
+        @Override
+        public void addViewControllers(ViewControllerRegistry registry) {
+            registry.addViewController("/ie7").setViewName("ie7");
+        };
+    
+    }
+    
+

@@ -1,0 +1,115 @@
+23844275 Elasticsearch does not respond with huge data
+
+I am working on centos5 and I run elasticsearch with version 1.0.0 with
+_-Xms808m -Xmx808m -Xss256k_ parameters. There are 17 index and total 30200583
+docs. Each index's docs count between 1000000 and 2000000. I create request
+query like ( each index have date field );
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "date": {
+                  "to": "2014-06-01 14:14:00",
+                  "from": "2014-04-01 00:00:00"
+                }
+              }
+            }
+          ],
+          "should": [],
+          "must_not": [],
+          "minimum_number_should_match": 1
+        }
+      },
+      "from": 0,
+      "size": "50"
+    }
+    
+
+It give response;
+
+    
+    
+    {
+       took: 5903
+       timed_out: false
+       _shards: {
+          total: 17
+          successful: 17
+          failed: 0
+       },
+       hits: {
+       total: 30200583
+    ...
+    ...
+    ...}
+    
+
+However when I send query on elasticsearch-head tool for last 50 rows like;
+
+    
+    
+    {
+      ...
+      ...
+      ...
+      "from": 30200533,
+      "size": "50"
+    }
+    
+
+It does not give a response and throw exception like;
+
+    
+    
+    ava.lang.OutOfMemoryError: Java heap space
+            at org.apache.lucene.store.DataOutput.copyBytes(DataOutput.java:247)
+            at org.apache.lucene.store.Directory.copy(Directory.java:186)
+            at org.elasticsearch.index.store.Store$StoreDirectory.copy(Store.java:348)
+            at org.apache.lucene.store.TrackingDirectoryWrapper.copy(TrackingDirectoryWrapper.java:50)
+            at org.apache.lucene.index.IndexWriter.createCompoundFile(IndexWriter.java:4596)
+            at org.apache.lucene.index.DocumentsWriterPerThread.sealFlushedSegment(DocumentsWriterPerThread.java:535)
+            at org.apache.lucene.index.DocumentsWriterPerThread.flush(DocumentsWriterPerThread.java:502)
+            at org.apache.lucene.index.DocumentsWriter.doFlush(DocumentsWriter.java:506)
+            at org.apache.lucene.index.DocumentsWriter.flushAllThreads(DocumentsWriter.java:616)
+            at org.apache.lucene.index.IndexWriter.getReader(IndexWriter.java:370)
+            at org.apache.lucene.index.StandardDirectoryReader.doOpenFromWriter(StandardDirectoryReader.java:285)
+            at org.apache.lucene.index.StandardDirectoryReader.doOpenIfChanged(StandardDirectoryReader.java:260)
+            at org.apache.lucene.index.StandardDirectoryReader.doOpenIfChanged(StandardDirectoryReader.java:250)
+            at org.apache.lucene.index.DirectoryReader.openIfChanged(DirectoryReader.java:170)
+            at org.apache.lucene.search.XSearcherManager.refreshIfNeeded(XSearcherManager.java:123)
+            at org.apache.lucene.search.XSearcherManager.refreshIfNeeded(XSearcherManager.java:59)
+            at org.apache.lucene.search.XReferenceManager.doMaybeRefresh(XReferenceManager.java:180)
+            at org.apache.lucene.search.XReferenceManager.maybeRefresh(XReferenceManager.java:229)
+            at org.elasticsearch.index.engine.internal.InternalEngine.refresh(InternalEngine.java:730)
+            at org.elasticsearch.index.shard.service.InternalIndexShard.refresh(InternalIndexShard.java:477)
+            at org.elasticsearch.index.shard.service.InternalIndexShard$EngineRefresher$1.run(InternalIndexShard.java:924)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908)
+            at java.lang.Thread.run(Thread.java:619)
+    
+
+What is the problem? Is it not enough java heap space or does my query cause
+this heap space error?
+
+The answer to both questions is "yes". You do not have enough heap space which
+is why you see the error, and the query caused the error because you don't
+have enough heap space.
+
+The reason is because sorted, deep pagination is very expensive. To retrieve
+the 20th element, you need to keep elements 1-20 in-memory and sorted. To
+retrieve the 1,000,000th element, you need to keep elements 1-999,999 in-
+memory and sorted.
+
+This often requires a considerable amount of memory.
+
+There are a few options:
+
+  * Get more memory. Problem solved
+  * Use [scan/scroll](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/scan-scroll.html) instead of a normal search. Scan/scroll does not perform scoring, so no sort order needs to be maintained, which makes it very memory efficient
+  * Use a different sorting criteria (e.g. reverse sort) or a smaller window (e.g. smaller range of dates so you can page to the end)
+

@@ -1,0 +1,97 @@
+8218309 Can We Retrieve Previous _source Docs with Elastic Search Versions
+
+I've read the blog post on ES regarding
+[versioning](http://www.elasticsearch.org/blog/versioning/).
+
+However, I'd like to be able to get the previous "_souce" documents from an
+update.
+
+For example, let's say I have this object:
+
+    
+    
+    {
+        "name": "John",
+        "age": 32,
+        "job": "janitorial technician"
+    }
+    // this becomes version 1
+    
+
+And I update it to:
+
+    
+    
+    {
+        "name": "John",
+        "age": 32,
+        "job": "president"
+    }
+    // this becomes version 2
+    
+
+Then, through versioning in ES, would I be able to get the previous "job"
+property of the object? I've tried this:
+
+    
+    
+    curl -XGET "localhost:9200/index/type/id?version=1"
+    
+
+but that just returns the most up-to-date _source object (the one where John
+is president).
+
+I'd actually like to implement a version differences aspect much like
+StackOverflow does. (BTW, I'm using elastic-search as my main db - if there's
+a way to do this with other nosql databases, I'd be happy to try it out.
+Preferrably, one that integrates well with ES.)
+
+No, you can't do this using the builtin versioning. All that does is to store
+the current version number to prevent you applying updates out of order.
+
+If you wanted to keep multiple versions available, then you'd have to
+implement that yourself. Depending on how many versions you are likely to want
+to store, you could take three approaches:
+
+**For low volume changes** :
+
+1) store older versions within the same document
+
+    
+    
+    { text: "foo bar",
+      date:  "2011-11-01",
+      previous: [
+          { date: '2011-10-01', content: { text: 'Foo Bar' }},
+          { date: '2011-09-01', content: { text: 'Foo-bar!' }},
+      ]
+    }
+    
+
+**For high volume changes** :
+
+2) add a `current` flag:
+
+    
+    
+    {
+       doc_id:  123,
+       version: 3,
+       text:    "foo bar",
+       date:    "2011-11-01",
+       current: true
+    }
+    
+    {
+       doc_id:  123,
+       version: 2,
+       text:    "Foo Bar",
+       date:    "2011-10-01",
+       current: false
+    }
+    
+
+3) Same as (2) above, but store the old versions in a separate index, so
+keeping your "live" index, which will be used for the majority of your
+queries, small and more performant.
+

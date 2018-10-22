@@ -1,0 +1,57 @@
+12333410 Why Scope.$apply() calls $rootScope.$digest() rather than
+this.$digest()?
+
+In AngularJS scope.$apply() is called on every event handler (keydown/input
+events for input directive, change event for select directive, etc) and some
+other cases.
+
+See [small example](http://jsfiddle.net/7Uxus/). Seems that ngRepeat is
+recalculated and redrawn on every keydown despite the fact that changes occur
+in the other scope.
+
+It would be interesting to know rationale for such decision.
+
+Would be great to have AngularJS authors on this but I believe that the
+$digest() needs to be called on the $rootScope since changes triggered in a
+repeater's can have side-effects in other scopes (even the $rootScope).
+
+The thing is that **methods triggered in child scopes can influence objects in
+parent scopes** (since child scopes inherit from parent ones). So, even if
+functions defined in child scopes can't modify object _references_ from a
+parent scope they still can modify values in objects defined in a parent
+scope.
+
+The above might sound a bit cryptic so let's consider an (a bit artificial)
+example with a list of items:
+
+    
+    
+    $scope.items = [{name: 'foo', value:0}, {name: 'bar', value:0}, {name: 'baz', value:0}];
+    
+
+Now, let's use ng-Repeat to display the above list and let's say that clicking
+on a item should increment a value of _other_ items (once again, the example
+is a bit artificial but the point here is that an action triggered in one
+scope can have side effect in other scopes). It could go like this:
+
+    
+    
+    $scope.incOther = function(item) {
+            for (var i=0; i<$scope.items.length; i++){
+                if ($scope.items[i] !== item){
+                    $scope.items[i].value++;
+                }
+            }
+        };
+    
+
+The example function would modify values in other scopes and AngularJS - to
+display correct results - need to evaluate watchers in parent scopes (up to
+the $rootScope since we don't know where an object was defined).
+
+Here is the complete jsFiddle illustrating this:
+<http://jsfiddle.net/pkozlowski_opensource/Z6e5g/3/>
+
+In fact the above jsFiddle also includes an object in a $rootScope to
+illustrate that the watchers evaluation really needs to start at the very top.
+

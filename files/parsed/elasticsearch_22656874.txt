@@ -1,0 +1,112 @@
+22656874 elasticsearch empty result after filter
+
+I have a set of geo locations saved in my elasticsearch and with a search
+like:
+
+    
+    
+    {
+        "query" : {
+            "match_all" : {}
+        }
+    }
+    
+
+I get full results and everything works correct. HOWEVER as soon as I start
+restricting the search to any area (even if it's -100, -100 to 100, 100 like
+below:
+
+    
+    
+    {
+        "query" : {
+            "filtered" : {
+                "query" : {
+                    "match_all" : {}
+                },
+                "filter" : {
+                    "geo_bounding_box" : {
+                        "location" : {
+                            "top_left" : "-100, -100",
+                            "bottom_right" : "100, 100"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+all I get as a response is:
+
+    
+    
+    stdClass Object
+    (
+        [took] => 21
+        [timed_out] => 
+        [_shards] => stdClass Object
+            (
+                [total] => 4
+                [successful] => 4
+                [failed] => 0
+            )
+    
+        [hits] => stdClass Object
+            (
+                [total] => 0
+                [max_score] => 
+                [hits] => Array
+                    (
+                    )
+    
+            )
+    
+    )
+    
+
+I'm running out of ideas on how to fix this so, anyone have any helpful
+advice?
+
+Have you tried doing only:
+
+    
+    
+    "query": { match_all: {} },
+    "filter" : {
+      "geo_bounding_box" : {
+       "location" : {
+         "top_left" : "-100, -100",
+          "bottom_right" : "100, 100"
+        }
+      }
+    }
+    
+
+I found the sollution to this, this is how I got it to work:
+
+    
+    
+    {
+        "query" : {
+            "filtered" : {
+                "query" : {
+    "match_all" : {}
+                },
+                "filter" : {
+                    "geo_polygon" : {
+                        "location" : {
+                            "points" : [
+                                "10,10",
+                                "20, 10",
+                                "20, 20",
+                                "10, 20"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+

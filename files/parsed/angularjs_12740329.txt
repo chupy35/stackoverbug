@@ -1,0 +1,412 @@
+12740329 Math functions in AngularJS bindings
+
+Is there a way to use math functions in AngularJS bindings?
+
+e.g.
+
+    
+    
+    <p>The percentage is {{Math.round(100*count/total)}}%</p>
+    
+
+This fiddle shows the problem
+
+<http://jsfiddle.net/ricick/jtA99/1/>
+
+You have to inject `Math` into your scope, if you need to use it as `$scope`
+know nothing about Math.
+
+Simplest way, you can do
+
+    
+    
+    $scope.Math = window.Math;
+    
+
+in your controller. Angular way to do this correctly would be create a Math
+service, I guess.
+
+While the accepted answer is right that you can inject `Math` to use it in
+angular, for this particular problem, the more conventional/angular way is the
+number filter:
+
+    
+    
+    <p>The percentage is {{(100*count/total)| number:0}}%</p>
+    
+
+You can read more about the `number` filter here:
+<http://docs.angularjs.org/api/ng/filter/number>
+
+This is a hairy one to answer, because you didn't give the full context of
+what you're doing. The accepted answer will work, but in some cases will cause
+poor performance. That, and it's going to be harder to test.
+
+If you're doing this as part of a static form, fine. The accepted answer will
+work, even if it isn't easy to test, and it's hinky.
+
+### If you want to be "Angular" about this:
+
+You'll want to keep any "business logic" (i.e. logic that alters data to be
+displayed) out of your views. This is so you can unit test your logic, and so
+you don't end up tightly coupling your controller and your view.
+Theoretically, you should be able to point your controller at another view and
+use the same values from the scopes. (if that makes sense).
+
+You'll also want to consider that any function calls inside of a binding (such
+as `{{}}` or `ng-bind` or `ng-bind-html`) will have to be evaluated on _every
+digest_ , because angular has no way of knowing if the value has changed or
+not like it would with a property on the scope.
+
+The "angular" way to do this would be to cache the value in a property on the
+scope on change using an ng-change event or even a $watch.
+
+For example with a static form:
+
+    
+    
+    angular.controller('MainCtrl', function($scope, $window) {
+       $scope.count = 0;
+       $scope.total = 1;
+    
+       $scope.updatePercentage = function () {
+          $scope.percentage = $window.Math.round((100 * $scope.count) / $scope.total);
+       };
+    });
+    
+    
+    
+    <form name="calcForm">
+       <label>Count <input name="count" ng-model="count" 
+                      ng-change="updatePercentage()"
+                      type="number" min="0" required/></label><br/>
+       <label>Total <input name="total" ng-model="total"
+                      ng-change="updatePercentage()"
+                      type="number" min="1" required/></label><br/>
+       <hr/>
+       Percentage: {{percentage}}
+    </form>
+    
+
+### And now you can test it!
+
+    
+    
+    describe('Testing percentage controller', function() {
+      var $scope = null;
+      var ctrl = null;
+    
+      //you need to indicate your module in a test
+      beforeEach(module('plunker'));
+    
+      beforeEach(inject(function($rootScope, $controller) {
+        $scope = $rootScope.$new();
+    
+        ctrl = $controller('MainCtrl', {
+          $scope: $scope
+        });
+      }));
+    
+      it('should calculate percentages properly', function() {
+        $scope.count = 1;
+        $scope.total = 1;
+        $scope.updatePercentage();
+        expect($scope.percentage).toEqual(100);
+    
+        $scope.count = 1;
+        $scope.total = 2;
+        $scope.updatePercentage();
+        expect($scope.percentage).toEqual(50);
+    
+        $scope.count = 497;
+        $scope.total = 10000;
+        $scope.updatePercentage();
+        expect($scope.percentage).toEqual(5); //4.97% rounded up.
+    
+        $scope.count = 231;
+        $scope.total = 10000;
+        $scope.updatePercentage();
+        expect($scope.percentage).toEqual(2); //2.31% rounded down.
+      });
+    });
+    
+
+I think the best way to do it is by creating a filter, like this:
+
+    
+    
+    myModule.filter('ceil', function() {
+        return function(input) {
+            return Math.ceil(input);
+        };
+    });
+    
+
+then the markup looks like this:
+
+    
+    
+    <p>The percentage is {{ (100*count/total) | ceil }}%</p>
+    
+
+Updated fiddle: <http://jsfiddle.net/BB4T4/>
+
+Either bind the global Math object onto the scope (remember to use $window not
+window)
+
+    
+    
+    $scope.abs = $window.Math.abs;
+    
+
+Use the binding in your HTML:
+
+    
+    
+    <p>Distance from zero: {{abs(distance)}}</p>
+    
+
+* * *
+
+Or create a filter for the specific Math function you're after:
+
+    
+    
+    module.filter('abs', ['$window', function($window) {
+      return function(n) {
+        return $window.Math.abs($window.parseInt(n));
+      };
+    });
+    
+
+Use the filter in your HTML:
+
+    
+    
+    <p>Distance from zero: {{distance | abs}}</p>
+    
+
+If you're looking to do a simple round in Angular you can easily set the
+filter inside your expression. For example:
+
+`{{ val | number:0 }}`
+
+See this [CodePen](http://codepen.io/Gothburz/pen/jbZLME/) example & for other
+number filter options.
+
+[Angular Docs on using Number
+Filters](https://docs.angularjs.org/api/ng/filter/number)
+
+Better option is to use :
+
+    
+    
+    {{(100*score/questionCounter) || 0 | number:0}}
+    
+
+It sets default value of equation to 0 in the case when values are not
+initialized.
+
+The easiest way to do simple math with Angular is directly in the HTML markup
+for individual bindings as needed, assuming you don't need to do mass
+calculations on your page. Here's an example:
+
+    
+    
+    {{(data.input/data.input2)| number}} 
+    
+
+In this case you just do the math in the () and then use a filter | to get a
+number answer. Here's more info on formatting Angular numbers as text:
+
+<https://docs.angularjs.org/api/ng/filter>
+
+Why not wrap the whole math obj in a filter?
+
+    
+    
+    var app = angular.module('fMathFilters',[]);
+    
+    
+    function math() {
+        return function(input,arg) {
+            if(input) {
+                return Math[arg](input);
+            }
+    
+            return 0;
+        }
+    }
+    
+    return app.filter('math',[math]);
+    
+
+and to use:
+
+{{ number_var | math:'ceil'}}
+
+This is more or less a summary of three answers (by Sara Inés Calderón, klaxon
+and Gothburz), but as they all added something important, I consider it worth
+joining the solutions and adding some more explanation.
+
+Considering your example, you can do calculations in your template using:
+
+    
+    
+    {{ 100 * (count/total) }}
+    
+
+However, this may result in a whole lot of decimal places, so **using
+filters** is a good way to go:
+
+    
+    
+    {{ 100 * (count/total) | number }}
+    
+
+By default, the number filter will [leave up to three fractional
+digits](https://docs.angularjs.org/api/ng/filter/number), this is where the
+**fractionSize argument** comes in quite handy (`{{ 100 * (count/total) |
+number:fractionSize }}`), which in your case would be:
+
+    
+    
+    {{ 100 * (count/total) | number:0 }}
+    
+
+This will also round the result already:
+
+    
+    
+    angular.module('numberFilterExample', [])
+      .controller('ExampleController', ['$scope',
+        function($scope) {
+          $scope.val = 1234.56789;
+        }
+      ]);
+    
+    
+    <!doctype html>
+    <html lang="en">
+      <head>  
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.23/angular.min.js"></script>
+      </head>
+      <body ng-app="numberFilterExample">
+        <table ng-controller="ExampleController">
+          <tr>
+            <td>No formatting:</td>
+            <td>
+              <span>{{ val }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td>3 Decimal places:</td>
+            <td>
+              <span>{{ val | number }}</span> (default)
+            </td>
+          </tr>
+          <tr>
+            <td>2 Decimal places:</td>
+            <td><span>{{ val | number:2 }}</span></td>
+          </tr>
+          <tr>
+            <td>No fractions: </td>
+            <td><span>{{ val | number:0 }}</span> (rounded)</td>
+          </tr>
+        </table>
+      </body>
+    </html>
+
+Last thing to mention, if you rely on an external data source, it probably is
+good practise to **provide** a proper **fallback value** (otherwise you may
+see NaN or nothing on your site):
+
+    
+    
+    {{ (100 * (count/total) | number:0) || 0 }}
+    
+
+Sidenote: Depending on your specifications, you may even be able to be more
+precise with your fallbacks/define fallbacks on lower levels already (e.g.
+`{{(100 * (count || 10)/ (total || 100) | number:2)}}`). Though, this may not
+not always make sense..
+
+That doesn't look like a very Angular way of doing it. I'm not entirely sure
+why it doesn't work, but you'd probably need to access the scope in order to
+use a function like that.
+
+My suggestion would be to create a filter. That's the Angular way.
+
+    
+    
+    myModule.filter('ceil', function() {
+        return function(input) {
+            return Math.ceil(input);
+        };
+    });
+    
+
+Then in your HTML do this:
+
+    
+    
+    <p>The percentage is {{ (100*count/total) | ceil }}%</p>
+    
+
+The `number` filter formats the number with thousands separators, so it's not
+strictly a math function.
+
+Moreover, its decimal 'limiter' doesn't `ceil` any chopped decimals (as some
+other answers would lead you to believe), but rather `round`ing them.
+
+So for any math function you want, you can inject it (easier to mock than
+injecting the whole Math object) like so:
+
+    
+    
+    myModule.filter('ceil', function () {
+      return Math.ceil;
+    });
+    
+
+No need to wrap it in another function either.
+
+Angular Typescript example using a pipe.
+
+math.pipe.ts
+
+    
+    
+    import { Pipe, PipeTransform } from '@angular/core';
+    
+    @Pipe({
+      name: 'math',
+    })
+    
+    export class MathPipe implements PipeTransform {
+    
+      transform(value: number, args: any = null):any {
+          if(value) {
+            return Math[args](value);
+          }
+          return 0;
+      }
+    }
+    
+
+Add to @NgModule declarations
+
+    
+    
+    @NgModule({
+      declarations: [
+        MathPipe,
+    
+
+then use in your template like so:
+
+    
+    
+    {{(100*count/total) | math:'round'}}
+    
+

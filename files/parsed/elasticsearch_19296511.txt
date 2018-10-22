@@ -1,0 +1,54 @@
+19296511 How to define a Pattern Tokenizer in elasticsearch?
+
+How to set up a [Pattern
+Tokenizer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+pattern-tokenizer.html) globally in config/elasticsearch.yml or with API call?
+I looked
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis.html)
+and
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+update-settings.html#update-settings-analysis) but still no results.
+
+**I tried the following:**  
+1\. add to config/elasticsearch.yml
+
+    
+    
+    index :
+      analysis :
+        tokenizer :
+          KeywordPatternAnalyzer :
+            type : pattern
+            pattern : \\W+
+    
+
+2\. perform call
+
+    
+    
+    curl -XPUT 'localhost:9200/_settings' -d '{
+      "analysis" : {
+        "tokenizer":{
+          "KeywordPatternAnalyzer":{
+            "type":"pattern",
+            "pattern":"\\W+"
+          }
+        }
+      }
+    }'
+    
+
+**And tested like this:**
+
+    
+    
+    curl -XGET 'http://localhost:9200/_analyze?tokenizer=KeywordPatternAnalyzer' -d 'this is a test'  
+    
+
+which returns
+
+    
+    
+    {"error":"ElasticSearchIllegalArgumentException[failed to find global tokenizer under [KeywordPatternAnalyzer]]","status":400}
+    
+

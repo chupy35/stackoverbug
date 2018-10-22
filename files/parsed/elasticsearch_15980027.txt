@@ -1,0 +1,449 @@
+15980027 ElasticSearch Indexing, Merge Size too large
+
+I posted about ES Data auto-deleting but didn't find a proper solution but now
+what concerns me is Merge Size. I am running ElasticSearch on a production
+website has around 100,000 docs and not many queries but what i do is ,
+_update doc, increment its custom_score whenever user clicks on it (PHP
+Stuff).
+
+My Total ES Size is ~123MB  and here is the status
+
+    
+    
+    {
+      index: {
+        primary_size: 122.5mb
+        primary_size_in_bytes: 128518629
+        size: 232.6mb
+        size_in_bytes: 243931154
+      }
+      translog: {
+        operations: 368
+      }
+      docs: {
+        num_docs: 112263
+        max_doc: 113319
+        deleted_docs: 1056
+      }
+      merges: {
+        current: 0
+        current_docs: 0
+        current_size: 0b
+        current_size_in_bytes: 0
+        total: 1507
+        total_time: 6m
+        total_time_in_millis: 364562
+        total_docs: 12950730
+        total_size: 6.3gb
+        total_size_in_bytes: 6817241817
+      }
+      refresh: {
+        total: 26154
+        total_time: 1m
+        total_time_in_millis: 61128
+      }
+      flush: {
+        total: 234
+        total_time: 1.5m
+        total_time_in_millis: 91111
+      }
+      shards: {
+        0: [
+          {
+            routing: {
+              state: STARTED
+              primary: true
+              node: 4klrp2F7TXqbqV2i2uJlrg
+              relocating_node: null
+              shard: 0
+              index: tune
+            }
+            state: STARTED
+            index: {
+              size: 32.4mb
+              size_in_bytes: 34065166
+            }
+            translog: {
+              id: 1365750099675
+              operations: 52
+            }
+            docs: {
+              num_docs: 28104
+              max_doc: 28242
+              deleted_docs: 138
+            }
+            merges: {
+              current: 0
+              current_docs: 0
+              current_size: 0b
+              current_size_in_bytes: 0
+              total: 191
+              total_time: 1m
+              total_time_in_millis: 60823
+              total_docs: 2192291
+              total_size: 1gb
+              total_size_in_bytes: 1169679226
+            }
+            refresh: {
+              total: 3450
+              total_time: 8.7s
+              total_time_in_millis: 8747
+            }
+            flush: {
+              total: 29
+              total_time: 11.5s
+              total_time_in_millis: 11582
+            }
+          }
+          {
+            routing: {
+              state: STARTED
+              primary: false
+              node: hUbZmGtMR-qFPr4h4ET_Xg
+              relocating_node: null
+              shard: 0
+              index: tune
+            }
+            state: STARTED
+            index: {
+              size: 25.4mb
+              size_in_bytes: 26658796
+            }
+            translog: {
+              id: 1365750099676
+              operations: 50
+            }
+            docs: {
+              num_docs: 28104
+              max_doc: 28773
+              deleted_docs: 669
+            }
+            merges: {
+              current: 0
+              current_docs: 0
+              current_size: 0b
+              current_size_in_bytes: 0
+              total: 191
+              total_time: 8.9s
+              total_time_in_millis: 8967
+              total_docs: 151360
+              total_size: 121.7mb
+              total_size_in_bytes: 127708203
+            }
+            refresh: {
+              total: 3445
+              total_time: 8.5s
+              total_time_in_millis: 8512
+            }
+            flush: {
+              total: 30
+              total_time: 9.5s
+              total_time_in_millis: 9576
+            }
+          }
+        ]
+        1: [
+          {
+            routing: {
+              state: STARTED
+              primary: false
+              node: 4klrp2F7TXqbqV2i2uJlrg
+              relocating_node: null
+              shard: 1
+              index: tune
+            }
+            state: STARTED
+            index: {
+              size: 30.5mb
+              size_in_bytes: 32065179
+            }
+            translog: {
+              id: 1365750099763
+              operations: 49
+            }
+            docs: {
+              num_docs: 28006
+              max_doc: 28156
+              deleted_docs: 150
+            }
+            merges: {
+              current: 0
+              current_docs: 0
+              current_size: 0b
+              current_size_in_bytes: 0
+              total: 193
+              total_time: 53.8s
+              total_time_in_millis: 53841
+              total_docs: 2031945
+              total_size: 877.1mb
+              total_size_in_bytes: 919752655
+            }
+            refresh: {
+              total: 3244
+              total_time: 6.9s
+              total_time_in_millis: 6922
+            }
+            flush: {
+              total: 29
+              total_time: 12.2s
+              total_time_in_millis: 12245
+            }
+          }
+          {
+            routing: {
+              state: STARTED
+              primary: true
+              node: hUbZmGtMR-qFPr4h4ET_Xg
+              relocating_node: null
+              shard: 1
+              index: tune
+            }
+            state: STARTED
+            index: {
+              size: 31.6mb
+              size_in_bytes: 33186132
+            }
+            translog: {
+              id: 1365750099763
+              operations: 50
+            }
+            docs: {
+              num_docs: 28006
+              max_doc: 28128
+              deleted_docs: 122
+            }
+            merges: {
+              current: 0
+              current_docs: 0
+              current_size: 0b
+              current_size_in_bytes: 0
+              total: 192
+              total_time: 1m
+              total_time_in_millis: 60375
+              total_docs: 2246221
+              total_size: 1gb
+              total_size_in_bytes: 1136003705
+            }
+            refresh: {
+              total: 3252
+              total_time: 8.5s
+              total_time_in_millis: 8591
+            }
+            flush: {
+              total: 29
+              total_time: 11.9s
+              total_time_in_millis: 11967
+            }
+          }
+        ]
+        2: [
+          {
+            routing: {
+              state: STARTED
+              primary: false
+              node: 4klrp2F7TXqbqV2i2uJlrg
+              relocating_node: null
+              shard: 2
+              index: tune
+            }
+            state: STARTED
+            index: {
+              size: 29.8mb
+              size_in_bytes: 31311783
+            }
+            translog: {
+              id: 1365750099805
+              operations: 53
+            }
+            docs: {
+              num_docs: 28109
+              max_doc: 28315
+              deleted_docs: 206
+            }
+            merges: {
+              current: 0
+              current_docs: 0
+              current_size: 0b
+              current_size_in_bytes: 0
+              total: 189
+              total_time: 42.2s
+              total_time_in_millis: 42284
+              total_docs: 1850347
+              total_size: 732.1mb
+              total_size_in_bytes: 767707262
+            }
+            refresh: {
+              total: 3186
+              total_time: 6.8s
+              total_time_in_millis: 6845
+            }
+            flush: {
+              total: 30
+              total_time: 10.5s
+              total_time_in_millis: 10573
+            }
+          }
+          {
+            routing: {
+              state: STARTED
+              primary: true
+              node: hUbZmGtMR-qFPr4h4ET_Xg
+              relocating_node: null
+              shard: 2
+              index: tune
+            }
+            state: STARTED
+            index: {
+              size: 25.3mb
+              size_in_bytes: 26615897
+            }
+            translog: {
+              id: 1365750099804
+              operations: 56
+            }
+            docs: {
+              num_docs: 28109
+              max_doc: 28799
+              deleted_docs: 690
+            }
+            merges: {
+              current: 0
+              current_docs: 0
+              current_size: 0b
+              current_size_in_bytes: 0
+              total: 188
+              total_time: 8.8s
+              total_time_in_millis: 8896
+              total_docs: 145382
+              total_size: 119.6mb
+              total_size_in_bytes: 125410595
+            }
+            refresh: {
+              total: 3189
+              total_time: 7s
+              total_time_in_millis: 7093
+            }
+            flush: {
+              total: 29
+              total_time: 11.2s
+              total_time_in_millis: 11277
+            }
+          }
+        ]
+        3: [
+          {
+            routing: {
+              state: STARTED
+              primary: true
+              node: 4klrp2F7TXqbqV2i2uJlrg
+              relocating_node: null
+              shard: 3
+              index: tune
+            }
+            state: STARTED
+            index: {
+              size: 33mb
+              size_in_bytes: 34651434
+            }
+            translog: {
+              id: 1365750099726
+              operations: 29
+            }
+            docs: {
+              num_docs: 28044
+              max_doc: 28150
+              deleted_docs: 106
+            }
+            merges: {
+              current: 0
+              current_docs: 0
+              current_size: 0b
+              current_size_in_bytes: 0
+              total: 182
+              total_time: 1m
+              total_time_in_millis: 65510
+              total_docs: 2142019
+              total_size: 1.1gb
+              total_size_in_bytes: 1212362289
+            }
+            refresh: {
+              total: 3198
+              total_time: 6.4s
+              total_time_in_millis: 6495
+            }
+            flush: {
+              total: 29
+              total_time: 11.5s
+              total_time_in_millis: 11517
+            }
+          }
+          {
+            routing: {
+              state: STARTED
+              primary: false
+              node: hUbZmGtMR-qFPr4h4ET_Xg
+              relocating_node: null
+              shard: 3
+              index: tune
+            }
+            state: STARTED
+            index: {
+              size: 24.2mb
+              size_in_bytes: 25376767
+            }
+            translog: {
+              id: 1365750099726
+              operations: 29
+            }
+            docs: {
+              num_docs: 28044
+              max_doc: 28079
+              deleted_docs: 35
+            }
+            merges: {
+              current: 0
+              current_docs: 0
+              current_size: 0b
+              current_size_in_bytes: 0
+              total: 181
+              total_time: 1m
+              total_time_in_millis: 63866
+              total_docs: 2191165
+              total_size: 1.2gb
+              total_size_in_bytes: 1358617882
+            }
+            refresh: {
+              total: 3190
+              total_time: 7.9s
+              total_time_in_millis: 7923
+            }
+            flush: {
+              total: 29
+              total_time: 12.3s
+              total_time_in_millis: 12374
+            }
+          }
+        ]
+      }
+    }
+    
+
+* * *
+    
+    
+    merges: {
+      current: 0       <-------
+      current_docs: 0  <-------
+      current_size: 0b <-------
+      current_size_in_bytes: 0 <-------
+      total: 191
+      total_time: 1m
+      total_time_in_millis: 60823
+      total_docs: 2192291
+      total_size: 1gb <-------
+      total_size_in_bytes: 1169679226
+    }
+    
+
+What is it?
+

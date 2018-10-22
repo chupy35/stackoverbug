@@ -1,0 +1,64 @@
+19963406 Refresh vs flush
+
+If a new document is indexed to Elasticsearch index then it is available for
+searching something like 1 second after index operation. However it can be
+forced to make this document searchable immediately by calling `_flush` or
+`_refresh` operation on index. What is the difference between these two
+operations - the result seems to be the same for them, document is immediately
+searchable.
+
+What exactly does each one of these operations?
+
+ES documentation seems to not tackle this problem deeply.
+
+A refresh causes a new segment to be written, so it becomes available for
+search.
+
+A flush causes a Lucene commit to happen. This is a lot more expensive.
+
+For more details, I've written an article that covers some of this:
+[Elasticsearch from the bottom
+up](http://www.found.no/foundation/elasticsearch-from-the-bottom-up/) :)
+
+The answer that you got is correct but I think it's worth to elaborate a bit
+more.
+
+A refresh effectively calls a reopen on the lucene index reader, so that the
+point in time snapshot of the data that you can search on gets updated. This
+lucene feature is part of the lucene near real-time api.
+
+An [elasticsearch
+refresh](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+refresh.html) makes your documents available for search, but it doesn't make
+sure that they are written to disk to a persistent storage, as it doesn't call
+fsync, thus doesn't guarantee durability. What makes your data durable is a
+lucene commit, which is way more expensive.
+
+While you can call lucene reopen every second, you cannot do the same with
+lucene commit.
+
+Through lucene you can then have new documents available for search in near
+real-time by calling reopen pretty often, but you still need to call commit to
+ensure data is written to disk and fsynced, thus safe.
+
+Elasticsearch solves this "problem" by adding a transaction log per shard
+(effectively a lucene index), where write operations that have not been
+committed yet are stored. The transaction log is fsynced and safe, thus you
+obtain durability at any point in time, even for documents that have not been
+committed yet. You can search on documents in near real-time as refresh
+happens automatically every second, and you can also be sure that if something
+bad happens the transaction log can be replayed to restore eventually lost
+documents. The nice thing about the transaction log is that it can be used
+internally for other things, for instance to provide real-time [get by
+id](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+get.html).
+
+An [elasticsearch
+flush](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+flush.html) effectively triggers a lucene commit, and empties also the
+transaction log, since once data is committed on the lucene level, durability
+can be guaranteed by lucene itself. Flush is exposed as an api too and can be
+tweaked, although usually that is not necessary. Flush happens automatically
+depending on how many operations get added to the transaction log, how big
+they are, and when the last flush happened.
+

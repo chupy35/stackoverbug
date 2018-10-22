@@ -1,0 +1,39 @@
+12851504 angularjs Select with filter to filter out the option that's already
+selected
+
+My code for select with ng-model is working fine except filter stuff. Without
+filter, it's showing duplicated option for the already selected one.. So I am
+trying to filter out the one already selected in below code.
+
+But it's not working.. Am I doing something wrong? any help please?
+
+    
+    
+    <select ng-model="result.color">
+    <option ng-repeat="codes in obj.codes | filter:!result.color" value="{{codes.code}}">{{codes.code}}</option>
+    <option ng-selected>{{result.color}}</option>
+    </select>
+    
+
+`ng-selected` accepts an expression. This is what I would do:
+
+    
+    
+        <option ng-repeat="codes in obj.codes" value="{{codes.code}}" ng-selected="result.color == codes.code">
+    
+
+* * *
+
+== edit ==
+
+another even shorter solution would be to use `ng-options`.
+
+    
+    
+    <select ng-model="result.color" ng-options="c.code for c in obj.codes"></select>
+    
+
+Here is the fiddle: <http://plnkr.co/edit/oIysU5>
+
+Not sure about the initial value as my fiddle seems working.
+

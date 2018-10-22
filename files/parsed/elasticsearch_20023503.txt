@@ -1,0 +1,92 @@
+20023503 Statistical Facets for distinct Results to avoid double counting
+
+We have use case where we have query which can bring duplicate results and we
+are running Statistical Facets on them.
+
+This results gives wrong results as query results in duplicate documents. Is
+there any way we can avoid duplicate counting?
+
+Any help will be highly appreciated.
+
+Here is the example query
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "bool": {
+                "must": [
+                  {
+                    "range": {
+                      "Latitude": {
+                        "from": "0",
+                        "to": "19150"
+                      }
+                    }
+                  },
+                  {
+                    "range": {
+                      "Longitude": {
+                        "from": "0",
+                        "to": "19150"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "has_parent": {
+                "parent_type": "contractsearch",
+                "query": {
+                  "bool": {
+                    "must": [
+                      {
+                        "range": {
+                          "Id": {
+                            "gt": "0"
+                          }
+                        }
+                      },
+                      {
+                        "has_child": {
+                          "type": "exposuregraphsearch",
+                          "query": {
+                            "terms": {
+                              "CedantExposureIdList": [
+                                "706341"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "facets": {
+        "Latitude": {
+          "statistical": {
+            "fields": [
+              "Latitude"
+            ]
+          }
+        },
+        "Longitude": {
+          "statistical": {
+            "fields": [
+              "Longitude"
+            ]
+          }
+        }
+      }
+    }
+    
+

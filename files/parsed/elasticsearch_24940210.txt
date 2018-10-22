@@ -1,0 +1,65 @@
+24940210 Does ElasticSearch Snapshot/Restore functionality cause the data to
+be analyzed again during restore?
+
+I have a decent amount of data in my ElasticSearch index. I changed the
+`default analyzer` for the index and hence essentially I need to reindex my
+data so that it is analyzed again using the new analyzer. So instead of
+creating a test script that will delete all of the existing data in the ES
+index and re-add the data I thought if there is a back-up/restore module that
+I could use. As part of that, I found the snapshot/restore module that ES
+supports - [ElasticSearch-
+SnapshotAndRestore](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+snapshots.html).
+
+My question is - If I use the above ES snapshot/restore module will it
+actually cause the data to be re-analyzed? Since I changed the default
+analyzer, I need the data to be reanalyzed. If not, is there an alternate
+tool/module you will suggest that will allow for pure export and import of
+data and hence cause the data to be re-analyzed during import?
+
+DevUser
+
+No it does not re-analyze the data. You will need to reindex your data.
+
+Fortunately that's fairly straightforward with Elasticsearch as it by default
+stores the source of your documents:
+
+> **Reindexing your data**
+
+>
+
+> While you can add new types to an index, or add new fields to a type, you
+can’t add new analyzers or make changes to existing fields. If you were to do
+so, the data that has already been indexed would be incorrect and your
+searches would no longer work as expected.
+
+>
+
+> The simplest way to apply these changes to your existing data is just to
+reindex: create a new index with the new settings and copy all of your
+documents from the old index to the new index.
+
+>
+
+> One of the advantages of the _source field is that you already have the
+whole document available to you in Elasticsearch itself. You don’t have to
+rebuild your index from the database, which is usually much slower.
+
+>
+
+> To reindex all of the documents from the old index efficiently, use scan &
+scroll to retrieve batches of documents from the old index, and the bulk API
+to push them into the new index.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/reindex.html>
+
+I'd read up on Scan and Scroll prior to taking this approach:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/scan-
+scroll.html>
+
+TaskRabbit did opensource an import/export tool but I've not used it so cannot
+recommend but it is worth a look:
+
+<https://github.com/taskrabbit/elasticsearch-dump>
+

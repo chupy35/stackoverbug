@@ -1,0 +1,148 @@
+21616228 Elasticsearch's Common Terms Query, use and compatibility with query
+types
+
+I am currently investigating the use of common terms query, and since the
+documentation is a little lacking (either that or I am not simply not finding
+any documentation on these issues) I am not entirely sure if certain
+operations are incompatible with common terms queries, or if I am doing it
+wrong.
+
+I am currently on Elasticsearch version 0.90.5 in Ubuntu 12.04, 64-bit.
+
+Here's what I am observing:
+
+  * The query types match and match_phrase appear to be incompatible with use of the high_freq_operator, low_freq_operator, and minimum_should_match option. (e.g. `[match] query does not support [high_freq_operator]` and similar)
+
+  * and, or, and not (composite expressions) seem to produce broken underlying expressions when their component expressions specify use of common terms. (e.g. `[_na] filter malformed, must start with start_object`)
+
+  * span_term query seems to be incompatible with common terms queries. (e.g. `[span_term] query does not support [common]`)
+
+My queries look this:
+
+This one parses for example...
+
+    
+    
+    {   "query": {                                                                                                                                                                                                                              
+            "match_phrase": {                                                                                                                                                                                                                   
+                "subject": {                                                                                                                                                                                                                    
+                    "common": {                                                                                                                                                                                                                 
+                        "body": {                                                                                                                                                                                                               
+                            "cutoff_frequency": 0.001,                                                                                                                                                                                          
+                            "query": "something not important"                                                                                                                                                                                  
+                        }                                                                                                                                                                                                                       
+                    }                                                                                                                                                                                                                           
+                }                                                                                                                                                                                                                               
+            }                                                                                                                                                                                                                                   
+        }                                                                                                                                                                                                                                       
+    } 
+    
+
+This one fails to parse, citing "[match] query does not support
+[high_freq_operator]":
+
+    
+    
+    {"query": {                                                                                                                                                                                                                              
+            "match_phrase": {                                                                                                                                                                                                                   
+                "subject": {                                                                                                                                                                                                                    
+                    "common": {                                                                                                                                                                                                                 
+                        "body": {                                                                                                                                                                                                               
+                            "cutoff_frequency": 0.001,
+                            "high_freq_operator": "or",                                                                                                                                                                                          
+                            "query": "something not important"                                                                                                                                                                                  
+                        }                                                                                                                                                                                                                       
+                    }                                                                                                                                                                                                                           
+                }                                                                                                                                                                                                                               
+            }                                                                                                                                                                                                                                   
+        }                                                                                                                                                                                                                                       
+    } 
+    
+
+This one fails to parse, citing "filter malformed, must start with
+start_object":
+
+    
+    
+    {                                                                                                                                                                                                                                           
+        "filter": {                                                                                                                                                                                                                             
+            "or": [                                                                                                                                                                                                                             
+                {                                                                                                                                                                                                                               
+                    "query": {                                                                                                                                                                                                                  
+                        "match": {                                                                                                                                                                                                              
+                            "subject": {                                                                                                                                                                                                  
+                                "common": {                                                                                                                                                                                                     
+                                    "body": {                                                                                                                                                                                                   
+                                        "cutoff_frequency": 0.001,                                                                                                                                                                              
+                                        "query": "PLEASE READ: something not important"                                                                                                                                                         
+                                    }                                                                                                                                                                                                           
+                                }                                                                                                                                                                                                               
+                            }                                                                                                                                                                                                                   
+                        }                                                                                                                                                                                                                       
+                    }                                                                                                                                                                                                                           
+                },                                                                                                                                                                                                                              
+                {                                                                                                                                                                                                                               
+                    "query": {                                                                                                                                                                                                                  
+                        "range": {                                                                                                                                                                                                              
+                            "date": {                                                                                                                                                                                                           
+                                "to": "2009-12-31T23:59:59Z"                                                                                                                                                                                    
+                            }                                                                                                                                                                                                                   
+                        }                                                                                                                                                                                                                       
+                    }                                                                                                                                                                                                                           
+                }                                                                                                                                                                                                                               
+            ]                                                                                                                                                                                                                                   
+        }                                                                                                                                                                                                                                       
+    } 
+    
+
+You have misunderstood the structure of queries. Queries can either be "leaf"
+queries (which deal with an individual field or fields directly) or a
+"compound" query which wraps other queries, like the `bool` and `dis_max`
+queries.
+
+A `common`-terms query is a leaf query in its own right, just like the
+`match`, `match_phrase`, `term` and `range` queries. You can't embed the
+`common` query INSIDE another leaf query.
+
+The `match` query (not the `match_phrase` nor the `match_phrase_prefix`) has
+been partially integrated with the `common`-terms query in that it supports
+the `cutoff_frequency` parameter. It's a simple integration: if you specify
+the `cutoff_frequency` then the `match` query is rewritten internally as a
+`common` query. If you want the full power of `common`-terms, then you need to
+use it directly.
+
+So this `match` query:
+
+    
+    
+    {
+       "query": {
+          "match": {
+             "subject": {
+                "query": "some words to query",
+                "cutoff_frequency": 0.001
+             }
+          }
+       }
+    }
+    
+
+is the equivalent of this `common` query:
+
+    
+    
+    {
+       "query": {
+          "common": {
+             "subject": {
+                "query": "some words to query",
+                "cutoff_frequency": 0.001
+             }
+          }
+       }
+    }
+    
+
+The difference being that in the `common` query, there are a number of other
+knobs that you can twiddle, eg `high_freq_operator` etc
+

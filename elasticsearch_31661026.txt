@@ -1,0 +1,3 @@
+31661026
+Elasticsearch not printing logs when started from commandline with user defined arguments
+<p>Normally I start elasticsearch using <code>sudo elasticsearch</code> which starts printing logs as soon as  press enter but if I give some user-defined configuration like </p>&#xA;&#xA;<pre><code>sudo elasticsearch -Des.cluster.name=new_cluster -Des.path.conf=/home/cloudera/Documents/es/config/ -Des.path.data=/home/cloudera/Documents/es/data/ -Des.path.log=/home/cloudera/Documents/es/logs/&#xA;</code></pre>&#xA;&#xA;<p>I do not get any output on the console. </p>&#xA;&#xA;<p>Why is it so?</p>&#xA;

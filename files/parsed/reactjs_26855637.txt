@@ -1,0 +1,85 @@
+26855637 Can a component know its own DOM tree context?
+
+I am attempting to write a `<Heading />` component that will abstract away
+some of the headaches of dealing with headings (h1, h2, etc) in conjunction
+with accessibility standards.
+
+The goal being that this component would be able to dynamically choose a
+h(1,2,3) depending on its closest parent heading. However, Looking up the DOM
+tree like this remind me more of jQUERY than react. I've looked through the
+docs and SO but haven't seen anything about it, so I'm not sure if this is
+even possible.
+
+So the question is: Is it possible for a component to know where it is
+rendered in the DOM tree and then execute some logic with that info? (probably
+somewhere in componentWillMount).
+
+You could look upward in the DOM in componentDidMount and componentDidUpdate,
+but that's messy and uncontrolable. There may be a better solution but this is
+the first thing that comes to mind.
+
+    
+    
+    var headerFactories = ['h1', 'h2', 'h3', 'h4'].map(function(tag){ 
+        return React.createFactory(tag)
+    });
+    var makeHeader = function(level){
+        var make = function(){
+            var factory = headerFactories[make.level] 
+                       || headerFactories[headerFactories.length - 1];
+            return factory.apply(this, arguments);
+        };
+        make.sub = function(){
+            return makeHeader(make.level + 1);
+        };
+        make.level = level;
+        return make;
+    }
+    
+
+The api may seem a bit strange, but let's say we have a Page component and an
+Article child which may have another Article child.
+
+    
+    
+    var Page = React.createClass({
+       render: function(){
+          // make a root level header
+          var header = makeHeader(); 
+          return <div>
+            {header(null, "My Page")}
+            <Article headerFactory={header.sub()} data={foo} subArticle={bar} />
+          </div>
+       }
+    });
+    
+    var Article = React.createClass({
+       render: function(){
+          var subArticle = false;
+    
+          if (this.props.subArticle) {
+             subArticle = <Article headerFactory={this.props.headerFactory.sub()} />
+          }
+    
+          return <div>
+             {this.props.headerFactory(null, this.props.data.title)}
+          </div>
+       }
+    });
+    
+
+What happens is when we do `headerFactory(null, "foo")` we get a component of
+that header level. When we call `.sub()` we get a version of that
+headerFactory with the next header level.
+
+    
+    
+    var h1 = makeHeader();
+    var h2 = h1.sub();
+    var h3 = h2.sub();
+    var h4 = h3.sub();
+    
+
+This allows components to have header levels based on their parents without
+breaking out of React.
+

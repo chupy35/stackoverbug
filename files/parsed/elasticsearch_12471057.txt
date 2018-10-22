@@ -1,0 +1,31 @@
+12471057 What score should i put in boost field of elasticsearch
+
+In my doc, I have a field called Tag and SuperTag. Whenever a Tag matches it
+will boost some score, but if a match on SuperTag it will boost significantly
+to make it 1st choice. In your opinion, what value should I put in boost field
+for Tag and SuperTag? Thanks.
+
+That's quite difficult to be answered, It depends so much in the data that
+both field contains and the analyzers that they have.
+
+Obviously if the data is going to be pretty much the same for both I would set
+a boost in supertag field to `2.0`.
+
+In case they don't hold the same data we can imagine scenarios like this:
+
+    
+    
+    {tag: 'tagnice tagnice tagnice'}
+    
+    {supertag: 'tagnice'}
+    
+
+even with the boosted supertag, tag could be more relevant just because `tf-
+idf` gives it bigger score.
+
+To solve that for example, an analyzer setted to both with filter unique will
+help.
+
+So as said, it depends so much in the data and how you store it in lucene. At
+first sight, without knowing that much, doubling the boost would work.
+

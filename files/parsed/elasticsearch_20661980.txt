@@ -1,0 +1,43 @@
+20661980 What is the difference between enabled : false and index : 'no' in
+elasticsearch?
+
+When mapping fields in elaticsearch, what's the difference between setting
+
+    
+    
+    enabled : false
+    
+
+for the field vs setting
+
+    
+    
+    index : 'no'
+    
+
+?
+
+As I understand, `index: no` is applicable to core types only, whereas
+`enabled: false` is defined for `object` types and ElasticSearch  specific
+fields such as `_index`, `_all`, ...
+
+From the
+[documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/enabled.html#enabled):
+
+> The `enabled` setting, which can be applied **only to** the **mapping type**
+and to **object fields**. It causes Elasticsearch to skip parsing of the
+contents of the field entirely.
+
+* * *
+
+Example of `enabled` usage (YAML format):
+
+    
+    
+    ---
+    ...
+    _all:
+          enabled: false
+    ...
+    
+

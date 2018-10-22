@@ -1,0 +1,32 @@
+23427745 How to put a directory first on the classpath with Spring Boot?
+
+I am building my Spring Boot application using Maven, so I can start it with:
+
+    
+    
+    java -jar myjar-1.0-SNAPSHOT.jar --spring.profiles.active=prod
+    
+
+I want to have a directory first on the classpath that would allow me to place
+some files on the filesystem without having to unzip the jar to change them.
+
+I have tried using `loader.path`, but it does not seem to work.
+
+    
+    
+    java -Dloader.path="config/*" -jar myjar-1.0-SNAPSHOT.jar --spring.profiles.active=prod
+    
+
+The `config` dir is a subdirectory of where the jar is located. I am trying to
+load a keystore file which is injected as a `Resource` in my application.
+There is such a file in the src/main/resources, but that only works in my IDE,
+not when packaged as a jar. So I want to put a file first on the classpath so
+that that one is found first on the classpath.
+
+You can use `loader.path` but only if the `Main-Class` is `PropertiesLauncher`
+(so it depends how you built the JAR file). Maybe you need to re-build the JAR
+with packaging=ZIP in the Boot plugin (e.g. [docs
+here](http://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#build-tool-plugins-maven-packaging-optional-
+params))? Can you not set the path to the keystore as a "file:" URL?
+

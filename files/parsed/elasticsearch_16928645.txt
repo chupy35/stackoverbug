@@ -1,0 +1,27 @@
+16928645 What exactly does the Standard tokenfilter do in Elasticsearch?
+
+[There are no examples in the
+documentation](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/standard-tokenfilter/), and I was just wondering what to
+expect from input I give it.
+
+Before Elasticsearch 0.16 (Lucene 3.1) the standard token filter was
+"normalizing tokens extracted by standard tokenizer". To be specific, it was
+removing `'s` at the end of words and dots in acronyms. So, back then
+`Apple's` `C.E.O` would become `Apple` `CEO` after passing the standard
+filter. Starting with Elasticsearch 0.16 (Lucene 3.1) the standard token
+filter does [nothing](https://github.com/apache/lucene-
+solr/blob/lucene_solr_4_3/lucene/analysis/common/src/java/org/apache/lucene/analysis/standard/StandardFilter.java#L49)
+(at least at the moment). It simply passes tokens to the next filter in the
+chain.
+
+Here's an excerpt of the source code of StandardFilter from Lucene trunk. It
+really does nothing.
+
+    
+    
+    public final boolean incrementToken() throws IOException {
+        return input.incrementToken(); // TODO: add some niceties for the new grammar
+    }
+    
+

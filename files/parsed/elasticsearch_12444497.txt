@@ -1,0 +1,32 @@
+12444497 Elastic search fuzziness in query_string
+
+I'm specifying a fuzzy_prefix_length in the query string, but a search for
+"tes" is not pulling up posts that are titled "test" ... any ideas what I'm
+doing wrong?
+
+this is my query string setup
+
+    
+    
+    "query" : {
+      "query_string" : {
+        "query" : the-query-string-goes-here,
+        "default_operator" : "AND",
+        "fuzzy_prefix_length" : 3,
+      }
+    }
+    
+
+You are, probably, missing "fuzzy" operator at the end of the query. Try this:
+
+    
+    
+    "query" : {
+      "query_string" : {
+        "query" : "tes~",
+        "default_operator" : "AND",
+        "fuzzy_prefix_length" : 3,
+      }
+    }
+    
+

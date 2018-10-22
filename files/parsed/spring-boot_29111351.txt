@@ -1,0 +1,115 @@
+29111351 @ConfigurationProperties referencing properties that themselves
+reference other properties
+
+    
+    
+    project.name=my-project
+    base.url=http://localhost:8080
+    cas.url=http://my-server:8010/cas
+    cas.callback.url=${base.url}/${project.name}
+    
+
+Basically I want to use the above in a spring-boot ConfigurationProperties but
+the casCallbackUrl is always null.
+
+    
+    
+    @Component
+    @ConfigurationProperties(prefix = "cas")
+    @Getter
+    @Setter
+    public class CasSettings {
+    
+        @NotBlank
+        private String url; //this is resolved correctly
+    
+        @NotBlank
+        private String callbackUrl; //callbackUrl is null
+    
+    }
+    
+
+**update**
+
+Well I got it working by camelCasing the property names, but according to the
+[documentation](http://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#boot-features-external-config-relaxed-binding)
+you should be able to use dot notation for property names.
+
+from:
+
+    
+    
+    cas.callback.url=${base.url}/${project.name}
+    
+
+to:
+
+    
+    
+    cas.callbackUrl=${base.url}/${project.name}
+    
+
+Why is spring-boot not picking up the dot notation?
+
+The dot represents a separate object within the configuration properties
+object. `cas.callback-url` would work.
+
+Spring relaxed property is not relaxed enugh to to transform dot notated
+properties to camel case fields. But you can implement it yourself easily:
+
+    
+    
+    @Service
+    @PropertySource("classpath:git.properties")
+    public class MngmntService implements EnvironmentAware {
+    
+        private BuildStatus buildStatus;
+        private static final Logger LOG = LoggerFactory.getLogger(MngmntService.class);
+    
+        @Override
+        public void setEnvironment(Environment env) {
+            RelaxedPropertyResolver pr = new RelaxedPropertyResolver(env, "git.");
+            buildStatus = new BuildStatus();
+            for (Field field : BuildStatus.class.getDeclaredFields()) {
+                String dotNotation = StringUtils.join(
+                    StringUtils.splitByCharacterTypeCamelCase(field.getName()),
+                    '.'
+                );
+                field.setAccessible(true);
+                try {
+                    field.set(buildStatus, pr.getProperty(dotNotation, field.getType()));
+                } catch (IllegalArgumentException | IllegalAccessException ex) {
+                    LOG.error("Error setting build property.", ex);
+                }
+            }
+        }
+    
+        public BuildStatus getBuildStatus() {
+            return buildStatus;
+        }
+    
+
+Property object:
+
+    
+    
+    public class BuildStatus implements Serializable {
+    
+        private String tags;
+        private String branch;
+        private String dirty;
+    
+        private String commitId;
+        private String commitIdAbbrev;
+        private String commitTime;
+    
+        private String closestTagName;
+    
+        private String buildTime;
+        private String buildHost;
+        private String buildVersion;
+        ...
+    }
+    
+

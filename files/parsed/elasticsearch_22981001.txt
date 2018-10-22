@@ -1,0 +1,43 @@
+22981001 Indexing metadata field in ElasticSearch
+
+I have a metadata field inside the model I'm indexing, but when I index a
+field inside metadata that was previously indexed as another type, I get a "no
+mapping" error... How can I disable the dynamic mapping of the metadata field
+only?
+
+If I previously indexed this document:
+
+    
+    
+    {
+       ...
+       "metadata": {
+          "key": {
+             "value": "test"
+          }
+       },
+       ...
+    }
+    
+
+Then, if I index this document:
+
+    
+    
+    {
+       ...
+       "metadata": {
+          "key": "test"
+       },
+       ...
+    }
+    
+
+I get the "tried to parse as object, but got EOF, has a concrete value been
+provided to it?" error because metadata[key] is no longer an object. But this
+might happen when indexing metadata.
+
+Thanks,
+
+Pedro
+

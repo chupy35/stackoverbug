@@ -1,0 +1,4 @@
+30313025
+Unassigned primary shards
+<p>Using ES 1.5.2</p>&#xA;&#xA;<p>When a primary shard is unassigned. Does it mean the data is lost?</p>&#xA;&#xA;<p>I had some unassigned primaries tried to re-allocate them with the allocate command, but the index didn't go back to it's original size.</p>&#xA;
+<p>There shouldn't be any data loss, one of the the master node's roles is specifically to retrieve all the data in the soon-to-be unassigned shard and dispatch it across all the other available shards.</p>&#xA;

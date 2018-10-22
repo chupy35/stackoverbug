@@ -1,0 +1,17 @@
+12991739 Which JavaScript file is the angular.module() function defined in?
+
+I was wondering if anybody knows which file the `angular.module()` function is
+defined in. I ask because when I type "angular." My IDE's auto-complete
+feature does not show the module method on the angular object.
+
+According to the AngularJS documentation it's in the [ng
+module](http://docs.angularjs.org/api/angular.module).
+
+Regarding the files in which the `.module()` is defined:
+
+  * in the build version it is the main angular.js file (corresponding to the `ngModule`): <http://code.angularjs.org/1.0.2/angular.js>, check the line 1052
+  * in the source code it is here: <https://github.com/angular/angular.js/blob/master/src/loader.js#L67>
+
+You might want to search for the `function module(name, requires, configFn)`
+string to locate it in your version of AngularJS.
+

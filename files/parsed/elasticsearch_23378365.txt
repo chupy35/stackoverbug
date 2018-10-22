@@ -1,0 +1,77 @@
+23378365 List all fields in an elasticsearch index?
+
+How do I get a list of all the fields that are present in an index (i.e.
+fields that occur in indexed documents, not just in the mapping)?
+
+**Explanation:**
+
+Don't think there is any way to do exactly that. But since everything in the
+index automatically gets thrown in the mapping, we know that the mapping
+contains at least every field in the index. From there, you can loop through
+each field in the mapping and run a count on the number of results in the
+index that have that field. If the count is more than 0, then that field
+exists; if the count is 0, then that field is not part of the index. Since we
+know that every field in the index will exist in your mapping, this should
+cover all possibilities.
+
+**Some example API calls:**
+
+    
+    
+    # Get the mapping
+    $ curl -XGET 'http://localhost:9200/index/type/_mapping?pretty'
+    
+    # Count a field
+    $ curl -XGET 'http://localhost:9200/index/type/_count' -d '
+    {
+        "query" : {
+            "constant_score" : {
+                "filter" : {
+                    "exists" : { "field" : "name_from_mapping" }
+                }
+            }
+        }
+    }'
+    
+
+**Documentation:**
+
+  * [`GET` mapping](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-get-mapping.html)
+  * [count API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-count.html)
+  * [exists filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-exists-filter.html)
+
+I might consider creating an "elasticsearch-index-fieldlist" plugin, similar
+to <https://github.com/jprante/elasticsearch-index-termlist>, if there is
+really no straightforward way to get at the list of fields present in an
+index...
+
+Starting with 1.3 you have the
+[_field_names](https://www.elastic.co/guide/en/elasticsearch/reference/2.3/mapping-
+field-names-field.html) meta field.
+
+    
+    
+    {
+      "aggs": {
+        "Field names": {
+          "terms": {
+            "field": "_field_names", 
+            "size": 10
+          }
+        }
+      }
+    }
+    
+
+In current(5.2) version, you can use the mapping API to get all the field
+names:
+
+    
+    
+    GET index_name/_mapping?pretty
+    
+
+please refer to the [official
+document](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html)
+for more information.
+

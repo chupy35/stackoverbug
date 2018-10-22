@@ -1,0 +1,65 @@
+22255854 Elasticsearch query with nested aggregations causing out of memory
+
+I have Elasticsearch installed with 16gb of memory. I started using
+aggregations, but ran into a "java.lang.OutOfMemoryError: Java heap space"
+error when I attempted to issue the following query:
+
+    
+    
+    POST /test-index-syslog3/type-syslog/_search
+    {
+        "query": {
+            "query_string": {
+               "default_field": "DstCountry",
+               "query": "CN"
+            }
+        },
+        "aggs": {
+            "whatever": {
+                "terms": {
+                    "field" : "SrcIP"
+                },
+                "aggs": {
+                    "destination_ip": {
+                        "terms": {
+                            "field" : "DstIP"
+                        },
+                        "aggs": {
+                            "port" : {
+                                "terms": {
+                                    "field" : "DstPort"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+The query_string itself only returns 1266 hits so I'm a bit confused by the
+OOM error.
+
+Am I using aggregations incorrectly? If not, what can I do to troubleshoot
+this issue? Thanks!
+
+Not sure about the mapping of course, but looking at the value the field
+DstCountry can be non_analyzed. Than you could replace the query by a filter
+within the aggregate. Maybe that helps.
+
+Also check if the fields you use in your aggregation are of type non_analyzed.
+
+You are loading the entire `SrcIP`-, `DstIP`-, and `DstPort`-fields into
+memory in order to aggregate on them. This is because Elasticsearch un-inverts
+the entire field to be able to rapidly look up a document's value for a field
+given its ID.
+
+If you're going to largely be aggregating on a very small set of data, you
+should [look into using docvalues](http://www.elasticsearch.org/blog/disk-
+based-field-data-a-k-a-doc-values/). Then a document's value is stored in a
+way that makes it easy to look up given the document's ID. There's a bit more
+overhead to it, but that way you'll leave it to the operating system's field
+cache to have the relevant pages in memory, instead of having to load the
+entire field.
+

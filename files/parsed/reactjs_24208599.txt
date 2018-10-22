@@ -1,0 +1,44 @@
+24208599 Using specific child components with a generic parent component
+
+Maybe I'm thinking about this in the wrong way, as I've only just recently
+picked up ReactJS, so feel free to correct my method of thinking.
+
+What I want to do is (theoretically) be able to have N specific child
+components that can fit into a single parent component, but I'm not sure how
+to tell the parent which child to render.
+
+For example, I've written a tab container that just renders a content area
+right now. The content area would be the _parent_. I want to have N different
+types of items that can go into this content area. These items would be the
+_children_. Is it possible for me to use a single parent component and someone
+dynamically choose which type of child to render without going through the
+hassle of a conditional statement in the parent?
+
+Let me know if my question is not clear.
+
+Thank you in advance!
+
+I sometimes do this like so:
+
+    
+    
+    var Parent = React.createClass({
+      render: function() {
+        return React.DOM.div({}, this.props.childClass(this.props.childProps));
+      }
+    });
+    
+
+or:
+
+    
+    
+    var Parent = React.createClass({
+      render: function() {
+        return React.DOM.div({children: this.props.children});
+      }
+    });
+    
+    Parent({}, ChildClass({foo: 'asdf'}))
+    
+

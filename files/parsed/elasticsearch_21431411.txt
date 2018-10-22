@@ -1,0 +1,15 @@
+21431411 Difference between boolean query and term query
+
+Difference between boolean query and term query. As far as my understanding
+boolean query is combination of one or more query and term query is single
+query to match particular field.Am in right?
+
+Thanks in Advance..!
+
+A bool query literally combines multiple queries of any type together with
+clauses such as `must`, `must_not`, and `should`.
+
+A term query specifies a single field and a single term to determine if the
+field matches. Note that term queries are specifically for **non-analyzed**
+fields.
+

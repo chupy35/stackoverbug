@@ -1,0 +1,116 @@
+21483466 How to load application.yaml config in spring-boot configuration for
+selenium testing
+
+I am trying to run selenium tests agains my spring-boot app. I want to start
+the app with the properties my application.yml and application-test.yml
+define. However, by default this doesn't happen.
+
+I have tried to do as [Dave Syer
+suggested](https://stackoverflow.com/questions/21271468/spring-propertysource-
+using-yaml/21276836#21276836?newreg=6795957b44fc404aa526d88dd8d68019) and have
+implemented an ApplicationContextInitializer that reads the application.yml
+and application-test.yml files using a YamlPropertySourceLoader.
+
+This doesn't seem to have any effect- setting the server port to 9000 in my
+application-test has no effect.
+
+Below is my Test Base Class code:
+
+    
+    
+    @ContextConfiguration(classes = {TestConfiguration.class}, initializers = {TestApplicationYamlLoaderApplicationContextInitializer.class})
+    @SharedDriver(type = SharedDriver.SharedType.ONCE)
+    @ActiveProfiles({"test"})
+    public abstract class IntegrationBase extends AbstractTestNGSpringContextTests {
+     ....
+    }
+    
+
+Below is the code for my ApplicationContextInitializer:
+
+    
+    
+    public class TestApplicationYamlLoaderApplicationContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+    @Override
+    public void initialize(ConfigurableApplicationContext applicationContext) {
+       ConfigurableEnvironment env = applicationContext.getEnvironment();
+    
+        YamlPropertySourceLoader loader = YamlPropertySourceLoader.matchAllLoader();
+        PropertySource applicationYamlPropertySource = loader.load("application.yml", new FileSystemResource("src/main/resources/application.yml"));
+        PropertySource testProfileYamlPropertySource = loader.load("application.yml", new FileSystemResource("src/main/resources/application-test.yml"));
+    
+        env.getPropertySources().addFirst(applicationYamlPropertySource);
+        env.getPropertySources().addFirst(testProfileYamlPropertySource);
+        System.out.println("woohoo!");
+    }
+    
+
+}
+
+And the application-test.yml
+
+    
+    
+    server:
+      port: 9000
+    
+
+`@ContextConfiguration` doesn't know about the Spring Boot initializers. Did
+you try `@SpringApplicationConfiguration`? (Then you wouldn't need your custom
+initializer.)
+
+Using @SpringBootApplication in your main config class, then spring boot will
+load application.yml automatically. If you want to load applicaton-test.yml,
+just set the current profile to test. This is an example:
+
+    
+    
+    @SpringBootApplication
+    public class Main {
+    
+        @Bean
+        public static PropertySourcesPlaceholderConfigurer placeholderConfigurer() {
+            return new PropertySourcesPlaceholderConfigurer();
+        }
+    
+        public static void main(String[] args) {
+            System.setProperty("spring.profiles.active", "test");
+            SpringApplication.run(Main.class, args);
+        }
+    
+    }
+    
+
+You may not have a main method, just put the profile set in any proper place,
+i.e. JVM start parameters.
+
+Ref. <http://docs.spring.io/spring-boot/docs/current/reference/html/boot-
+features-external-config.html>
+
+Spring Boot allows you to externalize your configuration so you can work with
+the same application code in different environments. You can use properties
+files, YAML files, environment variables and command-line arguments to
+externalize configuration. Property values can be injected directly into your
+beans using the @Value annotation, accessed via Spring’s Environment
+abstraction or bound to structured objects via @ConfigurationProperties.
+
+Spring Boot uses a very particular PropertySource order that is designed to
+allow sensible overriding of values. Properties are considered in the
+following order:
+
+  1. @TestPropertySource annotations on your tests.
+  2. Command line arguments.
+  3. Properties from SPRING_APPLICATION_JSON (inline JSON embedded in an environment variable or system property)
+  4. ServletConfig init parameters.
+  5. ServletContext init parameters.
+  6. JNDI attributes from java:comp/env.
+  7. Java System properties (System.getProperties()).
+  8. OS environment variables.
+  9. A RandomValuePropertySource that only has properties in random.*.
+  10. Profile-specific application properties outside of your packaged jar (application-{profile}.properties and YAML variants)
+  11. Profile-specific application properties packaged inside your jar (application-{profile}.properties and YAML variants)
+  12. Application properties outside of your packaged jar (application.properties and YAML variants).
+  13. Application properties packaged inside your jar (application.properties and YAML variants).
+  14. @PropertySource annotations on your @Configuration classes.
+  15. Default properties (specified using SpringApplication.setDefaultProperties).
+

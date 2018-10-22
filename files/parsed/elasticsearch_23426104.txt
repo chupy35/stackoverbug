@@ -1,0 +1,26 @@
+23426104 Same index data but different store size in ElasticSearch?
+
+I am evaluating the necessary storage size required by ElasticSearch. However,
+I find that the store size varies every time while indexing the same set of
+data.
+
+For example, the size of the data I used is 35mb. The indexing ran for several
+times, and the result store sizes are between 76mb ~ 85mb, not a fixed number
+(not repeatable?)
+
+Can someone explain this? Thanks in advance:)
+
+After you've inserted all of your data, have you tried doing an optimze
+(<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+optimize.html>) to bring the number of segments down to 1?
+
+Basically the time at which it does the Lucene segment merges causes the
+differences in sizes you are seeing. They are not deterministic because once
+the merge kicks off, the amount of data you insert before the merge completes
+affects the size of the remaining segments. You can read a little more about
+the segment merges here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-merge.html> and here: [Understanding Segments in
+Elasticsearch](https://stackoverflow.com/questions/15426441/basics-about-
+segments-in-elasticsearch)
+

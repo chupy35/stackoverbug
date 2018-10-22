@@ -1,0 +1,319 @@
+21099035 Get all parents who has more then 'N' childern
+
+I have searched for the answer, but unfortunately could not find it. I have an
+index that contains a type for a user:
+
+    
+    
+        users: {
+        properties: {
+    
+            loginKey: {
+                type: string
+            }
+    
+            timeZone: {
+                type: long
+            }
+            maxEmailsPerWeek: {
+                type: long
+            }
+    
+            joinDate: {
+                format: dateOptionalTime
+                type: date
+            }
+            preferredEntityId: {
+                type: long
+            }
+            partition: {
+                type: long
+            }
+            postalCode: {
+                type: string
+            }
+            nickName: {
+                type: string
+            }
+            announcements: {
+                type: long
+            }
+    
+            gender: {
+                type: string
+            }
+    
+            birthDate: {
+                format: dateOptionalTime
+                type: date
+            }
+            firstName: {
+                type: string
+            }
+            emailTestId: {
+                type: long
+            }
+            emailStateDate: {
+                format: dateOptionalTime
+                type: date
+            }
+            lastName: {
+                type: string
+            }
+            emailAddress: {
+                type: string
+            }
+    ...
+        }
+    }
+    
+
+and have a type of user's activity:
+
+    
+    
+        activity: {
+        _routing: {
+            required: true
+        }
+        properties: {
+            eventTimestamp: {
+                format: dateOptionalTime
+                type: date
+            }
+            userAgent: {
+                type: string
+            }
+            recordType: {
+                type: string
+            }
+            universalTrackingParams: {
+                properties: {
+                    MODULE_ID: {
+                        type: string
+                    }
+                    TRACKING_CODE: { // this is a unique user identifier
+                        index: not_analyzed
+                        omit_norms: true
+                        index_options: docs
+                        type: string
+                    }
+                    SENDING_DOMAIN_PARAM: {
+                        index: not_analyzed
+                        omit_norms: true
+                        index_options: docs
+                        type: string
+                    }
+                    PRODUCT_ID: {
+                        type: string
+                    }
+                    TEST_ID: {
+                        type: string
+                    }
+                    MAILING_ID: {
+                        type: string
+                    }
+                    NEWS_LETTER_ID: {
+                        type: string
+                    }
+                    LINK_POSITION: {
+                        type: integer
+                    }
+                    DECORATION_TIMESTAMP: {
+                        type: string
+                    }
+                    SITE_ID: {
+                        type: string
+                    }
+                    TEMPLATE_VERSION: {
+                        type: string
+                    }
+                    ORIGINAL_LINK: {
+                        index: not_analyzed
+                        omit_norms: true
+                        index_options: docs
+                        type: string
+                    }
+                }
+            }
+            ip: {
+                index: not_analyzed
+                omit_norms: true
+                index_options: docs
+                type: string
+            }
+        }
+        _parent: {
+            type: users
+        }
+    }
+    
+
+What I want to do is to search for all parents who has more then `N` children,
+in other words I would want to get all user records that had an activity (more
+then `N` times) within given period of time (`eventTimestamp`)
+
+Could someone suggest either the resouce i can read or the query that can
+accomplish that
+
+**Update** So this is what i came up for this (using index and types created
+by Sloan Ahrens below):
+
+    
+    
+    {
+      "min_score": 2,
+      "query": {
+        "top_children": {
+          "type": "order",
+          "score": "sum",
+          "query": {
+            "constant_score": {
+              "query": {
+                "match_all": {}
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+this will get me all customers who had at least 3 orders(thanks to imotov)
+
+Well, it's admittedly not a completely satisfying solution since it requires
+two queries, but I think you can get what you want using facets.
+
+Simplifying a little (and using schema/data from [this blog
+post](http://joelabrahamsson.com/grouping-in-elasticsearch-using-child-
+documents/), I'll first create a simple index with a parent/child
+relationship:
+
+    
+    
+    curl -XPUT "http://localhost:9200/orders" -d'
+    {
+        "mappings": { 
+            "customer": {},
+            "order" : {
+                "_parent" : {
+                    "type" : "customer"
+                }
+            }
+        }
+    }'
+    
+
+then add some data:
+
+    
+    
+    curl -XPOST "http://localhost:9200/orders/_bulk" -d'
+    { "index" : { "_type" : "customer", "_id" : "john" } }
+    { "name" : "John Doe" }
+    { "index" : { "_type" : "order", "_parent" : "john" } }
+    { "date" : "2013-10-15T12:00:00" }
+    { "index" : { "_type" : "order", "_parent" : "john" } }
+    { "date" : "2013-11-15T12:00:00" }
+    { "index" : { "_type" : "order", "_parent" : "john" } }
+    { "date" : "2013-12-01T12:00:00" }
+    { "index" : { "_type" : "customer", "_id" : "jane" } }
+    { "name" : "Jane Doe" }
+    { "index" : { "_type" : "order", "_parent" : "jane" } }
+    { "date" : "2013-11-20T12:00:00" }
+    { "index" : { "_type" : "customer", "_id" : "bob" } }
+    { "name" : "Bob Doe" }
+    { "index" : { "_type" : "order", "_parent" : "bob" } }
+    { "date" : "2013-09-20T12:00:00" }
+    '
+    
+
+and then I can facet `order`s on the `"_parent"` field, filtering the docs to
+be faceted on `date`:
+
+    
+    
+    curl -XPOST "http://localhost:9200/orders/order/_search " -d'
+    {
+        "size": 0, 
+        "facets": {
+           "customers": {
+              "terms": {
+                  "field": "_parent"
+              },
+              "facet_filter": {
+                  "range": {
+                        "date": {
+                            "from": "2013-11-01T00:00:00"
+                        }
+                    }
+              }
+           }
+        }
+    }'
+    
+
+which gives me the following response:
+
+    
+    
+    {
+       "took": 3,
+       "timed_out": false,
+       "_shards": {
+          "total": 1,
+          "successful": 1,
+          "failed": 0
+       },
+       "hits": {
+          "total": 5,
+          "max_score": 1,
+          "hits": []
+       },
+       "facets": {
+          "customers": {
+             "_type": "terms",
+             "missing": 0,
+             "total": 3,
+             "other": 0,
+             "terms": [
+                {
+                   "term": "customer#john",
+                   "count": 2
+                },
+                {
+                   "term": "customer#jane",
+                   "count": 1
+                }
+             ]
+          }
+       }
+    }
+    
+
+I can then retrieve the `customer`s with a second query, using the ids that
+were returned:
+
+    
+    
+    curl -XPOST "http://localhost:9200/orders/_search" -d'
+    {
+       "query": {
+          "ids": {
+             "type": "customer",
+             "values": [
+                "john",
+                "jane"
+             ]
+          }
+       }
+    }'
+    
+
+You would have to add your own logic between the last two steps, to decide
+which customers to retrieve based on result counts, but you might be able to
+make this method work in your context.
+
+Here is a runnable example you can play with:
+<http://sense.qbox.io/gist/9ebde72ccffa0dce654383ad4fb0a8451b74a9f7>
+

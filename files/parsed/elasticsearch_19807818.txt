@@ -1,0 +1,22 @@
+19807818 ElasticSearch Restricting Index, Field creation for Production
+
+For production I would like to restrict ElasticSearch automatic index
+creation. As per the documentation I have restricted the server
+_elasticsearch.yml_
+
+    
+    
+    action.auto_create_index
+    index.mapper.dynamic: false
+    
+
+However I'm stable to insert new documents with fields that do not match the
+custom mapping?
+
+According to
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+dynamic-mapping.html), I think `dynamic mapping` should be set to `strict`.
+
+> The dynamic creation of fields within a type can be completely disabled by
+setting the dynamic property of the type to strict.
+

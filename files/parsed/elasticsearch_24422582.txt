@@ -1,0 +1,24 @@
+24422582 How to deploy ElasticSearch to production?
+
+I have downloaded and build code around ElasticSearch. It works in staging
+server. I unzipped the download to folder C:\ElasticSearch\elasticsearch-1.1.1
+
+Now I see \bin \config \data \lib \logs \pluggins folders and License.txt file
+in there. The total size of unzipped folder is 4.9GB!!!
+
+Which of these do I really need to copy to production?
+
+I need to run it as a windows service.
+
+Could anyone please help me here.
+
+Thanks
+
+This depends mainly on what you want to keep for the production. If you want
+only the data then copy the folder data. If you still want to the same config
+and pluggins then copy the whole folder exept logs.
+
+However you should be aware that putting elastic search in production is
+usually way more complicated than that, it often needs to be in cluster and
+have special configuration on servers.
+

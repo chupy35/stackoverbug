@@ -1,0 +1,165 @@
+23400068 elasticsearch exclude aggregation bucket by subaggregation doc_count
+
+I think it'll be easier to explain with a query. Consider my query:
+
+    
+    
+    GET _search
+    {
+       "aggs": {
+          "group_by_app": {
+             "terms": {
+                "field": "application"
+             }
+          },
+          "aggs": {
+             "installs": {
+                "filter": {
+                   "fquery": {
+                      "query": {
+                         "match": {
+                            "action": "install"
+                         }
+                      },
+                      "_cache": true
+                   }
+                }
+             },
+             "launches": {
+                 "filter": {
+                   "fquery": {
+                      "query": {
+                         "match": {
+                            "action": "launch"
+                         }
+                      },
+                      "_cache": true
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+This returns me with below result:
+
+    
+    
+    "aggregations": {
+          "apps": {
+             "buckets": [
+                {
+                   "key": "app1",
+                   "doc_count": 2313,
+                   "launches": {
+                      "doc_count": 0
+                   },
+                   "installs": {
+                      "doc_count": 48
+                   }
+                },
+                {
+                   "key": "app2",
+                   "doc_count": 5,
+                   "launches": {
+                      "doc_count": 0
+                   },
+                   "installs": {
+                      "doc_count": 0
+                   }
+                },
+             ]
+         }
+    }
+    
+
+Now if you notice, installs and launches are both 0 for app2. I do not want
+the bucket for key = "app2" to show up in the result if both sub-aggregates
+launches and installs are 0.
+
+I saw
+[min_doc_count](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html#_minimum_document_count) and was
+wondering if it was possible to do something similar for my case?
+
+[EDIT]: The other thing I thought that I could try was that, instead of doing
+aggregation "group_by_app" for every possible "action", If I could aggregate
+it over ONLY "action" = "install" OR "action" = "launch". So basically what I
+mean is that the bucket aggregation is only over "action" = "launch" OR
+"install", and sub-aggregation are basically the same in the query. I can do a
+min_doc_count over the bucket aggregation to not show sub-aggregation results.
+However aggregation only allows term/terms or filter and not both. If somebody
+can suggest an alternative way to achieve that, even that would be a great
+help!
+
+I realized it wasn't that difficult. Instead of trying to filter in the
+aggregation, I can just use "query" to limit the documents I am aggregating
+over. So instead of aggregating over all the documents for all "application"
+with every "action", Only aggregate over documents for all "aplication" with
+only two "action", namely "action" = "install" OR "action" = "launch", and
+then do a min_doc_count = 1 over the bucket aggregation will not show
+"application" bucket if both "install" and "launch" sub-aggregation are 0.
+
+Here's the complete query:
+
+    
+    
+    GET _search
+    {
+        "query": {
+            "filtered": {
+               "filter": {
+                   "bool": {
+                       "must": [
+                          {
+                              "fquery": {
+                                 "query": {
+                                    "match": {
+                                       "action": "install OR launch"
+                                    }
+                                 },
+                                 "_cache": true
+                              }
+                          }
+                       ]
+                   }
+               }
+            }
+        }, 
+       "aggs": {
+          "group_by_app": {
+             "terms": {
+                "field": "application"
+             }
+          },
+          "aggs": {
+             "installs": {
+                "filter": {
+                   "fquery": {
+                      "query": {
+                         "match": {
+                            "action": "install"
+                         }
+                      },
+                      "_cache": true
+                   }
+                }
+             },
+             "launches": {
+                 "filter": {
+                   "fquery": {
+                      "query": {
+                         "match": {
+                            "action": "launch"
+                         }
+                      },
+                      "_cache": true
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+

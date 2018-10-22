@@ -1,0 +1,104 @@
+18862920 matching all nested objects with elasticsearch
+
+Is there a way to get elasticsearch to return only documents that have _all_
+their nested objects matching some criteria? Say I have the following
+contrived example:
+
+    
+    
+    "mappings": {                                                                                                                                                            
+      "person": {                                                                                                                                                            
+        "properties": {                                                                                                                                                      
+          "name": { "type": "string" },                                                                                                                                       
+          "other_info": ...                                                                                                                                                  
+    
+          "pet": {                                                                                                                                                      
+            "type": "nested",                                                                                                                                                 
+            "properties": {                                                                                                                                                  
+              "gender": { "type": "string" },                                                                                                                                 
+              "age": { "type": "integer" },                                                                                                                                   
+              "name": { "type": "string" },                                                                                                                                   
+              "other_info": ...                                                                                                                                              
+            }                                                                                                                                                                
+          }                                                                                                                                                                  
+        }                                                                                                                                                                    
+      }                                                                                                                                                                      
+    }    
+    
+
+In this case, how would I search for people who have pets that _all_ have age
+greater than 5? I'd also like to search for other properties unrelated to
+pets, but let's assume otherwise, for simplicity. If a person has three pets
+but only one or two of them are older than 5, I don't want it to come up as a
+search hit.
+
+* * *
+
+I couldn't find anything about how to do this, so I considered an alternate
+solution that I don't really like. Instead of using a nested document, have a
+separate index for pets, with the person ID as a property (maybe with a
+`_parent` field?). Then I could do the following:
+
+  * search for pets older than 5, get a list of pets as a result
+  * on the application side, group the pets in the list by person ID
+  * count the number of pets in each group, and if that matches the total number of pets owned by the person, add the person ID to a list
+  * do another search on the person index based on the IDs, and any other person-specific property I want to check for
+
+This seems like a very roundabout way of doing it though, plus if I went that
+route I'd need to know the total number of pets owned by each person before
+querying the person index (like storing it as a property for each pet, but
+that just makes it really messy) or by searching for all the people with at
+least one matching pet, with the pet count stored in the person index ahead of
+time (or using a [script
+filter](https://stackoverflow.com/questions/15543308/elasticsearch-filtering-
+by-the-size-of-a-field-that-is-an-array)?), and then checking if the count
+matches.
+
+I came across [this github
+issue](https://github.com/elasticsearch/elasticsearch/issues/3022#issuecomment-18705079)
+(adding the feature "Return matching nested inner objects per hit") which
+would have been really useful, but unfortunately it hasn't been implemented
+yet.
+
+Surely there's a better way to do this?
+
+Why not use a `must_not` clause. If I were you I would search for people with
+a pet older than 5 combined in a `bool` filter with a `must_not` clause
+searching for people with a pet younger than 5.
+
+Like this:
+
+    
+    
+    "filter" : {
+        "bool" : {
+            "must" : {
+                "nested" : {
+                    "path" : "person.pet"
+                    "filter" : {
+                        "range" : {
+                            "person.pet.age" : { "from" : 5 }
+                        }
+                    } 
+                }
+            },
+            "must_not" : {
+                "nested" : {
+                    "filter" : {
+                        "range" : {
+                            "person.pet.age" : { "lte" : 5 }
+                        }
+                    } 
+                }
+            }
+        }
+    }
+    
+
+What I'm doing here is first getting all persons with at least one pet older
+than 5 (which will include people with multiple pets, some of which are
+young). Then I am excluding all persons with a pet aged 5 or younger, leaving
+the results desired.
+
+Good luck!
+

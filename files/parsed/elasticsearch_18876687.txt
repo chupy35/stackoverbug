@@ -1,0 +1,127 @@
+18876687 Elasticsearch highlighting - not working
+
+I have the following problem:
+
+I'm doing some tests with facetings
+
+My script is as follows:
+
+<https://gist.github.com/nayelisantacruz/6610862>
+
+the result I get is as follows:
+
+    
+    
+    {
+        "took": 2,
+        "timed_out": false,
+        "_shards": {
+            "total": 5,
+            "successful": 5,
+            "failed": 0
+        },
+        "hits": {
+            "total": 2,
+            "max_score": 1,
+            "hits": []
+        },
+        "facets": {
+            "title": {
+                "_type": "terms",
+                "missing": 0,
+                "total": 2,
+                "other": 0,
+                "terms": [
+                    {
+                        "term": "JavaScript",
+                        "count": 1
+                    },
+                    {
+                        "term": "Java Platform, Standard Edition",
+                        "count": 1
+                    }
+                ]
+            }
+        }
+    }
+    
+
+which is fine, but the problem is that I can not display the "highlighting"
+
+I was expecting a result like the following:
+
+.......... .......... ..........
+
+    
+    
+    "facets": {
+        "title": {
+            "_type": "terms",
+            "missing": 0,
+            "total": 2,
+            "other": 0,
+            "terms": [
+                {
+                    "term": "<b>Java</b>Script",
+                    "count": 1
+                },
+                {
+                    "term": "<b>Java</b> Platform, Standard Edition",
+                    "count": 1
+                }
+            ]
+        }
+    }
+    
+
+.......... .......... ..........
+
+Anyone can help me and tell me what I'm doing wrong or what I'm missing,
+please
+
+Thank you very much for your attention
+
+Faceting and highlighting are two completely different things. Highlighting
+works together with search, in order to return highlighted snippets for each
+of the search results.
+
+Faceting is a completely different story, as a facet effectively looks at all
+the terms that have been indexed for a specific field, throughout all the
+documents that match the main query. In that respect, the query only controls
+the documents that are going to be taken into account to perform faceting.
+Only the top terms (by default with higher count) are going to be returned.
+Those terms are not only related to the search results (by default 10) but to
+all the documents that match the query.
+
+That said, the terms returned with the facets are never highlighted.
+
+If you use
+[highlighting](http://www.elasticsearch.org/guide/reference/api/search/highlighting/)
+you should see in your response, as mentioned in the reference, a new section
+that contains the highlighted snippets for each of your search results. The
+reason why you don't see it is that you are querying the `title.autocomplete`
+field, but you make highlighting on the `title` field with
+`require_field_match` enabled. You either have to set `require_field_match` to
+true or highlight the same field that you are querying on. But again this is
+not related to faceting whatsoever.
+
+Note the use of `*` instead of `_all`. This works like a charm at all level of
+nesting:
+
+    
+    
+    POST 123821/Encounters/_search 
+    { 
+      "query": { 
+        "query_string": { 
+          "query": "Aller*" 
+        } 
+      }, 
+      "highlight": { 
+        "fields": { 
+          "*": {} 
+        } 
+      } 
+    }
+    
+

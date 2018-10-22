@@ -1,0 +1,62 @@
+22197568 Failed "delete by query" query in Elasticsearch
+
+I made a simply query
+
+    
+    
+    curl -XDELETE 'http://rtparamdev03:9200/_all/_query?pretty=true' -d '
+    {
+    "query": {
+        "constant_score": {
+            "filter": {
+                "missing" : { "field" : "path" }
+            }
+        }
+       }
+    }'
+    
+
+I am getting a failure response.
+
+    
+    
+    {
+    "ok" : true,
+    "_indices" : {
+    "alerts" : {
+      "_shards" : {
+        "total" : 5,
+        "successful" : 0,
+        "failed" : 5
+      }
+    },
+    "logstash-2014.02.12" : {
+      "_shards" : {
+        "total" : 5,
+        "successful" : 0,
+        "failed" : 5
+      }
+    ...
+    }
+    
+
+I don't see anything obvious in the ElasticSearch log. I see the following but
+I don't think that it's relevant at all.
+
+I did an `all refresh` and I set `threadpool.index.queue_size=-1`. I'm still
+getting the same response.
+
+Any advice please?
+
+You can use the query string technique for Delete by query.
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/<index>/<type>/_query?q=<attributeName>:<attributeValue>'
+    
+
+Reference
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/0.90/docs-delete-by-
+query.html>
+

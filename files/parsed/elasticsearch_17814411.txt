@@ -1,0 +1,197 @@
+17814411 Elasticsearch exact match or query
+
+I have documents like this in my index:
+
+    
+    
+    {
+      "field" : "a, b, c, d, e"
+    }
+    
+
+The field value is a string made by a array to string function. So not every
+document has the same string but every document has at least `"a, b"` as
+value.
+
+Now I would like to have a query which is matching 2 kinds of documents:
+
+Documents which have only(exactly) `"a, b"` as field value or documents which
+contain at least two searchterms in the field.
+
+Basically my problem is that I can't fullfill the first condition if the field
+gets analyzed and I can"t fulfill the second condition if the fields is not
+getting analyzed. Is there a solution without cloning the field as
+not_alanyzed?
+
+If I clone the field to a not analyzed field(in the code example field1) I can
+use this query. I feel like this query is too complicated for the
+achievement...:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "or": [
+              {
+                "term": {
+                  "field1": "a, b"
+                }
+              },
+              {
+                "and": [
+                  {
+                    "term": {
+                      "field": "c"
+                    }
+                  },
+                  {
+                    "term": {
+                      "field1": "d"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+You could use a multi-field mapping. This allows a field to be sent once, but
+analyzed in two different ways.
+
+    
+    
+    "properties": {
+      "field" {
+        "type": "multi_field",
+          "fields" : {
+            "field" : {"type" : "string", "index" : "analyzed"},
+            "raw" : {"type" : "string", "index" : "not_analyzed"}
+        }
+      }
+    }
+    
+
+Send the document to elasticsearch as normal (it will get indexed in two
+places, `field` (or `field.field`) and `field.raw`
+
+Now your query will look like:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "or": [
+              {
+                "term": {
+                  "field.raw": "a, b"
+                }
+              },
+              {
+                "and": [
+                  {
+                    "term": {
+                      "field": "c"
+                    }
+                  },
+                  {
+                    "term": {
+                      "field": "d"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+It's not the most elegant solution. I would much prefer changing the way you
+store the data. It seems like "a, b" represents something different, maybe
+have a boolean field "a_b_only" on the doc to filter by.
+
+Good luck, and please feel free to ask for more help!
+
+Out of curiosity, why did you make a string from your array in the first
+place? A field in an ES document can hold multiple values, and you can query
+them using the 'terms' filter:
+<http://www.elasticsearch.org/guide/reference/query-dsl/terms-filter/>. So
+instead of your original field data:
+
+    
+    
+    {
+      "field1" : "a, b, c, d, e"
+    }
+    
+
+you'd just keep it in an array, like so:
+
+    
+    
+    {
+      "field1" : ["a", "b", "c", "d", "e"]
+    }
+    
+
+and then you'd query something like this (beware, this is untested!):
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "or": [
+              {
+                "terms": {
+                  "field1": ["a", "b"],
+                  "execution": "and"
+                }
+              },
+              {
+                "terms": {
+                  "field1": ["c", "d"],
+                  "execution": "and"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    
+
+As a final note, I'd think that your real data requires that 'field1' is set
+to be 'not_analyzed'.
+
+multi_fields are not supported in Elasticsearch version 1.X instead use
+
+    
+    
+    "title" :{ 
+               "type" : "string",
+                "raw" : {"type" :"string" , "index" :"not_analyzed" 
+             }
+    
+
+For more information please read [Elasticsearch 1.7 Docs on Multi-
+fields](https://www.elastic.co/guide/en/elasticsearch/reference/1.7/_multi_fields.html).
+

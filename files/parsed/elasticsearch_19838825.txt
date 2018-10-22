@@ -1,0 +1,30 @@
+19838825 What are elasticsearch indices?
+
+They are not mentioned in [ES
+glossary](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/glossary.html).
+
+What is their relationship to other ES entities (shards / nodes / indexes) ?
+
+Indices is the plural of index. If you have more than one index you call them
+indices. <http://www.thefreedictionary.com/index>
+
+**Indices** are equivalent to databases in Relational DBMS. Just like
+Relational Database has schema, ES **index** has **mapping**.
+
+**Shards** => **index** is broken into shards (in order to distribute them and
+scale)
+
+**Replicas** => copies of the **shards** (provide reliability if a node is
+lost)
+
+I hope the following diagram(taken from [Rafal Kuc's
+slides](http://www.slideshare.net/kucrafal/scaling-massive-elastic-search-
+clusters-rafa-ku-sematext?ref=http://prayag-waves.blogspot.com/)) demonstrates
+the relationship between ES Cluster, Index, Node and Shards.
+
+![ES diagram](https://i.stack.imgur.com/6wq4N.png)
+
+Also, there's a nice stackoverflow post [Shards and replicas in
+Elasticsearch](https://stackoverflow.com/a/15705989/432903) by
+[@javanna](https://stackoverflow.com/users/633239/javanna)
+

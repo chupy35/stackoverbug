@@ -1,0 +1,84 @@
+23839120 Elastic search dynamic aggregation
+
+I have a index with products type, this product have all some common
+attributes, but depends on category have different attributes( i make a
+dinamyc mapping).
+
+How is the best to mapping this and make after aggregation on them without
+knowing before how this field are named.
+
+    
+    
+    [specifications] => Array
+                       (
+                         [properties] => Array
+                         (
+                          [property1] => Array
+                          (
+                           [type] => string
+                           [index] => not_analyzed
+                          )
+                          [property2] => Array
+                          (
+                           [type] => string
+                           [index] => not_analyzed
+                          ),
+                          etc...
+                          )
+                         )
+    
+
+**Multi match** queries allows for **wildcard** fields.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-multi-match-query.html#CO27-2>
+
+You can fiddle with some naming convention or isolate the fields you want to
+search in an object field
+(<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+object-type.html>) and then use the widlcard to target those inner fields.
+
+I found the solution: mappping:
+
+    
+    
+    'attributes' => array(
+                        'type' => 'nested',
+                        'properties' => array(
+                            'key' => array(
+                                'type' => 'string',
+                                'index' => 'not_analyzed',
+                            ),
+                            'value' => array(
+                                'type' => 'string',
+                                'index' => 'not_analyzed',
+                            ),
+                        ),
+                    ),
+    
+
+aggs:
+
+    
+    
+    'attributes' => array(
+                    'nested' => array(
+                        'path' => 'attributes',
+                    ),
+                    'aggs' => array(
+                        'key' => array(
+                            'terms' => array(
+                                'field' => 'attributes.key',
+                            ),
+                            'aggs' => array(
+                                'value' => array(
+                                    'terms' => array(
+                                        'field' => 'attributes.value',
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+    
+

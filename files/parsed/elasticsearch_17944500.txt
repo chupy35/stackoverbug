@@ -1,0 +1,129 @@
+17944500 Elasticsearch: does not give back result when searching for a simple
+'a' character
+
+I want to store tags for messages in ElasticSearch. I've defined the tags
+field as this:
+
+    
+    
+    {
+      'tags': {
+        'type': 'string',
+        'index_name': 'tag'
+      }
+    }
+    
+
+For a message I've stored the following list in the tags field:
+
+    
+    
+    ['a','b','c']
+    
+
+Now if I try to search for tag 'b' with the following query, it gives back the
+message and the tags:
+
+    
+    
+    {
+      'filter': {
+        'limit': {
+          'value': 100
+        }
+      },
+      'query': {
+        'bool': {
+          'should': [
+            {
+              'text': {
+                'tags': 'b'
+              }
+            }
+          ],
+          'minimum_number_should_match': 1
+        }
+      }
+    }
+    
+
+There goes the same with tag 'c'. But if I search for tag 'a' with this:
+
+    
+    
+    {
+      'filter': {
+        'limit': {
+          'value': 100
+        }
+      },
+      'query': {
+        'bool': {
+          'should': [
+            {
+              'text': {
+                'tags': 'a'
+              }
+            }
+          ],
+          'minimum_number_should_match': 1
+        }
+      }
+    }
+    
+
+It gives back no results at all!  The answer is:
+
+    
+    
+    {
+      'hits': {
+        'hits': [],
+        'total': 0,
+        'max_score': None
+      },
+      '_shards': {
+        'successful': 5,
+        'failed': 0,
+        'total': 5
+      },
+      'took': 1,
+      'timed_out': False
+    }
+    
+
+What am I doing wrong? (It doesn't matter that the 'a' is the first element of
+the list, the same goes for ['b','a','c']. It seems it has problems only with
+a single 'a' character.
+
+There might be some stemming or stop word lists involved. Try making sure the
+field is not analyzed.
+
+    
+    
+    'tags': {'type': 'string', 'index_name': 'tag', "index" : "not_analyzed"}
+    
+
+Similar: [matching whole string with dashes in
+elasticsearch](https://stackoverflow.com/questions/16978508/matching-whole-
+string-with-dashes-in-elasticsearch/17032052#17032052)
+
+If you didn't set any analyzer and mapping to your index, Elasticsearch uses
+its own analyzer by default. Elasticsearch's `default_analyzer` has stopwords
+filter that defaultly ignores English stopwords such as:
+
+    
+    
+       "a", "an", "and", "are", "as", "at", "be", "but", "by",
+      "for", "if", "in", "into", "is", "it",
+      "no", "not", "of", "on", "or", "such",
+      "that", "the", "their", "then", "there", "these",
+      "they", "this", "to", "was", "will", "with"
+    
+
+Before going for more just check ElasticSearch mapping and analyzer guides:
+
+  * [Analyzer Guide](http://www.elasticsearch.org/guide/reference/index-modules/analysis/)
+
+  * [Mapping Guide](http://www.elasticsearch.org/guide/reference/mapping/)
+

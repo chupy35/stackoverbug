@@ -1,0 +1,57 @@
+15336990 elasticsearch - Should I organize the data all in one table?
+
+I'm new to ElasticSearch and search in general.
+
+I've a large database that I need to search. 70 tables.
+
+I don't know very well which the best practices for searching a database like
+this. I've done a large SQL select to 25 database tables to have all the data
+that I need. I mainly have done this because I will need Facets.
+
+This makes any sense in ElasticSearch? How is the best way to organize the
+data to be searched in ElasticSearch?
+
+Best Regards,
+
+A notable feature of ElasticSearch is the ability to search across multiple
+Indices/Types or both, this will allow you to structure your data in a similar
+way as it was structured in the database.
+
+An Indices is essentially ElasticSearch' equivalent to a Database and a Type
+is that to a table. This allows you to keep the data separated, so for
+instance having a ElasticSearch definition like so -
+
+    
+    
+    Index  |  Type
+    
+    data   -  table1
+    data   -  table2
+    data   -  table3
+    data   -  ....
+    
+
+This would allow you to search across all of your types in one query, like so
+-
+
+    
+    
+    curl -XPUT <host>:9200/data/table1,table2,table3
+    
+
+Or you could have different indexes with the same type, like so -
+
+    
+    
+    Index  |  Type
+    
+    data1   -  table
+    data2   -  table
+    data3   -  table
+    data4   -  ....
+    
+
+This ability to logically separate your data is a powerful feature of
+ElasticSearch, dividing the data amongst indices or types also keeps
+performance in mind.
+

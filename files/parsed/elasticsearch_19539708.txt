@@ -1,0 +1,11 @@
+19539708 What is Apache Lucene
+
+Please clear me on what is apache lucene? As for a I know it is search engine
+so please advise me how does apache lucene used in search
+
+and what is elastic search ?
+
+[Here](http://lucene.apache.org/core/4_5_0/index.html) is a documentation of
+Apache Lucene and I'm sure you will find what it is. ElasticSearch is search
+server based on Apache Lucene.
+

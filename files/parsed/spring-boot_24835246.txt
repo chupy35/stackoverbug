@@ -1,0 +1,26 @@
+24835246 How to add email to Spring Boot gradle build
+
+Spring boot has a number of starter dependencies. The default set does not
+include support for mail (org.springframework.mail is missing in Boot). How do
+I configure my build.gradle to include the spring framework mail support?
+
+Try spring-context-support, ie
+
+    
+    
+    compile 'org.springframework:spring-context-support'
+    
+
+You might find this a helpful tool for that kind of query:
+<http://www.findjar.com>.
+
+For spring boot you want to use this:
+
+    
+    
+    compile("org.springframework.boot:spring-boot-starter-mail")
+    
+
+[See more about spring starters here](http://docs.spring.io/spring-
+boot/docs/current/reference/html/using-boot-build-systems.html)
+

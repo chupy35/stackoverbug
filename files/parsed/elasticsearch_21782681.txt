@@ -1,0 +1,82 @@
+21782681 Unique count of terms aggregations
+
+I want to count distinct values of a field from my dataset. For example:
+
+The `terms` aggregation gives me the number of occurences by `username`. I
+want to only count **unique** usernames, not all.
+
+Here's my request:
+
+    
+    
+    POST appzz/messages/_search
+    {
+       "aggs": {
+          "words": {
+             "terms": {
+                "field": "username"
+             }
+          }
+       },
+       "size": 0,
+       "from": 0
+    }
+    
+
+Is there a `unique` option or something like that?
+
+We had a long discussion about it with one of the ES guys in a recent
+Elasticsearch meetup we had here. The short answer is no, there isn't. And
+according to him it's not something to be expected soon.
+
+One option to kind of do it is to get all the terms (give a really big size
+limit) and count how many terms are returned, but it's expensive and not
+really valid if you have a lot of unique terms.
+
+I'm still fairly new to ES, but if I get you correctly, it seems that you
+should be able to get your answer by simply counting the number of buckets
+returned in the response? (see
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html>)
+
+**NOTE** , though: _contrary_ to what that doc says right now with size 0 ("It
+is possible to not limit the number of terms that are returned by setting size
+to 0."), my testing with the latest version (1.0.1 now) shows that this does
+not work! _On the contrary_ , setting size to 0 will give you _0 buckets!!!_
+You should set (sigh) size to some arbitrary high figure instead for now if
+you want to get all the terms.
+
+**EDIT** : whoops, my bad! I just reread the doc again, and only just noticed
+that version note there, and realized that this is only coming out in 1.1.0?
+That note is in the past tense ("Added in 1.1.0."), which is confusing, but I
+guess 1.1.0 hasn't been released yet....
+
+Oh, and btw, there seems to be something wrong with your url? I hope you know
+that.
+
+You're looking for the [cardinality
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-cardinality-aggregation.html) which was added in
+Elasticsearch 1.1. It allows you to request something like this:
+
+    
+    
+    {
+      "aggs" : {
+          "unique_users" : {
+              "cardinality" : {
+                  "field" : "username"
+              }
+          }
+      }
+    }
+    
+
+@DerMiggel: I tried using cardinality for my project. Surprising on my local
+system out of a total dump of some 2,00,000 documents, I tried the cardinality
+with precision_threshold of 100, 0 and 40,000(as the max value). The first two
+times, result was different(count of 175 and 184 respectively) and for 40,000
+got out of memory exception. Also the computation time was huge as compared to
+other aggs. Hence I feel cardinality is not actually that correct and might
+crash your system when required high accuracy and precision.
+

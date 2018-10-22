@@ -1,0 +1,3 @@
+31108589
+Multi level has parent query in elasticsearch
+<p>Is it possible to do multi level "has parent" query. Like i have a hierarchy of 3. Something like top level parent , mid level parent and child. I would like to filter top level parent documents based on child document. </p>&#xA;

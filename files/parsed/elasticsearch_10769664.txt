@@ -1,0 +1,9 @@
+10769664 Elasticsearch flexible search
+
+Does anyone have experience with Elasticsearch and getting the searches to be
+more flexible?
+
+Currently, if I have a query "House" it will return the correct items back.
+but if "Hous" is typed in, nothing gets returned. Also, if I search "O.J." it
+will return O.J. but if I wanted to search OJ I get nothing.
+

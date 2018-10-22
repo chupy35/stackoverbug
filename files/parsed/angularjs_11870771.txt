@@ -1,0 +1,102 @@
+11870771 How can I make AngularJS rerun a function every time the data it uses
+changes?
+
+With Knockout, I can say
+
+    
+    
+    <html>
+        <head>
+            <script type="text/javascript" src="knockout-2.1.0.js"></script>
+        </head>
+        <body>
+            <input type="text" data-bind="value: a"></input> +
+            <input type="text" data-bind="value: b"></input> =
+            <span data-bind="text: result"></span>
+            <script type="text/javascript">
+                function ExampleViewModel() {
+                    this.a = ko.observable(5);
+                    this.b = ko.observable(6);
+                    this.result = ko.computed(function() {
+                        return parseInt(this.a()) + parseInt(this.b());
+                    }, this);
+                }
+    
+                ko.applyBindings(new ExampleViewModel());
+            </script>
+        </body>
+    </html>
+    
+
+and `result` will be recalculated every time a and b change. How can I get
+AngularJS to do this for me? I have tried
+
+    
+    
+    <html ng-app>
+        <head>
+            <script type="text/javascript" src="angular-1.0.1.min.js"></script>
+            <script type="text/javascript">
+                function ExampleCtrl($scope) {
+                    $scope.a = 5;
+                    $scope.b = 6;
+                    $scope.result = function() {
+                        return this.a + this.b
+                    };
+                }
+    
+    </script>
+        </head>
+        <body ng-controller="ExampleCtrl">
+            <input type="text" value="{{ a }}"></input> +
+            <input type="text" value="{{ b }}"></input> =
+            {{ result() }}
+        </body>
+    </html>
+    
+
+After a little more reading, I found `ng-change`:
+
+    
+    
+    <html ng-app>
+        <head>
+            <script type="text/javascript" src="angular-1.0.1.min.js"></script>
+            <script type="text/javascript">
+                function ExampleCtrl($scope) {
+                    $scope.a = 5;
+                    $scope.b = 6;
+                    $scope.result = function() {
+                        return parseInt($scope.a) + parseInt($scope.b)
+                    };
+                }
+    
+    </script>
+        </head>
+        <body ng-controller="ExampleCtrl">
+            <input type="text" ng-model="a" ng-change="result()"></input> +
+            <input type="text" ng-model="b" ng-change="result()"></input> =
+            {{ result() }}
+        </body>
+    </html>
+    
+
+But that requires me to keep track of the fact that changing `a` or `b`
+changes `result()`, is there any automatic way of detecting this?
+
+Your `result()` function will be re-evaluated whenever the model changes when
+binding via [ng-model](http://docs.angularjs.org/api/ng.directive%3angModel)
+in your inputs like this:
+
+    
+    
+    <input type="text" ng-model="a"></input>
+    
+
+instead of:
+
+    
+    
+    <input type="text" value="{{ a }}"></input>
+    
+

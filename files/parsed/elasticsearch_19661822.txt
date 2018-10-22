@@ -1,0 +1,93 @@
+19661822 Is it possible to write to multiple indexes with an ElasticSearch
+alias?
+
+The [ElasticSearch
+Docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+aliases.html) reads:
+
+> An alias can also be mapped to more than one index, and when specifying it,
+the alias will automatically expand to the aliases indices.
+
+But when I try to add an alias to 2 indices and write to both, neither seem to
+get updated with the document. If I remove one of the aliases, it will write
+correctly to the alias that still exists.
+
+Fails with multiple write aliases:
+
+    
+    
+    $ curl -XGET 'http://localhost:9200/_aliases'
+    
+
+result:
+
+    
+    
+    {
+      "dev_01": {
+        "aliases": {
+          "dev_read": {},
+          "dev_write": {}
+        }
+      },
+      "dev": {
+        "aliases": {
+          "dev_write": {}
+        }
+      }
+    }
+    
+
+Works with single alias:
+
+    
+    
+    $ curl -XGET 'http://localhost:9200/_aliases'
+    
+
+result:
+
+    
+    
+    {
+      "dev_01": {
+        "aliases": {
+          "dev_read": {},
+          "dev_write": {}
+        }
+      },
+      "dev": {
+        "aliases": {}
+      }
+    }
+    
+
+Does elasticsearch support writing to multiple indices? Are aliases Read-Only
+if pointed at multiple indices?
+
+the answer is No
+
+So it appears I should have triaged this a beep deeper, but the response my
+client gets from es is:
+
+> ElasticSearchIllegalArgumentException[Alias [dev_write] has more than one
+indices associated with it [[dev_01, dev]], can't execute a single index op
+
+Just wish the docs were a little more explicit up front, as they confused me a
+bit
+
+At first seems to imply you can:
+
+> The index aliases API allow to alias an index with a name, with **all** APIs
+automatically converting the alias name to the actual index name. An alias can
+also be mapped to more than one index...
+
+>
+
+> Associating an alias with more than one index are simply several add
+actions...
+
+Further down the page lets you know you can not:
+
+> It is an error to index to an alias which points to more than one index.
+

@@ -1,0 +1,26 @@
+24608521 how to modify the type mapping in elasticsearch to another type
+
+The thing is that I already defined a field "myvalue" as INTEGER. Now I think
+was a mistake and I want to store in the same field an string, so I want to
+change it, without loosing data, to STRING. is there any way of making it?, or
+I need to re-create the index and re-index the whole data?
+
+I already tried running:
+
+    
+    
+    {
+        "mappings": {
+            "myvalue": {
+                               "type":"string"
+    }
+        }
+    }
+    
+
+But if I get the mapping again from the server still appear as Integer
+
+There is not any way to change the mapping on a core field type for existing
+data. You will need to re-create the index with the `myvalue` field defined as
+a string and re-index your data.
+

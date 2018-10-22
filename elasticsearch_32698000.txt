@@ -1,0 +1,4 @@
+32698000
+Elasticsearch find search terms matching text
+<p>I have a scenario where i need to map each article to an entity. To do so, we are maintaining a set of keywords / search phrase (ex: (icici OR hdfc) AND bank) that may be available in each article. We want to use the power of elastic search to scan all the search phrases that may be available in the article being processed. </p>&#xA;&#xA;<p>What i have come across yet is forward search (like full text search and so on) But now here what i need is to have a reverse search of search phrases against an article. </p>&#xA;&#xA;<p>I was digging for a solution and hopped some genius would have already discovered the same and would help in for the same.</p>&#xA;
+<p>In Elasticsearch it's called <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-percolate.html" rel="nofollow">percolator</a>.</p>&#xA;

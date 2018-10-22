@@ -1,0 +1,29 @@
+23630357 elasticsearch: document TTL < indices.ttl.interval
+
+I have the following "problem". I have enabled ttl using the index mapping and
+Im putting documents with a ttl parameter and it works... somewhat:
+
+  * documents are expired and removed
+  * the issue looks like if you set a ttl that is smaller than the indices.ttl.interval parameter it only expires every interval
+
+Is this how its intended to work? I am assuming that even though the docs
+aren't actually purged yet (which happens every interval) a GET would still
+return "null" if the TTL has passed.
+
+Am I doing something wrong? I am reluctant to decrease the
+indices.ttl.interval to the minimum ttl I am planning to use (1-10 seconds) as
+I assume this will put quit a load on the index
+
+Thanks,
+
+Sander
+
+Right, that's how it is supposed to work. The `indices.ttl.interval` is
+effectively the wait between consecutive runs of the purger thread. If `_ttl`
+is lower than that, you see and get the document back till it gets effectively
+deleted at the following run of the purger.
+
+The way to fix this is to have the purger thread to run more often, which you
+can achieve by lowering the `indices.ttl.interval` settings. Otherwise, using
+those low ttl values doesn't make much sense.
+

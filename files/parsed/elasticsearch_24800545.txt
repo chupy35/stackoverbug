@@ -1,0 +1,208 @@
+24800545 How to aggregate over dynamic fields in elasticsearch?
+
+I am trying to aggregate over dynamic fields (different for different
+documents) via elasticsearch. Documents are like following:
+
+    
+    
+    [{
+       "name": "galaxy note",
+       "price": 123,
+       "attributes": {
+          "type": "phone",
+          "weight": "140gm"
+       }
+    },{
+       "name": "shirt",
+       "price": 123,
+       "attributes": {
+          "type": "clothing",
+          "size": "m"
+       }
+    }]
+    
+
+As you can see attributes change across documents. What Im trying to achieve
+is to aggregate fields of these attributes, like so:
+
+    
+    
+    {
+         aggregations: {
+             types: {
+                 buckets: [{key: 'phone', count: 123}, {key: 'clothing', count: 12}]
+             }
+         }
+    }
+    
+
+I am trying
+[aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html) feature of elasticsearch to
+achieve this, but not able to find correct way. Is it possible to achieve via
+aggregation ? Or should I start looking in to
+[facets](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets.html), thought it seem to be depricated.
+
+Not sure if this is what you mean, but this is fairly simple with basic
+aggregation functionality. Beware I did not include a mapping so with type of
+multiple words you are getting double results.
+
+    
+    
+    POST /product/atype
+    {
+       "name": "galaxy note",
+       "price": 123,
+       "attributes": {
+          "type": "phone",
+          "weight": "140gm"
+       }
+    }
+    
+    POST /product/atype
+    {
+       "name": "shirt",
+       "price": 123,
+       "attributes": {
+          "type": "clothing",
+          "size": "m"
+       }
+    }
+    
+    GET /product/_search?search_type=count
+    {
+      "aggs": {
+        "byType": {
+          "terms": {
+            "field": "attributes.type",
+            "size": 10
+          }
+        }
+      }
+    }
+    
+
+You have to define attributes as nested in your mapping and change the layout
+of the single attribute values to the fixed layout `{ key: DynamicKey, value:
+DynamicValue }`
+
+    
+    
+    PUT /catalog
+    {
+      "settings" : {
+        "number_of_shards" : 1
+      },
+      "mappings" : {
+        "article": {
+          "properties": {
+            "name": { 
+              "type" : "string", 
+              "index" : "not_analyzed" 
+            },
+            "price": { 
+              "type" : "integer" 
+            },
+            "attributes": {
+              "type": "nested",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              }
+            }
+          }  
+        }
+      }
+    }
+    
+
+You may than index your articles like this
+
+    
+    
+    POST /catalog/article
+    {
+      "name": "shirt",
+      "price": 123,
+      "attributes": [
+        { "key": "type", "value": "clothing"},
+        { "key": "size", "value": "m"}
+      ]
+    }
+    
+    POST /catalog/article
+    {
+      "name": "galaxy note",
+      "price": 123,
+      "attributes": [
+        { "key": "type", "value": "phone"},
+        { "key": "weight", "value": "140gm"}
+      ]
+    }
+    
+
+After all you are then able to aggregate over the nested attributes
+
+    
+    
+    GET /catalog/_search
+    {
+      "query":{
+        "match_all":{}
+      },     
+      "aggs": {
+        "attributes": {
+          "nested": {
+            "path": "attributes"
+          },
+          "aggs": {
+            "key": {
+              "terms": {
+                "field": "attributes.key"
+              },
+              "aggs": {
+                "value": {
+                  "terms": {
+                    "field": "attributes.value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+Which then gives you the information you requested in a slightly different
+form
+
+    
+    
+    [...]
+    "buckets": [
+      {
+        "key": "type",
+        "doc_count": 2,
+        "value": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+          {
+            "key": "clothing",
+            "doc_count": 1
+          }, {
+            "key": "phone",
+            "doc_count": 1
+          }
+          ]
+        }
+      },
+    [...]
+    
+

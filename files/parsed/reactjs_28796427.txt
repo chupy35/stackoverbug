@@ -1,0 +1,45 @@
+28796427 Async setState and handlers
+
+I am aware that setState calls can be batched and are async. However I
+couldn't find any information about what's the final boundary for handling the
+process of setting new state.
+
+I am specifically interested whether another handler code can be invoked
+before state updates from previous handler are applied. Is that possible?
+
+Example:
+
+    
+    
+    1. Render
+    
+    2. Handler A
+      setState(a: 1)
+    
+    3. Render
+    
+    4. Handler B
+      if this.state.a == 1 // can this get state not updated by Handler1
+    
+
+I think you are looking for
+
+    
+    
+    componentWillUpdate
+    
+
+This is called after other components set state, which will cause your
+component to render, but before your component's state actually changes, and
+before your component renders. You can read state in this method but you can't
+set it. (because the state transition is already underway)
+
+If you want to be able to both read and set state in your component, look at
+
+    
+    
+    componentWillReceiveProps
+    
+
+Details are at <http://facebook.github.io/react/docs/component-specs.html>
+

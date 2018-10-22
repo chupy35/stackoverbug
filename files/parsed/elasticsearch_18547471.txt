@@ -1,0 +1,67 @@
+18547471 How to store dynamic attributes in elasticsearch?
+
+I want to store and query different attributes per document. Something like
+this:
+
+JSON:
+
+    
+    
+    {
+        name: "doc1",
+        metadata: [
+            { color: "red" },
+            { data: [ "value1", "value2", "value3" ] },
+            { size: 500 },
+            { avail: true },
+        ]
+    },
+    ...
+    {
+        name: "doc4980",
+        metadata: [
+            { otherValues: [ 55, 33 ] },
+            { important: true },
+        ]
+    }
+    
+
+The keys and values will be different for lots of documents, as they will be
+defined by the user whenever a new attribute is needed.
+
+Is the following structure (example for the 2nd object only) the best to store
+this in elasticsearch? (Instead of the attribute names I'd like use mongodb
+ids which may refer to more details like the user who added the attribute)
+
+    
+    
+    "_source" : {
+        "name": "doc4980",
+        "metadata":[
+            {
+                k: "51d69d8f0c62690000000011", 
+                v: [ 55, 33 ]
+            },
+            {
+                k: "51d69d8f0c62690000000016", 
+                v: true
+            }
+        ]
+    }
+    
+
+To avoid cross object matches I would use the following mapping:
+
+    
+    
+    {
+        "my_type" : {
+            "properties" : {
+                "metadata" : {             
+                    "type" : "nested"            
+                }, 
+            }
+        } 
+    }
+    
+

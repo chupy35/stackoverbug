@@ -1,0 +1,29 @@
+23301877 Referencing top-level properties in nested filter
+
+In Elasticsearch, is it possible to reference a top-level (non-nested)
+property in a nested filter?
+
+I have a situation where I need a condition to be true either at a global
+level or in one of any number of associated nested objects. Inside of the
+nested filter I have an or-filter to check one or the other, but the outer
+property appears to be ignored. An example is
+[here](http://sense.qbox.io/gist/a63703a6753cee51f2cc0c3fa65854607726b538).
+
+I have a feeling that what I'm needing is not supported and everything inside
+of the nested-filter must apply at or below the specified path (from the
+[docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-nested-query.html), **"The query is executed against the nested objects /
+docs as if they were indexed as separate docs (they are, internally)"**. I'm
+about to just duplicate the top-level data in each nested object (it really is
+just a boolean field), but I'd like to know if this is possible or if there's
+another obvious solution I'm missing.
+
+You are correct in that the feature you are looking for is not supported.
+Elasticsearch uses the various Lucene join queries such as
+ToParentBlockJoinQuery underneath and it does not reference both layers of
+properties.
+
+You can use the include_in_parent/include_in_root properties to push the
+property to a higher level, but you lose the ability to filter on multiple
+properties belong to the same nested document.
+

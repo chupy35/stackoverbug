@@ -1,0 +1,55 @@
+26780865 Spring Boot does not load application.properties and Velocity
+templates
+
+I have two projects - one is based on the ["get started"
+example](https://spring.io/guides/gs/spring-boot/), second is from the
+[spring-boot-samples](https://github.com/spring-projects/spring-
+boot/tree/master/spring-boot-samples/spring-boot-sample-web-velocity). I build
+both with Maven and run both from Eclipse. The "spring-boot-samples" project
+loads application.properties and displays Velocity templates named by the
+Controller. The "get started" does not.
+
+Same file structure for application.properties
+(src/main/resources/application.properties) and templates
+(src/main/resources/templates/**), both with src/main/resources set to "Use as
+Source Folder" in Eclipse. Same workspace, same JRE.
+
+I compared the .classpath and pom.xml, but found nothing suspicious. Obviously
+there's a difference, but where do I have to look?
+
+PS: I can load application.properties via
+[@PropertySources](https://stackoverflow.com/a/20683140/3890673), but
+
+  * that should not be neccessary (see comments there)
+  * _is_ not necessary in the "spring-boot-samples" project
+  * does not help concerning the Velocity templates
+
+Thanks!
+
+Ah, one important difference:
+
+@RestController delivers the response directly, meaning: Instead of resolving
+the template's name the String is passed to the browser. The reason should be
+[@ResponseBody:](http://docs.spring.io/spring/docs/current/javadoc-
+api/org/springframework/web/bind/annotation/ResponseBody.html)
+
+> Annotation that indicates a method return value should be bound to the web
+response body.
+
+Using @Controller instead solves the Velocity problem.
+
+EDIT:
+
+To close this thread: I will continue using @PropertySources to get
+application.properties, but it does not work without it. Just having
+application.properties in your classpath is not sufficient.
+
+To fetch values from application.properties in spring boot, we need to specify
+some annotation.
+
+  * application.properties must be in the path src/main/resources 
+
+  * class must contain @RestController annotation 
+
+@Value("${name}") private String name;
+

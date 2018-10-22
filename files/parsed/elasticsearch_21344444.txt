@@ -1,0 +1,16 @@
+21344444 How to have independent elasticsearch local nodes?
+
+I'm writing unit tests that use local nodes and want them to be independent
+such that if they're running concurrently, they shouldn't affect each other.
+Can local nodes be named?
+
+The following will name a local cluster:
+
+    
+    
+    final node = NodeBuilder.nodeBuilder().clusterName('aoeu').local(true).node()
+    
+
+If the name is 'unique' (eg includes the hostname, working directory, and
+timestamp), it will keep the tests independent.
+

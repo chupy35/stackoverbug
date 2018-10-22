@@ -1,0 +1,139 @@
+24348662 Reactjs How to insert react component into string and then render
+
+How to create a reactjs component that will render the props data with another
+component. for example I have a sentence say "Hello guys this is {{name}}. How
+are you.". Now I want to replace the name with the reactjs component. when I
+try to replace the name with the component it shows as [object object].
+
+First Edit:
+
+    
+    
+    var sentence = "Hello guys this is {{name}}. How are you.";
+    
+    var tag_values = {'name': 'any Name'}
+    
+
+TagBox will take sentence and tag_value as props and replace the tags with the
+Tag component. and render it
+
+    
+    
+    var TagBox = React.createClass({
+        render: function(){
+            // replacing the tags with Tag component
+            this.props.sentence = this.props.sentence.replace(tags_values['name'], <Tag \>)
+            return(
+                <div>
+                    {this.props.sentence} //Issue: This will Print as "Hello guys this is [Object Object]. How are you." 
+                    // But this should print as "This will Print as Hello guys this is any Name. How are you."
+                    // After clicking on "any Name" it should be replaced with input.
+                </div>
+            );
+        }
+    })
+    
+
+Tag Component will replace the tag with input box on double click. and again
+replace input box with data on enter. This can be done using state.
+
+    
+    
+    var Tag = React.createClass({})
+    
+
+Okay, so assuming that's a string you have as input, you need to create an
+array.
+
+    
+    
+    var parts = str.split(/\{\{|\}\}/g); 
+    // => ["Hello guys this is ", "name", ". How are you."]
+    
+
+The odd items are literal strings, and the even parts are the stuff between
+the brackets.
+
+Now we'll create a helper function called `mapAlternate`. Which takes a
+function to call for odd elements, and a function to call for even elements in
+our array.
+
+    
+    
+    function mapAlternate(array, fn1, fn2, thisArg) {
+      var fn = fn1, output = [];
+      for (var i=0; i<array.length; i++){
+        output[i] = fn.call(thisArg, array[i], i, array);
+        // toggle between the two functions
+        fn = fn === fn1 ? fn2 : fn1;
+      }
+      return output;
+    }
+    
+
+Now we can do something like this in our component:
+
+    
+    
+    render: function(){
+        var parts = str.split(/\{\{|\}\}/g);
+    
+    
+        // render the values in <strong> tags
+        var children = mapAlternate(parts, 
+            function(x){ return <span>{x}</span>; }, 
+            function(x){ return <strong>{x}</strong> });
+    
+       return <div>{children}</div>;
+    }
+    
+
+Which gives us: "Hello guys this is **name**. How are you."
+
+Have you heard of [React String Replace](https://www.npmjs.com/package/react-
+string-replace) ?
+
+Here is a stateless component example:
+
+    
+    
+    import replace from 'react-string-replace';
+    const reg = /\{([a-z|A-Z|0-9|\.]+)\}/g;
+    
+    
+    const OutputComponent = props => {
+        var str = 'Hello {name}, this is a "Super" component: {Super}';
+        var output = replace(str, reg, prop => props.replacements[prop]);
+    
+        return <div>{output}</div>;
+    }
+    
+    // later
+    import Super from './Super.jsx';
+    const obj = {
+        Super: <Super />,
+        name: 'John'
+    }
+    
+    return <OutputComponent replacements={obj} />;
+    
+
+I just fixed this issue with [react-jsx-
+parser](https://www.npmjs.com/package/react-jsx-parser)
+
+Your Example would be:
+
+    
+    
+    import JsxParser from 'react-jsx-parser'
+    
+    export default class TagBox extends React.Component {
+        render() {
+           const sentence = "Hello guys this is <Tag>name</Tag>. How are you." // simply include the component in your string
+            return(
+                <JsxParser components={{ Tag }} jsx={ sentence } /> // identify the component in your string to inject
+            )
+        }
+    }
+    
+

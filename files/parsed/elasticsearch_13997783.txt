@@ -1,0 +1,14 @@
+13997783 ElasticSearch routing field
+
+Are there any guidelines for selecting a field to be used for routing in
+ElasticSearch? Previously we've had success using the `user_id` for an index
+of about ~750K documents (we have about 10K users).
+
+For a second index, I didn't use the `user_id` field, and instead used a
+different ID that was much larger (750K). Performance seems subpar, but its
+hard to pin down if the routing field is the cause (it is required), as there
+are 30 million documents stored.
+
+(I'll admit I'm thinking the query analyzer works in a similar fashion to a
+traditional SQL based one, and this may not be the case.)
+

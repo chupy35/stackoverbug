@@ -1,0 +1,38 @@
+24502999 Rendering in React.js
+
+I am new to React.js and one question I have is -  Is it necessary to unmount
+a React Modal view before re-rendering it.
+
+I am trying to call a react modal view as below. The modal shows up only the
+first time. But if the modal is unmounted before this render function is
+called, the Modal shows up.
+
+    
+    
+    render: function(options) {
+        React.renderComponent(<ModalView id="ModalView" 
+                             model={this.model}/>,$("#"+this.viewId)[0]);
+    },
+    
+
+Thanks.
+
+Are you using bootstrap modal? I have the same issue. Once rendered the
+componentDidMount would not be called. Hence modal would not be shown. I
+defined a onClose props to unmount the component on close. If there is a
+better way i would be interested.
+
+You should only call `React.renderComponent()` on the root component. To
+render a child component just return it in the `render` method.
+
+    
+    
+    render: function() {
+            return <ModalView id="ModalView " model={this.model}/>;
+    }
+    
+
+And to answer your question, no, you shouldn't need to explicitly unmount
+anything. To trigger a render you either `setState`, `setProps` or
+`forceUpdate`.
+

@@ -1,0 +1,26 @@
+25759610 Spring Boot Gradle Tomcat 8 (build.gradle)
+
+I have seen the answer to question [Spring Boot Gradle Tomcat
+8](https://stackoverflow.com/questions/22621132/spring-boot-gradle-tomcat-8),
+but I don't understand where to add the Groovy code. I have put it into
+build.gradle, but the application still loads with Tomcat 7.
+
+All you need to is place
+
+    
+    
+    configurations.all {
+      resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        if (details.requested.group == 'org.apache.tomcat.embed') {
+            details.useVersion '8.0.3'
+        }
+      }
+    } 
+    
+
+right under the `apply plugin: ***` section in your `build.gradle`.
+
+Check out
+[this](http://www.gradle.org/docs/current/dsl/org.gradle.api.artifacts.ResolutionStrategy.html)
+part of the gradle documentation for more details.
+

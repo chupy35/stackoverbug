@@ -1,0 +1,114 @@
+20324264 How we can order exact match on top in elasticsearch
+
+I am searching keyword from all the content. If I am entering complete Post
+Title in search box it is displaying in bottom. As I am order my post
+according to `post_date` but is there any way so that most score will be
+display on top and I can combine this order based on `post_date` and `exact
+match`.
+
+I am using below query :-
+
+    
+    
+        {
+           "query": {
+              "bool": {
+                 "must": [
+                    {
+                       "query_string": {
+                          "query": "Post title keyword goes here.."
+                       }
+                    },
+                    {
+                       "term": {
+                          "post_status": "publish"
+                       }
+                    }
+                 ]
+              }
+           },
+           "sort": [
+              {
+                 "post_date": {
+                    "order": "desc"
+                 }
+              }
+           ],
+           "from": 0,
+           "size": 20
+        }
+    
+
+I believe that would be grouping which elastic search doesn't support. You can
+however manipulate scoring and then sort results based on the scoring. More
+details on how scoring can be changed is available here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html>
+
+We can order exact match on top using `_score` in
+[sort](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-sort.html). I need to change in my JSON like this :-
+
+    
+    
+       "sort": [
+          "_score",
+          {
+             "post_date": {
+                "order": "desc"
+             }
+          }
+       ],
+    
+
+Add `_score` as a first fields.
+
+i beleve tis is about what you are looking for:
+
+    
+    
+    {
+      "query": {
+        "custom_filters_score": {
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "query_string": {
+                    "query": "Post title keyword goes here.."
+                  }
+                },
+                {
+                  "term": {
+                    "post_status": "publish"
+                  }
+                }
+              ]
+            }
+          },
+          "filters": [
+            {
+              "filter": {
+                "exists": {
+                  "field": "post_date"
+                }
+              },
+              "script": "doc['post_date'].date.getMillis() " /* calculate custom boost from date */ 
+            },
+            {
+              "filter": {
+                "query": {
+                  "query_string": {
+                    "query": "Post title keyword goes here..",
+                    "default_operator": "AND"
+                  }
+                }
+              },
+              "boost": 100
+            }
+          ]
+        }
+      }
+    }
+    
+

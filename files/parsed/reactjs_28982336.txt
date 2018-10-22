@@ -1,0 +1,78 @@
+28982336 ReactJS key attribute type
+
+I can't find the documentation about the allowed types for _key_ attribute.
+Looks like type _object_ is not an option, i'm getting 'duplicate keys
+warning' in console while using plain js object as key :
+
+    
+    
+    var someArray = [{name:1},{name:2}];
+    {someArray.map(function(o){
+        return <div key={o}> {o.name} </div>
+        })
+    }
+    
+
+The fiddle is here : <http://jsfiddle.net/iamfuric/gosbgm6q/>
+
+Is it a bug or _object_ is unsupported ?
+
+Thanks
+
+I think that it is better to specify the key as a unique id instead of an
+object.
+
+Because the key only has to be unique among its siblings, not globally unique
+so you can add an index in your map function and assign it to the key:
+
+    
+    
+    var someArray = [{name:1},{name:2}];
+        {someArray.map(function(o, index){
+             return <div key={index}> {o.name} </div>
+        })
+    }
+    
+
+The `key` just needs to be a basic type that can be treated as a hash value to
+determine uniqueness. So, a string or a number for example. There isn't a
+built-in JavaScript function on objects like some programming languages have
+that can return a unique hash value for an object instance.
+
+You'll either need to use an existing unique value, or create something
+artificially that will remain part of the object's lifetime.
+
+<http://jsfiddle.net/wiredprairie/vkfr6wc5/1/>
+
+In my example, I've created a simple function that adds a unique property
+called `_key` to each object if the property doesn't already exist. Then I
+passed that as the `key` attribute to the component.
+
+    
+    
+    var Hello = React.createClass({     
+        render: function() {
+            var someArray = [{name:'name1'},
+                             {name:'name2'}];     
+             return <div> {someArray.map(function(o){
+                unique(o);
+                return <div key={o._key}> {o.name} - { o._key} </div>
+             });
+        }
+    });
+    
+    var __unique = 0;
+    function unique(obj, key) {
+        key = key || '_key';
+        if(typeof obj === 'undefined' || obj === null) {
+            return obj;
+        }
+        if(!obj[key]) {
+            obj[key] = ++__unique;
+        }
+        return obj;
+    }
+    
+    React.render(<Hello key="world" />, document.body);
+    
+

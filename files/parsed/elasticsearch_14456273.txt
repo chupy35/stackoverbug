@@ -1,0 +1,129 @@
+14456273 Elasticsearch - search for word with Apostrophe
+
+I want to be able to search for the following words
+
+Vincent Vincents Vincent's
+
+Currently the test in the Database and ES is Vincent's
+
+Is it possible to detect the possessive and also ignore the apostrophe. I have
+looked at the Word-Delimiter but can't seem to find a decent explanation on
+this
+
+Search for the word with Apostrophe using match query like this.
+
+    
+    
+    {
+       "query": {
+          "bool": {
+             "must": [
+               {
+                 "match": {
+                      "_all": "Vincent Vincents Vincent's"
+                     }
+                  }
+                ]
+             }
+         }
+    }
+    
+
+You need to understand how elasticsearch's analyzers work. Analyzers perform a
+tokenization (split an input into a bunch of tokens, such as on whitespace),
+and a set of token filters (filter out tokens you don't want, like [stop
+words](http://www.ranks.nl/resources/stopwords.html), or modify tokens, like
+the [lowercase token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+lowercase-tokenfilter.html) which converts everything to lower case).
+
+Analysis is performed at two very specific times - during indexing (when you
+put stuff into elasticsearch) and, depending on your query, during searching
+(on the string you're searching for).
+
+That said, the default analyzer is the [standard
+analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html) which consists of a [standard
+tokenizer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-tokenizer.html), [standard token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-tokenfilter.html) (to clean up tokens from the standard tokenizer),
+[lowercase token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+lowercase-tokenfilter.html), and [stop words token
+filter](http://www.ranks.nl/resources/stopwords.html).
+
+To put this to an example, when you save the string "I love Vincent's pie!"
+into elasticsearch, and you're using the default standard analyzer, you're
+actually storing "i", "love", "vincent", "s", "pie". Then, when you attempt to
+search for "Vincent's" with a `term` query (which is **not analyzed** ), you
+will not find anything because "Vincent's" is not one of those tokens!
+However, if you search for "Vincent's" using a `match` query (which is
+**analyzed** ), you will find "I love Vincent's pie!" because "vincent" and
+"s" both find matches.
+
+The bottom line, either:
+
+  1. Use an analyzed query, such as `match`, when searching natural language strings.
+  2. Set up the analyzers to match your needs. You could set up set up a custom analyzer that performs a whitespace tokenizer or a letter tokenizer or a pattern tokenizer if you want to get complicated, as well as whatever filters your heart desires. It depends on your use case, but if you're dealing with natural language sentences I don't recommend this because the standard tokenizer was built for natural language searching.
+
+See
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis.html>
+for further reading.
+
+Use the "possessive_english" stemmer as described in the ES docs:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+stemmer-tokenfilter.html>
+
+Example:
+
+    
+    
+    {
+      "index" : {
+        "analysis" : {
+            "analyzer" : {
+                "my_analyzer" : {
+                    "tokenizer" : "standard",
+                    "filter" : ["standard", "lowercase", "my_stemmer"]
+                }
+            },
+            "filter" : {
+                "my_stemmer" : {
+                    "type" : "stemmer",
+                    "name" : "possessive_english"
+                }
+            }
+        }
+      }
+    }
+    
+
+Untested code, but should work. Here's a tested example with "word_delimiter":
+
+    
+    
+    {
+      "index" : {
+        "analysis" : {
+            "analyzer" : {
+                "my_analyzer" : {
+                    "tokenizer" : "standard",
+                    "filter" : ["standard", "lowercase", "my_word_delimiter"]
+                }
+            },
+            "filter" : {
+                "my_word_delimiter" : {
+                    "type" : "word_delimiter",
+                    "preserve_original": "true"
+                }
+            }
+        }
+      }
+    }
+    
+
+Works for me :-) ES docs:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+word-delimiter-tokenfilter.html>
+

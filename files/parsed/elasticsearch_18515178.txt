@@ -1,0 +1,96 @@
+18515178 Field Priority on full text search
+
+I have a situation in which my products are described in a few and the
+following structure is used:
+
+    
+    
+    {
+        "defaultDescription" : "Default Description",
+        "i18nDescription" : {
+            "pt" : "Descrição Padrão",
+            "de" : "Standard-Beschreibung"
+        }
+    }
+    
+
+Now I have the following requirement: perform a search following a list of
+prioritized languages (3 languages). If the first language isn't in the
+`i18nDescription`, use just the second language, if the second language isn't
+there use just the third one otherwise match against `defaultDescription`.
+
+My solution would be something like:
+
+    
+    
+    // suppose request comes with the following languages: en, de, pt
+    {
+        "size":10,
+        "fields" : ["defaultDescription", "i18nDescription.en^50", "i18nDescription.de^20", "i18nDescription.pt^10"],
+        "query": {
+            "multi_match" : { "query" : "default", "fields" : ["description","descriptions.fr-CA"] }
+        }
+    }
+    
+
+But this solution will just sort the result by priority language, I would like
+to do something like: `i18nDescription.en:search OR (i18nDescription.de:search
+AND _empty_:i18nDescription.en) OR (i18nDescription.pt:search AND
+_empty_:i18nDescription.en AND _empty_:i18nDescription.de) OR
+(description:search AND _empty_:i18nDescription.pt AND
+_empty_:i18nDescription.en AND _empty_:i18nDescription.de)`
+
+Is there a way to represent this is a ElasticSearch query?
+
+Playing a bit with bool queries we could reach the desired effect.
+
+It basically needs to check if one field has the text and others (that are
+more important) are empty, so it would consider just the most important
+present field.
+
+Query would be something similar to:
+
+    
+    
+    {
+        "size":10,
+        "query": {
+            "bool" : {
+                "should" : [ 
+                    {
+                        "bool" : {
+                            "must" : [
+                                { "multi_match" : { "fields":["defaultDescription"], "query" : "default" } },
+                                { "query_string" : { "query" : "+_missing_:i18nDescription.en +_missing_:i18nDescription.de +_missing_:i18nDescription.pt" } }
+                            ]
+                        }
+                    },
+                    {
+                        "bool" : {
+                            "must" : [
+                                { "multi_match" : { "fields":["i18nDescription.pt"], "query" : "default" } },
+                                { "query_string" : { "query" : "+_missing_:i18nDescription.en +_missing_:i18nDescription.de" } }
+                            ]
+                        }
+                    },
+                    {
+                        "bool" : {
+                            "must" : [
+                                { "multi_match" : { "fields":["i18nDescription.de"], "query" : "default" } },
+                                { "query_string" : { "query" : "+_missing_:i18nDescription.en" } }
+                            ]
+                        }
+                    },
+                    {
+                        "bool" : {
+                            "must" : [
+                                { "multi_match" : { "fields":["i18nDescription.en"], "query" : "default" } }
+                            ]
+                        }
+                    } 
+                ]
+            }
+        }
+    }
+    
+

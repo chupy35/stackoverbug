@@ -1,0 +1,4 @@
+32688993
+Can I update existing document without _id?
+<p>I'm using elasticSearch version 1.5</p>&#xA;&#xA;<p>I want to updating exist document without _id</p>&#xA;&#xA;<p>_id is auto generated.</p>&#xA;&#xA;<p>how can I without searching update the Document ?</p>&#xA;&#xA;<p>_id has another unique key.</p>&#xA;
+<p>There is a <a href="https://github.com/yakaz/elasticsearch-action-updatebyquery" rel="nofollow">update by query</a> plugin you can utilize. This would be your best option. But then if you are trying to update a large amount of documents in a single call , this might not work out.</p>&#xA;

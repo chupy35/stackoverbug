@@ -1,0 +1,16 @@
+23628058 elasticsearch snapshot fails when nodes in a cluster run in different
+machines
+
+we are using elasticsearch 1.1.1 We have a cluster with 3 nodes and all three
+nodes are in 3 different machines. Accessing the cluster, performing index
+operations work fine. But when we use snapshot feature to take the backup, it
+(backup) getting failed. but if we have all three nodes on the same machine,
+the snapshot command works fine. Did anybody face this issue. I did not
+include the configuration details here, as the cluster and indexing operations
+work fine without any issues.
+
+Thanks in advance.
+
+For those who are looking for a solution, it is a requirement that we should
+use the NFS
+

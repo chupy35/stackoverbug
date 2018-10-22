@@ -1,0 +1,73 @@
+28492023 How to get started with ReactJS Hello World example?
+
+I am using MacBook Pro.
+
+I prefer to use ubuntu in a VM for web development.
+
+I created a index.html inside my Macbook and then simply open it with Chrome.
+
+The html was created following this [video](https://egghead.io/lessons/react-
+hello-world-first-component#post-370)
+
+and this is my code
+
+    
+    
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name=description content="">
+        <meta name=viewport content="width=device-width, initial-scale=1">
+        <title>First Component</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.0-beta.1/react.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.0-beta.1/JSXTransformer.js"></script>
+    </head>
+    <body>
+        <script type="text/jsx">
+        /** @jsx React.DOM */
+        var APP = React.createClass({
+            render: function() {
+                return (
+                    <h1>Hello World</h1>
+                );
+            }
+        });
+    
+        React.renderComponent(<APP />, document.body);
+        </script>
+    </body>
+    </html>
+    
+
+I got the following error:
+
+![enter image description here](https://i.stack.imgur.com/R4WGZ.png)
+
+When I expand on the error:
+
+![enter image description here](https://i.stack.imgur.com/2r1Yu.png)
+
+Please advise.
+
+Update:
+
+In the newer versions it is
+([documentation](https://facebook.github.io/react/blog/2015/10/01/react-
+render-and-top-level-api.html))
+
+    
+    
+    ReactDOM.render(reactElement, domContainerNode)
+    
+
+* * *
+
+It is should be `React.render` and not `React.renderComponent` as per
+[documentation](http://facebook.github.io/react/docs/top-level-
+api.html#react.render)
+
+The video you mentioned uses 0.8 and you are using 0.13.
+
+From 0.12 `renderComponent` has been replaced with `render`
+

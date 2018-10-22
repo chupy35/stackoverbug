@@ -1,0 +1,51 @@
+19853862 How to rewrite ElasticSearch DSL query with the Java API
+
+I have got a working query for ElasticSearch, but I have problems to execute
+the same query with the Java API of ElasticSearch.
+
+How can I express the query below with the Java API of ElasticSearch?
+
+    
+    
+    ---
+    size: 0
+    
+    query:
+      match_all: []
+    
+    facets:
+      age:
+        statistical:
+          field : timestamp 
+    
+
+It should be something like:
+
+    
+    
+    client.prepareSearch("yourindex")
+          .setTypes("yourtype")
+          .setQuery(QueryBuilders.matchAllQuery())
+          .addFacet(FacetBuilders.statisticalFacet("age").field("timestamp"))
+          .setSize(0)
+          .execute()
+          .actionGet();
+    
+
+You can convert your query DSL to a JSON string, and then wrap it with
+`QueryBuilders.wrapperQuery()` or `WrapperQueryBuilder()`, finally do the
+query with Java API like this.
+
+    
+    
+    SearchResponse response = client.prepareSearch("yourIndex")
+                                    .setTypes("yourType")
+                                    .setQuery(dslQB)
+                                    .setFrom(currentItem)
+                                    .setSize(pageSize)
+                                    .execute()
+                                    .actionGet();
+    
+
+`
+

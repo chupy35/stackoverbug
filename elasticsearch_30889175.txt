@@ -1,0 +1,5 @@
+30889175
+How to find all documents with specific field in Elasticsearch?
+<p>I have many different documents in ES cluster, and I wonder how to find all documents that contain field <code>num-users</code>?</p>&#xA;
+<p>You can use the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-exists-filter.html" rel="nofollow">exists filter</a> to find out documents having that field</p>&#xA;
+<p>Updating Prabins answer:</p>&#xA;&#xA;<p>The exists filter has been replaced by the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-exists-query.html" rel="nofollow noreferrer">exists query</a>. You can use it like this:</p>&#xA;&#xA;<pre><code>GET /_search&#xA;{&#xA;    "query": {&#xA;        "exists" : { "field" : "num-users" }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;

@@ -1,0 +1,26 @@
+23605548 How to get the correct suggestion for the wrong searched term in
+ElasticSearch?
+
+I am quite new to ElasticSearch and it has been very nice getting to know
+about it. I have to implement something as the image attached below suggests.
+How do I hit this? I tried looking for it but did not get anything close to
+it. SO had to post it as a new question.
+
+Does ES have to do anything with it?
+
+![enter image description here](https://i.stack.imgur.com/iOB8h.png)
+
+Take a look at
+[Suggesters](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+suggesters.html)
+
+"The suggest feature suggests similar looking terms based on a provided text
+by using a suggester. Parts of the suggest feature are still under
+development."
+
+you can use
+this：<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+suggesters.html>
+
+using term suggest,it can fix you wrong word from it's dictionary.
+

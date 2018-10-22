@@ -1,0 +1,62 @@
+9685673 How to search in multiple fields with OR statement in ElasticSearch
+
+A have a string, let's say "Ab Cd"
+
+I have documents with fields: ['a', 'b', 'c', 'd', ... 'z'] (not all documents
+have all fields)
+
+I want search only in fields 'a', 'c', 'f', 'x' but I want to return all
+fields in document.
+
+Hit is successful if ANY of fields 'a', 'c', 'f', 'x' contains string
+beginning 'Ab' or 'Cd'.
+
+Now I use this but it searches in ALL fields not in selected ones.
+
+    
+    
+    {'query': {'query_string': {'query': "Ab* Cd*"}}}
+    
+
+It's possible to specify list of fields that you want to search by default as
+part of the query:
+
+    
+    
+    { 
+        "query": { 
+            "query_string" : {
+                "fields" : ["a", "c", "f", "x"],
+                "query" : "Ab* Cd*"
+            } 
+        }
+    }
+    
+
+Alternatively, you can prefix every term with the name of the field:
+
+    
+    
+    {'query': {'query_string': {'query': "a:Ab* c:Ab* f:Ab* x:Ab* a:Cd* c:Cd* f:Cd* x:Cd*"}}}
+    
+
+Check [Query String Query](http://www.elasticsearch.org/guide/reference/query-
+dsl/query-string-query.html) page of elasticsearch Guide that describes these
+and other useful options.
+
+This is exactly what I was looking for. In case anyone looking for a java
+version of this:
+
+    
+    
+     QueryStringQueryBuilder qsqb = new QueryStringQueryBuilder("Ab* Cd*")
+              .field("a", 2)
+              .field("b")
+              .field("c")
+              .field("f")
+              .field("x");
+    
+
+You can even use the field level boosting if you want as shows for field "a"
+in above code.
+

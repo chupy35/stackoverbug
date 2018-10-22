@@ -1,0 +1,20 @@
+18926153 elasticsearch node heap size and the file system buffer cache
+
+I have a physical machine with 128Gb of RAM. I am running three elasticsearch
+nodes on this particular machine. Each elasticsearch node has 30gb
+ES_HEAP_SIZE. Each index has 5 primaries and 5 replicas i.e total of 10 active
+shards per index. Currently there are 3200 active shards in the cluster of
+three nodes.  When I do a query on all the indices I get a lot of shard failed
+exceptions. I think it is because there is no space to search on 320 indices
+at a time in the RAM. My question is how does elasticsearch make use of the
+file system cache of the operating system and how does it make use of the heap
+size allocated to it.  My appilcation is indexing intensive rather than search
+intensive. So I do not care about filter caching. So am I over allocating the
+heap size? Can anyone explain me how does elasticsearch uses the heap size and
+file system cache so that I can architecture my elasticsearch cluster
+accrodingly ?
+
+You should check this great article
+<http://jprante.github.io/2012/11/28/Elasticsearch-Java-Virtual-Machine-
+settings-explained.html>
+

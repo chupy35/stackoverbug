@@ -1,0 +1,131 @@
+11923193 Renaming elastic search output fields
+
+I have a problem with using elastic search at the moment. When I try to
+perform a search and only want a subset of the fields returned, I need to
+specify the fields using a dot-notation if the fields are nested. Here's a
+sample of my mapper json document which maps my couchDB document:
+
+    
+    
+    {
+        "product": {
+            "_type": {"store": "yes"},
+            "_source": {"compress": true},
+            "index_analyzer": "standard",
+            "search_analyzer": "standard",
+            "dynamic_date_formats": ["date_time_no_millis", "date_optional_time"],
+            "properties": {
+                  "_id": {"type": "string", "store": "yes", "index": "not_analyzed"},
+                "key": {"type": "string", "store": "yes"},
+                "content": {
+                    "type": "object",
+                    "path": "just_name",
+                    "properties": {
+                        "key": {"type": "string", "store": "yes"},
+                        "name": {"type": "string", "store": "yes", "index_name": "name"},
+                        "description": {"type": "string", "store": "yes", "index_name": "description"},
+                        "brand": {
+                            "type": "object",
+                            "index_name": "brand",
+                            "properties": {
+                                "abbreviation": {"type": "string", "store": "yes", "index_name": "brand_abbreviation"},
+                                "name": {"type": "string", "store": "yes", "index_name": "brand_name"}
+                            }
+                        }
+                                    }
+                            }
+                     }
+              }
+    }
+    
+
+Referring to _id would just be a simple _id, but say I wanted to refer to name
+in the content, I would have to refer to it as content.name. The problem with
+this is that when the search output is out, the json output contains the field
+name as: "content.name".
+
+Is it possible to rename this as "name" and without the "content." prefix? You
+can see, I tried to specify index_name, but that seemed useless.
+
+You can use
+[`partial_fields`](http://www.elasticsearch.org/guide/reference/api/search/fields.html)
+to do this.
+
+For instance, if you index a doc like this:
+
+    
+    
+    curl -XPUT 'http://127.0.0.1:9200/test/test/1?pretty=1'  -d '
+    {
+       "email" : "john@foo.com",
+       "name" : "john",
+       "foo" : {
+          "bar" : {
+             "baz" : 1
+          }
+       }
+    }
+    '
+    
+
+You can include the fields/objects that you want like this:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/test/_search?pretty=1'  -d '
+    {
+       "partial_fields" : {
+          "doc" : {
+             "include" : [
+                "name",
+                "foo.*"
+             ]
+          }
+       }
+    }
+    '
+    
+
+Which will give you a result like this: (note the missing `email` field, and
+that field `foo` remains a hash - it is not flattened with dot notation)
+
+    
+    
+    {
+       "hits" : {
+          "hits" : [
+             {
+                "_score" : 1,
+                "fields" : {
+                   "doc" : {
+                      "name" : "john",
+                      "foo" : {
+                         "bar" : {
+                            "baz" : 1
+                         }
+                      }
+                   }
+                },
+                "_index" : "test",
+                "_id" : "1",
+                "_type" : "test"
+             }
+          ],
+          "max_score" : 1,
+          "total" : 1
+       },
+       "timed_out" : false,
+       "_shards" : {
+          "failed" : 0,
+          "successful" : 5,
+          "total" : 5
+       },
+       "took" : 1
+    }
+    
+
+On a side note, some comments about your mapping:
+
+  * your `_id` field (which I assume is meant to be the elasticsearch ID, not an external ID) is at the wrong level - it should be at the same level as `_type`. If it IS an external ID, then it's at the right level.
+  * Why are you storing all your fields? There really is no need - it just uses extra resources. Unless you have a massive `_source` field, it is much faster to retrieve just that field and parse it, rather than hitting the disk for each individual field.
+

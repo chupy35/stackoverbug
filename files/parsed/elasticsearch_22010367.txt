@@ -1,0 +1,41 @@
+22010367 how to modify stop word list in elastic search?
+
+I am quite new to elastic search, we are trying to incorporate new search
+engine(Elastic search) in our project. But we have specific stop words list
+maintained for project.
+
+Is there any stop words file is maintained in elastic search ? Where it is
+located ?
+
+Take a look at this [Stop Words
+Analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+stop-analyzer.html) and [Stop Words
+Filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+stop-tokenfilter.html). These docs define how you would use your own stopwords
+in ES. Hope it helps
+
+you can write your custom analyzer for specific stop words if you want to
+introduce or you can use in-build analyzer which meets your requirement.
+please refer below link to add stop words manually in custom analyzer.
+
+    
+    
+    https://www.elastic.co/guide/en/elasticsearch/guide/current/using-stopwords.html
+    
+    PUT /my_index/testsachin
+    {
+      "settings": {
+        "analysis": {
+          "analyzer": {
+            "custom_analyzer": { 
+              "type": "standard", 
+              "stopwords": [ "and", "the" ] 
+            }
+          }
+        }
+      }
+    }
+    
+
+please check if its helpful
+

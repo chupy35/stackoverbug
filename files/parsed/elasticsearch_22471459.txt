@@ -1,0 +1,93 @@
+22471459 How to get auto increment id for elasticsearch
+
+I need to store the unique auto increment id together with the rest of the
+fields in my document in ElasticSearch. Is there anyway in ElasticSearch to
+obtain them.
+
+I found this as a potential solution:
+<http://blogs.perl.org/users/clinton_gormley/2011/10/elasticsearchsequence---
+a-blazing-fast-ticket-server.html>
+
+But I just wonder is there any better way?
+
+As of Elasticsearch v1.1.0 there is no native support for auto-incrementing
+ids as far as I know. Also the [official
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html#_automatic_id_generation) does not mention any feature like this.
+
+The blogpost you mention takes a feasible approach. It has the benefit of
+persisting the last id that was used in Elasticsearch. Compared to e.g.
+storing an auto-incremented value in Redis or any other external datasource
+you don't have to worry about a system crash in production. Then there are no
+two datasources that may be out of sync.
+
+BTW, I implemented a [node.js module](https://github.com/analog-nico/es-
+sequence) based on this approach.
+
+The 1.x reference document API says that you can leave off an id and it will
+be automatically generated. Use POST instead of put and the op_type will
+automatically be set to create.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html#_automatic_id_generation>
+
+Depending on what you want to exactly achieve, this might be an option - it's
+still in very early development stages though:
+<https://github.com/elastic/elasticsearch/issues/10708>
+
+Here's another way to use elasticsearch to create `iids`:
+
+The main advantage is that the `iid` can be backed up with simple dumps where
+an implementation using the `_version` of elasticsearch is not able to back up
+the version.
+
+It allows to request a bulk of iids to minimize the number of requests needed.
+
+A request to get a bulk of 10 `iids` would look like this:
+
+    
+    
+    curl -XPOST "http://localhost:9200/sequence/sequence/1/_updatefields=iid&retry_on_conflict=5" -d '{
+      "script": "ctx._source.iid += bulk_size",
+      "params": {
+        "bulk_size": 10
+      },
+      "lang": "groovy",
+      "upsert": {
+        "iid": 0
+      }
+    }'
+    
+
+It needs this (optimised) mapping for the index:
+
+    
+    
+    curl -XPOST http://localhost:9200/sequence/_mapping -d '{
+      "settings": {
+        "number_of_shards": 1,
+        "auto_expand_replicas": "0-all"
+      },
+      "mappings": {
+        "sequence": {
+          "_all": {
+            "enabled": 0
+          },
+          "_type": {
+            "index": "no"
+          },
+          "dynamic": "strict",
+          "properties": {
+            "iid": {
+              "type": "string",
+              "index": "no"
+            }
+          }
+        }
+      }
+    }'
+    
+
+A more detailed description can be found
+[here](http://www.lovelysystems.com/blog/es-iid-generator/):
+

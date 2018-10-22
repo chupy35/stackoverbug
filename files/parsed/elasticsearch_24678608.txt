@@ -1,0 +1,27 @@
+24678608 Elasticsearch: the mapping for a document with multiple languages for
+the same field?
+
+I have a document type which has a single data item called title. Here are
+some situations about it:
+
+  * Title can have multiple languages for a single document. One document may have just English title. Another document may have two (such as English and Spanish) or more languages for title. Currently, there are four languages (English, Spanish, French, and Chinese) for documents, but there will be more languages in the future when the system grows.
+
+  * Title is used for search. For a document with both English title and Spanish title, it should be returned if an English search term is found in the English title or a Spanish search term is found in the Spanish title.
+
+  * Elasticsearch should return ONE document in search results if a search term is found in different language titles of the same document.
+
+  * There can be many updates to some documents. Example updates includes deleting a document, change one language title and leave other language titles intact, delete one language title and leave other language title intact.
+
+What is the right mapping for this document type, with document indexing,
+changes, delete, search, and system growth in mind?
+
+Any input is deeply appreciated!
+
+Regards.
+
+The mapping of the title should work with `object` type whose properties are
+included several language fields and each field can apply different analyzer
+according to its language.  During searching, you might specify the field to
+be `title.en` to quickly find the English title, or `title.*` to query all the
+title fields depends on what your need.
+

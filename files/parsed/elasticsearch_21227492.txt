@@ -1,0 +1,37 @@
+21227492 Elastic Search Query for multiple conditions
+
+I want to build a query in Elastic Search which has 3 sub conditions. 1\. It
+must satisfy at-least one of list of provided values. 2\. After 1, 2 must be
+satisfied and then 3rd condition.
+
+(1 must be satisfied, 2 and 3 also must be satisfied but only after 1 is
+satisfied). 1 is a list of values, so anyone satisfying will suffice.
+
+Please give a outline of how to frame the Elastic Search query using boolean
+parameters.
+
+Thanks in advance.
+
+    
+    
+    {
+       "query" : {
+          "filtered" : { 
+             "filter" : {
+                "bool" : {
+              "must" :[{"term":{"sessionId":"-ShAwL2KlnVeo6nMMNX3ycVlc0kdikOWPC8vShyvpRpdmOQJkbBo-FiLJymsuZp36gcQs1I"}}],
+                  "should" : [
+                     { "term" : {"visitorId": "b090606f-968d-fef4-33e3-3341f3a04265"}}, 
+                     { "term" : {"clientIp": "192.168.8.100"}} 
+                  ]
+    
+               }
+             }
+          }
+       }
+    }
+    
+
+the terms specified in the must, the documents must match the criteria the
+terms specified in the should, any of the term can be matched
+

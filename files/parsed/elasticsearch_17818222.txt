@@ -1,0 +1,154 @@
+17818222 ElasticSearch : search and return nested type
+
+I am pretty new to ElasticSearch and I am having trouble using nested mapping
+/ query.
+
+I have the following data structure added to my index :
+
+    
+    
+    {
+       "_id": "3",
+       "_rev": "6-e9e1bc15b39e333bb4186de05ec1b167",
+       "skuCode": "test",
+       "name": "Dragon vol. 1",
+       "pages": [
+           {
+               "id": "1", 
+               "tags": [
+                   {
+                       "name": "dragon"
+                   },
+                   {
+                       "name": "japonese"
+                   }
+               ]
+           },
+           {
+               "id": "2",               
+               "tags": [
+                   {
+                       "name": "tagforanotherpage"
+                   }
+               ]
+           }
+       ]
+    }
+    
+
+This index mapping is defined as bellow :
+
+    
+    
+    {
+      "metabook" : {
+        "metabook" : {
+          "properties" : {
+            "_rev" : {
+              "type" : "string"
+            },
+            "name" : {
+              "type" : "string"
+            },
+            "pages" : {
+              "type" : "nested",
+              "properties" : {
+                "tags" : {
+                  "properties" : {
+                    "name" : {
+                      "type" : "string"
+                    }
+                  }
+                }
+              }
+            },
+            "skuCode" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    }
+    
+
+My goal is to search all pages containing a specific tag, and return the book
+object with the filtered page list (I would like ES to return only pages that
+match the given tag). Something like (ignoring the second page) :
+
+    
+    
+    {
+       "_id": "3",
+       "_rev": "6-e9e1bc15b39e333bb4186de05ec1b167",
+       "skuCode": "test",
+       "name": "Dragon vol. 1",
+       "pages": [
+           {
+               "id": "1",               
+               "tags": [
+                   {
+                       "name": "dragon"
+                   },
+                   {
+                       "name": "japonese"
+                   }
+               ]
+           }
+       ]
+    }
+    
+
+Here is the query I actually use :
+
+    
+    
+    {
+    "from": 0,
+    "size": 10,
+    "query" : {
+        "nested" : {
+            "path" : "pages",
+            "score_mode" : "avg",
+            "query" : {
+               "term" : { "tags.name" : "japonese" }
+           }
+        }
+      }
+    }
+    
+
+But it actually returns an empty result. What am I doing wrong ? Maybe I
+should index my "pages" directly instead of books ? What am I missing ?
+
+Thank you in advance !
+
+Sadly you can't get back only parts of the a document. If the document matches
+a query, you will get the whole thing back; the root and all nested docs. If
+you want to get only parts back, then you could look at using parent/child
+docs.
+
+Also you aren't seeing any hits as you have a small syntax error in the nested
+query. Look closely at the field name:
+
+    
+    
+    {
+    "from": 0,
+    "size": 10,
+    "query" : {
+        "nested" : {
+            "path" : "pages",
+            "score_mode" : "avg",
+            "query" : {
+               "term" : { "pages.tags.name" : "japonese" }
+           }
+        }
+      }
+    }
+    
+
+If you need help with parent child docs feel free to ask! (There should be
+examples if you do a google search)
+
+Good luck!
+

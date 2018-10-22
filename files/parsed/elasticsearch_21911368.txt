@@ -1,0 +1,85 @@
+21911368 Query nested items containing all words
+
+I have an index in elastic search that contains simple nested items, defined
+this way:
+
+    
+    
+    'index' : 'items',
+    'body' : {
+        'name' : {'type' : 'string'},
+        'steps' : {
+          'type' : 'nested',
+          'text' : {'type' : 'string'},
+        }
+      }
+    
+
+Each step is a line in the object definition. Let's consider I have the four
+following objects:
+
+    
+    
+    obj1:
+      foo
+    
+    obj2:
+      bar
+    
+    obj3:
+      foo bar
+    
+    obj4:
+      foo
+      bar
+    
+
+I want to be able to search objects that have a line containing all words in
+the query. So If I query with 'foo bar', only 'obj3' will appear in the
+result.
+
+My current query is has follows:
+
+    
+    
+    'index : 'items',
+    'body' : {
+      'query' : {
+      'match' : {
+        "steps.text": {
+            'query' : 'foo bar',
+            'operator' : 'and'
+        }
+      }
+    }
+    
+
+This query almost works (it filters out obj1 and obj2 as they only contain one
+of the word) but obj4 still appears.
+
+So is there a way to tell elastic search "at least one step matches all the
+words" ?
+
+Thanks in advance, Vincent
+
+Finally solve the issue :) The query should have been:
+
+    
+    
+    {
+      nested: {
+         path: 'steps',
+         query: {
+           match: {
+             text: {
+               query: 'foo bar',
+               operator: 'AND'
+             }
+           }
+        }
+      }
+    }
+    
+
+This way it only finds items where one step contains 'foo' and 'bar'.
+

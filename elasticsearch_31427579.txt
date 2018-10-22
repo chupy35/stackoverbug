@@ -1,0 +1,4 @@
+31427579
+Elastic Search Java API for Search Templates
+<p>As per the elastic document, There is a REST API to add mustache templates (Search Template)</p>&#xA;&#xA;<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.6/search-template.html" rel="nofollow">https://www.elastic.co/guide/en/elasticsearch/reference/1.6/search-template.html</a></p>&#xA;&#xA;<p>does Java API support this now? If yes, What is the syntax to create search templates ?</p>&#xA;
+<p>I think it does.</p>&#xA;&#xA;<p>here is the documentation.&#xA;<a href="https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-search-template.html" rel="nofollow">https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-search-template.html</a></p>&#xA;&#xA;<p>hope that helps.</p>&#xA;

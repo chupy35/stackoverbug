@@ -1,0 +1,62 @@
+15503455 ElasticSearch: Allow only local requests
+
+How can allow only local requests for elasticsearch?  So command like:
+
+    
+    
+    curl -XGET 'http://localhost:9200/twitter/_settings'
+    
+
+can only be running on localhost and request like:
+
+    
+    
+    curl -XGET 'http://mydomain.com:9200/twitter/_settings'
+    
+
+would get rejected?
+
+Because, from what i see, elasticsearch allows it by default.
+
+**EDIT:**
+
+According to
+<http://www.elasticsearch.org/guide/reference/modules/network.html> you can
+manage `bind_host` parameter to allow hosts. And by default, it is set to
+`anyLocalAddress`
+
+If your final goal is to deny any requests from outside the host machine, the
+most reliable way would be to modify the host's
+[iptables](http://linux.die.net/man/8/iptables) so that it denies any incoming
+requests to the service ports used by ElasticSearch (9200-9300).
+
+If the end goal is to make sure that everyone refers to the service using an
+exclusive DNS, you're better off achieving this with an HTTP server that can
+proxy requests such as HTTPd or nginx.
+
+For elasticsearch prior to v2.0.0, if you want both http transport and
+internal elasticsearch transport to listen only on localhost simply add the
+following line to `elasticsearch.yml` file.
+
+    
+    
+    network.host: "127.0.0.1"
+    
+
+If you want only http transport to listen on localhost add the following line
+instead.
+
+    
+    
+    http.host: "127.0.0.1"
+    
+
+Starting from v2.0 elasticsearch is listening only on localhost by default.
+So, no additional configuration is needed.
+
+I use this parameter:
+
+http.host: "127.0.0.1"
+
+This parameter not accept http requests for external request.
+

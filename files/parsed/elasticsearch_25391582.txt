@@ -1,0 +1,18 @@
+25391582 Elasticsearch: query accuracy
+
+Reading that the elasticsearch may not have a complete accuracy for term
+aggregation when setting the size
+([link](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html)), I start questioning this: are
+the normal queries (without aggregations) accurate when setting `from` and
+`size`?
+
+`from` and `size` parameters are only related to the pagination of your
+results.
+
+They have no impact on the results accuracy : it's just extracting a subset of
+the results computed for the request.
+
+Actually, the things are a little different [see official
+explanation](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/pagination.html)
+

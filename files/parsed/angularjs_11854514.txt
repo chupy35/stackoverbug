@@ -1,0 +1,530 @@
+11854514 Is it possible to make a Tree View with Angular?
+
+I'm looking to display data in a tree structure in a web app. I was hoping to
+use Angular for this task.
+
+Looks like ng-repeat will allow me to iterate through a list of nodes, but how
+can I then do nesting when a given node's depth increases?
+
+I tried the [following code](http://jsbin.com/ihuvuf/1/), but the auto-
+escaping of the HTML is preventing this from working. Plus, the end ul tag is
+in the wrong place.
+
+I'm pretty sure that I'm going about this problem entirely the wrong way.
+
+Any ideas?
+
+Have a look at this fiddle
+
+Original: <http://jsfiddle.net/brendanowen/uXbn6/8/>
+
+Updated: <http://jsfiddle.net/animaxf/uXbn6/4779/>
+
+This should give you a good idea of how to display a `tree like structure`
+using angular. It is kind of using recursion in html!
+
+This one seems a bit more complete: <https://github.com/dump247/angular.tree>
+
+Another example based off the [original
+source](https://groups.google.com/forum/#!msg/angular/TbpjE-5XEM0/yUi8wqc7sWoJ
+"original source"), with a sample tree structure already in place (easier to
+see how it works IMO) and a filter to search the tree:
+
+[JSFiddle](http://goo.gl/zpWgW "JSFiddle example")
+
+Here is an example using a recursive directive: <http://jsfiddle.net/n8dPm/>
+Taken from <https://groups.google.com/forum/#!topic/angular/vswXTes_FtM>
+
+    
+    
+    module.directive("tree", function($compile) {
+    return {
+        restrict: "E",
+        scope: {family: '='},
+        template: 
+            '<p>{{ family.name }}</p>'+
+            '<ul>' + 
+                '<li ng-repeat="child in family.children">' + 
+                    '<tree family="child"></tree>' +
+                '</li>' +
+            '</ul>',
+        compile: function(tElement, tAttr) {
+            var contents = tElement.contents().remove();
+            var compiledContents;
+            return function(scope, iElement, iAttr) {
+                if(!compiledContents) {
+                    compiledContents = $compile(contents);
+                }
+                compiledContents(scope, function(clone, scope) {
+                         iElement.append(clone); 
+                });
+            };
+        }
+    };
+    });
+    
+
+If you are using Bootstrap CSS...
+
+I have created a simple re-usable tree control (directive) for AngularJS based
+on a Bootstrap "nav" list. I added extra indentation, icons, and animation.
+HTML attributes are used for configuration.
+
+It does not use recursion.
+
+I called it **angular-bootstrap-nav-tree** ( catchy name, don't you think? )
+
+There is an example [here](http://nickperkinslondon.github.io/angular-
+bootstrap-nav-tree/test/bs2_ng115_test_page.html), and the source is
+[here](https://github.com/nickperkinslondon/angular-bootstrap-nav-tree).
+
+When making something like this the best solution is an recursive directive.
+However, when you make such an directive you find out that AngularJS gets into
+an endless loop.
+
+The solution for this is to let the directive remove the element during the
+compile event, and manually compile and add them in the link events.
+
+I found out about this in [this
+thread](https://groups.google.com/forum/#!topic/angular/vswXTes_FtM), and
+abstracted this functionality [into a
+service](https://github.com/marklagendijk/angular-recursion).
+
+    
+    
+    module.factory('RecursionHelper', ['$compile', function($compile){
+        return {
+            /**
+             * Manually compiles the element, fixing the recursion loop.
+             * @param element
+             * @param [link] A post-link function, or an object with function(s) registered via pre and post properties.
+             * @returns An object containing the linking functions.
+             */
+            compile: function(element, link){
+                // Normalize the link parameter
+                if(angular.isFunction(link)){
+                    link = { post: link };
+                }
+    
+                // Break the recursion loop by removing the contents
+                var contents = element.contents().remove();
+                var compiledContents;
+                return {
+                    pre: (link && link.pre) ? link.pre : null,
+                    /**
+                     * Compiles and re-adds the contents
+                     */
+                    post: function(scope, element){
+                        // Compile the contents
+                        if(!compiledContents){
+                            compiledContents = $compile(contents);
+                        }
+                        // Re-add the compiled contents to the element
+                        compiledContents(scope, function(clone){
+                            element.append(clone);
+                        });
+    
+                        // Call the post-linking function, if any
+                        if(link && link.post){
+                            link.post.apply(null, arguments);
+                        }
+                    }
+                };
+            }
+        };
+    }]);
+    
+
+With this service you can easily make a tree directive (or other recursive
+directives). Here is an example of an tree directive:
+
+    
+    
+    module.directive("tree", function(RecursionHelper) {
+        return {
+            restrict: "E",
+            scope: {family: '='},
+            template: 
+                '<p>{{ family.name }}</p>'+
+                '<ul>' + 
+                    '<li ng-repeat="child in family.children">' + 
+                        '<tree family="child"></tree>' +
+                    '</li>' +
+                '</ul>',
+            compile: function(element) {
+                return RecursionHelper.compile(element);
+            }
+        };
+    });
+    
+
+See this [Plunker](http://plnkr.co/edit/JAIyolmqPqO9KsynSiZp?p=preview) for a
+demo. I like this solution best because:
+
+  1. You don't need an special directive which makes your html less clean.
+  2. The recursion logic is abstracted away into the RecursionHelper service, so you keep your directives clean.
+
+Update: Added support for a custom linking functions.
+
+[angular-ui-tree](http://angular-ui-tree.github.io/angular-ui-tree/#/basic-
+example "angular-ui-tree") seems to do a good job for me
+
+So many great solutions, but I feel they all in one way or another over-
+complicate things a bit.
+
+I wanted to create something that recreated the simplicity of @Mark
+Lagendijk's awnser, but without it defining a template in the directive, but
+rather would let the "user" create the template in HTML...
+
+With ideas taken from <https://github.com/stackfull/angular-tree-repeat>
+etc... I ended up with creating the project:
+<https://github.com/dotJEM/angular-tree>
+
+Which allows you to build your tree like:
+
+    
+    
+    <ul dx-start-with="rootNode">
+      <li ng-repeat="node in $dxPrior.nodes">
+        {{ node.name }}
+        <ul dx-connect="node"/>
+      </li>
+    </ul>
+    
+
+Which to me is cleaner than having to create multiple directives for
+differently structured trees.... In essence calling the above a tree is a bit
+false, it picks much more off from @ganaraj's awnser of "recursive templates",
+but allows us to define the template where we need the tree.
+
+(you could do that with a script tag based template, but it still has to sit
+right outside the actual tree node, and it still just feels a bit yuk...)
+
+Left here for just another choice...
+
+You can try with [Angular-Tree-DnD](https://github.com/thienhung1989/angular-
+tree-dnd) sample with Angular-Ui-Tree, but i edited, compatibility with table,
+grid, list.
+
+  * Able Drag & Drop
+  * Extended function directive for list _(next, prev, getChildren,...)_
+  * Filter data.
+  * OrderBy (ver)
+
+Yes it definitely possible. The question here probably assumes Angular 1.x,
+but for future reference I am including an Angular 2 example:
+
+Conceptually all you have to do is create a recursive template:
+
+    
+    
+    <ul>
+        <li *for="#dir of directories">
+    
+            <span><input type="checkbox" [checked]="dir.checked" (click)="dir.check()"    /></span> 
+            <span (click)="dir.toggle()">{{ dir.name }}</span>
+    
+            <div *if="dir.expanded">
+                <ul *for="#file of dir.files">
+                    {{file}}
+                </ul>
+                <tree-view [directories]="dir.directories"></tree-view>
+            </div>
+        </li>
+    </ul>
+    
+
+You then bind a tree object to the template and let Angular work its magic.
+This concept is obviously applicable to Angular 1.x as well.
+
+Here is a complete example:
+<http://www.syntaxsuccess.com/viewarticle/recursive-treeview-in-angular-2.0>
+
+You can use angular-recursion-injector for that:
+<https://github.com/knyga/angular-recursion-injector>
+
+Allows you to do unlimited depth nesting with conditioning. Does recompilation
+only if needed and compiles only right elements. No magic in code.
+
+    
+    
+    <div class="node">
+      <span>{{name}}</span>
+    
+      <node--recursion recursion-if="subNode" ng-model="subNode"></node--recursion>
+    </div>
+    
+
+One of the things that allows it to work faster and simpler then the other
+solutions is "--recursion" suffix.
+
+When the tree structure is large, Angular (up to 1.4.x) becomes very slow at
+rendering a recursive template. After trying a number of these suggestions, I
+ended up creating a simple HTML string and using `ng-bind-html` to display it.
+Of course, this is not the way to use Angular features
+
+A bare-bones recursive function is shown here (with minimal HTML):
+
+    
+    
+    function menu_tree(menu, prefix) {
+        var html = '<div>' + prefix + menu.menu_name + ' - ' + menu.menu_desc + '</div>\n';
+        if (!menu.items) return html;
+        prefix += menu.menu_name + '/';
+        for (var i=0; i<menu.items.length; ++i) {
+            var item = menu.items[i];
+            html += menu_tree(item, prefix);
+        }
+        return html;
+    }
+    // Generate the tree view and tell Angular to trust this HTML
+    $scope.html_menu = $sce.trustAsHtml(menu_tree(menu, ''));
+    
+
+In the template, it only needs this one line:
+
+    
+    
+    <div ng-bind-html="html_menu"></div>
+    
+
+This bypasses all of Angular's data binding and simply displays the HTML in a
+fraction of the time of the recursive template methods.
+
+With a menu structure like this (a partial file tree of a Linux file system):
+
+    
+    
+    menu = {menu_name: '', menu_desc: 'root', items: [
+                {menu_name: 'bin', menu_desc: 'Essential command binaries', items: [
+                    {menu_name: 'arch', menu_desc: 'print machine architecture'},
+                    {menu_name: 'bash', menu_desc: 'GNU Bourne-Again SHell'},
+                    {menu_name: 'cat', menu_desc: 'concatenate and print files'},
+                    {menu_name: 'date', menu_desc: 'display or set date and time'},
+                    {menu_name: '...', menu_desc: 'other files'}
+                ]},
+                {menu_name: 'boot', menu_desc: 'Static files of the boot loader'},
+                {menu_name: 'dev', menu_desc: 'Device files'},
+                {menu_name: 'etc', menu_desc: 'Host-specific system configuration'},
+                {menu_name: 'lib', menu_desc: 'Essential shared libraries and kernel modules'},
+                {menu_name: 'media', menu_desc: 'Mount point for removable media'},
+                {menu_name: 'mnt', menu_desc: 'Mount point for mounting a filesystem temporarily'},
+                {menu_name: 'opt', menu_desc: 'Add-on application software packages'},
+                {menu_name: 'sbin', menu_desc: 'Essential system binaries'},
+                {menu_name: 'srv', menu_desc: 'Data for services provided by this system'},
+                {menu_name: 'tmp', menu_desc: 'Temporary files'},
+                {menu_name: 'usr', menu_desc: 'Secondary hierarchy', items: [
+                    {menu_name: 'bin', menu_desc: 'user utilities and applications'},
+                    {menu_name: 'include', menu_desc: ''},
+                    {menu_name: 'local', menu_desc: '', items: [
+                        {menu_name: 'bin', menu_desc: 'local user binaries'},
+                        {menu_name: 'games', menu_desc: 'local user games'}
+                    ]},
+                    {menu_name: 'sbin', menu_desc: ''},
+                    {menu_name: 'share', menu_desc: ''},
+                    {menu_name: '...', menu_desc: 'other files'}
+                ]},
+                {menu_name: 'var', menu_desc: 'Variable data'}
+            ]
+           }
+    
+
+The output becomes:
+
+    
+    
+    - root
+    /bin - Essential command binaries
+    /bin/arch - print machine architecture
+    /bin/bash - GNU Bourne-Again SHell
+    /bin/cat - concatenate and print files
+    /bin/date - display or set date and time
+    /bin/... - other files
+    /boot - Static files of the boot loader
+    /dev - Device files
+    /etc - Host-specific system configuration
+    /lib - Essential shared libraries and kernel modules
+    /media - Mount point for removable media
+    /mnt - Mount point for mounting a filesystem temporarily
+    /opt - Add-on application software packages
+    /sbin - Essential system binaries
+    /srv - Data for services provided by this system
+    /tmp - Temporary files
+    /usr - Secondary hierarchy
+    /usr/bin - user utilities and applications
+    /usr/include -
+    /usr/local -
+    /usr/local/bin - local user binaries
+    /usr/local/games - local user games
+    /usr/sbin -
+    /usr/share -
+    /usr/... - other files
+    /var - Variable data
+    
+
+Not complicated.
+
+    
+    
+    <div ng-app="Application" ng-controller="TreeController">
+        <table>
+            <thead>
+                <tr>
+                    <th>col 1</th>
+                    <th>col 2</th>
+                    <th>col 3</th>
+                </tr>
+            </thead>
+            <tbody ng-repeat="item in tree">
+                <tr>
+                    <td>{{item.id}}</td>
+                    <td>{{item.fname}}</td>
+                    <td>{{item.lname}}</td>
+                </tr>
+                <tr ng-repeat="children in item.child">
+                    <td style="padding-left:15px;">{{children.id}}</td>
+                    <td>{{children.fname}}</td>
+                </tr>
+            </tbody>
+         </table>
+    </div>
+    
+
+controller code:
+
+    
+    
+    angular.module("myApp", []).
+    controller("TreeController", ['$scope', function ($scope) {
+        $scope.tree = [{
+            id: 1,
+            fname: "tree",
+            child: [{
+                id: 1,
+                fname: "example"
+            }],
+            lname: "grid"
+        }];
+    
+    
+    }]);
+    
+
+Based on @ganaraj 's [answer](https://stackoverflow.com/a/11861030/1309218),
+and @dnc253 's [answer](https://stackoverflow.com/a/14657310/1309218), I just
+made a simple "directive" for the tree structure having selecting, adding,
+deleting, and editing feature.
+
+Jsfiddle: <http://jsfiddle.net/yoshiokatsuneo/9dzsms7y/>
+
+HTML:
+
+    
+    
+    <script type="text/ng-template" id="tree_item_renderer.html">
+        <div class="node"  ng-class="{selected: data.selected}" ng-click="select(data)">
+            <span ng-click="data.hide=!data.hide" style="display:inline-block; width:10px;">
+                <span ng-show="data.hide && data.nodes.length > 0" class="fa fa-caret-right">+</span>
+                <span ng-show="!data.hide && data.nodes.length > 0" class="fa fa-caret-down">-</span>
+            </span>
+            <span ng-show="!data.editting" ng-dblclick="edit($event)" >{{data.name}}</span>
+            <span ng-show="data.editting"><input ng-model="data.name" ng-blur="unedit()" ng-focus="f()"></input></span>
+            <button ng-click="add(data)">Add node</button>
+            <button ng-click="delete(data)" ng-show="data.parent">Delete node</button>
+        </div>
+        <ul ng-show="!data.hide" style="list-style-type: none; padding-left: 15px">
+            <li ng-repeat="data in data.nodes">
+                <recursive><sub-tree data="data"></sub-tree></recursive>
+            </li>
+        </ul>
+    </script>
+    <ul ng-app="Application" style="list-style-type: none; padding-left: 0">
+        <tree data='{name: "Node", nodes: [],show:true}'></tree>
+    </ul>
+    
+
+JavaScript:
+
+    
+    
+    angular.module("myApp",[]);
+    
+    /* https://stackoverflow.com/a/14657310/1309218 */
+    angular.module("myApp").
+    directive("recursive", function($compile) {
+        return {
+            restrict: "EACM",
+            require: '^tree',
+            priority: 100000,
+    
+            compile: function(tElement, tAttr) {
+                var contents = tElement.contents().remove();
+                var compiledContents;
+                return function(scope, iElement, iAttr) {
+                    if(!compiledContents) {
+                        compiledContents = $compile(contents);
+                    }
+                    compiledContents(scope, 
+                                         function(clone) {
+                             iElement.append(clone);
+                                             });
+                };
+            }
+        };
+    });
+    
+    angular.module("myApp").
+    directive("subTree", function($timeout) {
+        return {
+            restrict: 'EA',
+            require: '^tree',
+            templateUrl: 'tree_item_renderer.html',
+            scope: {
+                data: '=',
+            },
+            link: function(scope, element, attrs, treeCtrl) {
+                scope.select = function(){
+                    treeCtrl.select(scope.data);
+                };
+                scope.delete = function() {
+                    scope.data.parent.nodes.splice(scope.data.parent.nodes.indexOf(scope.data), 1);
+                };
+                scope.add = function() {
+                    var post = scope.data.nodes.length + 1;
+                    var newName = scope.data.name + '-' + post;
+                    scope.data.nodes.push({name: newName,nodes: [],show:true, parent: scope.data});
+                };
+                scope.edit = function(event){
+                    scope.data.editting = true;
+                    $timeout(function(){event.target.parentNode.querySelector('input').focus();});
+                };
+                scope.unedit = function(){
+                    scope.data.editting = false;
+                };
+    
+            }
+        };
+    });
+    
+    
+    angular.module("myApp").
+    directive("tree", function(){
+        return {
+            restrict: 'EA',
+            template: '<sub-tree data="data" root="data"></sub-tree>',
+            controller: function($scope){
+                this.select = function(data){
+                    if($scope.selected){
+                        $scope.selected.selected = false;
+                    }
+                    data.selected = true;
+                    $scope.selected = data;
+                };
+            },
+            scope: {
+                data: '=',
+            }
+        }
+    });
+    
+

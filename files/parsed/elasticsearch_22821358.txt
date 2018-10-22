@@ -1,0 +1,82 @@
+22821358 Elasticsearch bool search matching incorrectly
+
+So I have an object with an Id field which is populated by a Guid. I'm doing
+an elasticsearch query with a "Must" clause to match a specific Id in that
+field. The issue is that elasticsearch is returning a result which does not
+match the Guid I'm providing exactly. I have noticed that the Guid I'm
+providing and one of the results that Elasticsearch is returning share the
+same digits in one particular part of the Guid.
+
+Here is my query source (I'm using the Elasticsearch head console):
+
+    
+    
+    {
+     query: 
+     {
+      bool: 
+      {
+        must: [
+        {
+          text: 
+          {
+            couchbaseDocument.doc.Id: 5cd1cde9-1adc-4886-a463-7c8fa7966f26
+          }
+        }]
+        must_not: [ ]
+        should: [ ]
+       }
+     }
+     from: 0
+     size: 10
+     sort: [ ]
+     facets: { }
+    }
+    
+
+And it is returning two results. One with ID of
+
+    
+    
+    5cd1cde9-1adc-4886-a463-7c8fa7966f26
+    
+
+and the other with ID of
+
+    
+    
+    34de3d35-5a27-4886-95e8-a2d6dcf253c2
+    
+
+As you can see, they both share the same middle term "-4886-". However, I
+would expect this query to only return a record if the record were an exact
+match, not a partial match. What am I doing wrong here?
+
+The query is (probably) correct.
+
+What you're almost certainly seeing is the work of the ['Standard
+Analyzer`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html) which is used by default at index-time. This Analyzer
+will tokenize the input (split it into terms) on hyphen ('-') among other
+characters. That's why a match is found.
+
+To remedy this, you want to set your `couchbaseDocument.doc.Id` field to
+`not_analyzed`
+
+See: [How to not-analyze in
+ElasticSearch?](https://stackoverflow.com/questions/18235996/how-to-not-
+analyze-in-elasticsearch) and the links from there into the official docs.
+
+Mapping would be something like:
+
+    
+    
+    {
+        "yourType" : {
+            "properties" : {
+                "couchbaseDocument.doc.Id" : {"type" : "string", "index" : "not_analyzed"},
+            }
+        }
+    }
+    
+

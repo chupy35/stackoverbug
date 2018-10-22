@@ -1,0 +1,84 @@
+11726249 Post-processing the DOM in AngularJS
+
+I want to add target="_blank" to an HTML fragment that went through the linky
+filter. That is, I need to post-process the DOM _after_ the content was
+completely rendered.
+
+See this jsFiddle.
+
+<http://jsfiddle.net/ADukg/410/>
+
+I suspect it's something around the priority of the directives, but changing
+that hasn't helped so far.
+
+You can do this with a setTimeout like [this](http://jsfiddle.net/ADukg/411/).
+even if the time is 0, it will only run after the angular finish it
+processing.
+
+The problem is that the linky filter will add the 'a' tags after the directive
+is evaluated and element.find('a') won't find anything.
+
+I think the best solution would be to write your own url filter which then
+calls the linky filter and don't use a directive.
+
+**Update**
+
+I created a jsfiddle for that as well: <http://jsfiddle.net/jomikr/ADukg/420/>
+
+  1. Open file `angular-sanitize.js`
+  2. Go to **line 525**
+  3. Change it to `writer.start('a', {href:url, target:'_blank'});`
+
+Alert - linky will add target _blank to every link, now!
+
+and what about just using a function in the controller.
+
+I'm using this in the controller:
+
+    
+    
+    $scope.getTarget = function(isExternal) {
+        return isExternal ? '_blank' : '';
+    }
+    
+
+and in the html:
+
+    
+    
+    <div ng-repeat="slide in slides" data-slider-id="{{$index}}">
+        <a ng-hide="{{slide.link == ''}}" 
+           href="{{slide.link}}" 
+           target="{{getTarget(slide.isExternal)}}">
+    ...
+    
+
+Renan's answer works well, but won't work on links that have been added after
+pageload.
+
+If you need to add _target blank to new links, try using a filter with a watch
+event:
+
+**JS**
+
+    
+    
+    app.directive('targetBlank', function() {
+        return {
+            restrict: 'A',
+            link: function(scope, element, attrs) {
+                scope.$watch(attrs.targetBlank, function(){
+                    element.find('a').attr('target', '_blank');
+                });
+            }
+        };
+    });
+    
+
+**HTML**
+
+    
+    
+    <div ng-bind-html="textModel | linky" target-blank="textModel"></div>
+    
+

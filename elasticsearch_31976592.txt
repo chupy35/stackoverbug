@@ -1,0 +1,3 @@
+31976592
+Selecting elasticsearch memory storage
+<p>I need to know which setting I have to set for selecting an onheap or offheap memory index. It seems that <code>index.store.type=memory</code> stores index data offheap, but I need to store my data onheap.</p>&#xA;&#xA;<p>I looked at the documentation and wasn't able to find this setting.</p>&#xA;&#xA;<p>Thanks,</p>&#xA;&#xA;<p>Joan.</p>&#xA;

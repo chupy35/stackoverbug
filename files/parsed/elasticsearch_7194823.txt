@@ -1,0 +1,216 @@
+7194823 How to use ElasticSearch Query params (DSL query) for multiple types?
+
+I have been working with the ElasticSearch from last few months, but still
+find it complicated when I have to pass an complicated query.
+
+I want to run the query which will have to search the multiple "types" and
+each type has to be searched with its own "filters", but need to have combined
+"searched results"
+
+For example:
+
+I need to search the "user type" document which are my friends and on the same
+time i have to search the "object type" document which I like, according to
+the keyword provided.
+
+OR
+
+The query that has both the "AND" and "NOT" clause
+
+Example query:
+
+    
+    
+    $options['query'] = array(
+            'query' => array(
+                'filtered' => array(
+                    'query' => array(
+                        'query_string' => array(
+                            'default_field' => 'name',
+                            'query' => $this->search_term . '*',
+                        ),
+                    ),
+                    'filter' => array(
+                        'and' => array(
+                            array(
+                                'term' => array(
+                                    'access_id' => 2,
+                                ),
+                            ),
+                        ),
+    
+                        'not' => array(
+                            array(
+                                'term' => array(
+                                    'follower' => 32,
+                                ),
+                            ),
+    
+                            array(
+                                'term' => array(
+                                    'fan' => 36,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        );
+    
+
+as this query is meant to search the user with access_id = 2, but must not
+have the follower of id 32 and fan of id 36
+
+but this is not working..
+
+**Edit: Modified query**
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "filter": {
+            "and": [
+              {
+                "not": {
+                  "filter": {
+                    "and": [
+                      {
+                        "query": {
+                          "query_string": {
+                            "default_field": "fan",
+                            "query": "*510*"
+                          }
+                        }
+                      },
+                      {
+                        "query": {
+                          "query_string": {
+                            "default_field": "follower",
+                            "query": "*510*"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "term": {
+                  "access_id": 2
+                }
+              }
+            ]
+          },
+          "query": {
+            "field": {
+              "name": "xyz*"
+            }
+          }
+        }
+      }
+    }
+    
+
+_now after running this query, i am getting two results, one with follower:
+"34,518" & fan: "510" and second with fan:"34", but isn't it supposed to be
+only the second one in the result._
+
+Any ideas?
+
+You may want to look at the slides of a presentation that I gave this month,
+which explains the basics of how the query DSL works:
+
+[Terms of endearment - the ElasticSearch Query DSL
+explained](http://www.slideshare.net/clintongormley/terms-of-endearment-the-
+elasticsearch-query-dsl-explained)
+
+The problem with your query is that your filters are nested incorrectly. The
+`and` and `not` filters are at the same level, but the `not` filter should be
+under `and`:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/_all/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "filtered" : {
+             "filter" : {
+                "and" : [
+                   {
+                      "not" : {
+                         "filter" : {
+                            "and" : [
+                               {
+                                  "term" : {
+                                     "fan" : 36
+                                  }
+                               },
+                               {
+                                  "term" : {
+                                     "follower" : 32
+                                  }
+                               }
+                            ]
+                         }
+                      }
+                   },
+                   {
+                      "term" : {
+                         "access_id" : 2
+                      }
+                   }
+                ]
+             },
+             "query" : {
+                "field" : {
+                   "name" : "keywords to search"
+                }
+             }
+          }
+       }
+    }
+    '
+    
+
+I just tried it with the "BOOL"
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": {
+                "access_id": 2
+              }
+            },
+            {
+              "wildcard": {
+                "name": "xyz*"
+              }
+            }
+          ],
+          "must_not": [
+            {
+              "wildcard": {
+                "follower": "*510*"
+              }
+            },
+            {
+              "wildcard": {
+                "fan": "*510*"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+**It gives the correct answer.**
+
+but I'm not sure should it be used like this ?
+

@@ -1,0 +1,55 @@
+24129007 Can I specify a fallback preference for a "should" query?
+
+If I have two documents in an index, with `locale` values `en` and `pt`,
+
+    
+    
+    {
+      "slug": "my-object",
+      "locale": "en",
+    }
+    
+    {
+      "slug": "my-object",
+      "locale": "pt",
+    }
+    
+
+and I run a query where the result _should_ be in a locale I don't have, `fr`,
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must":  [{ "term": { "slug":   "my-object" } }],
+          "should":[{ "term": { "locale": "fr" } }]
+        }
+      },
+      "size": 1
+    }
+    
+
+is there a way make it only fall back to a doc with `en` locale, not `pt` or
+any other?
+
+Basically, I want to say "it _should_ be in French, but I will also accept
+English."
+
+Good news! It looks like recent updates slated for 1.3 release should allow
+this to work in the general case (more than 1 result, supporting pagination).
+It isn't in the form of a "should" query, though, it is called the top_hits
+aggregator:
+
+<https://github.com/elasticsearch/elasticsearch/pull/6124>
+<https://github.com/elasticsearch/elasticsearch/issues/6299>
+
+If all you need back is one response or a known small response set applying
+the logic client side is likely the easiest way to get this going with the
+least amount of effort. So, you do a should "en", "fr" and ignore the en if
+the fr comes back.
+
+Another option is modeling the data such that you further denormalize things.
+Therefore, including all variants of the slug within the same document may
+simplify things. This could add other complications, so YMMV.
+

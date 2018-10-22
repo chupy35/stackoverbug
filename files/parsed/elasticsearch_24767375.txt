@@ -1,0 +1,63 @@
+24767375 How to suggest (autocomplete) next word in elastic search?
+
+Lets say I have following strings indexed:
+
+    
+    
+    "My awesome pizza"
+    "My awesome beer"
+    "Heineken is awesome beer"
+    "I love pizza pepperoni"
+    "Where is my beer"
+    
+
+For input `"My"` I want to suggest:
+
+  1. My **awesome**
+  2. My **beer**
+
+For input `"awesome"` I want to suggest:
+
+  1. awesome **pizza**
+  2. awesome **beer**
+
+etc.
+
+So I want to provide next words after user input... Also with some fuzziness (
+**aEwsome** ) should be also supported.
+
+Which suggesters/analyzers I should use? I tried **Term** and **completion**
+but it is not what I want (completion for example works only when search for
+start of the phrase - if I pass word that is in the middle of indexed string
+then it will not suggest it,)
+
+Elasticsearch provides a convenient way to get autocomplete up and running
+quickly with its completion suggester feature.
+
+Check this link, this is what you are looking for
+
+<https://qbox.io/blog/multi-field-partial-word-autocomplete-in-elasticsearch-
+using-ngrams>
+
+Completion Suggester also helps you to achieve this functionality
+
+Just in case anyone bumps in here, the edge-n-gram approach (as noted by
+@Siddardha Budige) is now superseded by **completion suggesters**.
+
+They are purposely built with auto-suggestion in mind, so they are fast end
+efficient. A very informative post By the ES team can be found
+[**here**](https://www.elastic.co/blog/you-complete-me).
+
+Two caveats:
+
+  1. They are implemented by an in-memory Data-Structure and are therefore not suitable for large datasets that can't fit in memory.
+
+  2. The ranking of the results is not based on similarity (a result either matches or not) so you have to be careful with blending fuzzy and non-fuzzy matches.
+
+EDIT: We shared our own experience with using Completion Suggesters
+[**here**](https://engineering.skroutz.gr/blog/implementing-a-fuzzy-
+suggestion-mechanism/).
+
+It includes some practical examples on fuzzyness and info for non-English
+inputs.
+

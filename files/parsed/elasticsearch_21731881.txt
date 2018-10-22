@@ -1,0 +1,109 @@
+21731881 Creating an ElasticSearch query to search all fields and use partial
+matching at the same time
+
+Separately, I have partial search working and I can search all fields. But I'm
+unable use partial matching on a search that maps all fields.
+
+This returns my name when I use partial matching:
+
+    
+    
+    GET /_search?pretty=true
+    { 
+        "query": {
+            "match": {
+                "FullName": "andon"
+            }
+        }
+    }
+    
+
+This search runs on all fields, but doesn't do partial matching (0 hits):
+
+    
+    
+    GET /_search?pretty=true
+    {
+        "query": {
+            "match": {
+               "_all": "andon"
+            }
+        }
+    }
+    
+
+What do I need to do to combine partial matching with a search on all fields &
+types? I have many fields and types so I'm hoping to avoid having to specify
+them all manually.
+
+If it makes any difference, I'm inserting my data from a River that connects
+to SQL.
+
+**EDIT:** I now have the _all field in my mapping. It appears to make no
+difference.
+
+    
+    
+    PUT /contact/
+    {
+        "settings" : {
+            "index" : {
+                "analysis" : {
+                    "analyzer" : {
+                        "my_ngram_analyzer" : {
+                            "tokenizer" : "my_ngram_tokenizer"
+                        }
+                    },
+                    "tokenizer" : {
+                        "my_ngram_tokenizer" : {
+                            "type" : "nGram",
+                            "min_gram" : "1",
+                            "max_gram" : "10"
+                        }
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "_default_": {
+                "_all" : {"enabled" : true},
+                "properties" : {
+                    "Description":{"type":"string","store":"yes", "index_analyzer": "my_ngram_analyzer"},
+                    "OfficePhone":{"type":"string","store":"yes"},
+                    "Email":{"type":"string","store":"yes", "index_analyzer": "my_ngram_analyzer"},
+                    "FullName":{"type":"string","store":"yes", "index_analyzer": "my_ngram_analyzer"},
+                    "ReportsTo":{"type":"string","store":"yes"},
+                    "Department":{"type":"string","store":"yes", "index_analyzer": "my_ngram_analyzer"},
+                    "Title":{"type":"string","store":"yes", "index_analyzer": "my_ngram_analyzer"}
+                }
+            }
+        }
+    }
+    
+
+The
+[`_all`-field](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+all-field.html) works by taking the text for all fields, pass them through the
+analyzer for `_all` (which is `standard` unless overridden), then index the
+resulting terms.
+
+It does _not_ take whatever terms are made by the analyzers for the other
+fields and shove them all into the same field.
+
+Thus, you'd have to override the `_all`-field to use your custom analyzer.
+
+But! I don't think you'd really want to do that. You'll get a much larger
+index. Having `_all` is convenient at times, but it's usually better to
+control what fields are searched at search time.
+
+So instead of doing a `match` on `_all`, you probably want to be using
+[`multi_match`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-multi-match-query.html), specifying your fields. You can also consider
+[`copy_to`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.x/mapping-
+core-types.html#copy-to) if you're on 1.0.
+
+I tried searching with wildcard characters(%2A) and was able to do partial
+searches
+
+ex => ?q=chew%2A&size=100
+

@@ -1,0 +1,77 @@
+24891441 How can perform an Elasticsearch Multisearch, with only suggesters?
+
+I need to return suggestions from 4 separate suggesters, across two separate
+indices.
+
+I am currently doing this by sending two separate requests to Elasticsearch
+(one for each index) and combining the results in my application. Obviously
+this does not seem ideal when the Multisearch API is available.
+
+From playing with the Multisearch API I am able to combine these suggestion
+requests into one and it correctly retrieves results from all 4 completion
+suggesters from both indexes.
+
+However, it also automatically performs a `match_all` query on the chosen
+indices. I can of course minimize the impact of this by setting `searchType`
+to `count` but the results are worse than the two separate curl requests.
+
+It seems that no matter what I try I cannot prevent the Multisearch API from
+performing some sort of query over each index.
+
+e.g.
+
+    
+    
+      {
+           index: 'users',
+           type: 'user'
+      },
+      {
+          suggest: {
+                users_suggest: {
+                     text: term,
+                     completion: {
+                         size : 5,
+                         field: 'users_suggest'
+                     }
+          }
+      },
+     {
+           index: 'photos',
+           type: 'photo'
+     },
+     {
+          suggest: {
+                photos_suggest: {
+                     text: term,
+                     completion: {
+                         size : 5,
+                         field: 'photos_suggest'
+                     }
+                }
+          }
+     }
+    
+
+A request like the above which clearly omits the `{query:{}` part of this
+multisearch request, still performs a `match_all` query and returns everything
+in the index.
+
+Is there any way to prevent the query taking place so that I can simply get
+the combined completion suggesters results? Or is there another way to search
+multiple suggesters on multiple indices in one query?
+
+Thanks in advance
+
+Do make size=0, so that no hits will be returned but only suggestions.
+
+    
+    
+    {
+        "size": 0,
+        "suggest":{}
+    }
+    
+
+for every request.
+

@@ -1,0 +1,195 @@
+28489985 Search Table in ReactJs
+
+I have made one table and am filtering it, but when I clear the search query,
+the table data doesn't show up, and table gets stuck on the query result.
+`SearchBox` is the textbox, `TableData` is the table, and in `Container` I am
+changing the `SearchBox` and `TableData` states.
+
+Here is my code:
+
+    
+    
+    var SearchBox = React.createClass({
+      doSearch: function() {
+        var query = this.refs.searchInput.getDOMNode().value;
+        console.log(query)
+        this.props.doSearch(query);
+      },
+      render: function() {
+        return (
+          <input
+            type="text"
+            ref="searchInput"
+            placeholder="Search Name"
+            value={this.props.query}
+            onChange={this.doSearch}
+          />
+        )
+      }
+    })
+    
+    var TableData = React.createClass({
+      render: function() {
+        var rows=[];
+        this.props.data.forEach(function(data) {
+          rows.push(<tr><td>{data.name}</td><td>{data.roll}</td></tr>)
+        });
+        return (
+          <table>
+            <thead>
+              <tr>
+                <th>Author</th>
+                <th>Text</th>
+              </tr>
+            </thead>
+            <tbody>{rows}</tbody>
+          </table>
+        );
+      }
+    });
+    
+    var Container = React.createClass({
+      componentDidMount: function() {
+        $.ajax({
+          url: this.props.url,
+          dataType: 'json',
+          success: function(data) {
+            this.setState({data: data});
+          }.bind(this),
+          error: function(xhr, status, err) {
+            console.error(this.props.url, status, err.toString());
+          }.bind(this)
+        });
+      },
+      doSearch: function(queryText) {
+        //get query result
+        var queryResult=[];
+        this.state.data.forEach(function(person) {
+          console.log("person ",person);
+          if (person.name.indexOf(queryText) != -1)
+            queryResult.push(person);
+          console.log("query result ",queryResult);
+        });
+        debugger;
+        this.setState({
+          data: queryResult,
+          query:queryText
+    
+        })
+      },
+      getInitialState: function() {
+        return {
+          data:[],
+          query:''
+        };
+      },
+      render: function() {
+        return(
+          <div>
+            <div className="row">
+              <SearchBox query = {this.state.query} doSearch={this.doSearch} />
+            </div>
+            <div class="row">
+              <TableData data = {this.state.data} />
+            </div>
+          </div>
+        );
+      }
+    });
+    
+    React.render(
+      <Container url="data2.json"/>,
+      document.getElementById('searchApplications')
+    );
+    
+
+In the initial state, your `doSearch` has not been called, so no filtering has
+occurred. When you delete your text value in the search box, `doSearch` is
+called, which tries to match '' against each person name. This returns 0
+results, resulting in the blank table. You can fix this by adding a condition
+to the if statement in `doSearch` checking if `queryText` is blank:
+
+    
+    
+    doSearch:function(queryText){
+    
+    
+      var queryResult=[];
+      this.state.data.forEach(function(person){
+          console.log("person ",person);
+          if(person.name.indexOf(queryText)!=-1 || queryText === '')
+            queryResult.push(person);
+            console.log("query result ",queryResult);
+      });
+      debugger;
+      this.setState({
+          data: queryResult,
+          query:queryText
+      })
+    },
+    
+
+I'd suggest you use the `onChange` event a bit differently and you shouldn't
+need to use `ref`. When the `SearchBox` is created, retrieve the initial
+`query` value from the property and store it in `state` as it may mutate.
+
+Then, in the `onChange` function for the `input` element, retrieve the new
+value from the event argument and store it in `state` using `setState`. From
+there, you can call `setState` so that the `render` will be called. From the
+`doSearch` function, you can call the `onSearch` method which in this example,
+calls a function declared in `App`.
+
+[Here's](http://jsbin.com/baweda/3/edit?html,js,output) a complete example.
+
+    
+    
+    var SearchBox = React.createClass({
+    
+        propTypes: {
+          onSearch: React.PropTypes.func.isRequired   
+        },
+    
+        // grab the query value and put it into state
+        // as the value may mutate as the user types
+        getInitialState: function() {
+          return {
+            query: this.props.query || ''
+          };    
+        },
+    
+        // if a change is ever propogated through properties
+        componentWillReceiveProps: function(nextProps) {
+          this.setState({ query: nextProps.query || '' });
+        },
+    
+        doSearch:function(event){        
+            // grab the new value from the input text box
+            var newQuery = event.target.value || '';
+            this.setState({ query: newQuery });
+    
+            this.props.onSearch.call(this, newQuery);
+        },
+        render:function(){
+            return (<input type="text" 
+                placeholder="Search Name" 
+                value={ this.state.query } 
+                onChange={ this.doSearch }/>);
+        }
+    });
+    
+    var App = React.createClass({          
+      _onSearch: function(query) {
+        console.log(query);
+      },  
+      render: function() {
+        return (
+          <div>
+            <SearchBox onSearch={ this._onSearch } />
+          </div>);
+    
+      }
+    });
+    
+    React.render(<App />, document.body);
+    
+

@@ -1,0 +1,185 @@
+15351457 Using ngrams instead of wildcards without a predefined schema
+
+I recently discovered that I shouldn't be using wildcards for elasticsearch
+queries. Instead, I've been told I should use ngrams. In my experimentation,
+this has worked really well. What I'd like to do is be able to tell
+Elasticsearch to use ngrams for all mapped fields (or mapped properties that
+fit a specific patern). For example:
+
+    
+    
+    CURL -XPUT 'http://localhost:9200/test-ngram-7/' -d '{
+         "mappings": {
+             "person": {
+                 "properties": {
+                     "name": {
+                         "type": "string",
+                         "analyzer": "partial"
+                     }
+                 }
+             }
+         },
+         "settings": {
+             "analysis": {
+                 "filter": {
+                     "lb_ngram": {
+                         "max_gram": 10,
+                         "min_gram": 1,
+                         "type": "nGram"
+                     }
+                 },
+                 "analyzer": {
+                     "partial": {
+                         "filter": [
+                             "standard",
+                             "lowercase",
+                             "asciifolding",
+                             "lb_ngram"
+                         ],
+                         "type": "custom",
+                         "tokenizer": "standard"
+                     }
+                 }
+             }
+         }
+     }'
+    
+
+Now, when I add this mapping:
+
+    
+    
+    CURL -XPUT 'http://localhost:9200/test-ngram-7/person/1' -d '{
+     "name" : "Cobb",
+     "age" : 31
+     }'
+    
+
+I can easily query for "obb" and get a partial result. In my app, I don't know
+in advance what fields people will be mapping. I could obviously short circuit
+this on the client side and declare my mapping before posting the document,
+but it would be really cool if I could do something like this:
+
+    
+    
+    CURL -XPUT 'http://localhost:9200/test-ngram-7/' -d '{
+         "mappings": {
+             "person": {
+                 "properties": {
+                     "_default_": {
+                         "type": "string",
+                         "analyzer": "partial"
+                     }
+                 }
+             }
+         },
+         "settings": {
+             "analysis": {
+                 "filter": {
+                     "lb_ngram": {
+                         "max_gram": 10,
+                         "min_gram": 1,
+                         "type": "nGram"
+                     }
+                 },
+                 "analyzer": {
+                     "partial": {
+                         "filter": [
+                             "standard",
+                             "lowercase",
+                             "asciifolding",
+                             "lb_ngram"
+                         ],
+                         "type": "custom",
+                         "tokenizer": "standard"
+                     }
+                 }
+             }
+         }
+     }'
+    
+
+Note that I'm using " _default_ ". It would also be cool if I could do like
+"name.*" and all properties starting with name would get filtered this way. I
+know elasticsearch supports _default_ and wildcards.*, so I'm hoping that I'm
+just doing it wrong.
+
+In short, I'd like for new properties to get run through ngram filters when
+mappings are created _automatically_ , not using the mapping API.
+
+So, One solution I've found is to set up a "default" analyzer. The docs says
+
+> Default Analyzers An analyzer is registered under a logical name. It can
+then be referenced from mapping definitions or certain APIs. When none are
+defined, defaults are used. There is an option to define which analyzers will
+be used by default when none can be derived.
+
+>
+
+> The default logical name allows one to configure an analyzer that will be
+used both for indexing and for searching APIs. The default_index logical name
+can be used to configure a default analyzer that will be used just when
+indexing, and the default_search can be used to configure a default analyzer
+that will be used just when searching.
+
+Here is an example:
+
+    
+    
+    CURL -XPUT 'http://localhost:9200/test-ngram-7/' -d '{
+    
+         "settings": {
+             "analysis": {
+                 "filter": {
+                     "lb_ngram": {
+                         "max_gram": 10,
+                         "min_gram": 1,
+                         "type": "nGram"
+                     }
+                 },
+                 "analyzer": {
+                     "default": {
+                         "filter": [
+                             "standard",
+                             "lowercase",
+                             "asciifolding",
+                             "lb_ngram"
+                         ],
+                         "type": "custom",
+                         "tokenizer": "standard"
+                     }
+                 }
+             }
+         }
+     }'
+    
+
+And then this query will work:
+
+    
+    
+    CURL -XGET 'http://localhost:9200/test-ngram-7/person/_search' -d '{
+      "query":
+     {
+         "match" : {
+             "name" : "obb"
+         }
+     }
+     }'
+    
+
+Answering my own question because I am still interested if this is the
+"correct" way to do this.
+
+You could set up a dynamic_template, see
+<http://www.elasticsearch.org/guide/reference/mapping/root-object-type.html>
+for info.
+
+Using this, you can create mapping templates for you not-known field, based on
+a match, pattern-matching etc, and apply analyzers etc for these templates.
+This will give you more fine-grained control of the behavior compared to
+setting the default analyzer. The default analyzer should typically be used
+for basic stuff like "lowercase" and "asciifolding", but if you are certain
+that you wih to apply the nGram for ALL fields, it certainly a valid way to
+go.
+

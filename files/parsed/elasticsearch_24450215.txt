@@ -1,0 +1,74 @@
+24450215 Elastic search exact match search on attachment type content
+
+I am trying to perform an exact search match in the content of indexed files
+(pdfs) that have been correctly indexed into ES using the attachment plugin.
+
+I already know that to perform an exact match search I have to specify
+`"index" : "not_analyzed"` in the mapping of the specific field.
+
+I tried to to the same with the attachment type but it seems it is not working
+as expected. I tested the following two mappings:
+
+    
+    
+    {
+        doc: {
+            "properties": {
+                file : { 
+                    "type" : "attachment",
+                    "index" : "not_analyzed",
+                    "fields" : {
+                        "title" : { "store" : "yes" },
+                        "file" : { "term_vector":"with_positions_offsets", "store":"yes" }
+                    }
+                }
+            }
+        }
+    }
+    
+    {
+        doc: {
+            "properties": {
+                file : { 
+                    "type" : "attachment",
+                    "fields" : {
+                        "title" : { "store" : "yes" },
+                        "file" : { "term_vector":"with_positions_offsets", "store":"yes", "index" : "not_analyzed" }
+                    }
+                }
+            }
+        }
+    }
+    
+
+But they didn't help me to achieve the exact search match I wanted.
+
+Could you please provide me some help on this?  Do you know if the attachment
+plugin supports the exact match search? If not could you please suggest an
+alternative approach?
+
+Thank you.
+
+I believe you have your `{"index": "not_analyzed"}` in the wrong location, it
+should be within the fields section. Try this mapping instead:
+
+    
+    
+    {
+        doc: {
+            "properties": {
+                file : { 
+                    "type" : "attachment",
+                    "fields" : {
+                        "title" : { "store" : "yes" },
+                        "file" : {  "index" : "not_analyzed"}
+                    }
+                }
+            }
+        }
+    }
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+attachment-type.html>
+

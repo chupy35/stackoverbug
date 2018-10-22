@@ -1,0 +1,162 @@
+21875375 Add an extra flag in ES query to check if a field exists
+
+I am writing a query to get some records like this:
+
+    
+    
+    curl -X GET 'http://localhost:9200/posts/post/_search?from=0&size=30&pretty' -d '{
+      "query": {
+        "filtered": {
+          "query": {
+            "query_string": {
+              "query": "content:(aid OR hiv)"
+            }
+          }
+        }
+      },
+      "fields": [
+        "content",
+        "entity_avatar_link",
+        "author_link",
+        "name"
+      ],
+      size: 30,
+      from: 0
+    }
+    
+
+This much is working fine and I am getting the results.
+
+I am trying to add a script field (which acts a flag) which returns whether a
+field exists in the doc along with every doc returned (I cannot return the
+field, as in most cases, it will be a very large size (an embedded field)).
+So, I added this also to the query:
+
+    
+    
+    "script_fields": {
+        "is_arranged_flag": {
+          "script": "!_source.arranged_retweets.empty"
+        }
+      }
+    
+
+So the whole query will be like:
+
+    
+    
+    curl -X GET 'http://localhost:9200/posts/post/_search?from=0&size=30&pretty' -d '{
+      "query": {
+        "filtered": {
+          "query": {
+            "query_string": {
+              "query": "content:(aid OR hiv)"
+            }
+          }
+        }
+      },
+      "fields": [
+        "content",
+        "entity_avatar_link",
+        "author_link",
+        "name"
+      ],
+      "script_fields": {
+        "is_arranged_flag": {
+          "script": "!_source.arranged_retweets.empty"
+        }
+      }
+      size: 30,
+      from: 0
+    }
+    
+
+But after adding the `script_fields` section, no result is coming out (results
+is empty [] for the same search query).
+
+I have also tried:
+
+    
+    
+     "script_fields": {
+        "is_arranged_flag": {
+          "script": "!doc['arranged_retweets'].empty"
+        }
+      }
+    
+
+What am I doing wrong?
+
+Here is the mapping `http://localhost:9200/posts/post/_mapping`
+
+    
+    
+    {
+      "post": {
+        "properties": {
+          "arranged_retweets": {
+            "properties": {
+              "author_gender": {
+                "type": "string"
+              },
+              "author_link": {
+                "type": "string"
+              }
+            }
+          },
+          "content": {
+            "type": "string",
+            "analyzer": "tweet_analyzer"
+          },
+          "name": {
+            "type": "string",
+            "index": "not_analyzed",
+            "omit_norms": true,
+            "index_options": "docs"
+          },
+          "author_link": {
+            "type": "string",
+            "index": "not_analyzed",
+            "omit_norms": true,
+            "index_options": "docs"
+          },
+          "entity_avatar_link": {
+            "type": "string",
+            "index": "not_analyzed",
+            "omit_norms": true,
+            "index_options": "docs"
+          },
+        }
+      }
+    }
+    
+
+I think this is the valid `script_fields` segment.
+
+    
+    
+    "script_fields": {
+       "is_arranged_flag": {
+          "script": "!doc['arranged_retweets'].empty"
+       }
+    }
+    
+
+Reference:
+[scripting](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html) (Read the section on document fields)
+
+I figured it out with the help of the discussion here
+(<https://groups.google.com/forum/#!topic/elasticsearch/BJZdlFSJSRg>). The
+field arranged_retweets is an object. So, we need to check down to the inner
+level `arranged_retweets.author_gender` and check if it is empty like this:
+
+    
+    
+    "script_fields": {
+       "is_arranged_flag": {
+          "script": "!doc['arranged_retweets.author_gender'].empty"
+       }
+    }
+    
+

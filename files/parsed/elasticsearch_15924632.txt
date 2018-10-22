@@ -1,0 +1,46 @@
+15924632 Empty string in Elasticsearch date field?
+
+I have a date field setup in my mapping like this:
+
+    
+    
+    "groupsAssignedDate" : {
+        "type" : "date",
+        "format" : "MM-dd-YYYY"
+    }
+    
+
+In my app, the field groupsAssignedDate is set to the empty string initially.
+When a group is assigned, a unix timestamp is generated and stored in the
+field. I'm trying to use elasticsearch's bulk update function to bring in a
+bunch of documents with a groupsAssignedDate of "" because no groups have been
+assigned yet. Elasticsearch won't index the docs though. This is in the log
+file:
+
+    
+    
+    Failed to parse [groupsAssignedDate]
+    ...
+    failed to parse date field [], tried both date format [MM-dd-YYYY], and timestamp number
+    
+
+It appears elasticsearch supports the JSON null value...do I need to switch my
+docs from using "" to null or is there some way I can support using the empty
+string instead?
+
+Sounds like you may have answered this yourself. Just using null rather than
+"" in the date field should work.
+
+If that's an issue, maybe consider this from  
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/ignore-
+malformed.html#ignore-malformed-setting>
+
+The **index.mapping.ignore_malformed** global setting can be set on the index
+level to allow to ignore malformed content globally across all mapping types
+(malformed content example is trying to index a string value as a numeric
+type).
+
+**EDIT** Edited the URL above to jump to the new information.
+
+**EDIT** Edited the URL above again to jump to the new information.
+

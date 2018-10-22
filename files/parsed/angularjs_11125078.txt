@@ -1,0 +1,393 @@
+11125078 is there a post render callback for Angular JS directive?
+
+I 've just gotten my directive to pull in a template to append to its element
+like this:
+
+    
+    
+    # CoffeeScript
+    .directive 'dashboardTable', ->
+      controller: lineItemIndexCtrl
+      templateUrl: "<%= asset_path('angular/templates/line_items/dashboard_rows.html') %>"
+      (scope, element, attrs) ->
+        element.parent('table#line_items').dataTable()
+        console.log 'Just to make sure this is run'
+    
+    # HTML
+    <table id="line_items">
+        <tbody dashboard-table>
+        </tbody>
+    </table>
+    
+
+I am also using a jQuery Plugin called DataTables. The general usage of it is
+like this: $('table#some_id').dataTable(). You can pass in the JSON data into
+the dataTable() call to supply the table data OR you can have the data already
+on the page and it will do the rest.. I am doing the latter, having the rows
+already on the HTML page.
+
+But the problem is that I have to call the dataTable() on the table#line_items
+AFTER DOM ready. My directive above calls the dataTable() method BEFORE the
+template is appended to the directive's element. Is there a way that I can
+call functions AFTER the append?
+
+Thank you for your help!
+
+UPDATE 1 after Andy's answer:
+
+I want to make sure that the link method does only get called AFTER everything
+is on the page so I altered the directive for a little test:
+
+    
+    
+    # CoffeeScript
+    #angular.module(...)
+    .directive 'dashboardTable', ->
+        {
+          link: (scope,element,attrs) -> 
+            console.log 'Just to make sure this gets run'
+            element.find('#sayboo').html('boo')
+    
+          controller: lineItemIndexCtrl
+          template: "<div id='sayboo'></div>"
+    
+        }
+    
+
+And I do indeed see "boo" in the div#sayboo.
+
+Then I try my jquery datatable call
+
+    
+    
+    .directive 'dashboardTable',  ->
+        {
+          link: (scope,element,attrs) -> 
+            console.log 'Just to make sure this gets run'
+            element.parent('table').dataTable() # NEW LINE
+    
+          controller: lineItemIndexCtrl
+          templateUrl: "<%= asset_path('angular/templates/line_items/dashboard_rows.html') %>"
+        }
+    
+
+No luck there
+
+Then I try adding a time out :
+
+    
+    
+    .directive 'dashboardTable', ($timeout) ->
+        {
+          link: (scope,element,attrs) -> 
+            console.log 'Just to make sure this gets run'
+            $timeout -> # NEW LINE
+              element.parent('table').dataTable()
+            ,5000
+          controller: lineItemIndexCtrl
+          templateUrl: "<%= asset_path('angular/templates/line_items/dashboard_rows.html') %>"
+        }
+    
+
+And that works. So I wonder what goes wrong in the non-timer version of the
+code?
+
+You can use the 'link' function, also known as postLink, which runs after the
+template is put in.
+
+    
+    
+    app.directive('myDirective', function() {
+      return {
+        link: function(scope, elm, attrs) { /*I run after template is put in */ },
+        template: '<b>Hello</b>'
+      }
+    });
+    
+
+Give this a read if you plan on making directives, it's a big help:
+<http://docs.angularjs.org/guide/directive>
+
+I had the same problem and I believe the answer really is no. See [Miško's
+comment](https://github.com/angular/angular.js/issues/1306#issuecomment-8200414)
+and some [discussion in the
+group](https://groups.google.com/forum/?fromgroups=#!topic/angular/SCc45uVhTt8).
+
+Angular can track that all of the function calls it makes to manipulate the
+DOM are complete, but since those functions could trigger async logic that's
+still updating the DOM after they return, Angular couldn't be expected to know
+about it. Any callback Angular gives _might_ work sometimes, but wouldn't be
+safe to rely on.
+
+We solved this heuristically with a setTimeout, as you did.
+
+_(Please keep in mind that not everyone agrees with me - you should read the
+comments on the links above and see what you think.)_
+
+I had the same issue, but using Angular + DataTable with a `fnDrawCallback` \+
+[row
+grouping](http://www.datatables.net/examples/advanced_init/row_grouping.html)
+\+ $compiled nested directives. I placed the $timeout in my `fnDrawCallback`
+function to fix pagination rendering.
+
+Before example, based on row_grouping source:
+
+    
+    
+    var myDrawCallback = function myDrawCallbackFn(oSettings){
+      var nTrs = $('table#result>tbody>tr');
+      for(var i=0; i<nTrs.length; i++){
+         //1. group rows per row_grouping example
+         //2. $compile html templates to hook datatable into Angular lifecycle
+      }
+    }
+    
+
+After example:
+
+    
+    
+    var myDrawCallback = function myDrawCallbackFn(oSettings){
+      var nTrs = $('table#result>tbody>tr');
+      $timeout(function requiredRenderTimeoutDelay(){
+        for(var i=0; i<nTrs.length; i++){
+           //1. group rows per row_grouping example
+           //2. $compile html templates to hook datatable into Angular lifecycle
+        }
+      ,50); //end $timeout
+    }
+    
+
+Even a short timeout delay was enough to allow Angular to render my compiled
+Angular directives.
+
+I got this working with the following directive:
+
+    
+    
+    app.directive('datatableSetup', function () {
+        return { link: function (scope, elm, attrs) { elm.dataTable(); } }
+    });
+    
+
+And in the HTML:
+
+    
+    
+    <table class="table table-hover dataTable dataTable-columnfilter " datatable-setup="">
+    
+
+**trouble shooting if the above doesnt work for you.**
+
+1) note that 'datatableSetup' is the equivalent of 'datatable-setup'. Angular
+changes the format into camel case.
+
+2) make sure that app is defined before the directive. e.g. simple app
+definition and directive.
+
+    
+    
+    var app = angular.module('app', []);
+    app.directive('datatableSetup', function () {
+        return { link: function (scope, elm, attrs) { elm.dataTable(); } }
+    });
+    
+
+If the second parameter, "delay" is not provided, the default behaviour is to
+execute the function after the DOM has completed rendering. So instead of
+setTimeout, use $timeout:
+
+    
+    
+    $timeout(function () {
+        //DOM has finished rendering
+    });
+    
+
+Although my answer is not related to datatables it addresses the issue of DOM
+manipulation and e.g. jQuery plugin initialization for directives used on
+elements which have their contents updated in async manner.
+
+Instead of implementing a timeout one could just add a watch that will listen
+to content changes (or even additional external triggers).
+
+In my case I used this workaround for initializing a jQuery plugin once the
+ng-repeat was done which created my inner DOM - in another case I used it for
+just manipulating the DOM after the scope property was altered at controller.
+Here is how I did ...
+
+HTML:
+
+    
+    
+    <div my-directive my-directive-watch="!!myContent">{{myContent}}</div>
+    
+
+JS:
+
+    
+    
+    app.directive('myDirective', [ function(){
+        return {
+            restrict : 'A',
+            scope : {
+                myDirectiveWatch : '='
+            },
+            compile : function(){
+                return {
+                    post : function(scope, element, attributes){
+    
+                        scope.$watch('myDirectiveWatch', function(newVal, oldVal){
+                            if (newVal !== oldVal) {
+                                // Do stuff ...
+                            }
+                        });
+    
+                    }
+                }
+            }
+        }
+    }]);
+    
+
+**Note:** Instead of just casting the myContent variable to bool at my-
+directive-watch attribute one could imagine any arbitrary expression there.
+
+**Note:** Isolating the scope like in the above example can only be done once
+per element - trying to do this with multiple directives on the same element
+will result in a $compile:multidir Error - see:
+[https://docs.angularjs.org/error/$compile/multidir](https://docs.angularjs.org/error/%24compile/multidir)
+
+None of the solutions worked for me accept from using a timeout. This is
+because I was using a template that was dynamically being created during the
+postLink.
+
+Note however, there can be a timeout of '0' as the timeout adds the function
+being called to the browser's queue which will occur after the angular
+rendering engine as this is already in the queue.
+
+Refer to this: <http://blog.brunoscopelliti.com/run-a-directive-after-the-dom-
+has-finished-rendering>
+
+Here is a directive to have actions programmed after a shallow render. By
+shallow I mean it will evaluate after that very element rendered and that will
+be unrelated to _when_ its contents get rendered. So if you need some sub
+element doing a post render action, you should consider using it there:
+
+    
+    
+    define(['angular'], function (angular) {
+      'use strict';
+      return angular.module('app.common.after-render', [])
+        .directive('afterRender', [ '$timeout', function($timeout) {
+        var def = {
+            restrict : 'A', 
+            terminal : true,
+            transclude : false,
+            link : function(scope, element, attrs) {
+                if (attrs) { scope.$eval(attrs.afterRender) }
+                scope.$emit('onAfterRender')
+            }
+        };
+        return def;
+        }]);
+    });
+    
+
+then you can do:
+
+`<div after-render></div>`
+
+or with any useful expression like:
+
+`<div after-render="$emit='onAfterThisConcreteThingRendered'"></div>`
+
+May be am late to answer this question. But still someone may get benefit out
+of my answer.
+
+I had similar issue and in my case I can not change the directive since, it is
+a library and change a code of the library is not a good practice. So what I
+did was use a variable to wait for page load and use ng-if inside my html to
+wait render the particular element.
+
+In my controller:
+
+    
+    
+    $scope.render=false;
+    
+    //this will fire after load the the page
+    
+    angular.element(document).ready(function() {
+        $scope.render=true;
+    });
+    
+
+In my html (in my case html component is a canvas)
+
+    
+    
+    <canvas ng-if="render"> </canvas>
+    
+
+Following the fact that the load order cannot be anticipated, a simple
+solution can be used.
+
+Let's look at the directive-'user of directive' relationship. Usually the user
+of the directive will supply some data to the directive or use some
+functionality ( functions ) the directive supplies. The directive on the other
+hand expects some variables to be defined on its scope.
+
+If we can make sure that all players have all their action requirements
+fulfilled before they attempt to execute those actions - everything should be
+well.
+
+And now the directive:
+
+    
+    
+    app.directive('aDirective', function () {
+        return {
+            scope: {
+                input: '=',
+                control: '='
+            },
+            link: function (scope, element) {
+                function functionThatNeedsInput(){
+                    //use scope.input here
+                }
+                if ( scope.input){ //We already have input 
+                    functionThatNeedsInput();
+                } else {
+                    scope.control.init = functionThatNeedsInput;
+                }
+              }
+    
+            };
+    })
+    
+
+and now the user of the directive html
+
+    
+    
+    <a-directive control="control" input="input"></a-directive>
+    
+
+and somewhere in the controller of the component that uses the directive:
+
+    
+    
+    $scope.control = {};
+    ...
+    $scope.input = 'some data could be async';
+    if ( $scope.control.functionThatNeedsInput){
+        $scope.control.functionThatNeedsInput();
+    }
+    
+
+That's about it. There is a lot of overhead but you can lose the $timeout. We
+also assume that the component that uses the directive is instantiated before
+the directive because we depend on the control variable to exist when the
+directive is instantiated.
+

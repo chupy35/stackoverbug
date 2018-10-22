@@ -1,0 +1,76 @@
+15326692 ElasticSearch - Querying only for particular array elements that are
+not empty
+
+I'm relatively new to ES and am having difficulty finding really good
+references or tutorials on the query dsl.
+
+We have a document type of the example below. The query I wish to conduct is
+thus: "Return all the email_package records that have at least one entities
+record (one record in the 'entities' array)." And yes I want the complete
+'email' record.
+
+Could anyone assist? Also if you could point to a reference or tutorial or
+cookbook somewhere that addresses question like this, that would be also
+greatly appreciated.
+
+    
+    
+    "email_package": {
+                        "email": {
+                            "date": "2007-02-13T18:24:22-04:00",
+                            "subject": "this is the subject",
+                            "body": "this is the body"
+                        },
+                        "entities": [
+                            {
+                                "Louisville": {
+                                    "City": "South"
+                                }
+                            },
+                            {
+                                "Memphis": {
+                                    "City": "South"
+                                }
+                            }
+                        ]
+                   }
+                    // more 'email_package records follow...
+    
+
+Your document is a bit problematic, since you seems to be nesting objects and
+giving them different names. If you are not bound to the current structure, I
+would have changed the mapping into something that is more manageable, and
+queries will be straight forward, e.g:
+
+    
+    
+    "email_package": {
+        "email": {
+            "body": "this is the body1", 
+            "date": "2007-02-13T18:24:22-04:00", 
+            "subject": "this is the subject"
+        }, 
+        "entities": [
+            {
+                "name": "Louisville"
+                "City": "South", 
+             }, 
+            {
+                "name": "Memphis"                 
+                "City": "South", 
+            }
+        ]
+    }
+    
+
+Query:
+
+    
+    
+    { "filter": {
+        "exists": {
+            "field": "email_package.entities.name"
+        }
+     }
+    
+

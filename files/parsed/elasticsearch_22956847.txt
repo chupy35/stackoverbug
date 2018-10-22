@@ -1,0 +1,101 @@
+22956847 elasticsearch - create TransportClient singleton instance
+
+I'm trying to use a singleton instance of client for multiple index creation.
+Below is the code for the same. But every time I'm getting instance as null
+and it's creating a new instance. Please let me know what I'm doing wrong
+
+singleton instance :
+
+    
+    
+    public class ESClientSingleton {
+    
+        public static Client instance ;
+    
+        private ESClientSingleton()
+        {}
+    
+        public static Client getInstance()
+        {
+            if (instance == null)
+              {
+                System.out.println("the instance is null...");
+                ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder(); 
+                        settings.put("node.client", true); 
+                        settings.put("node.data", false); 
+                        settings.put("node.name", "node-client");
+                        settings.put("cluster.name", "elasticsearch");
+                        settings.build(); 
+                instance = new TransportClient(settings)
+                                .addTransportAddress(new InetSocketTransportAddress("10.203.251.142", 9300));
+                //instance = client;
+                System.out.println("return the client");
+                return instance;
+              }
+            return instance;
+        }       
+    }
+    
+
+calling method :
+
+    
+    
+    public static IndexResponse insertESDocument(String nodeName, String json) throws MasterNotDiscoveredException, SocketException
+      {  
+          Client client = ESClientSingleton.getInstance();
+          logger.debug("calling the es client");
+          logger.debug("the json received as == "+json);
+          IndexResponse response = client.prepareIndex("aricloud-nodes","node-entry",nodeName )
+                                   .setSource(json)
+                                   .execute()
+                                   .actionGet();
+          logger.debug("the document is successfully indexed...");
+                  System.out.println("the document is indexed...");
+                  //client.close();
+          return response;  
+      } 
+    
+
+This is indeed the correct way to call the singleton client object instance
+for elasticsearch cluster. I had some issue with webapp and the same is
+working now.
+
+Nevertheless this can be an example for someone who are looking for similar
+kind of answer.
+
+For implementing Singleton pattern, use **enum** instead of a class.  enum has
+many built in advantages which helps us to simplify the singleton
+implementation. Refer joshua bloch's Effective Java for more info.
+
+In a multi-threaded environment, checking if the instance is null might not be
+enough.
+
+You can have a **racing condition** with 2 or more threads that are doing this
+check in parallel, and the second will try also try to instantiate the object
+because the first didn't finish the assignation. There are many ways to
+overcome this, most common would be to declare instance as **volatile** and to
+put the if in a **synchronized block** :
+
+    
+    
+    public class SingletonDemo {
+        private static volatile SingletonDemo instance;
+        private SingletonDemo() { }
+        public static SingletonDemo getInstance() {
+            if (instance == null ) {
+                synchronized (SingletonDemo.class) {
+                    if (instance == null) {
+                        instance = new SingletonDemo();
+                    }
+                }
+            }
+    
+            return instance;
+        }
+    }
+    
+
+Or the enum solution, as proposed by Jayan K. More details here:
+<https://en.wikipedia.org/wiki/Singleton_pattern>
+

@@ -1,0 +1,21 @@
+21774320 Elasticsearch Primary Shards not balanced
+
+I noticed a strange behaviour in my elasitcsearch cluster. As you can see on
+the screenshot below (it shows the "kopf"-plugin), most of the primary shards
+are located on the nl-1 server. I thought, that elasitcsearch balanced the
+primary shards evenly over all servers. Am I wrong or why is this happening?
+
+Thank you for your help.
+
+![Screenshot](https://i.stack.imgur.com/9HpH5.png)
+
+I dont think balance of primaries is a focus of ES.
+
+[See this github issues question about it
+here](https://github.com/elasticsearch/elasticsearch/issues/3293)
+
+There is a cluster settings you can tweak to nudge towards balancing them.
+
+[cluster.routing.allocation.balance.primary](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+update-settings.html)
+

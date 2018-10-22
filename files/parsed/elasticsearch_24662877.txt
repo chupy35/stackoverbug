@@ -1,0 +1,75 @@
+24662877 How to use wildcards with ngrams in ElasticSearch
+
+Is it possible to combine wildcard matches and ngrams in ElasticSearch? I'm
+already using ngrams of length 3-11.
+
+As a very small example, I have records C1239123 and C1230123. The user wants
+to return both of these. This is the only info they know: C123?12
+
+The above case won't work on my full match analyzer because the query is
+missing the 3 on the end. I was under the impression wildcard matches would
+work out of the box, but if I perform a search similar to the above I get
+gibberish.
+
+Query:
+
+    
+    
+    .Search<ElasticSearchProject>(a => a
+        .Size(100)
+        .Query(q => q
+            .SimpleQueryString(query => query
+                .OnFieldsWithBoost(b => b
+                    .Add(f => f.Summary, 2.1)
+                    .Add(f => f.Summary.Suffix("ngram"), 2.0)
+                .Query(searchQuery))));
+    
+
+Analyzer:
+
+    
+    
+    var projectPartialMatch = new CustomAnalyzer
+    {
+        Filter = new List<string> { "lowercase", "asciifolding" },
+        Tokenizer = "ngramtokenizer"
+    };
+    
+
+Tokenizer:
+
+    
+    
+    .Tokenizers(t=>t
+        .Add("ngramtokenizer", new NGramTokenizer
+        {
+            TokenChars = new[] {"letter","digit","punctuation"},
+            MaxGram = 11,
+            MinGram = 3
+        }))
+    
+
+EDIT: The main purpose is to allow the user to tell the search engine exactly
+where the unknown characters are. This preserves the match order. I do not
+ngram the query, only the indexed fields.
+
+EDIT 2 with more test results: I had simplified my prior example a bit too
+much. The gibberish was being caused by punctuation filters. With a proper
+example there's no gibberish, but results aren't returned in a relevant order.
+Seeing below, I'm unsure why the first 2 results match at all. Ngram is not
+applied to the query.
+
+Searching for c.a123?.7?0 gives results in this order:
+
+  * C.A1234.560 
+  * C.A1234.800 
+  * C.A1234.700 <\--Shouldn't this be first? 
+  * C.A1234.950
+
+To anyone looking for a resolution to this, wildcards are used on ngrammed
+tokens by default. My problem was due to my queries having punctuation in them
+and using a standard analyzer on my query (which breaks on punctuation).
+
+Duc.Duong's suggestion to use the Inquisitor plugin helped show exactly how
+data would be analyzed.
+

@@ -1,0 +1,172 @@
+11264188 How can I detect onKeyUp in AngularJS?
+
+How can I detect onKeyUp in AngularJS?
+
+I'm looking for an 'ngOnkeyup' directive, similar to ngChange, but I can't
+find anything suitable.
+
+If there isn't such a directive, is there a clean way to call into the
+controller from a browser-native onkeyup event?
+
+You'll have to create your custom directive if default directives are not
+enough. Something like this, may be?
+
+    
+    
+    <!doctype html>
+    <html lang="en" ng-app="app">
+      <body ng-controller="ctrl">
+        <input ng-onkeyup="keyup()"/>
+        <script src="js/lib/angular-1.0.0.min.js"></script>
+        <script>
+          angular.module('app', []).directive('ngOnkeyup', function() {
+            return {
+              restrict: 'A',
+              scope: {
+                func: '&ngOnkeyup'
+              },
+              link: function( scope, elem, attrs ) {
+                elem.bind('keyup', scope.func);
+              }
+            };
+          });
+    
+          function ctrl($scope) {
+            $scope.keyup = function() {
+              alert('keyup fired');
+            };
+          }
+        </script>
+      </body>
+    </html>
+    
+
+**EDIT: see second answer below from maklemenz which refers to the new built-
+in ng-keyup directive**
+
+You could use the [angular-ui library](http://angular-ui.github.com/):
+
+With angular-ui, you can just do
+
+    
+    
+    <input ui-event="{keyup: 'myFn($event)'}"
+    
+
+If you don't want to use another library, the most efficient and simple way to
+do this is:
+
+JS
+
+    
+    
+    myApp.directive('onKeyup', function() {
+      return function(scope, elm, attrs) {
+        elm.bind("keyup", function() {
+          scope.$apply(attrs.onKeyup);
+        });
+      };
+    });
+    
+
+HTML:
+
+    
+    
+    <input on-keyup="count = count + 1">
+    
+
+* * *
+
+**Edit** : If you wanted to detect which key was pressed, you have two basic
+options really. You could add an attribute to the directive to handle the
+allowed keys within the directive, or you could pass the key pressed to your
+controller. I would generally recommend the directive handles the key method.
+
+Here's an example of both ways: <http://jsfiddle.net/bYUa3/2>
+
+FYI - I was just searching for this today and it appears that there is a
+branch in Angular's github that addresses the issue of keyup keydown.
+
+<https://github.com/angular/angular.js/pull/1622>
+
+It has been merged into master... HOWEVER it does not look like it will appear
+in a release until 1.1.3
+
+In order to build the angular with the ng-keyup option in place you can
+download the code from git and run `rake package` on the folder. Of course on
+windows that means installing Node.js and Ruby and possibly some other hoops
+(I was having fork errors on win32)
+
+Though, I did get the "built in" keyup in the end.
+
+In addition to the already mentioned Event Binder, you can now use these
+convenient ui-key* directives from Angular UI:
+
+    
+    
+    <textarea
+     ui-keypress="{13:'keypressCallback($event)'}">
+    </textarea>
+    <textarea
+      ui-keydown="{'enter alt-space':'keypressCallback($event)'}">
+    </textarea>
+    <textarea
+      ui-keyup="{'enter':'keypressCallback($event)'}">
+    </textarea>
+    
+    <script>
+    $scope.keypressCallback = function($event) {
+    alert('Voila!');
+    $event.preventDefault();
+    };
+    </script>
+    
+
+<http://angular-ui.github.io/#/directives-keypress>
+
+For everyone looking for that feature today, please use the official [ng-
+keyup](http://docs.angularjs.org/api/ng.directive:ngKeyup) directive:
+
+    
+    
+    <input type="text" ng-keyup="{expression}" />
+    
+
+If I understand your question corectly, you are looking for the ng-keyup
+directive. Here is a link:
+<http://docs.angularjs.org/api/ng.directive:ngKeyup>
+
+Just to help anyone out there who, like me, wanted to fire the event only on a
+certain key. Here is the code using `ng-keyup` that calls my `cancel()`
+function when, and only when, escape is pressed. To find out what keycode you
+want look at [this website](http://keycode.info/)
+
+    
+    
+    ng-keyup="$event.keyCode == 27 ? cancel() : ''"
+    
+
+Note that as @maklemenz mentioned this uses the in built Angular directive
+available now
+
+I know my answer is too late but I hope it can be helpful to some folks. If
+you are looking for a fast and easy method you can use this:
+
+    
+    
+     // in the controller
+        
+        // get element by id, you can use by class...
+        var element = angular.element('#element');
+        
+        element.keyup(function () {
+        console.log('keyup fired');
+        })
+    
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.23/angular.min.js"></script>
+    
+    <input id="element" type="text" />
+

@@ -1,0 +1,77 @@
+24060094 Elasticsearch get by id doesn't work but document exists
+
+I'm seeing weird behaviours with ids on elasticsearch 1.2.0 (recently upgraded
+from 1.0.1).
+
+A search retrieves my document, showing the correct value for _id:
+
+[terminal]
+
+    
+    
+    curl 'myServer:9200/global/_search?q=someField:something
+    
+
+result is
+
+    
+    
+    {
+      "took": 79,
+      "timed_out": false,
+      "_shards": {
+        "total": 12,
+        "successful": 12,
+        "failed": 0
+      },
+      "hits": {
+        "total": 1,
+        "max_score": 17.715034,
+        "hits": [
+          {
+            "_index": "global",
+            "_type": "user",
+            "_id": "7a113e4f-44de-3b2b-a3f1-fb881da1b00a",
+            ...
+          }
+        ]
+      }
+    }
+    
+
+But a direct lookup on id doesn't:  
+[terminal]
+
+    
+    
+    curl 'myServer:9200/global/user/7a113e4f-44de-3b2b-a3f1-fb881da1b00a'
+    
+
+result is
+
+    
+    
+    {
+      "_index": "global",
+      "_type": "user",
+      "_id": "7a113e4f-44de-3b2b-a3f1-fb881da1b00a",
+      "found": false
+    }
+    
+
+It seems that this is on documents that have previously been updated using
+custom scripting.
+
+Any ideas?
+
+I think you should upgrade to 1.2.1  Due to release notes
+(<http://www.elasticsearch.org/blog/elasticsearch-1-2-1-released/>) there are
+some problems, especially with get:
+
+`There was a routing bug in Elasticsearch 1.2.0 that could have a number of
+bad side effects on the cluster. Possible side effects include:
+
+documents that were indexed prior to the upgrade to 1.2.0 may not be
+accessible via get. A search would find these documents, but not a direct get
+of the document by ID.`
+

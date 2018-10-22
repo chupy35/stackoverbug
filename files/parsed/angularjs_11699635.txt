@@ -1,0 +1,69 @@
+11699635 Dealing with DOM Manipulations in AngularJS
+
+When I perform DOM manipulation (add new HTML) using jQuery, AngularJS doesn't
+automatically detect variables in the new HTML and replace them with their
+values. For example:
+
+    
+    
+    $scope.showSummary = function($event){
+    
+        $($event.currentTarget).html("<div>{{row}}</div>");
+    
+    };
+    
+
+This is a simple example, but after changing the HTML in the element (this
+function was called by `ng-click`), the output it still `{{row}}` instead of
+what _row_ should mean in the context/scope.
+
+You have to inject `$compile` (<http://docs.angularjs.org/api/ng.$compile>)
+and use it so angular knows about the new html.
+
+`$compile('<div>{{row}}</div')($scope).appendTo($event.currentTarget);`
+
+However, it is frowned upon in angular to do DOM manipulation in your
+controllers. You want your controllers to handle business and your views to
+handle the view.
+
+Try a directive to do what you want.
+<http://docs.angularjs.org/guide/directive>
+
+If you use fragments for new elements (e.g. $("<" + "div>").appendTo("body")),
+using a wrapper like the following for the JQuery prepend/append methods lets
+you avoid having to change your element-adding code:
+
+    
+    
+    // run angular-compile command on new content
+    // (also works for prependTo/appendTo, since they use these methods internally)
+    var oldPrepend = $.fn.prepend;
+    $.fn.prepend = function()
+    {
+        var isFragment = arguments[0][0] && arguments[0][0].parentNode && arguments[0][0].parentNode.nodeName == "#document-fragment";
+        var result = oldPrepend.apply(this, arguments);
+        if (isFragment)
+            AngularCompile(arguments[0]);
+        return result;
+    };
+    var oldAppend = $.fn.append;
+    $.fn.append = function()
+    {
+        var isFragment = arguments[0][0] && arguments[0][0].parentNode && arguments[0][0].parentNode.nodeName == "#document-fragment";
+        var result = oldAppend.apply(this, arguments);
+        if (isFragment)
+            AngularCompile(arguments[0]);
+        return result;
+    };
+    
+    function AngularCompile(root)
+    {
+        var injector = angular.element($('[ng-app]')[0]).injector();
+        var $compile = injector.get('$compile');
+        var $rootScope = injector.get('$rootScope');
+        var result = $compile(root)($rootScope);
+        $rootScope.$digest();
+        return result;
+    }
+    
+

@@ -1,0 +1,30 @@
+17592682 using TTL with bulk_index in elasticsearch
+
+I am trying to user bulk insert with a ttl value but I could not do it. here
+is the curl request I am doing.
+
+All I am trying to do is insert some values that has certain ttl. Does anybody
+tell me what I am doing wrong. I could not find any example usage about this.
+
+    
+    
+    curl -XPOST 'http://10.9.8.7:9200/_bulk?_ttl=1&op_type=create' -d '{"index": {"_type": "numbers", "_index": "index"}}
+    {"name": 1, "number": 1}
+    {"index": {"_type": "numbers", "_index": "index"}}
+    {"name": 2, "number": 2}
+    {"index": {"_type": "numbers", "_index": "index"}}
+    {"name": 3, "number": 3}
+    {"index": {"_type": "numbers", "_index": "index"}}
+    {"name": 4, "number": 4}
+    
+
+what's the error/response? Did you enable ttl in your mapping?
+
+Default is off according to this:
+<http://www.elasticsearch.org/guide/reference/mapping/ttl-field/> Also, you
+can set a default ttl in your mapping.
+
+And according to this
+<http://www.elasticsearch.org/guide/reference/api/bulk/>, ttl should go in the
+body and not the url.
+

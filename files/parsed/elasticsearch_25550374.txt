@@ -1,0 +1,30 @@
+25550374 Apart the two hop operation what other differences between
+Elasticsearch Node Client and Transport Client?
+
+This may have been answered before but I do think their is some other key
+difference between the two native clients worth mentioning. I summarize what I
+think is some key differences but also have some questions at the bottom.
+
+The most common knowledge is that Node client joins the cluster as a node and
+that Transport client requires 2 hop operations.
+
+To take it further "The Node Client connects to the cluster". Actually the
+Node Client joins the cluster as a node to create a full mesh cluster. I.e:
+There is two way communication between all the nodes including clients. So
+anyone can contact anyone. Better explained here:
+<https://www.found.no/foundation/elasticsearch-networking/>
+
+The only difference between client node and data node is that the client node
+does not store data. People should also be aware that the Node client also
+binds listening ports for the tcp and http transports. This allows it to
+become a proxy so other clients can connect to it or to serve plugin sites.
+
+The transport client is a client in the purest sense. It doesn't join the
+cluster and it does not do any kind of port binding and it cannot be connected
+to and it cannot serve plugin sites.
+
+Also correct me if I'm wrong Node client can also do scatter gather.
+
+  1. Does the Transport client consider routing fields. So if we pass it a routing field we could avoid the two hop? I'm guessing no.
+  2. Does the transport client do scatter gather?
+

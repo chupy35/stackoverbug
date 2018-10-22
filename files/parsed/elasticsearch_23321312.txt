@@ -1,0 +1,7 @@
+23321312 Elasticsearch index auto update
+
+I am working on PHP project for searching data I want to use Elasticsearch, I
+created index and it works fine but if I insert new record, I can't search the
+new record. How to update my index dynamic or auto update? any body can help
+please?
+

@@ -1,0 +1,124 @@
+19186195 How to map then query nested data on elasticsearch
+
+I'm trying to index and query a simple nested data on elastic search but
+getting the following error:
+
+    
+    
+    "filter":[]}}}]]]; nested: QueryParsingException[[products] [_na] query malformed, no field after start_object]; }]
+    
+
+My mapping is:
+
+    
+    
+    {
+      "product": {
+        "properties": {
+          "id": { "type": "integer", "store": true },
+          "description": { "type": "string" },
+          "kind": { "type": "string" },
+          "name": { "type": "string", "store": true },
+          "tags": {
+            "type": "nested",
+            "properties": {
+              "label": {
+                "type": "string",
+                "index": "not_analyzed",
+                "omit_norms": true,
+                "index_options": "docs"
+              },
+              "slug": {
+                "type": "string",
+                "index": "not_analyzed",
+                "omit_norms": true,
+                "index_options": "docs"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+I'm successfully getting all headphones the query below:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "bool": {
+                        "must": {
+                            "match": { "kind": "Headphone" }
+                        },
+                        "must_not": [],
+                        "should": []
+                    }
+                },
+                "filter": []
+            }
+        }
+    }
+    
+
+My question is what is the proper query structure to find "headphones with XX
+tag" or "headphones with XX and YY tag (another query)" while supporting
+facets?
+
+I just tried to merge the query part below with the query above but i can't
+find out the "correct" place (key) to put it:
+
+    
+    
+    {
+        "nested": {
+            "path": "tags",
+            "filter": {
+                "bool": {
+                    "must": {
+                        "terms": {
+                            "tags.slug": [ "discount", "black"],
+                            "minimum_should_match": 1
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+First of all, the mapping doesn't seem to be valid. For example, correct
+mapping should contain `properties` instead of `mapping`. Make sure that your
+mapping is actually getting applied by running
+
+    
+    
+    curl "localhost:9200/products/product/_mapping?pretty"
+    
+
+The search request is missing `query` element on the top level and
+`minimum_should_match` is not supported by the `terms` filter. So, request
+should look like this:
+
+    
+    
+    {
+        "query": {
+            "nested": {
+                "path": "tags",
+                "filter": {
+                    "bool": {
+                        "must": {
+                            "terms": {
+                                "tags.slug": [ "discount", "black"]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+

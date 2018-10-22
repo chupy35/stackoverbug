@@ -1,0 +1,195 @@
+22544461 ElasticSearch - Optimal number of Shards per node
+
+I would appreciate if someone could suggest the optimal number of shards per
+ES node for optimal performance or provide any recommended way to arrive at
+the number of shards one should use, given the number of cores and memory foot
+print.
+
+There are three condition you consider before sharding..
+
+**_Situation 1)_** You want to use elasticsearch with failover and high
+availability. Then you go for sharding. In this case, you need to select
+number of shards according to number of nodes[ES instance] you want to use in
+production.
+
+Consider you wanna give 3 nodes in production. Then you need to choose 1
+primary shard and 2 replicas for every index. If you choose more shards than
+you need.
+
+**_Situation 2)_** Your current server will hold the current data. But due to
+dynamic data increase future you may end up with no space on disk or your
+server cannot handle much data means, then you need to configure more no of
+shards like 2 or 3 shards ( **its up to your requirements** ) for each index.
+But there shouldn't any replica.
+
+**_Situation 3)_** In this situation you the combined situation of situation 1
+& 2\. then you need to combine both configuration. Consider your data
+increased dynamically and also you need high availability and failover. Then
+you configure a index with 2 shards and 1 replica. Then you can share data
+among nodes and get an optimal performance..!
+
+**Note:** _Then query will be processed in each shard and perform mapreduce on
+results from all shards and return the result to us. So the map reduce process
+is expensive process. Minimum shards gives us optimal performance_
+
+If you are using only one node in production then, only one primary shards is
+optimal no of shards for each index.
+
+Hope it helps..!
+
+I'm late to the party, but I just wanted to point out a couple of things:
+
+  1. The optimal number of shards per _index_ is always 1. However, that provides no possibility of horizontal scale.
+  2. The optimal number of shards per _node_ is always 1. However, then you cannot scale horizontally more than your current number of nodes.
+
+The main point is that shards have an inherent cost to both indexing and
+querying. Each shard is actually a separate Lucene index. When you run a
+query, Elasticsearch must run that query against each shard, and then compile
+the individual shard results together to come up with a final result to send
+back. The benefit to sharding is that the index can be distributed across the
+nodes in a cluster for higher availability. In other words, it's a trade-off.
+
+Finally, it should be noted that any more than 1 shard per node will introduce
+I/O considerations. Since each shard must be indexed and queried individually,
+a node with 2 or more shards would require 2 or more separate I/O operations,
+which can't be run at the same time. If you have SSDs on your nodes then the
+actual cost of this can be reduced, since all the I/O happens _much_ quicker.
+Still, it's something to be aware of.
+
+That, then, begs the question of why would you want to have more than one
+shard per node? The answer to that is planned scalability. The number of
+shards in an index is fixed. The only way to add more shards later is to
+recreate the index and reindex all the data. Depending on the size of your
+index that may or may not be a big deal. At the time of writing, Stack
+Overflow's index is 203GB (see: <https://stackexchange.com/performance>).
+That's kind of a big deal to recreate all that data, so resharding would a
+nightmare. If you have 3 nodes and a total of 6 shards, that means that you
+can scale out to up to 6 nodes at a later point easily without resharding.
+
+It might be also a good idea to have more than one primary shard per node,
+depends on use case. I have found out that bulk indexing was pretty slow, only
+one CPU core was used - so we had idle CPU power and very low IO, definitely
+hardware was not a bottleneck. Thread pool stats shown, that during indexing
+only one bulk thread was active. We have a lot of analyzers and complex
+tokenizer (decomposed analysis of German words). Increasing number of shards
+per node has resulted in more bulk threads being active (one per shard on
+node) and it has dramatically improved speed of indexing.
+
+Just got back from configuring some log storage for 10 TB so let's talk
+sharding :D
+
+# Node limitations
+
+Main source: [The definitive guide to
+elasticsearch](https://www.elastic.co/guide/en/elasticsearch/guide/current/_limiting_memory_usage.html%20the%20definitive%20guide%20to%20elasticsearch)
+
+**HEAP: 32 GB at most** :
+
+> If the heap is less than 32 GB, the JVM can use compressed pointers, which
+saves a lot of memory: 4 bytes per pointer instead of 8 bytes.
+
+**HEAP: 50% of the server memory at most**. The rest is left to filesystem
+caches (thus 64 GB servers are a common sweet spot):
+
+> Lucene makes good use of the filesystem caches, which are managed by the
+kernel. Without enough filesystem cache space, performance will suffer.
+Furthermore, the more memory dedicated to the heap means less available for
+all your other fields using doc values.
+
+[An index split in] **N shards can spread the load over N servers** :
+
+1 shard can use all the processing power from 1 node (it's like an independent
+index). Operations on sharded indices are run concurrently on all shards and
+the result is aggregated.
+
+**Less shards is better (the ideal is 1 shard)** :
+
+The overhead of sharding is significant. See this benchmark for numbers
+<https://blog.trifork.com/2014/01/07/elasticsearch-how-many-shards/>
+
+**Less servers is better (the ideal is 1 server (with 1 shard)])** :
+
+The load on an index can only be split across nodes by sharding (A shard is
+enough to use all resources on a node). More shards allow to use more servers
+but more servers bring more overhead for data aggregation... There is no free
+lunch.
+
+# Configuration
+
+## Usage: A single big index
+
+We put everything in a single big index and let elasticsearch do all the hard
+work relating to sharding data. There is no logic whatsoever in the
+application so it's easier to dev and maintain.
+
+Let's suppose that we plan for the index to be at most 111 GB in the future
+and we've got 50 GB servers (25 GB heap) from our cloud provider.
+
+That means we should have 5 shards.
+
+**Note** : Most people tend to overestimate their growth, try to be realistic.
+For instance, this 111GB example is already a BIG index. For comparison the
+stackoverflow index is 430 GB (2016) and it's a top 50 site worldwide, made
+entirely of written texts by millions of people.
+
+## Usage: Index by time
+
+When there're too much data for a single index or it's getting too annoying to
+manage, the next thing is to split the index by time period.
+
+The most extreme example is logging applications (logstach and graylog) which
+are using a new index every day.
+
+The ideal configuration of 1-single-shard-per-index makes perfect sense in
+scenario. The index rotation period can be adjusted, if necessary, to keep the
+index smaller than the heap.
+
+**Special case** : Let's imagine a popular internet forum with monthly
+indices. 99% of requests are hitting the last index. We have to set multiple
+shards (e.g. 3) to spread the load over multiple nodes. (Note: It's probably
+unnecessary optimization. A 99% hitrate is unlikely in the real world and the
+shard replica could distribute part of the read-only load anyway).
+
+### Usage: Going Exascale (just for the record)
+
+ElasticSearch is magic. It's the easiest database to setup in cluster and it's
+one of the very few able to scale to many nodes (excluding
+[Spanner](https://en.wikipedia.org/wiki/Spanner_\(database\) "Spanner") ).
+
+It's possible to go exascale with hundreds of elasticsearch nodes. There must
+be many indices and shards to spread the load on that many machines and that
+takes an appropriate sharding configuration (eventually adjusted per index).
+
+The final bit of magic is to tune elasticsearch routing to target specific
+nodes for specific operations.
+
+* * *
+
+I have not tested this yet, but aws has a good articale about [ES best
+practises](https://docs.aws.amazon.com/elasticsearch-
+service/latest/developerguide/aes-bp.html). Look at [Choosing Instance Types
+and Testing](https://docs.aws.amazon.com/elasticsearch-
+service/latest/developerguide/sizing-domains.html#aes-bp-instances) part.
+
+If you have data that can be split up in logical pieces and your queries are
+generally targeted, it's a good idea to shard based on that logic to reap
+benefits of the 'Custom Routing' mechanism.
+
+For example, you have real estate data for 50 states and would always query by
+1 or more states, you would create 50 shards and route based on name of the
+state.
+
+Instead of blindly broadcasting to all shards, you tell Elasticsearch “Hey!
+Search for the data on this shard! It’s all there, I promise!”. For example,
+you could route documents based on their state_code. Or their zip or postcode.
+Or whatever is commonly searched/filtered in your application.
+
+Routing ensures that all documents with the same routing value will locate to
+the same shard, eliminating the need to broadcast searches.
+
+See here for details: <https://www.elastic.co/blog/customizing-your-document-
+routing>
+
+This has the potentially to increase performance noticeably, if your problem
+fits into the niche that custom routing serves.
+

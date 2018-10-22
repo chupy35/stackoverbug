@@ -1,0 +1,9 @@
+13831976 Elasticsearch high updates index compacting
+
+Does ES do a periodic compaction on it's near realtime index? how often the it
+will occuer?
+
+I think that you have to call the [optimize
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+optimize.html) yourself.
+

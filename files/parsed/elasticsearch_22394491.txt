@@ -1,0 +1,32 @@
+22394491 ElasticSearch: do not exists on master, act as master failure?
+
+I have 2 nodes, first node is Buzz Search 5 , and 2nd node is called Buzz
+Search 6. Currently Buzz Search 5 is running for a day. It has
+minimum_master_nodes set to 1. It does NOT have the host name for Buzz Search
+6 in the list of unicast hosts.
+
+I want to join Buzz Search 6 to it. It does have the host name of BuzzSearch 6
+in list of unicast hosts in config file. It has minimum_master_nodes set to 2.
+When I attempt to start it, I get this error:
+
+    
+    
+    [2014-03-13 21:22:49,334][INFO ][discovery.zen ] [Buzz Search 6] master_left [[BuzzSumo Search 5][utWqLm8DRtCGXOI9vKy8vw][sdfsdfsd.net][inet[/122.19.11.152:9300]]], reason [do not exists on master, act as master failure]
+    [2014-03-13 21:22:49,335][DEBUG][cluster.service ] [Buzz Search 6] processing [zen-disco-master_failed ([Buzz Search 5][utWqLm8DRtCGXOI9vKy8vw][sdfsdfsd.net][inet[/122.19.11.152:9300]])]: execute
+    [2014-03-13 21:22:49,335][DEBUG][cluster.service ] [Buzz Search 6] processing [zen-disco-master_failed ([Buzz Search 5][utWqLm8DRtCGXOI9vKy8vw][sdfsdfsd.net][inet[/122.19.11.152:9300]])]: no change in cluster_state
+    [2014-03-13 21:22:58,135][DEBUG][transport.netty ] [Buzz Search 6] connected to node [[Buzz Search 6][UVX-vS3WQrKPaZoc4hv7qA][sdfsdfsd.net][inet[/122.19.11.152:9300]]]
+    
+
+What does this error mean? it's so cryptic.  reason [do not exists on master,
+act as master failure]
+
+More importantly, how can I resolve it?
+
+" processing [zen-disco-master_failed ([Buzz. Search
+5][utWqLm8DRtCGXOI9vKy8vw][sdfsdfsd.net][inet[/122.19.11.152:9300]])]: execute
+[2014-03-13 21:22:49,335][DEBUG][cluster.service ]"
+
+The above error message makes sense..  There is some problems with buzz search
+5.. Try to restart the buzz search 5.. And wait till d node is up and test
+again..
+

@@ -1,0 +1,133 @@
+17030561 How to boost results in elasticsearch, so that match in field1 is
+always higher then match in field2?
+
+There is the mapping, 3 fields and 9 documents:
+
+    
+    
+    #! /bin/bash
+    
+    #DELETE
+    curl -XDELETE 'http://localhost:9200/test'
+    echo
+    # CREATE
+    curl -XPUT 'http://localhost:9200/test?pretty=1' -d '{
+        "settings": {
+           "analysis" : {
+                "analyzer" : {
+                   "my_analyz_1" : {
+                        "filter" : [
+                            "standard",
+                            "lowercase",
+                            "asciifolding"
+                        ],
+                        "type" : "custom",
+                        "tokenizer" : "standard"
+                    }
+                }
+            }
+        }
+    }'
+    echo
+    # DEFINE
+    curl -XPUT 'http://localhost:9200/test/posts/_mapping?pretty=1' -d '{
+        "posts" : {
+            "properties" : {
+                "section" : {
+                  "type" : "string",
+                  "analyzer" : "my_analyz_1"
+                },
+                "category" : {
+                  "type" : "string",
+                  "analyzer" : "my_analyz_1"
+                },
+                "title" : {
+                  "type" : "string",
+                  "analyzer" : "my_analyz_1"
+                }
+            }
+        }
+    }'
+    echo
+    # INSERT
+    curl localhost:9200/test/posts/1 -d '{section: "Bicycle", category: "Small", title: "Diamondback Grind-16"}'
+    curl localhost:9200/test/posts/2 -d '{section: "Bicycle", category: "Big",   title: "Diamondback JrViper"}'
+    curl localhost:9200/test/posts/3 -d '{section: "Bicycle", category: "Small", title: "2-Hip Cyclone small"}'
+    curl localhost:9200/test/posts/4 -d '{section: "Bicycle", category: "Big",   title: "2-Hip Bizzle"}'
+    curl localhost:9200/test/posts/5 -d '{section: "Small",   category: "Small", title: "Toyota"}'
+    curl localhost:9200/test/posts/6 -d '{section: "Car",     category: "Big",   title: "Subaru Impreza small"}'
+    curl localhost:9200/test/posts/7 -d '{section: "Small",   category: "Big",   title: "Toyota Corona MARK II"}'
+    curl localhost:9200/test/posts/8 -d '{section: "Car",     category: "Small", title: "Hyundai Elantra"}'
+    curl localhost:9200/test/posts/9 -d '{section: "Car",     category: "Big",   title: "Ford Maverick small"}'
+    echo
+    # REFRESH
+    curl -XPOST localhost:9200/test/_refresh
+    echo
+    
+
+I want to search for the word "small", but I want always _the order_ of
+results as follows:
+
+  1. results where 'small' is in section
+  2. results where 'small' is in category
+  3. results where 'small' is in title
+
+So I search with query:
+
+    
+    
+    curl "localhost:9200/test/posts/_search?pretty=1" -d '{
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "multi_match": {
+                            "query": "small",
+                            "fields": ["section^3", "category^2", "title"]
+                        }
+                    }
+                ]
+            }
+        }
+    }'
+    
+
+and the results are:
+
+    
+    
+    {"_id": 7} {section: "Small",   category: "Big",   title: "Toyota Corona MARK II"}
+    {"_id": 1} {section: "Bicycle", category: "Small", title: "Diamondback Grind-16"}
+    {"_id": 5} {section: "Small",   category: "Small", title: "Toyota"}
+    {"_id": 3} {section: "Bicycle", category: "Small", title: "2-Hip Cyclone small"}
+    {"_id": 8} {section: "Car",     category: "Small", title: "Hyundai Elantra"}
+    {"_id": 9} {section: "Car",     category: "Big",   title: "Ford Maverick small"
+    {"_id": 6} {section: "Car",     category: "Big",   title: "Subaru Impreza small"}
+    
+
+which is not what I wanted. The 5 should be second, because match is in the
+section. The 3 should be after 7 and 5, because match was in category and in
+title.
+
+So, my question is, how can I obtain results where match in section is
+_always_ more important, then match in category, which is _always_ more
+important than match in title.
+
+Thanks in advance!
+
+**EDIT:**
+
+Problem solved with the search type 'dfs_query_then_fetch', which calculates
+TF-IDF values across all shards. For more see
+<http://www.elasticsearch.org/guide/reference/api/search/search-type/>
+
+Have you tried setting `use_dis_max` to be `false`?
+
+This should mean that a doc with "small" in `category` and `title` would be
+higher than a doc with "small" in just the `category`.
+
+As for the strange behaviour you are seeing between the 2nd and 3rd results, I
+am a bit lost... Can you do the query and ask for the  [explanation of how the
+scores were
+calculated](http://www.elasticsearch.org/guide/reference/api/search/explain/)?
+

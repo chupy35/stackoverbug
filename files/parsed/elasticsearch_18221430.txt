@@ -1,0 +1,27 @@
+18221430 ElasticSearch parent/child on different indexes
+
+have two objects: humans and belongings. I want to specify a _parent of a
+belonging to be a specific human. ElasticSearch provides this ability via the
+_parent mapping. However the documentation and most examples I've found are
+all doing this from within the SAME index.
+
+But if I had a humans index, and a belongings index, I'm wondering if I am
+able to specify the parent relationship across indexes. Preliminary tests seem
+to point to NO.
+
+Furthermore, my theory is that you cannot do this because it would result in
+the human always being on a different shard as the belonging (different
+indexes, different shards). We know from the documentation that the human id
+is used to route the child (upon indexing) to the same shard as the human.
+This is for efficiency purposes (in memory joins, round trips, etc). But that
+cannot occur since we're talking about different shards altogether.
+
+QUESTION #1: Does anyone know if _parent can be specified across indexes?
+
+And if so,
+
+QUESTION #2: How is the routing issues I mentioned resolved internally?
+
+You are correct in saying "different index, different shard" - meaning the
+answer to question #1 is no. With that, #2 cannot be answered.
+

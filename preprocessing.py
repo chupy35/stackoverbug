@@ -4,19 +4,26 @@ import get_gh_issues as github
 from nltk.corpus import stopwords
 import re
 from nltk.stem import PorterStemmer
-
+import string
 def tokenize (text):
-	result = []
-	for i in range(len(text)):
-		for j in range(len(text[i])):
-			word_tokenized = word_tokenize(text[i][j])
-			result.append(word_tokenized)
-	return result
+    result = []
+    for i in range(len(text)):
+        for j in range(len(text[i])):
+            #printable = set(string.printable)
+            #word_tokenized = word_tokenize(''.join(filter(lambda x: x in string, text[i][j])))
+            #print text[i][j].decode("ascii", errors=("ignore").encode())
+            string = re.sub(r"[^\x00-\x7f]", "", text[i][j])
+            string = string.encode('utf-8').strip()
+            #string = re.sub(r'[\xc2\x99]',"", text[i][j])
+            #string = re.sub(r'[\xe2\x80\x94]', "", string)
+            word_tokenized = word_tokenize(string)
+            result.append(word_tokenized)
+    return result
 
 def to_lowercase(text):
 	"""Convert all characters to lowercase from list of tokenized words"""
 	new_words = []
-	final_result = []    
+	final_result = []
 	for i in range(len(text)):
 		new_words = []
 		for j in range(len(text[i])):
@@ -46,7 +53,7 @@ def remove_stopwords(text):
 		new_words = []
 		for j in range(len(text[i])):
 			if text[i][j] not in stopwords.words('english'):
-				new_words.append(text[i][j])	
+				new_words.append(text[i][j])
 		final_result.append(new_words)
 	return final_result
 
@@ -59,12 +66,12 @@ def stem_words(text):
 		new_words = []
 		for j in range(len(text[i])):
 			stem = stemmer.stem(text[i][j])
-			new_words.append(stem)	
+			new_words.append(stem)
 		final_result.append(new_words)
 	return final_result
 
 def preprocessing (text):
-	words_tokenized = tokenize (text)
+	words_tokenized = tokenize(text)
 	words_lower_case = to_lowercase(words_tokenized)
 	words_without_punctuation = remove_punctuation(words_lower_case)
 	words_without_stopwords = remove_stopwords(words_without_punctuation)

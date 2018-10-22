@@ -1,0 +1,21 @@
+12246781 display limited words from ES field
+
+I am using Mpdreamz/NEST for integrating Elasticsearch in C# . Is there any
+way to limit the number of words in a result string of query??
+
+For example I have a field named 'Content' in ES and I need to dispaly 30
+words of 'Content' matching 'sensex' from my index.
+
+Thanks in advance for any help
+
+You can't so easily even within Elasticsearch itself.
+
+You have three options
+
+  1. Force excerpts by using highlighting 
+  2. Try to use script_fields to return the first 30 words
+  3. At index time add another field that has just the first 30 words
+
+Eventhough the first two are possible to do with NEST i would go for the third
+option since it won't incur a performance penalty at query time.
+

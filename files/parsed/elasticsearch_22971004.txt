@@ -1,0 +1,41 @@
+22971004 Combine a text pattern and a numeric greater-than comparison in a
+single ElasticSearch query
+
+I know how to search for an exact match in ElasticSearch:
+
+    
+    
+    GET world/country/_search
+    {
+        "query": {
+            "match": {
+                "GAIN" : "10"
+            }
+        }
+    } 
+    
+
+But I want to do a numeric greater-than comparison, and combine it with a text
+pattern search. In SQL I would write this:
+
+    
+    
+    WHERE GAIN > 10 AND DESCRIPTIONLIKE '%good%'
+    
+
+How do I do the equivalent in ElasticSearch?
+
+To search for `GAIN > 10` you'll need a [Range
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.x/query-
+dsl-range-query.html).
+
+To search for `DESCRIPTION LIKE '%good%'` you'll need to ensure that the
+description field is analyzed in a way that tokenizes it; then you could just
+use a regular match query on it, which would find documents that contain the
+word `good` (but not `goodbye` \-- depending on the analyzer, but I assume you
+want word-boundary tokenization).
+
+To combine the two conditions you'll need a [Bool
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-query.html).
+

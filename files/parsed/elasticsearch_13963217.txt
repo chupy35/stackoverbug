@@ -1,0 +1,40 @@
+13963217 Save variables in Elasticsearch
+
+I'm using a script query and script filter in my Elasticsearch query, as you
+can see below. Is it possible to save the calculated value of the query script
+and use it for sorting, so I don't have to calculate the same value again?
+Thank you.
+
+    
+    
+        "sort" : {
+            "_script" : { 
+                "script" : "sqrt(pow((doc[l].value - l_value),2)+pow((doc[a].value - a_value),2)+pow((doc[b].value - b_value),2))",
+                "type" : "number",
+                "params" : {
+                    "l_value" : '10',
+                    "a_value" : '20',
+                    "b_value" : '20'
+                },
+                "order" : "asc"
+            }
+        },
+        "query" : {
+            "filtered" : {
+                "filter" : {
+                    "script" : {
+                        "script" : "sqrt(pow((doc[l].value - l_value),2)+pow((doc[a].value - a_value),2)+pow((doc[b].value - b_value),2)) < 20",
+                        "params" : {
+                            "l_value" : 10,
+                            "a_value" : 20',
+                            "b_value" : 20.'
+                        }
+                    }
+                },
+                "query": {
+                    "match_all": {}
+                }
+            }
+        }
+    
+

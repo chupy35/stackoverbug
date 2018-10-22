@@ -1,0 +1,111 @@
+12791667 How to specify headers parameter for custom Angular $resource action
+
+The following works fine, but I am thinking this modifies the $httpProvider
+globally, which isn't what I want.
+
+    
+    
+    angular.module('SessionService', ['ngResource'])
+        .config(function($httpProvider){
+            $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+        })
+        .factory('Login', function($resource){
+            var resource = $resource('/adminui/login',{},{
+                post:{
+                    method:"POST",
+                    isArray:false
+                },
+            });
+            return resource;
+        })
+    LoginCtrl = function($scope,Login) {
+        $scope.login = function(){
+            Login.post($.param({user:$scope.user.username,password:$scope.user.password}),$.noop,$.noop)
+        }
+    }
+    
+
+Is there anyway to do this instead?
+
+    
+    
+    ...
+        .factory('Login', function($resource){
+            var resource = $resource('/adminui/login',{},{
+                post:{
+                    method:"POST",
+                    isArray:false,
+                    headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'} // ignored
+                },
+            });
+            return resource;
+        })
+    
+
+The "headers" parameter seems to be ignored. the request is still
+
+`Content-Type:application/json;charset=UTF-8`
+
+Is my value for headers ok?
+
+While the development docs (as of 12 Oct) show that overriding headers is
+possible in a $resource, it hasn't yet been released (v1.0.2 or v1.1.0). The
+feature is in the v1.0.x and master branches, however. In order to get at that
+feature, you might consider building from the v1.0.x branch for now.
+
+How to build: <http://docs.angularjs.org/#H1_4>
+
+Alternatively, you could pull from the snapshot build:
+<http://code.angularjs.org/snapshot/>
+
+Looks like this feature will be in the next release.
+
+I have confirmed that 1.1.3 does indeed support this. However, you need to
+make sure you also get the 1.1.3 version of the resource service. A quick test
+of:
+
+    
+    
+    angular.module('myApp', ['ngResource']).
+      config(['$routeProvider', function($routeProvider) {
+        $routeProvider.when('/', {templateUrl: 'partials/partial1.html',controller: 'MyController'});
+        $routeProvider.otherwise({redirectTo: '/'});
+      }])
+    
+      .controller("MyController", function( $scope, Bug) {
+        Bug.post({test:"test"});
+      })
+    
+      .factory('Bug', function($resource){
+        var resource = $resource('/bug',{},{
+            post:{
+                method:"POST",
+                isArray:false,
+                headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'} 
+            },
+        });
+        return resource;
+    });
+    
+
+This will make a request with the headers set to (confirmed using Chrome):
+
+    
+    
+    Content-Type:application/x-www-form-urlencoded; charset=UTF-8
+    
+
+A quick note, I was unable to find a download of the angular-resource.js, so I
+had to go the the github website to download it. It is
+[here](https://raw.github.com/angular/angular.js/v1.1.3/src/ngResource/resource.js).
+
+For some giggles, I created a fiddle. Notice that there will be a failed POST
+call, but its headers are set correctly. [Example
+Fiddle](http://jsfiddle.net/Xesued/eYeM3/2/)
+
+Just adding the link to the 1.1.5 resource files (and others):
+<http://code.angularjs.org/1.1.5/>
+
+You can set the URL to match the version you are looking for.  
+e.g. 1.1.4: <http://code.angularjs.org/1.1.4/>
+

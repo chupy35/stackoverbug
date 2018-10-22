@@ -1,0 +1,156 @@
+25144034 How to copy some ElasticSearch data to a new index
+
+Let's say I have movie data in my ElasticSearch and I created them like this:
+
+    
+    
+    curl -XPUT "http://192.168.0.2:9200/movies/movie/1" -d'
+    {
+        "title": "The Godfather",
+        "director": "Francis Ford Coppola",
+        "year": 1972
+    }'
+    
+
+And I have a bunch of movies from different years. I want to copy all the
+movies from a particular year (so, 1972) and copy them to a new index of
+"70sMovies", but I couldn't see how to do that.
+
+Well the straightforward way to do this is to write code, with the API of your
+choice, querying for "year": 1972 and then indexing that data into a new
+index. You would use the Search api or the Scan and Scroll API to get all the
+documents and then either index them one by one or use the Bulk Api:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+search.html>
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-scroll.html>
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html>
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html>
+
+Assuming you don't want to do this via code but are looking for a direct way
+of doing this, I suggest the Elasticsearch Snapshot and Restore. Basically you
+would take a snapshot of your existing index, restore it into a new index and
+then use the Delete command to delete all documents with a year other than
+1972.
+
+> **Snapshot And Restore**
+
+>
+
+> The snapshot and restore module allows to create snapshots of individual
+indices or an entire cluster into a remote repository. At the time of the
+initial release only shared file system repository was supported, but now a
+range of backends are available via officially supported repository plugins.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+snapshots.html>
+
+> **Delete By Query API**
+
+>
+
+> The delete by query API allows to delete documents from one or more indices
+and one or more types based on a query. The query can either be provided using
+a simple query string as a parameter, or using the Query DSL defined within
+the request body.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+delete-by-query.html>
+
+Check out knapsack: <https://github.com/jprante/elasticsearch-knapsack>
+
+Once you have the plugin installed and working, you could export part of your
+index via query. For example:
+
+    
+    
+    curl -XPOST 'localhost:9200/test/test/_export' -d '{
+    "query" : {
+        "match" : {
+            "myfield" : "myvalue"
+        }
+    },
+    "fields" : [ "_parent", "_source" ]
+    }'
+    
+
+This will create a tarball with only your query results, which you can then
+import into another index.
+
+The best approach would be to use elasticsearch-dump tool
+<https://github.com/taskrabbit/elasticsearch-dump>.
+
+The real world example I used :
+
+    
+    
+    elasticdump \
+      --input=http://localhost:9700/.kibana \
+      --output=http://localhost:9700/.kibana_read_only \
+      --type=mapping
+    elasticdump \
+      --input=http://localhost:9700/.kibana \
+      --output=http://localhost:9700/.kibana_read_only \
+      --type=data
+    
+
+You can do it easily with elasticsearch-dump
+(<https://github.com/taskrabbit/elasticsearch-dump>) in three steps. In the
+following example I copy the index "thor" to "thor2"
+
+    
+    
+    elasticdump --input=http://localhost:9200/thor --output=http://localhost:9200/thor2 --type=analyzer
+    
+    elasticdump --input=http://localhost:9200/thor --output=http://localhost:9200/thor2 --type=mapping
+    
+    elasticdump --input=http://localhost:9200/thor --output=http://localhost:9200/thor2 --type=data
+    
+
+Since ElasticSearch 2.3 you can now use the built in `_reindex` API
+
+for example:
+
+    
+    
+    POST /_reindex
+    {
+      "source": {
+        "index": "twitter"
+      },
+      "dest": {
+        "index": "new_twitter"
+      }
+    }
+    
+
+Or only a specific part by adding a filter/query
+
+    
+    
+    POST /_reindex
+    {
+      "source": {
+        "index": "twitter",
+        "query": {
+          "term": {
+            "user": "kimchy"
+          }
+        }
+      },
+      "dest": {
+        "index": "new_twitter"
+      }
+    }
+    
+
+Read more:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-
+reindex.html>
+

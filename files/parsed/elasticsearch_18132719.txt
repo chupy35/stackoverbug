@@ -1,0 +1,247 @@
+18132719 How to change Elasticsearch max memory size
+
+I have an Apache server with a default configuration of Elasticsearch and
+everything works perfectly, except that the default configuration has a max
+size of 1GB.
+
+I don't have such a large number of documents to store in Elasticsearch, so I
+want to reduce the memory.
+
+I have seen that I have to change the `-Xmx` parameter in the Java
+configuration, but I don't know how.
+
+I have seen I can execute this:
+
+    
+    
+    bin/ElasticSearch -Xmx=2G -Xms=2G
+    
+
+But when I have to restart Elasticsearch this will be lost.
+
+Is it possible to change max memory usage when Elasticsearch is installed as a
+service?
+
+**Updated on Nov 24, 2016** : Elasticsearch 5 apparently has changed the way
+to configure the JVM. [See this answer
+here](https://stackoverflow.com/questions/18132719/how-to-change-
+elasticsearch-max-memory-size/40333263#40333263). The answer below still
+applies to versions < 5\.
+
+tirdadc, thank you for pointing this out in your comment below.
+
+* * *
+
+I have a pastebin page that I share with others when wondering about memory
+and ES. It's worked OK for me: <http://pastebin.com/mNUGQCLY>. I'll paste the
+contents here as well:
+
+References:
+
+<https://github.com/grigorescu/Brownian/wiki/ElasticSearch-Configuration>
+<http://www.elasticsearch.org/guide/reference/setup/installation/>
+
+Edit the following files to modify memory and file number limits. These
+instructions assume Ubuntu 10.04, may work on later versions and other
+distributions/OSes. ( **Edit** : This works for Ubuntu 14.04 as well.)
+
+**/etc/security/limits.conf** :
+
+    
+    
+    elasticsearch - nofile 65535
+    elasticsearch - memlock unlimited
+    
+
+**/etc/default/elasticsearch (on CentOS/RH: /etc/sysconfig/elasticsearch )** :
+
+    
+    
+    ES_HEAP_SIZE=512m
+    MAX_OPEN_FILES=65535
+    MAX_LOCKED_MEMORY=unlimited
+    
+
+**/etc/elasticsearch/elasticsearch.yml** :
+
+    
+    
+    bootstrap.mlockall: true
+    
+
+If you use the service wrapper provided in Elasticsearch's Github repository,
+found at <https://github.com/elasticsearch/elasticsearch-servicewrapper>, then
+the conf file at elasticsearch-servicewrapper / service / elasticsearch.conf
+controls memory settings. At the top of elasticsearch.conf is a parameter:
+
+    
+    
+    set.default.ES_HEAP_SIZE=1024
+    
+
+Just reduce this parameter, say to "set.default.ES_HEAP_SIZE=512", to reduce
+Elasticsearch's allotted memory.
+
+Note that if you use the elasticsearch-wrapper, the ES_HEAP_SIZE provided in
+elasticsearch.conf OVERRIDES ALL OTHER SETTINGS. This took me a bit to figure
+out, since from the documentation, it seemed that heap memory could be set
+from elasticsearch.yml.
+
+If your service wrapper settings are set somewhere else, such as at
+/etc/default/elasticsearch as in James's example, then set the ES_HEAP_SIZE
+there.
+
+If you installed ES using the RPM/DEB packages as provided (as you seem to
+have), you can adjust this by editing the init script
+(`/etc/init.d/elasticsearch on RHEL/CentOS`). If you have a look in the file
+you'll see a block with the following:
+
+    
+    
+    export ES_HEAP_SIZE
+    export ES_HEAP_NEWSIZE
+    export ES_DIRECT_SIZE
+    export ES_JAVA_OPTS
+    export JAVA_HOME
+    
+
+To adjust the size, simply change the `ES_HEAP_SIZE` line to the following:
+
+    
+    
+    export ES_HEAP_SIZE=xM/xG
+    
+
+(where x is the number of MB/GB of RAM that you would like to allocate)
+
+Example:
+
+    
+    
+    export ES_HEAP_SIZE=1G
+    
+
+Would allocate 1GB.
+
+Once you have edited the script, save and exit, then restart the service. You
+can check if it has been correctly set by running the following:
+
+    
+    
+    ps aux | grep elasticsearch
+    
+
+And checking for the -Xms and -Xmx flags in the java process that returns:
+
+    
+    
+    /usr/bin/java -Xms1G -Xmx1G
+    
+
+Hope this helps :)
+
+If you use windows server, you can change Environment Variable, restart server
+to apply new Environment Value and start Elastic Service. More detail in
+[Install Elastic in Windows
+Server](https://thoaingo07.wordpress.com/2015/04/03/elasticsearch-
+installation-in-windows-server/)
+
+For anyone looking to do this on Centos 7 or with another system running
+SystemD, you change it in
+
+    
+    
+    /etc/sysconfig/elasticsearch 
+    
+
+Uncomment the ES_HEAP_SIZE line, and set a value, eg:
+
+    
+    
+    # Heap Size (defaults to 256m min, 1g max)
+    ES_HEAP_SIZE=16g
+    
+
+(Ignore the comment about 1g max - that's the default)
+
+Previous answers were insufficient in my case, probably because I'm on Debian
+8, while they were referred to some previous distribution.
+
+On **Debian 8** modify the service script normally place in
+`/usr/lib/systemd/system/elasticsearch.service`, and add
+`Environment=ES_HEAP_SIZE=8G` just below the other "Environment=*" lines.
+
+Now reload the service script with `systemctl daemon-reload` and restart the
+service. The job should be done!
+
+Instructions for `ubuntu 14.04`:
+
+`sudo vim /etc/init.d/elasticsearch`
+
+Set
+
+`ES_HEAP_SIZE=512m`
+
+then in:
+
+`sudo vim /etc/elasticsearch/elasticsearch.yml`
+
+Set:
+
+`bootstrap.memory_lock: true`
+
+There are comments in the files for more info
+
+In elasticsearch path home dir i.e. typically `/usr/share/elasticsearch`,
+There is a config file `bin/elasticsearch.in.sh`. Edit parameter `ES_MIN_MEM`,
+`ES_MAX_MEM` in this file to change `-Xms2g`, `-Xmx4g` respectively.  And
+Please make sure you have restarted the node after this config change.
+
+In **ElasticSearch >= 5** the documentation has
+[changed](https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-
+size.html), which means none of the above answers worked for me.
+
+I tried changing `ES_HEAP_SIZE` in `/etc/default/elasticsearch` and in
+`etc/init.d/elasticsearch`, but when I ran `ps aux | grep elasticsearch` the
+output still showed:
+
+`/usr/bin/java -Xms2g -Xmx2g # aka 2G min and max ram `
+
+**I had to make these changes in:**
+
+`/etc/elasticsearch/jvm.options`
+
+    
+    
+    # Xms represents the initial size of total heap space
+    # Xmx represents the maximum size of total heap space
+    
+    -Xms1g 
+    -Xmx1g 
+    # the settings shipped with ES 5 were: -Xms2g
+    # the settings shipped with ES 5 were: -Xmx2g
+    
+
+In elasticsearch 2.x :
+
+    
+    
+    vi /etc/sysconfig/elasticsearch 
+    
+
+Go to the block of code
+
+    
+    
+    # Heap size defaults to 256m min, 1g max
+    # Set ES_HEAP_SIZE to 50% of available RAM, but no more than 31g
+    #ES_HEAP_SIZE=2g
+    
+
+Uncomment last line like
+
+    
+    
+    ES_HEAP_SIZE=2g
+    
+

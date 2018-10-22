@@ -1,0 +1,69 @@
+17749138 Queries vs Filters - Order of execution
+
+I've read [this
+question](https://stackoverflow.com/questions/14595988/queries-vs-filters) and
+a colleague of mine made me doubt:
+
+In a filtered query, when is the filter applied ? Before or after executing
+the query ? When is the result cached ?
+
+If the filter is applied beforehand, wouldn't it be a a good thing to
+duplicate the query part in the filters ? If the filter is applied afterward,
+then i'm having trouble understanding what is cached.
+
+Let me explain you search query execution-
+
+First thing is that there is always a Complete document of reference in which
+you want to search.
+
+If you have filter query included with search query then it will just make
+that document smaller or in other words filter queries are cached results of
+same query. Now you have a smaller tree to search from with your query text.
+
+Now your doubt part- Duplicating the query in filters will only increase
+overhead of cache mechanism and There are many guide lines on what to include
+in filter query and what to ignore. It's all play of relevancy.
+
+Luckily, ES provides two types of filters for you to work with:
+
+    
+    
+    {
+      "query" : {
+        "field" : { "title" : "Catch-22" }
+      },
+      "filter" : {
+        "term" : { "year" : 1961 }
+      }
+    }
+    
+    
+    {
+      "query": {
+        "filtered" : {
+          "query" : {
+            "field" : { "title" : "Catch-22" }
+          },
+          "filter" : {
+            "term" : { "year" : 1961 }
+          }
+        }
+      }
+    }
+    
+
+In the first case, filters are applied to all documents found by the query. In
+the second case, the documents are filtered before the query runs. This yields
+better performance.
+
+Quoted from: <http://www.packtpub.com/elasticsearch-server-for-fast-scalable-
+flexible-search-solution/book>
+
+About cache, I'm not sure about cache mechanism of filters. My guessing would
+be: First case, since the filter is against a set of results returned by
+query, the cache is kind of specific for this return set. Second case, the
+filter is applied first, the cache is stored for the indices you checked
+against, thus, this cache is more reusable because it does not rely on the
+content of the query, but at larger memory cost and query time for first
+time(before the cache is generated).
+

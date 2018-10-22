@@ -1,0 +1,103 @@
+12574765 Better design for passing data to other ng-view's and persisting it
+across controllers
+
+I started developing in AngularJS. I'm confused as to whether this is a proper
+design to pass data between my partial views.
+
+Right now I have a loader page where I do some request.
+
+    
+    
+    function PeopleController($scope,$http,$location){
+        $http.get('/location/-79.18925/43.77596').
+        success(function(data){
+          $scope.savePeopleResponse(data);
+          $location.url('/test');
+        });
+    }
+    
+
+Then in the view that gets loaded for /test
+
+I am just calling
+
+    
+    
+    <div ng-controller="resultController">
+        <div class="blueitem">{{getResultForPeople()|json}}</div>
+    </div>
+    
+
+[resultController]
+
+    
+    
+        function resultController($scope){
+          $scope.getResultForPeople = function(){
+         return $scope.getPeopleResponse();
+        }
+    }
+    
+
+and the savePeopleResponse and getResultForPeople are "cached" in the
+rootScope as such
+
+    
+    
+    app.run(function($rootScope) {
+      var peopleResponse = {};
+      $rootScope.savePeopleResponse = function(data) {
+       peopleResponse = data;
+       console.log(data);
+      }
+    
+      $rootScope.getPeopleResponse = function(){
+        return peopleResponse;
+      }
+    });
+    
+
+Now as you can see, this will get very messy if this application grows larger
+and larger. What's the best way to handle data so that it's persisted across
+controllers?
+
+You can persist data across controllers by [creating your own
+service](https://docs.angularjs.org/guide/services#creating-services) as
+described nicely in [this blog](http://onehungrymind.com/angularjs-sticky-
+notes-pt-1-architecture/). You can also refer to [this
+question](https://stackoverflow.com/questions/12008908/pass-variables-between-
+controllers).
+
+In your case you can move your `savePeopleResponse` and `getPeopleResponse`
+into a service and then inject the service into any controllers you would like
+to access it.
+
+    
+    
+    angular.module('myApp', [])
+        .factory('peopleService', function () {
+            var peopleResponse = {};
+    
+            return {
+                savePeopleResponse:function (data) {
+                    peopleResponse = data;
+                    console.log(data);
+                },
+                getPeopleResponse:function () {
+                    return peopleResponse;
+                }
+            };
+        });
+    
+
+With your controller something like this:
+
+    
+    
+    function resultController ($scope, peopleService) {
+        $scope.getResultForPeople = peopleService.getPeopleResponse;
+    }
+    
+
+With this code example make sure you include `ng-app="myApp"`
+

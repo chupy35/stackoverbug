@@ -1,0 +1,67 @@
+20987215 Substring and similarity matching in elasticsearch
+
+I am learning to use elastisearch as alternative for database queries and I am
+not able to perform substring matches on the built index. The mapping I have
+used to create index is
+
+    
+    
+            "mappings" : {
+               "user" : {
+                 "properties" : {
+                    "name" : {"type": "string"},
+                    "specialty" : {"type": "string" ,"analyzer":"snowball"},
+                    "address : {"type": "string" ,"analyzer":"snowball"}
+                  }
+               }
+              }
+    
+
+The document I am indexing is
+
+    
+    
+        {
+          "name" : "John Doe",
+          "speciality": ["pediatrician","Child Doctor"],
+          "address": ["#123 park road Abbeyville","#423 park road AbbeyTown" ]
+         }
+    
+
+When I perform a search like
+
+    
+    
+    curl -XGET localhost:9200/test/user/_search?q=speciality:pediatrician
+    
+
+I get the correct document
+
+However when I search strings like
+
+    
+    
+    curl -XGET localhost:9200/test/user/_search?q=speciality:pedia
+    curl -XGET localhost:9200/test/user/_search?q=speciality:pediatricians
+    
+
+No results are retrieved
+
+P.S I know that wild cards can be used for matching but I need to be able to
+search for both the whole word and parts of the words based on user input so
+as to return the most relevant documents.
+
+Did you try reindexing after changing the mapping? Also try setting the search
+analyzer to snowball in the settings.
+
+**UPDATE:**
+
+You can go for wild card search. Better go for trailing wild card search alone
+instead of both leading and trailing wild card search.
+
+    
+    
+    curl -XGET localhost:9200/test/user/_search?q=speciality:pedia*
+    curl -XGET localhost:9200/test/user/_search?q=speciality:pediatricians*
+    
+

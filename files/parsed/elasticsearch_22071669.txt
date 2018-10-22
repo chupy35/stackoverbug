@@ -1,0 +1,76 @@
+22071669 Do changes to elasticsearch mapping apply to already indexed
+documents?
+
+If I change the mapping so certain properties have new/different boost values,
+does that work even if the documents have already been indexed? Or do the
+boost values get applied when the document is indexed?
+
+They do not.
+
+Index time boosting is generally not recommended. Instead, you should do your
+boosting when you search.
+
+You cannot change field level boost factors after indexing data. It's not even
+possible for new data to be indexed once the same fields have been indexed
+already for previous data.
+
+The only way to change the boost factor is to reindex your data. The pattern
+to do this without changing the code of your application is to use aliases. An
+alias points to a specific index. In case you want to change the index, you
+create a new index, then reindex data from the old index to the new index and
+finally you change the alias to point to the new index. Reindexing data is
+either supported by the elasticsearch library or can be achieved with a
+scan/scroll.
+
+  1. First version of mapping
+
+Index: items_v1
+
+Alias: items -> items_v1
+
+  2. Change necessary, sencond version of the index with new field level boost values : 
+
+Create new index: items_v2
+
+Reindex data: items_v1 => items_v2
+
+Change alias: items -> items_v2
+
+This might be useful in other situations where you want to change your
+mapping.
+
+Field level boosts are, however, not recommended. The better approach is to
+use boosting at query time.
+
+Alias commands are:
+
+**Adding an alias**
+
+    
+    
+    POST /_aliases
+    {
+        "actions": [
+                { "add": {
+                "alias": "tems",
+                "index": "items_v1"
+            }}
+        ]
+    }
+    
+
+**Removing an alias**
+
+    
+    
+    POST /_aliases
+    {
+        "actions": [
+                { "remove": {
+                "alias": "tems",
+                "index": "items_v1"
+            }}
+        ]
+    }
+    
+

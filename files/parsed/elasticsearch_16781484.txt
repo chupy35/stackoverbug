@@ -1,0 +1,16 @@
+16781484 ElasticSearch mass delete by URL
+
+I have about 8 million documents(with URL) in the ElasticSearch(v.0.90) index
+but only 3,5 millions documents are "valid"(need to be searched within). I
+have a list of all "valid" URLs(no special template here).
+
+How can I delete other 4,5M documents from the index?
+
+You can use [DeleteByQuery
+API](http://www.elasticsearch.org/guide/reference/api/delete-by-query/). Then,
+you will probably need to run
+[Optimize](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+optimize/).
+
+But you will need for that a lot of free disk space.
+

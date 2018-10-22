@@ -1,0 +1,231 @@
+12790854 AngularJS directive to scroll to a given item
+
+I have a scope variable $scope.first_unread_id which is defined in my
+controller. In my template, I have:
+
+    
+    
+    <div id="items" >
+      <ul class="standard-list">
+        <li ng-repeat="item in items" scroll-to-id="first_unread_id">
+        <span class="content">{{ item.content }}</span>
+        </li>
+      </ul>
+    </div>
+    
+
+and my directive looks like:
+
+    
+    
+    angular.module('ScrollToId', []).
+    directive('scrollToId', function () {
+      return function (scope, element, attributes) {
+        var id = scope.$parent[attributes["scrollToId"]];
+        if (id === scope.item.id) {
+          setTimeout(function () {
+            window.scrollTo(0, element[0].offsetTop - 100)
+          }, 20);
+        }
+      }
+    
+    });
+    
+
+it works, however, two questions:
+
+  1. Is there a better way of getting the "first_unread_id" off the controller scope into the direct than interrogating scope.$parent? This seems a bit 'icky'. I was hoping I could pass that through the view to the direct as a parameter w/o having to repeat that on ever li element.
+
+  2. Is there a better way to avoid the need of the setTimeout() call? Without it, it works _sometimes_ \- I imagine due to difference in timing of layout. I understand the syntax I have used is defining a link function - but it isn't clear to me if that is a pre or post-link by default - and if that even matters for my issue.
+
+  1. You shouldn't need the scope.$parent - since it will inherit the value from the parent scope, and when it changes in the parent scope it will be passed down.
+  2. The default is a post-link function. Do you have some images or something loading that would make the page layout change shortly after initial load? Have you tried a setTimeout with no time on it, eg setTimeout(function(){})? This would make sure this would go 'one after' everything else is done.
+  3. I would also change the logic of your directive a bit to make it more general. I would make it scroll to the element if a given condition is true.
+
+Here are those 3 changes:
+
+html:
+
+    
+    
+    <div id="items" >
+      <ul class="standard-list">
+        <li ng-repeat="item in items" scroll-if="item.id == first_unread_id">
+          <span class="content">{{ item.content }}</span>
+        </li>
+      </ul>
+    </div>
+    
+
+JS:
+
+    
+    
+    app.directive('scrollIf', function () {
+      return function (scope, element, attributes) {
+        setTimeout(function () {
+          if (scope.$eval(attributes.scrollIf)) {
+            window.scrollTo(0, element[0].offsetTop - 100)
+          }
+        });
+      }
+    });
+    
+
+Assuming that the parent element is the one where we scroll, this works for
+me:
+
+    
+    
+    app.directive('scrollIf', function () {
+      return function(scope, element, attrs) {
+        scope.$watch(attrs.scrollIf, function(value) {
+          if (value) {
+            // Scroll to ad.
+            var pos = $(element).position().top + $(element).parent().scrollTop();
+            $(element).parent().animate({
+                scrollTop : pos
+            }, 1000);
+          }
+        });
+      }
+    });
+    
+
+I ended up with the following code (which does not depend on jQ) which also
+works if the scrolling element is not the window.
+
+    
+    
+    app.directive('scrollIf', function () {
+        var getScrollingParent = function(element) {
+            element = element.parentElement;
+            while (element) {
+                if (element.scrollHeight !== element.clientHeight) {
+                    return element;
+                }
+                element = element.parentElement;
+            }
+            return null;
+        };
+        return function (scope, element, attrs) {
+            scope.$watch(attrs.scrollIf, function(value) {
+                if (value) {
+                    var sp = getScrollingParent(element[0]);
+                    var topMargin = parseInt(attrs.scrollMarginTop) || 0;
+                    var bottomMargin = parseInt(attrs.scrollMarginBottom) || 0;
+                    var elemOffset = element[0].offsetTop;
+                    var elemHeight = element[0].clientHeight;
+    
+                    if (elemOffset - topMargin < sp.scrollTop) {
+                        sp.scrollTop = elemOffset - topMargin;
+                    } else if (elemOffset + elemHeight + bottomMargin > sp.scrollTop + sp.clientHeight) {
+                        sp.scrollTop = elemOffset + elemHeight + bottomMargin - sp.clientHeight;
+                    }
+                }
+            });
+        }
+    });
+    
+
+In combination with UI Router's [$uiViewScroll](http://angular-
+ui.github.io/ui-router/site/#/api/ui.router.state.$uiViewScroll) I ended up
+with the following directive:
+
+    
+    
+    app.directive('scrollIf', function ($uiViewScroll) {
+        return function (scope, element, attrs) {
+            scope.$watch(attrs.scrollIf, function(value) {
+                if (value) {
+                    $uiViewScroll(element);
+                }
+            });
+        }
+    });
+    
+
+In combo with @uri, this works for my dynamic content with ui-router and
+stateChangeSuccess in .run:
+
+    
+    
+    $rootScope.$on('$stateChangeSuccess',function(newRoute, oldRoute){
+    
+            setTimeout(function () {
+                var postScroll = $state.params.postTitle;
+                var element = $('#'+postScroll);
+                var pos = $(element).position().top - 100 + $(element).parent().scrollTop();
+                $('body').animate({
+                    scrollTop : pos
+                }, 1000);
+            }, 1000);
+    
+        });
+    
+
+Same as accepted answer, but uses the javascript built-in method
+"[scrollIntoView](https://developer.mozilla.org/en-
+US/docs/Web/API/Element/scrollIntoView)":
+
+    
+    
+    angular.module('main').directive('scrollIf', function() {
+        return function(scope, element, attrs) {
+            scope.$watch(attrs.scrollIf, function(value) {
+                if (value) {
+                    element[0].scrollIntoView({block: "end", behavior: "smooth"});
+                }
+            });
+        }
+    });
+    
+
+For an answer taking the best of the answers here, in ES6:  
+  
+File: `scroll.directive.js`
+
+    
+    
+    export default function ScrollDirective() {
+        return {
+            restrict: 'A',
+            scope: {
+                uiScroll: '='
+            },
+            link: link
+        };
+    
+        function link($scope, $element) {
+            setTimeout(() => {
+                if ($scope.uiScroll) {
+                    $element[0].scrollIntoView({block: "end", behavior: "smooth"});
+                }
+            });
+        }
+    }
+    
+
+File `scroll.module.js`
+
+    
+    
+    import ScrollDirective from './scroll.directive';
+    
+    export default angular.module('app.components.scroll', [])
+        .directive('uiScroll', ScrollDirective);
+    
+
+After importing it in your project, you can use it in the your html:
+
+    
+    
+    <div id="items" >
+      <ul class="standard-list">
+        <li ng-repeat="item in items" ui-scroll="true">
+        <span class="content">{{ item.content }}</span>
+        </li>
+      </ul>
+    </div>
+    
+

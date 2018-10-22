@@ -1,0 +1,16 @@
+19386111 Elasticsearch shard crashing
+
+I am having an issue with one of my elasticsearch shards crashing and
+restarting the node does not fix the issue. I have a machine dedicated to
+elasticsearch that has 16GB of RAM with a 8GB heap size. I am running only one
+node with 2 shards and no replicas. The cluster stats list that we have
+741,189 documents and 1.2GB of data, we had 2.5GB before the shard crashed.
+
+I have a very insert, update, and retrieval heavy application and about the
+time we reach 2.5GB of data and 1,000,000 documents one of the shards crashes
+and can not be restarted. The only way that I have found to fix the issue I am
+having to to delete all of the data and reindex the node. The shard crash
+about every 3 to 4 days now and the rate in which data is being added to the
+system is expected to increase over time. I am happy to provide any other
+information that may be helpful in fixing this issue.
+

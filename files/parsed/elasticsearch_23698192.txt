@@ -1,0 +1,51 @@
+23698192 Elastic search : how to get all data of specific field
+
+I'm using the Java API. I want to know how to fetch only a specific field. I
+have tried this query in ElasticSearch Head plugin:
+
+    
+    
+    {"fields": ["name"],"query": { "match_all": {} }}
+    
+
+It's working. Now, please help me to write this using the Java API.
+
+The equivalent SQL query would be:
+
+    
+    
+    select name from user;
+    
+
+If you have a query already, all you need to do is something like this:
+
+    
+    
+    SearchRequest sr = new SearchRequest("your_index");
+    sr.source("{\"fields\": [\"name\"],\"query\": { \"match_all\": {} }}");
+    ActionFuture<SearchResponse> res = client.search(sr);
+    SearchHits hits = res.get().getHits();
+    
+
+You can also check out SearchRequestBuilder to help build the requests, but to
+me it's easier to build the query elsewhere and then plug it in like this.
+
+If you don't know how to connect a java `client`, see
+<http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/client.html>
+
+To use the match all queries in Java api..
+
+    
+    
+       QueryBuilder qb = QueryBuilders.matchAllQuery();
+    
+
+Refer <http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/query-dsl-queries.html>
+
+I have created a git hub repository.. Refer to use the java
+client.<https://github.com/sidharthancr/elasticsearch-java-client>.
+
+HOpe it helps..!
+

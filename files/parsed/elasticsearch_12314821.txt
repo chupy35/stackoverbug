@@ -1,0 +1,59 @@
+12314821 Elasticsearch with snowball analyzer only returns results for stemmed
+word
+
+I am using the snowball analyzer in my query string search ... like so
+
+    
+    
+       "query" : {
+          "query_string" : {
+            "query" : the-query-string-goes-here,
+            "default_operator" : "AND",
+            "analyzer" : "snowball"
+          }
+        }
+    
+
+this actually works but it does something weird ... searching for "fighting"
+will return results for "fight" but ignore results for "fighting". A search
+for "crews" will return results for "crew" but not "crews", also a search for
+"crew" also ignores results for "crews" ...
+
+Anyone know what's going on?
+
+Stemming makes sense when you apply it at both index time and query time. Now
+you are applying it at query time, so that you search for the stems of the
+words which are part of the query. But I guess the index doesn't contain the
+stems since you haven't applied stemming at index time. You're actually
+searching on the `_all` field since you didn't specify any field name neither
+in your query nor using `default_field` (or `fields`) attribute supported by
+the query_string. The `_all` field is by default analyzed using the
+`StandardAnalyzer`.
+
+There are different ways to solve this problem. I'd personally decide a set of
+fields on which you want to search in your query and apply to them stemming in
+your mapping. After that you don't need to specify the analyzer in your query
+since the configured analyzer for the field on which you are searching will be
+used.
+
+Let me know if the answer is clear enough.
+
+Thanks to @javanna for pointing me in the right direction. I solved this by
+setting the analyzer for the `_all` field to `snowball`. See [this
+doc](http://www.elasticsearch.org/guide/reference/mapping/all-field.html) for
+details.
+
+I'm using the Ruby tire gem, and I was able to specify the mapping in my model
+as follows:
+
+    
+    
+    mapping(_all: { analyzer: 'snowball' }) do
+      indexes :id, type: 'integer'
+      indexes :description
+      indexes :name, boost: 10
+    end
+    
+
+I formatted my query exactly like in the original question.
+

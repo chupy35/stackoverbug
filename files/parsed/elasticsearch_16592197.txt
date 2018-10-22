@@ -1,0 +1,357 @@
+16592197 Elasticsearch not returning an exact match first
+
+I have an elastic search index with a field for exact matches, and somehow i
+get both a lot of similar results (which I don't mind) and those similar
+results en up sorted before the exact match, (which i do mind.)
+
+Can someone explain what's going on and how to fix it?
+
+My mapping is like this
+
+    
+    
+    "exact":{
+      "type":"string",
+      "boost":10.0,
+      "analyzer":"keyword"
+    },
+    
+
+My query that searches for "AAPL P JAN 2014 885,00" is like this:
+
+    
+    
+    {
+      "size" : 21,
+      "query" : {
+        "field" : {
+          "exact" : "AAPL P JAN 2014 885,00"
+        }
+      },
+      "explain" : true,
+      "sort" : [ {
+        "_score" : {
+          "order" : "desc"
+        }
+      } ],
+      "facets" : {
+        "category" : {
+          "terms" : {
+            "field" : "category",
+            "size" : 10
+          }
+        }
+      }
+    }
+    
+
+And the returned documents end up in this order:
+
+  * {"exact":["APPLE INC","US0378331005","AAPL","73773"],"id-compound":"AAPL"}
+  * {"exact":["AAPL","73773","AAPL P JAN 2014 675,00"],"id-compound":"AAPL*PUT*20140118*675"}
+  * {"exact":["AAPL","73773","AAPL C JAN 2014 500,00"],"id-compound":"AAPL*CALL*20140118*500"}
+
+etc, with the exact match a bunch of results down the line.
+
+Can someone explain to me why the exact match doesn't end on top?
+
+The search results with full explain is below if it helps make sense of
+things.
+
+    
+    
+    "hits" : [ {
+      "_shard" : 0,
+      "_node" : "1",
+      "_index" : "instruments",
+      "_type" : "instrument",
+      "_id" : "AAPL",
+      "_score" : 1306.8339, "_source" : {"exact":["APPLE INC","US0378331005","AAPL","73773"],"id-compound":"AAPL"},
+      "_explanation" : {
+        "value" : 1306.8339,
+        "description" : "product of:",
+        "details" : [ {
+          "value" : 6534.169,
+          "description" : "sum of:",
+          "details" : [ {
+            "value" : 6534.169,
+            "description" : "weight(exact:AAPL in 9096), product of:",
+            "details" : [ {
+              "value" : 0.25854474,
+              "description" : "queryWeight(exact:AAPL), product of:",
+              "details" : [ {
+                "value" : 6.1701355,
+                "description" : "idf(docFreq=211, maxDocs=37299)"
+              }, {
+                "value" : 0.0419026,
+                "description" : "queryNorm"
+              } ]
+            }, {
+              "value" : 25272.875,
+              "description" : "fieldWeight(exact:AAPL in 9096), product of:",
+              "details" : [ {
+                "value" : 1.0,
+                "description" : "tf(termFreq(exact:AAPL)=1)"
+              }, {
+                "value" : 6.1701355,
+                "description" : "idf(docFreq=211, maxDocs=37299)"
+              }, {
+                "value" : 4096.0,
+                "description" : "fieldNorm(field=exact, doc=9096)"
+              } ]
+            } ]
+          } ]
+        }, {
+          "value" : 0.2,
+          "description" : "coord(1/5)"
+        } ]
+      }
+    }, {
+      "_shard" : 0,
+      "_node" : "1",
+      "_index" : "instruments",
+      "_type" : "instrument",
+      "_id" : "AAPL*PUT*20140118*675",
+      "_score" : 163.35423, "_source" : {"exact":["AAPL","73773","AAPL P JAN 2014 675,00"],"id-compound":"AAPL*PUT*20140118*675"},
+      "_explanation" : {
+        "value" : 163.35423,
+        "description" : "product of:",
+        "details" : [ {
+          "value" : 816.7711,
+          "description" : "sum of:",
+          "details" : [ {
+            "value" : 816.7711,
+            "description" : "weight(exact:AAPL in 18), product of:",
+            "details" : [ {
+              "value" : 0.25854474,
+              "description" : "queryWeight(exact:AAPL), product of:",
+              "details" : [ {
+                "value" : 6.1701355,
+                "description" : "idf(docFreq=211, maxDocs=37299)"
+              }, {
+                "value" : 0.0419026,
+                "description" : "queryNorm"
+              } ]
+            }, {
+              "value" : 3159.1094,
+              "description" : "fieldWeight(exact:AAPL in 18), product of:",
+              "details" : [ {
+                "value" : 1.0,
+                "description" : "tf(termFreq(exact:AAPL)=1)"
+              }, {
+                "value" : 6.1701355,
+                "description" : "idf(docFreq=211, maxDocs=37299)"
+              }, {
+                "value" : 512.0,
+                "description" : "fieldNorm(field=exact, doc=18)"
+              } ]
+            } ]
+          } ]
+        }, {
+          "value" : 0.2,
+          "description" : "coord(1/5)"
+        } ]
+      }
+    }, {
+      "_shard" : 0,
+      "_node" : "1",
+      "_index" : "instruments",
+      "_type" : "instrument",
+      "_id" : "AAPL*CALL*20140118*500",
+      "_score" : 163.35423, "_source" : {"exact":["AAPL","73773","AAPL C JAN 2014 500,00"],"id-compound":"AAPL*CALL*20140118*500"},
+      "_explanation" : {
+        "value" : 163.35423,
+        "description" : "product of:",
+        "details" : [ {
+          "value" : 816.7711,
+          "description" : "sum of:",
+          "details" : [ {
+            "value" : 816.7711,
+            "description" : "weight(exact:AAPL in 383), product of:",
+            "details" : [ {
+              "value" : 0.25854474,
+              "description" : "queryWeight(exact:AAPL), product of:",
+              "details" : [ {
+                "value" : 6.1701355,
+                "description" : "idf(docFreq=211, maxDocs=37299)"
+              }, {
+                "value" : 0.0419026,
+                "description" : "queryNorm"
+              } ]
+            }, {
+              "value" : 3159.1094,
+              "description" : "fieldWeight(exact:AAPL in 383), product of:",
+              "details" : [ {
+                "value" : 1.0,
+                "description" : "tf(termFreq(exact:AAPL)=1)"
+              }, {
+                "value" : 6.1701355,
+                "description" : "idf(docFreq=211, maxDocs=37299)"
+              }, {
+                "value" : 512.0,
+                "description" : "fieldNorm(field=exact, doc=383)"
+              } ]
+            } ]
+          } ]
+        }, {
+          "value" : 0.2,
+          "description" : "coord(1/5)"
+        } ]
+      }
+    }, {
+      "_id" : "AAPL*PUT*20140118*940",
+      "_score" : 163.35423, "_source" : {"exact":["AAPL","73773","AAPL P JAN 2014 940,00"],"id-compound":"AAPL*PUT*20140118*940"},
+      "_explanation" : {
+        "value" : 163.35423,
+        "description" : "product of:",
+        "details" : [ {
+          "value" : 816.7711,
+          "description" : "sum of:",
+          "details" : [ {
+            "value" : 816.7711,
+            "description" : "weight(exact:AAPL in 794), product of:",
+            "details" : [ {
+              "value" : 0.25854474,
+              "description" : "queryWeight(exact:AAPL), product of:",
+              "details" : [ {
+                "value" : 6.1701355,
+                "description" : "idf(docFreq=211, maxDocs=37299)"
+              }, {
+                "value" : 0.0419026,
+                "description" : "queryNorm"
+              } ]
+            }, {
+              "value" : 3159.1094,
+              "description" : "fieldWeight(exact:AAPL in 794), product of:",
+              "details" : [ {
+                "value" : 1.0,
+                "description" : "tf(termFreq(exact:AAPL)=1)"
+              }, {
+                "value" : 6.1701355,
+                "description" : "idf(docFreq=211, maxDocs=37299)"
+              }, {
+                "value" : 512.0,
+                "description" : "fieldNorm(field=exact, doc=794)"
+              } ]
+            } ]
+          } ]
+        }, {
+          "value" : 0.2,
+          "description" : "coord(1/5)"
+        } ]
+      }
+    }
+    
+
+and just in case where's what happens if i analyze the data i'm trying to
+store:
+
+    
+    
+    curl -XGET 'localhost:9200/instruments/_analyze?field=exact&pretty=true' -d 'ING  P JUN 2013 6.00'
+    {
+      "tokens" : [ {
+        "token" : "ING  P JUN 2013 6.00",
+        "start_offset" : 0,
+        "end_offset" : 20,
+        "type" : "word",
+        "position" : 1
+      } ]
+    
+
+All three documents get exactly the same score, as you can see from the
+explain output they all match on "AAPL". The term always appears once in the
+documents (tf=1) and it appears on 211 out of 37299 documents (idf=6.1701355).
+The field norm is much higher since you are using index time boosting (the
+boost part in your mapping, 10), anyway no big deal since the match is always
+on the same field. It's just that if you have a match on other fields exact
+would pretty much always win, which might make sense in your case.
+
+But the problem is that `AAPL P JAN 2014 885,00` is not an exact match if I
+look at your documents. What I do see is that out of the 5 terms in your query
+only one matches, which is confirmed by the coord too in your explain output:
+coord(1/5)`.
+
+The `keyword` analyzer seems to be applied, but as you see from the returned
+documents you are not sending the content of the `exact` field as a single
+value, but as an array of values. Each of its item won't be tokenized, since
+you are using the `keyword` analyzer, but still you have multiple tokens. I
+guess you have to check how you're indexing documents.
+
+I think you have found you answer, just wanted to give a bit more info for
+other with the same problem.
+
+You use a `field` query which from the elasticsearch documentation:
+
+> Field Query:
+
+>
+
+> A query that executes a query string against a specific field. It is a
+simplified version of query_string query (by setting the default_field to the
+field this query executed against).
+
+I believe a `query_string` query is for text, i.e.: it does a lot to the
+query, making it fuzzy, etc...
+
+What you want to use (and I think you found this out) is a `term` query which
+will not do anything to the search phrase, and so only give you exact matches.
+
+NOTE: Analysis happens at 2 distinct times, index time and query time. Setting
+`"analyzer": "keyword"` seems to only affect search time queries "when
+searching using a query string" [form elasticsearch
+docs](http://www.elasticsearch.org/guide/reference/mapping/core-types/). I
+must admit I don't know exactly what that means (I would guess `query_string`
+but it could also mean for searches like `http://../_search?q=exact:{query
+here}`)
+
+I'm not sure if it's technically the best thing but if you're just after a
+single specific answer from elastic search you could just use a filter with a
+script that looked for an exact match.
+
+    
+    
+    {
+      from : 0,
+      size : 1,
+      "query" : { 
+        "text_phrase" : { 
+          "title" : "AAPL P JAN 2014 885,00"
+        } 
+      },
+      "filter" : { 
+        "script" : { 
+          "script" : "_source.exact.contains(x)", 
+          "params" : { 
+            "x" : "AAPL P JAN 2014 885,00" 
+          }  
+        } 
+      }
+    }
+    
+
+I've used this to obtain a single known entry from elastic search and it
+worked well for me.
+
+The reason why your keyword analyzer seems to be ignored in the search query
+is because ES tokenizes this string twice - first it runs its DSL tokenizer
+and then it runs the tokenizer specified in the maping on the rezult. This is
+explained in more detail in this article
+<http://paulsabou.com/blog/2012/03/25/advanced-exact-matching-with-elastic-
+search/>
+
+You should NOT ANALYZE your id field.
+
+Define your field as:
+
+    
+    
+    "exact":{
+       "type":"string",
+       "index":"not_analyzed"
+     }
+    
+
+Have a look at [Finding Exact
+Values](https://www.elastic.co/guide/en/elasticsearch/guide/current/_finding_exact_values.html)
+

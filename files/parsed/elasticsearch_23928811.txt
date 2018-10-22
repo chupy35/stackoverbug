@@ -1,0 +1,26 @@
+23928811 Elasticsearch Dedupe result, return 1 doc for each "field value"
+
+For say, we have our indices like this:
+
+    
+    
+    {"id":1, "country":"cn", "keywords":"kwd1 kwd2"}
+    {"id":2, "country":"cn", "keywords":"kwd1 kwd3"}
+    {"id":3, "country":"us", "keywords":"kwd1 kwd5"}
+    {"id":4, "country":"us", "keywords":"kwd1 kwd4"}
+    
+
+Then we query the by the  {"term":{"keywords": "kwd1"}.
+
+Normally we will get the result with all 4 docs returned.
+
+However, what if I only need 1 doc for each "country" value returned? In
+another word, how can I get the result "deduped by field("country")'s value?
+
+Thanks a lot!
+
+**one way** : you could look on facets or aggregations
+
+**another way** : have parent index with countries and child index for
+keywords, and use top_children query
+

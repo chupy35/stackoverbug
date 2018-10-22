@@ -1,0 +1,63 @@
+26736719 Syntax error in updated 0.12 react docs?
+
+When I try and run the [Transferring with ... in
+JSX](http://facebook.github.io/react/docs/transferring-
+props.html#transferring-with-...-in-jsx) example
+
+    
+    
+    var FancyCheckbox = React.createClass({
+      render: function() {
+        var { checked, ...other } = this.props;
+        var fancyClass = checked ? 'FancyChecked' : 'FancyUnchecked';
+        // `other` contains { onClick: console.log } but not the checked property
+        return (
+          <div {...other} className={fancyClass} />
+        );
+      }
+    });
+    React.render(
+      <FancyCheckbox checked={true} onClick={console.log}>
+        Hello world!
+      </FancyCheckbox>,
+      document.body
+    );
+    
+
+I get `Uncaught SyntaxError: Unexpected token {`. Same when I try to run it in
+[jsfiddle](http://jsfiddle.net/ke4bmqny/1/)
+
+Is this an error or is some extra code transpilation required for this to
+work?
+
+To use this feature you have to have [harmony
+enabled](http://facebook.github.io/react/blog/2014/03/21/react-v0.10.html#react-
+tools). Unfortunately the fiddle integration you're using is not having it
+enabled.
+
+There is a [commit made
+recently](https://github.com/facebook/react/commit/0f5368341ff96c88c3fbef57dfa089b43d129a06)
+which adds it, so very likely it will be up there.
+
+If you want to use it right away, you can either host the file somewhere, or
+just add the script directly to the fiddle:
+
+    
+    
+    <script>
+      (function () {
+        var tag = document.querySelector(
+                'script[type="application/javascript;version=1.7"]'
+        );
+        if (!tag || tag.textContent.indexOf('window.onload=function(){') !== -1) {
+          alert('Bad JSFiddle configuration, please fork the original React JSFiddle');
+        }
+        tag.setAttribute('type', 'text/jsx;harmony=true');
+        tag.textContent = tag.textContent.replace(/^\/\/<!\[CDATA\[/, '');
+      })();
+    </script>
+    
+
+The important line is `'text/jsx;harmony=true'`. [Check the updated
+fiddle](http://jsfiddle.net/ke4bmqny/2/).
+

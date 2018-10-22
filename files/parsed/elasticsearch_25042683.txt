@@ -1,0 +1,33 @@
+25042683 Can ElasticSearch create/store just the indexes while leaving the
+source document where it is?
+
+Assuming I already have a set of documents living in some document store can I
+have ElasticSearch create its indexes and store them in its various replicated
+nodes while leaving the documents themselves where they are? In other words
+can I use ES just for search and not for storage? (I understand this might not
+be ideal but assume there are good reasons I need to keep the documents
+themselves where they are).
+
+If I take this approach does it remove any functionality from search, for
+example showing where in a document the search term was found?
+
+Thanks.
+
+The link Konstantin referenced should show you how to disable _source.
+
+There is another way to store fields (store=true). You are better off using
+_source and excluding any specific fields you don't want stored as part of
+_source, though.
+
+Functionality removed:
+
+  * Viewing fields that are returned from search 
+  * Highlighting 
+  * Easily rebuilding an index from _source. Probably not an issue, since data is stored elsewhere
+
+There are probably other features I am missing.
+
+The only case I've come across where I really don't need _source is when
+building an analytics engine where I am only returning aggregates (term and
+histogram).
+

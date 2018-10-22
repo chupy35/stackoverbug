@@ -1,0 +1,27 @@
+19919887 Elasticsearch Multiple Cluster Search
+
+I just watched [Rafal Kuc's
+presentation](http://www.elasticsearch.org/videos/scaling-massive-
+elasticsearch-clusters/) and would like to use it for the basis of an Elastic
+Search Question.
+
+If I added 50 million documents per day to a cluster where each day created a
+new index (time based [data design pattern](http://vimeo.com/44716955)),
+eventually in time that would get pretty big. For example sake we'll put the
+avg document at 15kb.
+
+Now lets say I needed to do that for 10 years. Eventually, I would need to
+create multiple clusters. Can I create multiple clusters in ES and search them
+all simultaneously? Could I use an alias for something like this? Or is it not
+possible?
+
+No, I think a search via the api or your client of choice (Java/Python/etc) is
+going to be against a single cluster.
+
+Your client could make multiple requests one to each cluster, perhaps if you
+organized your clusters by years?
+
+In theory a cluster could just grow forever, although at some point I would
+think the overhead of scattering and gathering a query to N nodes (where N is
+very very very large) would cause problems.
+

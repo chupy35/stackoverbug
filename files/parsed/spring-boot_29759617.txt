@@ -1,0 +1,63 @@
+29759617 Making spring boot boostrap behind proxy
+
+I tried to use Spring Boot using proxy.
+
+I get the following message
+
+    
+    
+    $ spring init -l
+    
+    Failed to retrieve help from service at 'https://start.spring.io'
+    (start.spring.io: unknown error)
+    
+
+I tried following
+
+    
+    
+    export http_proxy
+    
+    export https_proxy
+    
+    JAVA_OPTS settings
+    
+
+We are using commons `HttpClient` and we build a default instance via
+[HttpClientBuilder](http://hc.apache.org/httpcomponents-client-
+ga/httpclient/apidocs/org/apache/http/impl/client/HttpClientBuilder.html)
+
+There are a bunch of system properties that are taken into account but I
+assume the following is the ones you're looking for:
+
+  * `http.proxyHost`
+  * `http.proxyPort`
+
+Can you try that? If that does not work, please raise an issue on [the boot
+tracker](https://github.com/spring-projects/spring-boot/issues)
+
+Behind corporate proxy using locally installed
+[cntlm](http://cntlm.sourceforge.net/) proxy:
+
+[![enter image description
+here](https://i.stack.imgur.com/vl8HE.png)](https://i.stack.imgur.com/vl8HE.png)
+
+    
+    
+    JAVA_OPTS 
+    -Dhttp.proxyHost=localhost -Dhttp.proxyPort=3128 -Dhttps.proxyHost=localhost -Dhttps.proxyPort=3128
+    
+
+Output:
+
+    
+    
+    $ spring init
+    Using service at https://start.spring.io
+    Content saved to 'demo.zip'
+    
+
+Use
+
+> -Dhttp.proxyHost=your.proxy.net -Dhttp.proxyPort=8080
+

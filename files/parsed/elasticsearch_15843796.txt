@@ -1,0 +1,388 @@
+15843796 Using a custom_score to sort by a nested child's timestamp
+
+I'm pretty new to elasticsearch and have been banging my head trying to get
+this sorting to work. The general idea is to search email message threads with
+nested messages and nested participants. The goal is to display search results
+at the thread level, sorting by the participant who is doing the search and
+either the last_received_at or last_sent_at column depending on which mailbox
+they are in.
+
+My understanding is that you can't sort by a single child's value among many
+nested children. So in order to do this I saw a couple of suggestions for
+using a custom_score with a script, then sorting on the score. My plan is to
+dynamically change the sort column and then run a nested custom_score query
+that will return the date of one of the participants as the score. I've been
+noticing some issues with both the score format being strange (eg. always has
+4 zeros at the end) and it may not be returning the date that I was expecting.
+
+Below are simplified versions of the index and the query in question. If
+anyone has any suggestions, I'd be very grateful. (FYI - I am using
+elasticsearch version 0.20.6.)
+
+Index:
+
+    
+    
+    mappings: {
+        message_thread: {
+            properties: {
+                id: {
+                    type: long
+                }
+                subject: {
+                    dynamic: true
+                    properties: {
+                        id: {
+                            type: long
+                        }
+                        name: {
+                            type: string
+                        }
+                    }
+                }
+                participants: {
+                    dynamic: true
+                    properties: {
+                        id: {
+                            type: long
+                        }
+                        name: {
+                            type: string
+                        }
+                        last_sent_at: {
+                            format: dateOptionalTime
+                            type: date
+                        }
+                        last_received_at: {
+                            format: dateOptionalTime
+                            type: date
+                        }
+                    }
+                }
+                messages: {
+                    dynamic: true
+                    properties: {
+                        sender: {
+                            dynamic: true
+                            properties: {
+                                id: {
+                                    type: long
+                                }
+                            }
+                        }
+                        id: {
+                            type: long
+                        }
+                        body: {
+                            type: string
+                        }
+                        created_at: {
+                            format: dateOptionalTime
+                            type: date
+                        }
+                        recipient: {
+                            dynamic: true
+                            properties: {
+                                id: {
+                                    type: long
+                                }
+                            }
+                        }
+                    }
+                }
+                version: {
+                    type: long
+                }
+            }
+        }
+    }
+    
+
+Query:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": { "participants.id": 3785 }
+            },
+            {
+              "custom_score": {
+                "query": {
+                  "filtered": {
+                    "query": { "match_all": {} },
+                    "filter": {
+                      "term": { "participants.id": 3785 }
+                    }
+                  }
+                },
+                "params": { "sort_column": "participants.last_received_at" },
+                "script": "doc[sort_column].value"
+              }
+            }
+          ]
+        }
+      },
+      "filter": {
+        "bool": {
+          "must": [
+            {
+              "term": { "messages.recipient.id": 3785 }
+            }
+          ]
+        }
+      },
+      "sort": [ "_score" ]
+    }
+    
+
+**Solution:**
+
+Thanks to @imotov, here is the final result. The participants were not
+properly nested in the index (while the messages didn't need to be). In
+addition, include_in_root was used for the participants to simplify the query
+(participants are small records and not a real size issue, although @imotov
+also provided an example without it). He then restructured the JSON request to
+use a dis_max query.
+
+    
+    
+    curl -XDELETE "localhost:9200/test-idx"
+    curl -XPUT "localhost:9200/test-idx" -d '{
+      "mappings": {
+        "message_thread": {
+          "properties": {
+            "id": {
+              "type": "long"
+            },
+            "messages": {
+              "properties": {
+                "body": {
+                  "type": "string",
+                  "analyzer": "standard"
+                },
+                "created_at": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd'\''T'\''HH:mm:ss'\''Z'\''"
+                },
+                "id": {
+                  "type": "long"
+                },
+                "recipient": {
+                  "dynamic": "true",
+                  "properties": {
+                    "id": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "sender": {
+                  "dynamic": "true",
+                  "properties": {
+                    "id": {
+                      "type": "long"
+                    }
+                  }
+                }
+              }
+            },
+            "messages_count": {
+              "type": "long"
+            },
+            "participants": {
+              "type": "nested",
+              "include_in_root": true,
+              "properties": {
+                "id": {
+                  "type": "long"
+                },
+                "last_received_at": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd'\''T'\''HH:mm:ss'\''Z'\''"
+                },
+                "last_sent_at": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd'\''T'\''HH:mm:ss'\''Z'\''"
+                },
+                "name": {
+                  "type": "string",
+                  "analyzer": "standard"
+                }
+              }
+            },
+            "subject": {
+              "properties": {
+                "id": {
+                  "type": "long"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }'
+    curl -XPUT "localhost:9200/test-idx/message_thread/1" -d '{
+      "id" : 1,
+      "subject" : {"name": "Test Thread"},
+      "participants" : [
+        {"id" : 87793, "name" : "John Smith", "last_received_at" : null, "last_sent_at" : "2010-10-27T17:26:58Z"},
+        {"id" : 3785, "name" : "David Jones", "last_received_at" : "2010-10-27T17:26:58Z", "last_sent_at" : null}
+      ],
+      "messages" : [{
+        "id" : 1,
+        "body" : "This is a test.",
+        "sender" : { "id" : 87793 },
+        "recipient" : { "id" : 3785},
+        "created_at" : "2010-10-27T17:26:58Z"
+      }]
+    }'
+    curl -XPUT "localhost:9200/test-idx/message_thread/2" -d '{
+      "id" : 2,
+      "subject" : {"name": "Elastic"},
+      "participants" : [
+        {"id" : 57834, "name" : "Paul Johnson", "last_received_at" : "2010-11-25T17:26:58Z", "last_sent_at" : "2010-10-25T17:26:58Z"},
+        {"id" : 3785, "name" : "David Jones", "last_received_at" : "2010-10-25T17:26:58Z", "last_sent_at" : "2010-11-25T17:26:58Z"}
+      ],
+      "messages" : [{
+        "id" : 2,
+        "body" : "More testing of elasticsearch.",
+        "sender" : { "id" : 57834 },
+        "recipient" : { "id" : 3785},
+        "created_at" : "2010-10-25T17:26:58Z"
+      },{
+        "id" : 3,
+        "body" : "Reply message.",
+        "sender" : { "id" : 3785 },
+        "recipient" : { "id" : 57834},
+        "created_at" : "2010-11-25T17:26:58Z"
+      }]
+    }'
+    curl -XPOST localhost:9200/test-idx/_refresh
+    echo
+    # Using include in root
+    curl "localhost:9200/test-idx/message_thread/_search?pretty=true" -d '{
+      "query": {
+        "filtered": {
+          "query": {
+            "nested": {
+              "path": "participants",
+              "score_mode": "max",
+              "query": {
+                "custom_score": {
+                  "query": {
+                    "filtered": {
+                      "query": {
+                        "match_all": {}
+                      },
+                      "filter": {
+                        "term": {
+                          "participants.id": 3785
+                        }
+                      }
+                    }
+                  },
+                  "params": {
+                    "sort_column": "participants.last_received_at"
+                  },
+                  "script": "doc[sort_column].value"
+                }
+              }
+            }
+          },
+          "filter": {
+            "query": {
+              "multi_match": {
+                "query": "test",
+                "fields": ["subject.name", "participants.name", "messages.body"],
+                "operator": "and",
+                "use_dis_max": true
+              }
+            }
+          }
+        }
+      },
+      "sort": ["_score"],
+      "fields": []
+    }
+    '
+    
+    # Not using include in root
+    curl "localhost:9200/test-idx/message_thread/_search?pretty=true" -d '{
+      "query": {
+        "filtered": {
+          "query": {
+            "nested": {
+              "path": "participants",
+              "score_mode": "max",
+              "query": {
+                "custom_score": {
+                  "query": {
+                    "filtered": {
+                      "query": {
+                        "match_all": {}
+                      },
+                      "filter": {
+                        "term": {
+                          "participants.id": 3785
+                        }
+                      }
+                    }
+                  },
+                  "params": {
+                    "sort_column": "participants.last_received_at"
+                  },
+                  "script": "doc[sort_column].value"
+                }
+              }
+            }
+          },
+          "filter": {
+            "query": {
+              "bool": {
+                "should": [{
+                  "match": {
+                    "subject.name":"test"
+                  }
+                }, {
+                  "nested" : {
+                    "path": "participants",
+                    "query": {
+                      "match": {
+                        "name":"test"
+                      }
+                    }
+                  }
+                }, {
+                  "match": {
+                    "messages.body":"test"
+                  }
+                }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "sort": ["_score"],
+      "fields": []
+    }
+    '
+    
+
+There are a couple of issues here. You are asking about nested objects, but
+participants are not defined in your mapping as nested objects. The second
+possible issue is that score has type float, so it might not have enough
+precision to represent timestamp as is. If you can figure out how to fit this
+value into float, you can take a look at this example: [Elastic search -
+tagging strength (nested/child document
+boosting)](https://stackoverflow.com/questions/13095866/elastic-search-
+tagging-strength-nested-child-document-boosting). However, if you are
+developing a new system, it might be prudent to upgrade to 0.90.0.Beta1, which
+supports sorting on nested fields.
+

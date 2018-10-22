@@ -1,0 +1,9 @@
+23055201 How to find the globally defined analyzer name in Elastic search?
+
+When searching in Elastic search, by default, the globally defined analyzer is
+used. How can I find out what this analyzer is ? We are using a Elastic search
+saas provider and I thus want to find out what the setting is ?
+
+As far as I am aware, Elasticsearch will use the `Standard Analyzer` as
+default if none other is specified upon index creation.
+

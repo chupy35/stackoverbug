@@ -1,0 +1,40 @@
+19960219 elasticsearch index getting reset
+
+I have a single node elasticsearch instance ( 0.90 version) running on a
+single machine ( 8GB RAM, dual core CPU) having RHEL 5.6
+
+After having indexed close to 2 million documents, it runs fine for a few
+hours and then restarts on its own, wiping out the index in the process. I now
+need to reindex all the documents again.
+
+Any ideas on why this happens? Maximum file descriptors is set to 32k and the
+number of open file descriptors at any time does not even come close. So it
+cant be that.
+
+Here are the modifications i made to the default elasticsearch.yml file :
+
+    
+    
+    index.number_of_shards: 5 
+    index.cache.field.type: soft 
+    index.fielddata.cache: soft 
+    index.cache.field.expire: 5m 
+    indices.fielddata.cache.size: 10% 
+    indices.fielddata.cache.expire : 5m 
+    index.store.type: mmapfs 
+    bootstrap.mlockall: true 
+    discovery.zen.ping.multicast.enabled: false 
+    action.disable_delete_all_indices: true 
+    script.disable_dynamic: true 
+    
+
+I use the elasticsearch service wrapper to start and stop the instance. In the
+elasticsearch.conf file, i have set the heap size to 2GB :
+
+    
+    
+    set.default.ES_HEAP_SIZE=2048 
+    
+
+Any help in diagnosing the problem will be appreciated.  Thanks guys!
+

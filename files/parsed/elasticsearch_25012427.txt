@@ -1,0 +1,20 @@
+25012427 How to set chinese analyzer to a field in elasticsearch
+
+Is there an example how to set chinese language analyzer for certain field in
+Elasticsearch?
+
+Documents contain fields with both english and chinese languages and I would
+like to configure analyzer for one certain field.
+
+You can try <https://github.com/medcl/elasticsearch-analysis-ik>.
+
+Here are some documents in Chinese:
+
+  * <http://www.nosqldb.cn/1368777631032.html>
+
+  * <http://my.oschina.net/xiaohui249/blog/232784>
+
+Basically, You just need to install the ik-analyzer-plugin and the
+dictionaries(by simply copying files), enable it in elasticsearch.yml, and
+then set the analyzer to the field you want to use it.
+

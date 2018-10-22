@@ -1,0 +1,57 @@
+16797694 Elasticsearch date range intersection
+
+I'm storing something like the following information in elastic search:
+
+    
+    
+    { "timeslot_start_at" : "2013-02-01", "timeslot_end_at" : "2013-02-03" }
+    
+
+Given that I have another date range (given from user input for example) I am
+wanting to search for an intersecting time range. Similar to this: [Determine
+Whether Two Date Ranges
+Overlap](https://stackoverflow.com/questions/325933/determine-whether-two-
+date-ranges-overlap) Which outlines that the following logic is what i'm
+after:
+
+    
+    
+    (StartDate1 <= EndDate2) and (StartDate2 <= EndDate1)
+    
+
+But I'm unsure of how to fit this into an elastic search query, would I use a
+range filter and only set the 'to' values, leaving the from blank? Or is there
+a more efficient way of doing this?
+
+Update: It is now possible to use
+[date_range](https://www.elastic.co/guide/en/elasticsearch/reference/5.2/range.html)
+data type that was added in elasticsearch v5.2. For an earlier version of
+elasticsearch the following solution still applies.
+
+To test for intersection, you should combine two range queries into a single
+query using bool query:
+
+    
+    
+    {
+        "bool": {
+            "must": [
+                {
+                    "range": {
+                        "timeslot_start_at": {
+                            "lte": "2013-02-28"
+                        }
+                    }
+                },
+                {
+                    "range": {
+                        "timeslot_end_at": {
+                            "gte": "2013-02-03"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    
+

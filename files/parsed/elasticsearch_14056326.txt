@@ -1,0 +1,50 @@
+14056326 Elastic Search Grouped Queries
+
+I'm indexing an array of key value pairs. The key is always a UUID and the
+value is a user entered value. I've been crawling through the documentation
+but I can't figure out exactly how to query in this scenarioExample schema:
+
+    
+    
+    {
+      "id": 1,
+      "owner_id": 1,
+      "values": [
+        { "key": "k3kfa23rewf", "value": "the red card" },
+        { "key": "23a2dd23108", "value": "purple balloons" },
+      ]
+    },
+    {
+      "id": 2,
+      "owner_id": 1,
+      "values": [
+        { "key": "k3kfa23rewf", "value": "the blue card" },
+        { "key": "23a2dd23108", "value": "purple balloons" },
+      ]
+    }
+    
+
+I would like to query:
+
+    
+    
+    { "term": { "owner_id": 1 },
+    { "term": { "values.key": "23a2dd23108" }, "match": { "values.value": "purple" } },
+    { "term": { "values.key": "k3kfa23rewf" }, "match": { "values.value": "blue" } }
+    
+
+So that the record with ID 2 is returned. Any suggestions?
+
+I think that you need here to use [nested
+documents](http://www.elasticsearch.org/guide/reference/mapping/nested-
+type.html).
+
+That way, you will be able to create
+[BoolQueries](http://www.elasticsearch.org/guide/reference/query-dsl/bool-
+query.html), with a Must clause with a TermQuery on owner_id and two must
+clauses with [nested
+queries](http://www.elasticsearch.org/guide/reference/query-dsl/nested-
+query.html) with Term and Match queries on `values.key` and `values.value`.
+
+Does it help?
+

@@ -1,0 +1,34 @@
+31581260 Placeholder in banner.txt are not replaced when deploying war file
+
+I've built a spring boot application and I'm trying to customize the banner to
+display the version of my application. After reading the documentation, I've
+managed to create a banner.txt in the classpath and added the
+**${application.formatted-version}** placeholder inside. I've also managed to
+create a manifest file (using Gradle) containing the **Implementation-
+Version**.
+
+Everything works fine when executing a jar file directly but when creating a
+war file, the banner is displayed but the version placeholder is not replaced.
+
+After a bit of debugging, this method seems to be the source of the problem
+**org.springframework.boot.ResourceBanner.getApplicationVersion()**
+
+When running a war file, the call to
+**sourcePackage.getImplementationVersion()** always return null
+
+The manifest file is located at the root of the war file /META-INF/MANIFEST.MF
+The application is deployed in a standalone tomcat 8.0.15
+
+Any idea of what's wrong ?
+
+It's a bug/limitation in Tomcat. It fails to find the `/META-INF/MANIFEST.MF`
+from an exploded WAR file which causes its `ClassLoader` to define the package
+with a `null` implementation version. This has been fixed in Tomcat, but the
+fix hasn't made it into a release yet. It'll be in 8.0.25.
+
+There's [some more information in this Spring Boot
+issue](https://github.com/spring-projects/spring-boot/issues/3406) and [this
+is the change that was made to
+Tomcat](https://svn.apache.org/viewvc?diff_format=h&view=revision&revision=1688897)
+if you're interested.
+

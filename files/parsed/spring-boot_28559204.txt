@@ -1,0 +1,114 @@
+28559204 spring boot do not publish correctly font files from static dir
+(font-awesome)
+
+I cannot manage to make spring boot publish correctly the font files.
+
+Since I migrate to spring boot, font-awesome didn't display the icons
+correctly, instead I got a square.
+
+In this case my files are local, the urls are good because I can see them
+loaded in network tab of the chrome console.
+
+If I change the css loading in the header by using the maxcdn link :
+
+    
+    
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-   awesome/4.3.0/css/font-awesome.min.css">
+    
+
+then it works. The problem is that I got other woff to load that are not in
+maxcdn (simple-line-icons plugin).
+
+I put all my static files in src/main/resources/static
+
+Here is a picture of what I get in chrome (square icons + network info) (open
+the image link in a new tab to see in large size)
+
+![enter image description here](https://i.stack.imgur.com/6B2KP.png)
+
+Apparently chrome says that the font awesome woff file is transfered with mime
+text/plain
+
+Here is a pic with content of font awesome fonts dir. original font size (on
+top) and the same dir filtered with maven (on bottom) size are slightly
+different
+
+![enter image description here](https://i.stack.imgur.com/jfd4M.png)
+
+Here is my pom part were I do maven filtering :
+
+    
+    
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <filters>
+            <filter>src/main/filters/${env}.properties</filter>
+        </filters>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+            </plugin>
+    
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <file>
+                    <exists>dev</exists>
+                </file>
+            </activation>
+            <build>
+                <filters>
+                    <filter>${basedir}/src/main/filters/dev.properties</filter>
+                </filters>
+            </build>
+        </profile>
+        <profile>
+            <id>webdev1</id>
+            <activation>
+                <file>
+                    <exists>webdev1</exists>
+                </file>
+            </activation>
+            <build>
+                <filters>
+                    <filter>${basedir}/src/main/filters/webdev1.properties</filter>
+                </filters>
+            </build>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <activation>
+                <file>
+                    <exists>prod</exists>
+                </file>
+            </activation>
+            <build>
+                <filters>
+                    <filter>${basedir}/src/main/filters/prod.properties</filter>
+                </filters>
+            </build>
+        </profile>
+    </profiles>
+    
+
+* * *
+
+### Solved
+
+The problem was due to maven filtering resources, I've updated my pom.xml to
+exclude the static dir
+

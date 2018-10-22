@@ -1,0 +1,91 @@
+23102707 Issues with elasticSearch geoPoint
+
+I'm using ElasticSearch 1.1.0, and trying to use the geodistance filter.
+
+Here is my mapping
+
+    
+    
+    {
+    "dynamic": "true",
+    "numeric_detection": true,
+    "properties": {
+        "address": {
+            "type": "nested",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "geo_point"
+                },
+                "postcode": {
+                    "type": "integer"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                    }
+                }    
+            }
+        }
+    }
+    
+
+Here is my document
+
+    
+    
+    "address": {
+        "postcode": "29004",
+        "city": "Málaga",
+        "state": "Málaga",
+        "region": "Málaga",
+        "country": "espagne",
+        "location": {
+            "lat": 36.68676,
+            "lon": -4.49028
+        }
+    }
+    
+
+(The mapping was created before indexing any document, and the document is
+well indexed). But when a try to fetch this annonce with the following query
+string
+
+    
+    
+    {
+    "query": {
+        "filtered": {
+            "query": {
+                "match_all": {
+    
+                }
+            },
+            "filter": {
+                "geo_distance": {
+                    "distance": "200km",
+                    "address.location": {
+                        "lat": 36.68676,
+                        "lon": -4.49028
+                    }
+                }
+            }
+        }
+    }
+    }
+    
+
+I got no results.. I can not understand why. Am I doing something wrong ?
+Thanks for your help :) !
+
+Ok , I forgot to set the long_lat mapping option ...
+<https://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-geo-
+point-type.html#_mapping_options>
+

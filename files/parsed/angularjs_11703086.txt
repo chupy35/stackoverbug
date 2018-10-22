@@ -1,0 +1,170 @@
+11703086 How can I transclude into an attribute?
+
+Is is possible to somehow use `ngTransclude` for an attribute value, instead
+of replacing inner HTML content? For example this simple directive
+
+    
+    
+    var testapp = angular.module('testapp', [])
+    
+    testapp.directive('tag', function() {
+      return {
+        template: '<h1><a href="{{transcludeHere}}" ng-transclude></a></h1>',
+        restrict: 'E',
+        transclude: true
+      }
+    });
+    
+
+and use it as
+
+    
+    
+    <tag>foo</tag>
+    
+
+I want it to translate into
+
+    
+    
+    <h1><a href="foo">foo</a></h1>
+    
+
+Is there any way of doing that, or do I have to use an attribute instead of
+transcluding?
+
+**Here's a[fiddle](http://jsfiddle.net/darthdeus/bMW7a/) with the example**
+
+Something like this:
+
+    
+    
+    var testapp = angular.module('testapp', [])
+    
+    testapp.directive('tag', function() {
+      return {
+        restrict: 'E',
+        template: '<h1><a href="{{transcluded_content}}">{{transcluded_content}}</a></h1>',
+        replace: true,
+        transclude: true,
+        compile: function compile(tElement, tAttrs, transclude) {
+            return {
+                pre: function(scope) {
+                    transclude(scope, function(clone) {
+                      scope.transcluded_content = clone[0].textContent;
+                    });
+                }
+            }
+        }
+      }
+    });​
+    
+
+[fiddle](http://jsfiddle.net/vt8BF/2/).
+
+One more solution:
+
+    
+    
+    app.directive('tag', function($compile) {
+      return {
+        restrict: 'E',
+        template:"<h1></h1>",
+        transclude: 'element',
+        replace: true,
+        controller: function($scope, $element, $transclude) {
+          $transclude(function(clone) {
+            var a = angular.element('<a>');
+            a.attr('href', clone.text());
+            a.text(clone.text());        
+            // If you wish to use ng directives in your <a>
+            // it should be compiled
+            //a.attr('ng-click', "click()");
+            //$compile(a)($scope);       
+            $element.append(a);
+          });
+        }
+      };
+    });
+    
+
+Plunker: <http://plnkr.co/edit/0ZfeLz?p=preview>
+
+Vadim's answer can be easily fixed by using the `compile` function, and
+returning the postLink function, where tranclusion will happen.
+
+    
+    
+    app.directive('tag', function ($compile) {
+      return {
+        restrict: 'E',
+        template: '<h1></h1>',
+        transclude: 'element',
+        replace: true,
+        compile: function($element, $attrs) {
+            return function ($scope, $element, $attrs, $controller, $transclude) {
+              $transclude(function(clone) {
+                var a = angular.element('<a></a>');
+                a.attr('href', clone.text());
+                a.text(clone.text());        
+                // If you wish to use ng directives in your <a>
+                // it should be compiled
+                // a.attr('ng-click', 'click()');
+                // $compile(a)($scope);
+                $element.append(a);
+              });
+            };
+        }
+      };
+    });
+    
+
+Please refer to <https://docs.angularjs.org/api/ng/service/>$compile
+
+The `$transclude` function used to be passed in the `compile` function, but it
+was deprecated, and is now in the `link` function.
+
+I know originally your question was about transclusion, but this problem is
+MUCH more succinctly solved using an attribute.
+
+    
+    
+    var testapp = angular.module('testapp', [])
+    
+    testapp.directive('tag', function() {
+      return {
+        template: '<h1><a href="{{url}}">{{url}}</a></h1>',
+        restrict: 'E',
+        scope: {
+          url: '@'
+        }
+      }
+    });
+    
+
+and your html
+
+    
+    
+    <tag url="foo"></tag>
+    
+
+The translation:
+
+    
+    
+    <h1><a href="foo">foo</a></h1>
+    
+
+Also, with the very latest version of Angular, there is a feature called "one-
+time binding" that is perfect for situations just like this where you only
+want/need to fulfill the interpolated value one time, upon initialization. The
+syntax looks like this:
+
+    
+    
+    {{::url}}
+    
+
+Just replace all instances of {{url}} in your template with the above.
+

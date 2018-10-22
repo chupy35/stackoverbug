@@ -1,0 +1,120 @@
+9391308 Elastic Search - OR filter with boolean and ids
+
+I'm trying to search through items, where some of them might be private.
+
+If a item is private, only friends of item owner (array item.friends) may see
+the item. If it's not private, everyone can see it.
+
+So my logic is: If item is **not** `is_private` (is_private=0) **OR** user id
+(4 in my example) is in array `item.friends`, user can see the item.
+
+Still i get no results. Every item is now set to `is_private`=1, so I guess
+something is wrong with my ids filter.
+
+Any suggestions?
+
+    
+    
+    // ---- Mapping
+    {
+        "item": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "date"
+                },
+                "location": {
+                    "properties": {
+                        "location": {
+                            "type": "geo_point"
+                        }
+                    }
+                },
+                "is_proaccount": {
+                    "type": "integer"
+                },
+                "is_given_away": {
+                    "type": "integer"
+                },
+                "is_private": {
+                    "type": "integer"
+                },
+                "friends": {
+                    "type": "integer",
+                    "index_name": "friend"
+                }
+            }
+        }
+    }
+    
+    // ----- Example insert
+    {
+        "name": "Test",
+        "description": "Test",
+        "created": "2012-02-20T12:21:30",
+        "location": {
+            "location": {
+                "lat": "59.919914",
+                "lon": "10.753414"
+            }
+        },
+        "is_proaccount": "0",
+        "is_given_away": "0",
+        "is_private": 1,
+        "friends": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+        ]
+    }
+    
+    // -----  Query
+    {
+        "from": 0,
+        "size": 30,
+        "filter": {
+            "or": [
+                {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "is_private": 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "ids": {
+                        "values": [
+                            4
+                        ],
+                        "type": "friends"
+                    }
+                }
+            ]
+        },
+        "query": {
+            "match_all": {}
+        }
+    }
+    
+
+The "ids" filter probably does not mean what you think it means: it filters on
+the **document** ID (and, optionally, on the document type.)
+
+See <http://www.elasticsearch.org/guide/reference/query-dsl/ids-filter.html>
+

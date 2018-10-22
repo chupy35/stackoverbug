@@ -1,0 +1,51 @@
+25073873 GroovyTemplates properties configuration
+
+I'm trying to configure the properties of GroovyTemplates. I checked the
+[reference](http://docs.spring.io/spring-
+boot/docs/current/reference/html/common-application-properties.html) document,
+but formatting options are not available through the _application.properties_
+file. So I did the following to customize some other properties.
+
+    
+    
+    @EnableAutoConfiguration
+    @Configuration
+    @ComponentScan
+    public class Application implements CommandLineRunner {
+    
+        @Autowired
+        private GroovyTemplateAutoConfiguration.GroovyMarkupConfiguration configuration;
+    
+        public static void main(String[] args) {
+            SpringApplication.run(Application.class, args);
+        }
+    
+        @Override
+        public void run(String... strings) throws Exception {
+            this.configuration.groovyTemplateConfiguration().setUseDoubleQuotes(true);
+            this.configuration.groovyTemplateConfiguration().setAutoNewLine(true);
+            this.configuration.groovyTemplateConfiguration().setAutoIndent(true);
+    
+        }
+    }
+    
+
+I can see the double quotes in the rendered HTML files. However, it is still
+unformatted.
+
+So, I have two questions. The first one is, how can I set the properties
+properly? Most probably, the one I did is not the proper way. The second
+question is, why do I still get the unformatted HTML?
+
+In the docs it says
+
+    
+    
+    spring.groovy.template.configuration.*= # See Groovy's TemplateConfiguration
+    
+
+So I assume that corresponds up the properties you set (what you are doing
+isn't wrong, necessarily, but it might happen too late to influence the
+behaviour at runtime). I would stick with the `application.properties` if I
+were you.
+

@@ -1,0 +1,14 @@
+12702659 How many words to highlight before or/and after matched text
+
+Is it possible with elasticsearch to configure the number of words before and
+after matched text? Say for example I am searching for a keyword 'report' and
+set wordaround=5 Then it should return only 5 words containing the matched
+keyword
+
+Please help me!!!
+
+Try to define your fragment_size
+
+See:
+<http://www.elasticsearch.org/guide/reference/api/search/highlighting.html>
+

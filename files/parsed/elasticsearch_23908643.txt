@@ -1,0 +1,49 @@
+23908643 Arithmetic operations with fields
+
+Is it possible to query the result of a subtraction between two fields?
+
+E.g. There are two fields: "start", "end". I would like documents with `end -
+start > 10`.
+
+Can this be done directly or the only way to do is to create a new field while
+loading the documents with this difference?
+
+script filter in your query might be the way to go.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-script-filter.html>
+
+You can use [script
+filters](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-script-filter.html) using the scripting syntax explained in the [scripting
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html#modules-scripting).
+
+For your specific issue, you might do something like
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "script": {
+              "script": "doc['end'].value - doc['start'].value > 10"
+            }
+          }
+        }
+      }
+    }
+    
+
+where you can replace the `match_all` query with your own.
+
+As it's probably clear from the code above, you can access [specific
+fields](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html#_document_fields) in your document with the sintax
+`doc['field']` and apply specific functions to their values. In this case,
+`.value` (without parenthesis) returns the value of the field itself.
+

@@ -1,0 +1,187 @@
+12422611 AngularJS Paging with $location.path but no ngView reload
+
+My single page application loads a home page and I want to display a series of
+ideas. Each of the ideas is displayed in an animated flash container, with
+animations displayed to cycle between the ideas.
+
+Ideas are loaded using $http:
+
+    
+    
+    $scope.flash = new FlashInterface scope:$scope,location:$location
+    
+    $http.get("/competition.json")
+      .success (data) ->
+        $scope.flash._init data
+    
+
+However, to benefit from history navigation and UX I wish to update the
+address bar to display the correct url for each idea using $location:
+
+    
+    
+    $location.path "/i/#{idea.code}"
+    $scope.$apply()
+    
+
+I am calling $apply here because this event comes from outwith the AngularJS
+context ie Flash. I would like for the current controller/view to remain and
+for the view to not reload. This is very bad because reloading the view
+results in the whole flash object being thrown away and the preloader cycle
+beginning again.
+
+I've tried listening for $routeChangeStart to do a preventDefault:
+
+    
+    
+    $scope.$on "$routeChangeStart", (ev,next,current) ->
+      ev.preventDefault()
+    $scope.$on "$routeChangeSuccess", (ev,current) ->
+      ev.preventDefault()
+    
+
+but to no avail. The whole thing would be hunky dory if I could figure out a
+way of overriding the view reload when I change the $location.path.
+
+I'm still very much feeling my way around AngularJS so I'd be glad of any
+pointers on how to structure the app to achieve my goal!
+
+From [this blog post](http://blog.grio.com/2012/08/where-my-docs-at-a-
+smattering-of-pointers-on-angularjs-one-of-which-at-least-is-difficult-if-not-
+impossible-to-find-on-the-internet.html):
+
+> by default all location changes go through the routing process, which
+updates the angular view.
+
+>
+
+> There’s a simple way to short-circuit this, however. Angular watches for a
+location change (whether it’s accomplished through typing in the location bar,
+clicking a link or setting the location through `$location.path()`). When it
+senses this change, it broadcasts an event, `$locationChangeSuccess`, and
+begins the routing process. What we do is capture the event and reset the
+route to what it was previously.
+
+    
+    
+    function MyCtrl($route, $scope) {
+        var lastRoute = $route.current;
+        $scope.$on('$locationChangeSuccess', function(event) {
+            $route.current = lastRoute;
+        });
+    }
+    
+
+You should be loading `$location` via Dependency Injection and using the
+following:
+
+    
+    
+    $scope.apply(function () {
+        $location.path("yourPath");
+    }
+    
+
+Keep in mind that you should **not** use hashtags(#) while using
+`$location.path`. This is for compability for HTML5 mode.
+
+Instead of updating the path, just update query param with a page number.
+
+set your route to ignore query param changes:
+
+    
+    
+    ....
+    $routeProvider.when('/foo', {..., reloadOnSearch: false})
+    ....
+    
+
+and in your app update `$location` with:
+
+    
+    
+    ...
+    $location.search('page', pageNumber);
+    ...
+    
+
+My solution was to use the $routeChangeStart because that gives you the "next"
+and "last" routes, you can compare them without the need of an extra variable
+like on $locationChangeSuccess.
+
+The benefit is being able to access the "params" property on both "next" and
+"last" routes like `next.params.yourproperty` when you are using the
+"/property/value" URL style and of course use `$location.url` or
+`$location.path` to change the URL instead of `$location.search()` that
+depends on "?property=value" URL style.
+
+In my case I used it not only for that but also to prevent the route to change
+is the controller did not change:
+
+    
+    
+    $scope.$on('$routeChangeStart',function(e,next,last){
+      if(next.$$route.controller === last.$$route.controller){
+        e.preventDefault();
+        $route.current = last.$$route;
+        //do whatever you want in here!
+      }
+    });
+    
+
+Personally I feel like AngularJS should provide a way to control it, right now
+they assume that whenever you change the browser's location you want to change
+the route.
+
+The $locationChangeSuccess event is a bit of a brute force approach, but I
+found that checking the path allows us to avoid page reloads when the route
+path _template_ is unchanged, but reloads the page when switching to a
+different route template:
+
+    
+    
+    var lastRoute = $route.current;
+    $scope.$on('$locationChangeSuccess', function (event) {
+        if (lastRoute.$$route.originalPath === $route.current.$$route.originalPath) {
+            $route.current = lastRoute;
+        }
+    });
+    
+
+Adding that code to a particular controller makes the reloading more
+intelligent.
+
+Edit: While this makes it a bit easier, I ultimately didn't like the
+complexity of the code I was writing to keep friendly looking URL's. In the
+end, I just switched to a search parameter and angular handles it much better.
+
+I needed to do this but after fussing around trying to get the
+`$locationChange~` events to get it to work I learned that you can actually do
+this on the `route` using
+[`resolve`](https://docs.angularjs.org/api/ngRoute/provider/$routeProvider).
+
+    
+    
+    $routeProvider.when(
+        '/page',
+        {
+            templateUrl : 'partial.html',
+            controller : 'PageCtrl',
+            resolve : {
+                load : ['$q', function($q) {
+                    var defer = $q.defer();
+    
+                    if (/*you only changed the idea thingo*/)
+                        //dont reload the view
+                        defer.reject('');
+                    //otherwise, load the view
+                    else
+                        defer.resolve();
+    
+                    return defer.promise;
+                }]
+            }
+        }
+    );
+    
+

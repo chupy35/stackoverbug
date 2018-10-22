@@ -1,0 +1,68 @@
+25358116 Two same level stats aggregation
+
+Can we have two same level aggregations? For example I want to have two stats
+aggregation of two different fields in a single bucket aggregation. How can I
+do that particularly?
+
+Ok i got the solution
+
+    
+    
+    {
+      "size" : 0,
+      "query" : {
+        "filtered" : {
+          "query" : {
+            "match_all" : { }
+          },
+          "filter" : {
+            "and" : {
+              "filters" : [ {
+                "numeric_range" : {
+                  "transactionDate" : {
+                    "from" : "2013-08-01",
+                    "to" : "2013-11-01",
+                    "include_lower" : true,
+                    "include_upper" : true
+                  }
+                }
+              }]
+            }
+          }
+        }
+      },
+      "aggregations" : {
+       "monthWise1" : {
+         "date_range" : {
+           "field" : "transactionDate",
+           "ranges" : [ {
+             "key" : "Aug-2013",
+             "from" : "2013-08-01",
+             "to" : "2013-08-31"
+           }, {
+             "key" : "Sep-2013",
+             "from" : "2013-09-01",
+             "to" : "2013-09-30"
+           }, {
+             "key" : "Oct-2013",
+             "from" : "2013-10-01",
+             "to" : "2013-10-31"
+           } ]
+         },
+         "aggregations" : {
+           "statField1" : {
+             "stats": {
+               "field": "balance"
+             }
+           },
+           "statField2" : {
+             "stats": {
+               "field": "discount"
+             }
+           }
+         }
+      }
+    }
+    }
+    
+

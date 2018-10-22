@@ -1,0 +1,4 @@
+32344732
+Can you see the time a document was indexed in ElasticSearch?
+<p>Does ElasticSearch store any meta data that indicate when a document was actually indexed? If not is there any way to default a field to current date like how in MySQL you can default a column to NOW()</p>&#xA;
+<p>You can enable <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-timestamp-field.html" rel="nofollow">_timestamp</a> , and get this functionality.</p>&#xA;

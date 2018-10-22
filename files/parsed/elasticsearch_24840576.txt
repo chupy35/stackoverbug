@@ -1,0 +1,11 @@
+24840576 elasticsearch how to reset an field for all docs at once?
+
+I have and index with 1mln documents and need to set value `NULL` for field
+`status` to ALL documents in this index. Is it possible? Or the only way is to
+reindex all documents?
+
+Yes, the only way to do this is to reindex all the documents.
+
+You can update your mapping so that status.null_value = "NULL", so that
+documents indexed after that will have that value.
+

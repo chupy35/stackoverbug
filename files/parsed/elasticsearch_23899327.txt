@@ -1,0 +1,51 @@
+23899327 elasticsearch won't log slow queries anymore
+
+i had this working. not sure what changed.
+
+in my elasticsearch.yml, the only things uncommented and updated are the
+following lines:
+
+    
+    
+    index.search.slowlog.threshold.query.warn: 1ms
+    index.search.slowlog.threshold.query.info: 1ms
+    index.search.slowlog.threshold.query.debug: 1ms
+    index.search.slowlog.threshold.query.trace: 1ms
+    
+
+and my logging.yml has the following set:
+
+    
+    
+    es.logger.level: INFO
+    
+
+i've tried changing that value to 'DEBUG' and 'TRACE', but still doesn't work.
+yes, i've restarted my elasticsearch instance (several times)
+
+what am i missing?
+
+I'd try adding/changing your logging.yml file to the following:
+
+    
+    
+    additivity:
+      index.search.slowlog: true
+      index.indexing.slowlog: true
+    
+
+They both normally default to false
+
+I'd try setting the fetch threshold too:
+
+    
+    
+    index.search.slowlog.threshold.fetch.warn: 1ms
+    index.search.slowlog.threshold.fetch.info: 1ms
+    index.search.slowlog.threshold.fetch.debug: 1ms
+    index.search.slowlog.threshold.fetch.trace: 1ms
+    
+
+Finally I'd also try setting everything to 0ms instead of 1ms. This should in
+effect log everything.
+

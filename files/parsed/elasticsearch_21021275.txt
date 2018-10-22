@@ -1,0 +1,42 @@
+21021275 Delete particular record from ElasticSearch through java api
+
+My index contain index Type,I want to delete particular document from given
+key following query is sql
+
+    
+    
+    delete * from tablename where name="abc";
+    
+
+My ElasticSearch query :
+
+    
+    
+    DeleteByQueryResponse response = client.prepareDeleteByQuery(indexName)
+                                                        .setQuery(termQuery(”_type”, “type1”))
+                                                        .execute()
+                                                        .actionGet();
+    
+
+But i think it will delete type not particluar record...
+
+Anyone knows
+
+Thanks in advance
+
+Just replace the term query values...
+
+    
+    
+     .setQuery(termQuery(”name”, “abc”))
+     .setFilter(FilterBuilders.typeFilter("type1")
+    
+
+Please see the [Elasticsearch Guide - Java
+API](http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/index.html) topics below for more details on querying and
+filtering:
+
+  * [Query DSL - Queries](http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/query-dsl-queries.html)
+  * [Query DSL - Filters](http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/query-dsl-filters.html)
+

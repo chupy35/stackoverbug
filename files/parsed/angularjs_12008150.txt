@@ -1,0 +1,195 @@
+12008150 can i inherit a parent controller's variables?
+
+Here is my code:
+
+    
+    
+    function ParentCtrl($scope) {
+    $scope.people = ["Tom", "Dick", "Harry"];
+    $scope.count = $scope.people.length;
+    }
+    
+    function ChildCtrl($scope) {
+    $scope.parentpeople = ParentCtrl.people //this is what I would like to do ideally
+    }
+    
+
+I am nesting one angular `controller` inside of another one. I would like to
+pass variables of the first `controller` to the second one. Does anyone know
+how to do this?
+
+**NOTE**
+
+I cannot do something like
+
+    
+    
+    ChildCtrl.prototype = new ParentCtrl();
+    
+
+because I will overwrite the `people` property of the `ChildCtrl`.
+
+The $scope inheritance is based upon where you reference your controllers
+using ng-controller.
+
+If you have something like
+
+    
+    
+    <div ng-controller="ParentController">
+        <div ng-controller="ChildController">
+        </div>
+    </div>
+    
+
+Then yes, the child controller will inherit the properties of the parent
+controller.
+
+**Note :** The child controller need not be defined on the direct child in the
+html. It can be any child within.
+
+By default, child scopes prototypically inherit from the parent scope (see
+[Scope](http://docs.angularjs.org/guide/scope)), so you already have access to
+the parent controller's $scope properties in the child. To prove it:
+
+    
+    
+    function ChildCtrl($scope) {
+        alert($scope.people)
+    }
+    
+
+You're getting things wrong. You are mixing controller inheritance with scope
+inheritance, and they are different and loosly coupled in AngularJS.
+
+What you actually want is:
+
+    
+    
+    function ParentCtrl($scope) {
+        $scope.people = ["Tom", "Dick", "Harry"];
+        $scope.count = $scope.people.length;
+    }
+    
+    function ChildCtrl($scope) {
+        $scope.parentpeople = $scope.$parent.people;
+    }
+    
+
+And it will work for the case:
+
+    
+    
+    <div ng-controller="ParentCtrl">
+        <div ng-controller="ChildCtrl">
+        </div>
+    </div>
+    
+
+But as Mark and ganaraj noticed above, this has no sense, as you can access
+your property of $scope.people from both ParentCtrl and ChildCtrl.
+
+If you want to inherit controllers from each other, you need to use prototype
+inheritance of controller functions themselves.
+
+Also you can get the Scope of any controller by DOM:
+
+    
+    
+    $needleScope = angular.element(aDomElement).scope()
+    
+
+Using jQuery:
+
+    
+    
+    $needleScope = $('#aDomElementId').scope()
+    
+
+Or get all Scope in the document:
+
+    
+    
+    $allScopes = $('.ng-scope').scope()
+    
+
+It might help you!!!
+
+Scope is a special JavaScript object that connects controller with views.
+Scope contains model data. In controllers, model data is accessed via $scope
+object.
+
+    
+    
+    <script>
+          var mainApp = angular.module("mainApp", []);
+    
+          mainApp.controller("shapeController", function($scope) {
+             $scope.message = "In shape controller";
+             $scope.type = "Shape";
+          });
+    </script>
+    
+
+Scope Inheritance Scope is controller-specific. If we define nested
+controllers, then the child controller inherits the scope of its parent
+controller.
+
+    
+    
+    <script>
+          var mainApp = angular.module("mainApp", []);
+    
+          mainApp.controller("shapeController", function($scope) {
+             $scope.message = "In shape controller";
+             $scope.type = "Shape";
+          });
+    
+          mainApp.controller("circleController", function($scope) {
+             $scope.message = "In circle controller";   
+          });
+    </script>
+    
+
+Live example as give below.
+
+    
+    
+    <html>
+        <head>
+           <title>Angular JS Forms</title>
+        </head>
+        <body>
+           <h2>AngularJS Sample Application</h2>
+           <div ng-app="mainApp" ng-controller="shapeController">
+              <p>{{message}} <br/> {{type}} </p>
+              <div ng-controller="circleController">
+                 <p>{{message}} <br/> {{type}} </p>
+              </div>
+              <div ng-controller="squareController">
+                 <p>{{message}} <br/> {{type}} </p>
+              </div>
+           </div>
+           <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+           <script>
+              var mainApp = angular.module("mainApp", []);
+    
+              mainApp.controller("shapeController", function($scope) {
+                 $scope.message = "In shape controller";
+                 $scope.type = "Shape";
+              });
+    
+              mainApp.controller("circleController", function($scope) {
+                 $scope.message = "In circle controller";   
+              });
+    
+              mainApp.controller("squareController", function($scope) {
+                 $scope.message = "In square controller";
+                 $scope.type = "Square";
+              });
+    
+           </script>
+        </body>
+        </html>
+    
+

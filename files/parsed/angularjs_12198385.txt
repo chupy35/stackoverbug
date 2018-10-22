@@ -1,0 +1,50 @@
+12198385 Controller Code Organization in Angular
+
+So, I'm in the midst of my first major project with Angular. I have one
+controller that is doing a _ton_ of the legwork, and it's reached the point
+where it's thousands of lines of JavaScript.
+
+I'd like to break this up somehow, but I can't seem to find a solid example
+anywhere. The code is mostly made up of functions used to do calculations on
+objects, so directives and modules don't seem like the right answer, but I
+could be wrong there.
+
+How are you guys organizing code in your large Angular projects? Should I just
+suck it up, or is there a sane way to split this into easy to scan files?
+
+I suggest putting at least some of those objects and their related
+calculations into services, then inject the services into your controller(s).
+See the [Sticky Notes Part 1 blog entry](http://onehungrymind.com/angularjs-
+sticky-notes-pt-1-architecture/) for an example of a service that encapsulates
+some data and provides methods to access/manipulate that data.
+
+See if you can break up your controller into multiple controllers, one for
+each view. A view can be as large as a page, or just some chunk/block on a
+page.
+
+To quote from a google group post I saw recently: "I prefer to think of
+angular controllers as dumb apis/configs for my views and leave all the heavy
+lifting to services." --
+[reference](https://groups.google.com/d/msg/angular/eegk_lB6kVs/rCvY4K3ih0AJ)
+
+There are a few things that you need to ask yourself when you are in a
+controller.
+
+  1. Are you doing any DOM manipulation in the controller? This is a definite NO. Dont ever do that. It always belongs in the directives department. 
+
+  2. Are you writing any Business Logic in your controller? That too is a NO. Your Business logic should in most cases exist in a Service. That is the right place for it. 
+
+Now, have a look at your controller. Is it devoid of these 2 things and still
+larger than 1000 lines? It is highly unlikely, but even if it somehow is
+happening, then consider breaking down your controller into smaller
+controllers. This breaking of controllers have to be done based on the view.
+
+To sum things up, your controller is just a place where you glue up the
+business logic and your views in the HTML. It should technically never contain
+anything other than these glues.
+
+I usually create a Util factory (seems to be the way to go now in Angular
+rather than services) and have it return any shared logic as a set of methods.
+
+<https://gist.github.com/lamba/c275f5f010090632209e>
+

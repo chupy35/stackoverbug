@@ -1,0 +1,41 @@
+24091231 React.js passing a handleClick method down from App to List to
+ListItem?
+
+Quick question about good form in a React.js app:
+
+I have a top-level App that has a state like "selectedItem", and want a
+ListItem component to be able to change that state.
+
+So you make a top-level method on App like `selectItem: function(item)` that
+does a `setState(selectedItem: item)`.
+
+App passes this function down as a property to List component.
+
+List component passes this function down as a property to ListItem component.
+
+Finally ListItem component uses it as the onClick handler, with a `.bind(null,
+item)` so that the top-level state can be changed by a clicked item in the
+list.
+
+Is this right?
+
+It seems quite messy. Seems it'd be nicer for the ListItem to be able to call
+App.selectItem(item) directly without it having to be passed down three times.
+
+If `ListItem` is directly aware of `App` and its `selectItem` method, then
+`ListItem` is coupled to that application—it can never be reused in any other
+context. For components to be reusable, they should generally take a change
+(or whatever) handler as a property that it will call when appropriate.
+
+As for components that _are_ specific to your application (that is, they're
+not meant to be reusable), all that passing around can get messy. There's an
+architecture called [flux](http://facebook.github.io/react/docs/flux-
+overview.html) that allows application-specific views (known as "controller-
+views") to interact with an application-wide dispatcher in much the way that
+you mention.
+
+In short, reusable components should be passed props to make them maximally
+portable; application-specific components can access application-level logic
+directly, though many people still recommend passing properties as it makes
+data flow clear and explicit.
+

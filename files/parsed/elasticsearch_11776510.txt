@@ -1,0 +1,28 @@
+11776510 elasticsearch downloadable manual
+
+Does anyone know where I can find a downloadable manual (any format) for
+elasticsearch? <http://www.elasticsearch.org/guide/> is OK, but sometimes the
+site is not reachable, and searching for content is not practical.
+
+Not that I am aware of. You can fork and run the site locally if you have
+problems with it not being reachable which btw never happens for me. It is
+available on github:
+<https://github.com/elastic/elasticsearch/tree/master/docs>
+
+Here is the GitHub repo for all the documentation for their products:
+<https://github.com/elastic/docs>
+
+Please note the following disclaimer in the repo:
+
+    
+    
+    Conditions of use
+    This documentation build process is provided to the public purely for the
+    purpose of testing documentation changes before submitting pull requests to
+    the appropriate Elasticsearch repository.
+    
+    The documents produced by this build process may be published only on 
+    http://www.elastic.co. They may not be published in any other form or on
+    any other website without explicit permission.
+    
+

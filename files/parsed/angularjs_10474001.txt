@@ -1,0 +1,100 @@
+10474001 How do I create a new, uh, thing in Angularjs?
+
+I think the vagueness of the question is part of the problem, so my real first
+question is, what do you call, in Angular, the _thing_.
+
+The thing I'm trying to name is the view plus the controller, over the model
+of a single object. I don't even know what to call it. For things I know ahead
+of time I'm going to need, I've been creating _directives_ , but what do you
+call one instance of the thing that a directive creates?
+
+I have several situations where all of a sudden (in response to some external
+event), I have a new object in the model and I want to show it on the screen.
+Angular seems to want me to list all the possible views _ab initio_ in their
+parent view, but that isn't really reasonable in my case. How, for example,
+would I list all the pop-ups and tool-tips and other stuff.
+
+I'm down in some little edge case, deep in the controller code, and it needs
+to add something to the current view. What's the accepted practice.
+
+Incidentally, the $route/ng-view is one case of exactly this. The view
+containing the ng-view, and the ng-view DIV itself, have no idea what the
+$route module is going to put in the ng-view. I need the more general case of
+this strategy.
+
+**EDIT**
+
+People keep asking for an example. How about this: I'm making an equipment-
+requisition app. When a user asks that one of the 1000 different type of
+equipment be sent to him, I need to display a pop-up that gathers addition
+information specific to that type. If he asks for a screwdriver, the pop-up
+will ask about blade size, neck length, and handle composition; if he asks for
+an airplane, it will be a wizard ask him about engine size, fuel tanks,
+seating arrangement. All the app knows on start-up is the list of all
+equipment types, and the name of the UI element that gathers all subsequent
+information about each particular type.
+
+I think the problem is that you think that you need to create the "thing" in
+controller, but actually you don't. The way two-way data binding works is that
+you change some attribute value, and the view changes based on that. I've
+never seen a use case where that's not enough, pop-ups and tooltips
+notwithstanding.
+
+However, if you really must have the controller show something, you could
+utilize angular's events to do that. You would need two parts: a directive
+responsible for showing stuff (modifying DOM), and the controller. The
+controller would $broadcast an event with some parameters, and the directive
+would listen to those events using $on and react accordingly.
+
+> I'm down in some little edge case, deep in the controller code, and it needs
+to add something to the current view. What's the accepted practice.
+
+Somewhere, you need to define all of the views you'll need -- e.g., all of the
+equipment popups. You could put each view into a separate file and use ng-
+include to dynamically pull in the one you currently need to display. Define a
+property on your $scope (e.g., $scope.equipmentTypeViewUrl), then
+
+    
+    
+    <div ng-include src="equipmentTypeViewUrl"></div>
+    
+
+Since ng-view can only appear once per page, ng-include is probably not what
+you need to use if you need multiple levels of routing.
+
+See also
+
+  * [create a single html view for multiple partial views in angularjs](https://stackoverflow.com/questions/12577378/create-a-single-html-view-for-multiple-partial-views-in-angularjs)
+  * <https://groups.google.com/forum/#!topic/angular/xIIyGpW8KUk/discussion>
+  * [App design using Angular js](https://stackoverflow.com/questions/12793609/app-design-using-angular-js)
+  * [Client Side Template with view per role](https://stackoverflow.com/questions/12996018/client-side-template-with-view-per-role/13005658#13005658)
+
+I'd just make sure I had some useful code coming in as the model...
+
+    
+    
+    <div class="row" ng-repeat="attribute in attributes">
+        <div class="widget" ng-repeat="input in attribute.inputs">
+            <input type="{{input.type}}" ng-model="input.value" />
+        </div>
+    </div>
+    
+
+I'm extremely limited in my knowledge, but all I know is if you have a
+definite structure to your model you can build a view that reacts to it
+dynamically.
+
+If all of those things are related to your original object (properties or in
+some way other) you could loop through the data, display the properties and if
+need use the keys and filters for a label. Imho it's not really an angular
+question, more one if your data structure. If you have a good data structure
+you could use a service for creating a related data-object.
+
+For a related popup, you can use a directive and even process the model data
+there (only recommended if it has a consistent structure).
+
+If you dislike this approach, you can process the data directly in the
+template.
+
+But without more specific details, there will be no definite answer.
+

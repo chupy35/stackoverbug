@@ -1,0 +1,82 @@
+24854491 Elasticsearch: needs help on ids filter
+
+I am new to Elasticsearch. I have a mapping which has the following field:
+
+    
+    
+    {
+      "book": {
+        "book": {
+          "dynamic": "false",
+          "_source": {
+            "enabled": true
+          },
+          "_id": {
+            "path": "id"
+          },
+          "properties": {
+            "id": {
+              "type": "long",
+              "store": "yes",
+              "index": "not_analyzed",
+              "include_in_all": false
+            }
+          }
+        }
+      }
+    }
+    
+
+I am able to create the index and add documents. However, when I run query
+such as:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "ids": {
+              "type": "long",
+              "values" : [10]
+            }
+          }
+        }
+      }
+    }
+    
+
+It returns nothing (the index has a document with id = 10). I am confused by
+[this
+link](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-ids-filter.html):
+
+Can anyone enlighten me on this? What I did is wrong?
+
+I got it figured out. The correct way of using ids filter is as follows:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "ids": {
+              "type": "book",
+              "values" : [10]
+            }
+          }
+        }
+      }
+    }
+    
+
+The type parameter should be the document type, **NOT the type of the id
+field**.  Hope this helps someone else.
+

@@ -1,0 +1,19 @@
+12512457 Querying indexed data on elasticsearch
+
+I had indexed data on elastic search with terms like "name",and "message". Now
+I want to apply query on indexed data in such a way that I want to find
+frequency (count) of a certain pharse used in the message. For example
+messages are "I like to eat sandwich","I like to eat burger" etc,,,Now i want
+to query that how many times "like to" pharse is used in all the indexed
+messages.
+
+Sounds like you are looking for the Terms Facet API. See here :
+<http://www.elasticsearch.org/guide/reference/api/search/facets/terms-
+facet.html>
+
+You can filter your facet with a specific term if you need too. See "Facet
+Filter" on the following page :
+<http://www.elasticsearch.org/guide/reference/api/search/facets/index.html>
+
+HTH David.
+

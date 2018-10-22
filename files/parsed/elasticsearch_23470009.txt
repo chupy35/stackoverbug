@@ -1,0 +1,89 @@
+23470009 Elasticsearch. filtered query with partial_fields possible?
+
+Is it possible to exclude certain field from result ? I'm using filtered query
+like this:
+
+    
+    
+    {
+        "size": 10,
+        "query": {
+            "filtered": {
+                "query": {
+                    "bool": {
+                        "should": [
+                            {
+                                "text": {
+                                    "name": {
+                                        "query": "list",
+                                        "operator": "or",
+                                        "boost": 30
+                                    }
+                                }
+                            },
+                            {
+                                "text": {
+                                    "field2": {
+                                        "query": "list",
+                                        "operator": "or",
+                                        "boost": 0.2
+                                    }
+                                }
+                            },
+                            {
+                                "text": {
+                                    "field1": {
+                                        "query": "list",
+                                        "operator": "or",
+                                        "boost": 0.02
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "filter": {
+                    "and": [
+                        {
+                            "term": {
+                                "_type": "product"
+                            }
+                        }
+                    ]
+                }
+            },
+            "filter": {
+                "partial_fields": {
+                    "exclude": "field3"
+                }
+            }
+        },
+        "sort": [
+            {
+                "_score": "desc"
+            }
+        ]
+    }
+    
+
+I've added **filter partial_fields** but it does not seem to have any effect.
+I'm using **ES 0.9**
+
+partial_fields can return a partial representation of _source based on include
+and exclude patterns
+
+So i guess you should specify a wildcard pattern for field name in exclude. If
+your field name is DATA then the exclude pattern should be DAT*..
+
+Keep in mind that partial_fields support has been deprecated as of 1.0.0beta -
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-fields.html#partial>
+
+I know you're on 0.9 but at some point you'll need to upgrade and this
+approach won't work. I'd suggest upgrading to a 1.x release and using source
+filtering instead:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-source-filtering.html>
+

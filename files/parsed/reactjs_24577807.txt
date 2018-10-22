@@ -1,0 +1,158 @@
+24577807 Set document title on client and server side
+
+I want to know how you set the title of each page with ReactJS. And more, I
+use react-router-component and i want use same tech to set title to each page
+at server side by using React.renderComponentToString.
+
+My current root Component :
+
+    
+    
+    module.exports = App = React.createClass
+      getInitialState: ->
+        return title: 'My title'
+    
+      render: ->
+        <html lang="fr">
+          <head>
+            <link rel="stylesheet" href="/assets/css/main.css" />
+            <script src="/assets/js/bundle.js"></script>
+            <title>{@state.title}</title>
+          </head>
+          <body>
+            <div id="body-content">
+              <div id="main-container">
+                <Content path={@props.path} />
+              </div>
+            </div>
+          </body>
+        </html>
+    
+
+And my Content component :
+
+    
+    
+    Content = React.createClass
+      render: ->
+        <Locations id="main" className="App" path={@props.path}>
+          <Location path="/" handler={MainPage} />
+          <Location path="/users/:username" handler={UserPage} />
+        </Locations>
+    
+
+to pass the title to your `App` component server side, you have to pass it the
+same way as you're passing the `path`, i.e. as `props` and not `state`.
+
+So first you'll need to change:
+
+    
+    
+    <title>{@state.title}</title>
+    
+
+To:
+
+    
+    
+    <title>{@props.title}</title>
+    
+
+Then in your backend pass the wanted title to the `App` component when
+instantiating it, like so:
+
+    
+    
+    var url = require('url');
+    var ReactAsync = require('react-async');
+    
+    var App = require('./path/to/your/root-component.jsx');
+    
+    // app = your express app:
+    app.get('*', function (req, res) {
+      var path = url.parse(req.url).pathname;
+      var title = getTitleFromPath(path); // Made up function to get title from a path..
+      ReactAsync.renderComponentToStringWithAsyncState(
+        App({path: path, title: title}),
+        function (err, markup) {
+          if (err) return res.send(500, err);
+          res.send('<!DOCTYPE html>\n' + markup);
+        }
+      );
+    });
+    
+
+Hope that helps!
+
+As for setting the title client side I think your solution with setting the
+`document.title` probably is the best option.
+
+**Update**
+
+I've now tested the above and the title is set correctly, however React gets a
+different checksum for the server generated component and the client generated
+one, which is no good:
+
+    
+    
+    Uncaught Error: Invariant Violation: You're trying to render a component to the document using server rendering but the checksum was invalid
+    
+
+So actually **you shouldn't use this solution!**
+
+Will have to play around a little more...
+
+### Top-level React component
+
+    
+    
+    var React = require('react');
+    var AppStore = require('../stores/AppStore');
+    
+    var Application = React.createClass({
+    
+      propTypes: {
+        path: React.PropTypes.string.isRequired,
+        onSetTitle: React.PropTypes.func.isRequired
+      },
+    
+      render() {
+        var page = AppStore.getPage(this.props.path);
+        this.props.onSetTitle(page.title);
+        return (
+          <div className="container">
+            <h1>{page.title}</h1>
+            <div return <div dangerouslySetInnerHTML={{__html: page.body}}>;
+          </div>
+        );
+      }
+    });
+    
+    module.exports = Application;
+    
+
+### Client-side startup script (entry point)
+
+    
+    
+    var React = require('react');
+    var Dispatcher = require('./core/Dispatcher');
+    var Application = require('./components/Application');
+    
+    Dispatcher.register((payload) => {
+      var action = payload.action;
+      if (action.actionType === ActionTypes.CHANGE_LOCATION) {
+        app.setProps({path: action.path});
+      }
+    });
+    
+    var app = React.createElement(Application, {
+      path: window.location.pathname,
+      onSetTitle: (title) => document.title = title
+    }));
+    app = React.render(app, document.body);
+    
+
+**More info** : <https://gist.github.com/koistya/24715d295fbf710d1e24>  
+**Demo Project** : <https://github.com/kriasoft/react-starter-kit>
+

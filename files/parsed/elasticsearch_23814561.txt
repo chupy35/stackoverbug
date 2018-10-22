@@ -1,0 +1,36 @@
+23814561 ElasticSearch: Count of intersection in terms query
+
+I'm using elasticsearch to implement full user search. I want to return the
+number of mutual friends shared between the searching user and each of the
+results. I'm currently using the "terms" query to boost the score of results
+for users who share mutual friends with the searching user.
+
+For context, the relevant chunk of my query is pasted below:
+
+`"should": [ { "terms": { "friend_ids": [ "100", "2", "8", "9", "15", "25" ] }
+} ]`
+
+Ideally the response would include for each doc a field called
+"num_mutual_friends"....
+
+One way of achieving this is to use a script_field:
+
+    
+    
+    {
+      "query": {...},
+      "script_fields": {
+        "num_mutual_friends": {
+          "script": {
+            "inline": "doc['friend_ids'].values.intersect(input_friend_ids).length",
+            "params": {
+              "input_friend_ids": [
+                "101", "9", "8"
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+

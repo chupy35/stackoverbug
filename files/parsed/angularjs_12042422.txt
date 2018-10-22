@@ -1,0 +1,25 @@
+12042422 AngularJS $scope doesn't render after being updated
+
+I have a controller that listens on $scope.$on, which will show a popup window
+when triggered. It works 100% of the time from a couple other controllers
+$rootScope.$broadcast methods. But one of them won't work ever.
+
+The controller gets the event, and sets the $scope variable needed, but the
+page doesn't update, even if I fire $scope.$eval(). Then, if I go to another
+route, the $scope will finally render, and the modal will pop up on top of
+that route. I can't tell if I've found a bug in angularjs, or I'm missing
+something fundamental.
+
+Sorry I can't include code, it's a work project.
+
+You probably is changing the $scope outside of the angular $digest. Try
+replacing `code making changes` with `$scope.$apply(function(){ code making
+changes })`. With this the dirty-check should run and update all.
+
+I would recommend using:
+
+`$scope.$evalAsync(function() { // scope changes here });`
+
+This way you won't run into problems like trying to call apply when there's a
+digest already in progress.
+

@@ -1,0 +1,57 @@
+21580001 elastic search wont return field value in result although it is
+declared as "store"="yes"
+
+Im trying to index specific document with the following mapping
+
+    
+    
+    {
+       "session": { "_source": {
+             "enabled": false
+          },
+          "properties": {          
+             "sessionId": {
+                "type": "string"
+             },
+             "start": {
+                "type": "date"
+             },
+             "text": {
+                "type": "string"
+                , "store": "yes"
+             }
+          }
+       }
+    }
+    
+
+when searching for text
+
+    
+    
+    {
+       "query": {
+          "bool": {
+             "must": [
+                {
+                   "text": {
+                      "session.text": "something"
+                   }
+                }
+             ]
+          }
+       }
+    }
+    
+
+i do get results but session.text value wont stored in the results
+
+When you disable `_source` you need to explicitly state what fields you want,
+or specify `*` to get them all.
+
+This is documented here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-fields.html>
+
+In your case, you want to specify `"fields": ["text"]` in your search.
+

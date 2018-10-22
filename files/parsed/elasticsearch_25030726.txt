@@ -1,0 +1,65 @@
+25030726 Elasticsearch does not return existing document sometimes
+
+For the existing document when I fire following cURL command, I get:
+
+    
+    
+    root@unassigned-hostname:~# curl -XGET "http://localhost:9200/test/test3/573553/"
+    
+
+result:
+
+    
+    
+    {
+      "_index": "test",
+      "_type": "test3",
+      "_id": "573553",
+      "exists": false
+    }
+    
+
+When I fire the same command second time, I get:
+
+    
+    
+    root@unassigned-hostname:~# curl -XGET "http://localhost:9200/test/test3/573553/"
+    
+
+result:
+
+    
+    
+    {
+      "_index": "test",
+      "_type": "test3",
+      "_id": "573553",
+      "_version": 1,
+      "exists": true,
+      "_source": {
+        "id": "573553",
+        "name": "hVTHc",
+        "price": "21053",
+        "desc": "VGNHNXkAAcVblau"
+      }
+    }
+    
+
+I am using Elasticsearch 0.90.11 on Ubuntu 12.04.
+
+Could anyone please help me figuring out this problem?
+
+I have seen cases where elasticsearch shards can get out of sync during
+network partitions or very high add/update/delete volume (the same document
+getting updated/deleted/added within milliseconds of each other, potentially
+racing). There is no clean way to merge the shards, instead, you just randomly
+choose a winner. One way to check if this is the case is to repeatedly run a
+match all query and check if the results jump around at all.
+
+If you want to roll the dice and see what happens you can set replicas down to
+0 and then bump back up to whatever value you were using.
+
+While this may not be the reason for your issue, it is worth noting this is
+one of the reasons not to depend on elasticsearch as your primary source of
+truth.
+

@@ -1,0 +1,32 @@
+13023338 Conditionally have anchor links send user to a different page, rather
+than load to ng-view
+
+I have a view that contains an anchor link. That link has an href to another
+url in my site. Angular tries to load that site, using html5mode. I would
+rather just have default behavior for that link and send the user off to the
+url. How can I specify that this particular link should behave like a normal
+html link, not an angular route?
+
+AngularJS understands a few rules that will make the browser perform a full
+reload. The rules are documented under the 'Html link rewriting' section in
+the [$location service
+documentation](http://docs.angularjs.org/guide/dev_guide.services.$location#hashbang-
+and-html5-modes_html5-mode_html-link-rewriting).
+
+From the documentation:
+
+In cases like the following, links are not rewritten; instead, the browser
+will perform a full page reload to the original link.
+
+  * Links that contain target element Example: `<a href="/ext/link?a=b" target="_self">link</a>`
+  * Absolute links that go to a different domain Example: `<a href="http://angularjs.org/">link</a>`
+  * Links starting with '/' that lead to a different base path when base is defined Example: `<a href="/not-my-base/link">link</a>`
+
+Note that the last example only works if you have used the `base` element in
+the head section of your page:
+
+    
+    
+    <base href="/my-base/" />
+    
+

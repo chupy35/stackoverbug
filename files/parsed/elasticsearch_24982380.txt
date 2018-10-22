@@ -1,0 +1,149 @@
+24982380 How to retrieve more data from aggregation when array of items is
+aggregated?
+
+This question is related to [How to retrieve more data in
+aggregation?](https://stackoverflow.com/questions/24960348/how-to-retrieve-
+more-data-in-aggregation). The difference is that I try to aggregate on field
+"languages" which is an array and contains many entries like this: `{ id: 1,
+name: "English" }`.
+
+Here is a mapping:
+
+    
+    
+    languages:
+                    properties:
+                        name:
+                            type: "string"
+                            index: "not_analyzed"
+                        id:
+                            type: "long"
+    
+
+I try to aggregate like this:
+
+    
+    
+    aggs:
+        languages:
+            terms:
+               field: "languages.id"
+               aggs:
+                  languageName:
+                     terms:
+                        field: "languages.name"
+    
+
+The result is:
+
+    
+    
+    {
+      "key": 175,
+      "doc_count": 1,
+      "languageName": {
+        "buckets": [
+          {
+            "key": "Latin",
+            "doc_count": 1
+          },
+          {
+            "key": "Lingala",
+            "doc_count": 1
+          },
+          {
+            "key": "Quechua",
+            "doc_count": 1
+          },
+          {
+            "key": "Tamil",
+            "doc_count": 1
+          },
+          {
+            "key": "Walloon",
+            "doc_count": 1
+          }
+        ]
+      }
+    }
+    
+
+For some reason nested aggregation returns all language names for single
+language id... How I can retrieve correct language name?
+
+It is easier if you provide mapping, documents and query in json format so it
+is easier to copy paste and reproduce. Are you really using nested objects in
+the mapping? If that is the case you also need the nested aggregation:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-nested-aggregation.html>
+
+If you are not using nested objects, look up the documentation for inner
+objects. In the end you could en up with a document that is actually the
+following:
+
+    
+    
+    languages.id=[1,2,3,4]
+    languages.name=["Latin","Lingala","Dutch","English"]
+    
+
+Hope that helps
+
+You have to use nested aggregation as,
+
+    
+    
+    POST _search
+    {
+       "size": 0,
+       "aggs": {
+          "nestedlang": {
+             "nested": {
+                "path": "languages"
+             },
+             "aggs": {
+                "languages": {
+                   "term": {
+                      "field": "languages.id"
+                   },
+                   "aggs": {
+                      "languageName": {
+                         "terms": {
+                            "field": "languages.name"
+                         }
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+Make sure you have type = nested for "languages"..
+
+eg.
+
+    
+    
+    {
+        ...
+    
+        "languages" : {
+            "properties" : {
+                "resellers" : { 
+                    "type" : "nested"
+                    "properties" : {
+                        "name" : { "type" : "string" },
+                        "id" : { "type" : "long" }
+                    }
+                }
+            }
+        }
+    } 
+    
+
+Learn more
+@[elasticserach](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-nested-aggregation.html)
+

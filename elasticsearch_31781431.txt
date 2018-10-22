@@ -1,0 +1,4 @@
+31781431
+elasticsearch service fails to start after installation
+<p>I installed elastic search using the deb package from <a href="https://www.elastic.co/downloads/elasticsearch" rel="nofollow">here</a>. The service however fails to start and throws below error. How can I fix this?</p>&#xA;&#xA;<pre><code>    $ sudo service elasticsearch restart&#xA;  * Stopping Elasticsearch Server      [ OK ]&#xA;  * Starting Elasticsearch Server&#xA;  chown: invalid group: `elasticsearch:elasticsearch'&#xA;  chown: invalid group: `elasticsearch:elasticsearch'    [fail]&#xA;</code></pre>&#xA;
+<p>Maybe you don't have this user/group set up in your system:</p>&#xA;&#xA;<p>For security reasons, running the server as an unprivileged user and group is strongly encouraged. Create user and group for Elasticsearch:</p>&#xA;&#xA;<p><code>groupadd elasticsearch</code></p>&#xA;&#xA;<p><code>useradd -s /sbin/nologin -d /usr/local/elasticsearch -c "Elasticsearch User"</code></p>&#xA;

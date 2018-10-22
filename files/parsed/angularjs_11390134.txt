@@ -1,0 +1,48 @@
+11390134 Getting to bound data in Angular.js
+
+Is there a way in angular to get binding back from a template?
+
+In other words, if I have something like this:
+
+    
+    
+    <div ng-repeat="item in list">
+      <div>{{item.name}}</div>
+          <div>{{item.state}}</div>
+    </div>
+    
+
+would it be possible to change the item's state by clicking on it, because the
+repeated div would "remember" what item it was built from?
+
+Yes, you can use the `ng-click` directive to trigger a method on the current
+scope:
+
+    
+    
+    // In your view's controller:
+    function MyCtrl($scope, MyList) {
+      // You probably have something like that already to
+      // populate your list, using a $resource or $http GET call.
+      // Here I use a $resource which would be defined on your module.
+      $scope.list = MyList.query()
+    
+      $scope.setState = function(state) {
+        // "this" refers to the current scope
+        this.item.state = state
+      }
+    }
+    
+    // And in your view:
+    <div ng-repeat="item in list">
+      <div>{{item.name}}</div>
+      <div ng-click="setState('whatever')">{{item.state}}</div>
+    </div> 
+    
+
+Or you can simply set an expression such as `ng-click="item.state='whatever'"`
+directly on the div, although this is less testable - only in end-to-end tests
+- and less flexible, say you want to introduce validation or something).
+
+HTH
+

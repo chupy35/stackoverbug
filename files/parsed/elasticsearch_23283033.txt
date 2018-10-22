@@ -1,0 +1,104 @@
+23283033 Filter out metadata fields and only return source fields in
+elasticsearch
+
+Is there a way to tell elasticsearch to not return any metadata? Currently I
+can select which fields I want to be returned in source. But I only want
+fields in source. I would prefer to not have the metadata returned as I dont
+need it and would save some unnecessary parsing and transport etc.
+
+I found [Elasticsearch - how to return only data, not meta
+information?](https://stackoverflow.com/questions/10860588/elasticsearch-how-
+to-return-only-data-not-meta-information) older question where somebody
+commented that it wasnt possible to do it then. Wondering if this
+functionality has been added or is still missing?
+
+I do not know options like this in a query. It is possible to do this in a get
+by Id request.
+
+    
+    
+    /{index}/{type}/{id}/_source
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+get.html#_source>
+
+[response_filtering](https://www.elastic.co/guide/en/elasticsearch/reference/master/common-
+options.html#_response_filtering)
+
+> All REST APIs accept a **filter_path** parameter that can be used to reduce
+the response returned by elasticsearch. This parameter takes a comma separated
+list of filters expressed with the dot notation:
+
+    
+    
+    curl -XGET 'localhost:9200/_search?pretty&filter_path=took,hits.hits._id,hits.hits._score'
+    {
+      "took" : 3,
+      "hits" : {
+        "hits" : [
+          {
+            "_id" : "3640",
+            "_score" : 1.0
+          },
+          {
+            "_id" : "3642",
+            "_score" : 1.0
+          }
+        ]
+      }
+    }
+    
+
+In python
+
+    
+    
+    def get_all( connection, index_name, type_name ):
+    
+        query = {
+            "match_all":{}
+        }
+    
+        result = connection.search( index_name, type_name,
+                 {"query": query},
+                 filter_path= ["took", "hits.hits._id", "hits.hits.score"])
+    
+        return result
+    
+
+> If you want to filter _source fields, you should consider combining the
+already existing  **_source** parameter (see Get API for more details) with
+the filter_path parameter like this:
+
+    
+    
+    curl -XGET 'localhost:9200/_search?pretty&filter_path=hits.hits._source&_source=title'
+    {
+      "hits" : {
+        "hits" : [ {
+          "_source":{"title":"Book #2"}
+        }, {
+          "_source":{"title":"Book #1"}
+        }, {
+          "_source":{"title":"Book #3"}
+        } ]
+      }
+    }
+    
+
+It's not that difficult if we know it :)
+
+    
+    
+    http://localhost:9200/***{index_name}***/***{type}***/_search?pretty&filter_path=took,hits.hits._id,hits.hits._score,**hits.hits._source**
+    
+
+`filter_path` (response filtering) doesn't have any effect for the version 1.5
+of elasticsearch.
+
+Unless the option had a different name or was moved in the documentation, it
+was first added in [version
+1.6](https://www.elastic.co/guide/en/elasticsearch/reference/1.6/common-
+options.html#_response_filtering).
+

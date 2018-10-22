@@ -1,0 +1,4 @@
+32791780
+The best memory configuration for ElasticSearch
+<p>I have one linux server with 128G memory and 32 cpu cores. I would run an ElasticSearch instance on this server, the server is exclusively only for running ES. So how many memory I should configure for ES. How could I get the best performance of ES please. Is the server too luxurious for ES? Thanks!</p>&#xA;
+<p>I suggest you run two ES instances in each server. Since your linux server pretty powerful, if you set the ES memory as 60g or 80g it may encounter GC problem. Try to run two or three ES instances in one server and monitor the CPU and Memory usage, btw, change the http port of ES for running multiple nodes in one server. </p>&#xA;

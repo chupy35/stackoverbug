@@ -1,0 +1,359 @@
+25203085 Search query for elastic search
+
+I have documents in elastic search in the following format
+
+    
+    
+    {
+       "stringindex" : {
+       "mappings" : {
+      "files" : {
+        "properties" : {
+          "BaseOfCode" : {
+            "type" : "long"
+          },
+          "BaseOfData" : {
+            "type" : "long"
+          },
+          "Characteristics" : {
+            "type" : "long"
+          },
+          "FileType" : {
+            "type" : "long"
+          },
+          "Id" : {
+            "type" : "string"
+          },
+          "Strings" : {
+            "properties" : {
+              "FileOffset" : {
+                "type" : "long"
+              },
+              "RO_BaseOfCode" : {
+                "type" : "long"
+              },
+              "SectionName" : {
+                "type" : "string"
+              },
+              "SectionOffset" : {
+                "type" : "long"
+              },
+              "String" : {
+                "type" : "string"
+              }
+            }
+          },
+          "SubSystem" : {
+            "type" : "long"
+          }
+        }
+      }
+    }
+    
+
+} }
+
+My requirement is when I search for a particular string (String.string) i want
+to get only the FileOffSet (String.FileOffSet) for that string. How do i do
+this?
+
+Thanks
+
+I suppose that you want to perform a nested query and retrieve only one field
+as the result, but I see problems in your mapping, hence I will split my
+answer in 3 sections:
+
+  1. What is the problem I see:
+  2. How to query nested fields (this is more ES background):
+  3. How to find a solution:
+
+**1) What is the problem I see:**
+
+You want to query a nested field, but you don't have a nested field.
+
+**The nested field part:**
+
+The field "Strings" is not nested in the type "files" (nested data without a
+nested field may bring future problems), otherwise your mapping for the field
+"Strings" would be something like this:
+
+    
+    
+    {
+      "stringindex" : {
+        "mappings" : {
+          "files" : {
+            "properties" : {
+              "Strings" : {
+                "properties" : {
+                  "type" : "nested",
+                  "String" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+Note: yes, I cut most of the fields, but I did this to easily show that you
+didn't create a nested field.
+
+With a nested field "in hands", we need a nested query.
+
+**The specific field result part:**
+
+To retrieve only one field as result, you have to include the property
+"_source" in your query.
+
+**2) How to query nested fields:**
+
+This is more for ES background, if you have never worked with nested fields.
+
+**Small example:**
+
+You define a type with a nested field:
+
+    
+    
+    {
+      "nesttype" : {
+            "properties" : {
+                "name" :     { "type" : "string" },
+                "parents" : {
+                    "type" : "nested" ,
+                    "properties" : {
+                        "sex"       : { "type" : "string" },
+                        "name"      : { "type" : "string" }
+                    }
+                }
+            }
+        }
+    }
+    
+
+You create some inputs:
+
+    
+    
+    { "name" : "Dan", "parents" : [{ "name" : "John" , "sex" : "m" }, 
+                                   { "name" : "Anna" , "sex" : "f" }] }
+    
+    { "name" : "Lana", "parents" : [{ "name" : "Maria" , "sex" : "f" }] }
+    
+
+Then you query, but only fetch the nested field "parents.name":
+
+    
+    
+    {
+      "query": {
+        "nested": {
+          "path": "parents",
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "term": {
+                    "sex": "m"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "_source" : [ "parents.name" ]
+    }
+    
+
+The output of this query is "the name of the parents of all people who have a
+parent of the sex 'm' ". One entry (Dan) has a father, whereas the other
+(Lana) doesn't. So it only will retrieve Dan's parents names.
+
+**3) How to find a solution:**
+
+**To fix your mapping:**
+
+You only need to include the type "nested" in the field "Strings":
+
+    
+    
+    {
+      "files" : {
+            "properties" : {
+                ...
+                "Strings" : {
+                    "type" : "nested" ,
+                    "properties" : {
+                        "FileOffset"    : { "type" : "long" },
+                        "RO_BaseOfCode" : { "type" : "long" },
+                        ...
+                    }
+                }
+                ...
+            }
+        }
+    }
+    
+
+**To query your data:**
+
+    
+    
+    {
+      "query": {
+        "nested": {
+          "path": "Strings",
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "term": {
+                    "String": "my string"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "_source" : [ "Strings.FileOffSet" ]
+    }
+    
+
+Great answer by **dan** , but I think he didn't mention it all.
+
+His solution don't work for your question, but I guess you even don't know
+that.
+
+Consider a scenario where data is like ,
+
+**doc_1**
+
+    
+    
+    {
+      "Id": 1,
+      "Strings": [
+        {
+          "string": "x",
+          "fileoffset": "f1"
+        },
+        {
+          "string": "y",
+          "fileoffset": "f2"
+        }
+      ]
+    }
+    
+
+**doc_2**
+
+    
+    
+    {
+      "Id": 2,
+      "Strings": {
+        "string": "z",
+        "fileoffset": "f3"
+      }
+    }
+    
+
+When you run the like **dan** said, like say let's apply filter with
+Strings.string=x then response is like,
+
+    
+    
+    {
+      "hits": [
+        {
+          "_index": "stringindex",
+          "_type": "files",
+          "_id": "11961",
+          "_score": 1,
+          "_source": {
+            "Strings": [
+              {
+                "fileoffset": "f1"
+              },
+              {
+                "fileoffset": "f2"
+              }
+            ]
+          }
+        }
+      ]
+    }
+    
+
+This is because, elasticsearch will get hits from documents where any of the
+object inside nested field (here Strings) pass the filter criteria. (In this
+case in `doc_1`, `Strings.string=x` passed filter, so `doc_1` is returned. But
+we don't know which nested object pass the criteria.
+
+So, you have to use
+[nested_aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-nested-aggregation.html),
+
+Here is a solution for you..
+
+    
+    
+    POST index/type/_search
+    {
+        "size": 0, 
+       "aggs": {
+          "StringsNested": {
+             "nested": {
+                "path": "Strings"
+             },
+             "aggs": {
+                "StringFilter": {
+                   "filter": {
+                      "term": {
+                         "Strings.string": "x"
+                      }
+                   },
+                   "aggs": {
+                      "FileOffsets": {
+                         "terms": {
+                            "field": "Strings.fileoffset"
+                         }
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+So, response is like,
+
+    
+    
+    "aggregations": {
+          "StringsNested": {
+             "doc_count": 2,
+             "StringFilter": {
+                "doc_count": 1,
+                "FileOffsets": {
+                   "buckets": [
+                      {
+                         "key": "f1",
+                         "doc_count": 1
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    
+
+Remember to have mapping of Strings as nested, as **dan** said.
+

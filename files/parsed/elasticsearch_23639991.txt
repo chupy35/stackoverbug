@@ -1,0 +1,35 @@
+23639991 Elasticsearch Boosting Search Terms
+
+I have an elasticsearch index that I am trying to search for matches based on
+multiple fields (title and description). If a particular term shows up in the
+title I want to be able to boost the score by 2*original score. If it is in
+description it should remain the original score. I am a bit confused by the
+elasticsearch documentation. Can anyone help me adjust the following query to
+reflect this logic?
+
+    
+    
+    {
+        "query": {
+            "query_string": {
+                "query": "string",
+                "fields": ["title","description"]
+             }
+         }
+    }
+    
+
+You just need to add `^2` to get a boost on the field you want:
+
+    
+    
+    {
+        "query": {
+            "query_string": {
+                "query": "string",
+                "fields": ["title^2","description"]
+             }
+         }
+    }
+    
+

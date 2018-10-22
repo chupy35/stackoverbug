@@ -1,0 +1,76 @@
+23933324 Elasticsearch not_analyzed field still finds on search
+
+I create an index with a mapping which contains a field `not_analyzed` with
+command below and index a document with next command.
+
+    
+    
+     curl -XPUT localhost:9200/twitter -d '{
+    "settings": {
+    "number_of_shards": 5,
+    "number_of_replicas": 1
+    },
+    "mappings": {
+    "tweet" : {
+        "properties" : {
+            "message" : {   "type" : "string", 
+                            "index": "not_analyzed"}
+        }                      
+      }
+      }
+    }'
+    
+    
+    curl -XPOST 'http://localhost:9200/twitter/tweet?' -d '{
+    "user" : "kimchy",
+    "postDate" : "2009-11-15T14:12:12",
+    "message" : "trying out Elasticsearch"
+    }
+    '
+    
+
+I checked to mappings with
+`http://localhost:9200/twitter/_mapping?pretty=true` and it outputs:
+
+    
+    
+     {
+     "twitter" : {
+    "mappings" : {
+      "tweet" : {
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "index" : "not_analyzed"
+          },
+          "post_date" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          },
+          "user" : {
+            "type" : "string"
+          }
+        }
+      }
+      }
+     }
+    }
+    
+
+Finally when I search with this
+`http://localhost:9200/twitter/tweet/_search?pretty=1&q=trying` it finds the
+indexed document. Is it normal? I thought it should not find it unless I
+search the complete text `"trying out Elasticsearch"`.
+
+`not_analyzed` means that it's not doing tokenizing/other analysis to index
+the values, but it does still store the full value in Elasticsearch and it can
+be used as an exact match in a terms query. The field value is still getting
+included/analyzed into the `_all` field and indexed there so that it's
+searchable.
+
+You need to set `"include_in_all": false` or `"index": "no"` to disable that.
+
+See
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html> for more information.
+

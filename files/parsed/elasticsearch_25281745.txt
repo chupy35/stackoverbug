@@ -1,0 +1,294 @@
+25281745 ElasticSearch Query: Get `key` from each record within ElasticSearch
+and return a collection of unique values
+
+I am trying to get `categories` from each record within ElasticSearch and
+return a collection of unique categories.
+
+Given I have a collection of books
+
+    
+    
+    GET _search
+    {
+      "query": {
+        "match_all": {}
+      }
+    }
+    
+    # Response
+    
+    {
+      "hits": {
+        "hits": [
+          {
+            "_source": {
+              "title" : "Amazing Book",
+              "categories": [
+                {
+                    "id" : "123",
+                    "name" : "Comedy"
+                },
+                {
+                    "id" : "456",
+                    "name" : "Action"
+                }
+              ],
+            }
+          },
+          {
+            "_source": {
+              "title" : "Other Amazing Book",
+              "categories": [
+                {
+                    "id" : "456",
+                    "name" : "Action"
+                },
+                {
+                    "id" : "987",
+                    "name" : "Romance"
+                }
+              ],
+            }
+          }
+        ]
+      }
+    }
+    
+
+What query would produce this output?
+
+    
+    
+    {
+      "categories": [
+        {
+            "id" : "123",
+            "name" : "Comedy"
+        },
+        {
+            "id" : "456",
+            "name" : "Action"
+        },
+        {
+            "id" : "987",
+            "name" : "Romance"
+        }
+      ]
+    }
+    
+
+What you want is related to the **aggregrations** feature.
+
+I achieved to produce a suitable output, but you must change your mapping like
+this :
+
+    
+    
+    POST test/book/_mapping
+    {
+    "properties": {
+        "title":{
+          "type": "string"
+        },
+        "categories":{
+          "type": "nested" 
+        }
+      }
+    }
+    
+
+Then, if you index the documents :
+
+    
+    
+    PUT test/book/1
+    {
+      "title" : "Amazing Book",
+      "categories": [
+        {
+            "id" : "123",
+            "name" : "Comedy"
+        },
+        {
+            "id" : "456",
+            "name" : "Action"
+        }
+      ]
+    }
+    
+    PUT test/book/2
+    {
+      "title" : "Other Amazing Book",
+      "categories": [
+        {
+            "id" : "456",
+            "name" : "Action"
+        },
+        {
+            "id" : "987",
+            "name" : "Romance"
+        }
+      ]
+    }
+    
+
+Finally, the following search request :
+
+    
+    
+    GET test/book/_search
+    {
+      "aggs": {
+        "categories": {
+          "nested": {
+            "path": "categories"
+          },
+          "aggs": {
+            "id": {
+              "terms": {
+                "field": "categories.id"
+              }
+              , 
+              "aggs": {
+                "name": {
+                  "terms": {
+                    "field": "categories.name"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+produces this output (I extracted the relevant part) :
+
+    
+    
+    "aggregations": {
+          "categories": {
+             "doc_count": 4,
+             "id": {
+                "buckets": [
+                   {
+                      "key": "456",
+                      "doc_count": 2,
+                      "name": {
+                         "buckets": [
+                            {
+                               "key": "action",
+                               "doc_count": 2
+                            }
+                         ]
+                      }
+                   },
+                   {
+                      "key": "123",
+                      "doc_count": 1,
+                      "name": {
+                         "buckets": [
+                            {
+                               "key": "comedy",
+                               "doc_count": 1
+                            }
+                         ]
+                      }
+                   },
+                   {
+                      "key": "987",
+                      "doc_count": 1,
+                      "name": {
+                         "buckets": [
+                            {
+                               "key": "romance",
+                               "doc_count": 1
+                            }
+                         ]
+                      }
+                   }
+                ]
+             }
+          }
+       }
+    
+
+The reason you have to change the mapping is that, using the default mapping,
+the JSON document is flattened into a simple key-value format, something like
+:
+
+    
+    
+    {
+      "title": "Amazing book",
+      "categories.id": [123 , 456],
+      "categories.name": [comedy, action],
+    }
+    
+
+In this case, **you lose the association between "123" and "Comedy"** , and an
+equivalent aggregations (just remove the "nested" agg) will output :
+
+    
+    
+    "aggregations": {
+          "categories": {
+             "buckets": [
+                {
+                   "key": "456",
+                   "doc_count": 2,
+                   "name": {
+                      "buckets": [
+                         {
+                            "key": "action",
+                            "doc_count": 2
+                         },
+                         {
+                            "key": "comedy",
+                            "doc_count": 1
+                         },
+                         {
+                            "key": "romance",
+                            "doc_count": 1
+                         }
+                      ]
+                   }
+                },
+                {
+                   "key": "123",
+                   "doc_count": 1,
+                   "name": {
+                      "buckets": [
+                         {
+                            "key": "action",
+                            "doc_count": 1
+                         },
+                         {
+                            "key": "comedy",
+                            "doc_count": 1
+                         }
+                      ]
+                   }
+                },
+                {
+                   "key": "987",
+                   "doc_count": 1,
+                   "name": {
+                      "buckets": [
+                         {
+                            "key": "action",
+                            "doc_count": 1
+                         },
+                         {
+                            "key": "romance",
+                            "doc_count": 1
+                         }
+                      ]
+                   }
+                }
+             ]
+          }
+       }
+    
+

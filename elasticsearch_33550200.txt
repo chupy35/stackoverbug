@@ -1,0 +1,4 @@
+33550200
+I am looking for ElasticSearch equivalent of below query -
+<pre><code>SELECT sender&#xA;FROM julymonth&#xA;WHERE recipient IN ('x', 'y')&#xA;GROUP BY sender;&#xA;</code></pre>&#xA;&#xA;<p>Here sender  and recipient are column names and julymonth is table name.</p>&#xA;
+<p>Imaging your structure, this would be it:</p>&#xA;&#xA;<pre><code>POST /julymonth/_search&#xA;{&#xA;  "query": {&#xA;    "filtered": {&#xA;      "filter": {&#xA;        "terms": {&#xA;          "recipient": [&#xA;            "x",&#xA;            "y"&#xA;          ]&#xA;        }&#xA;      }&#xA;    }&#xA;  },&#xA;  "aggs": {&#xA;    "senders": {&#xA;      "terms": {&#xA;        "field": "sender",&#xA;        "size": 0&#xA;      }&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;&#xA;<ol>&#xA;<li>Query part will filter your documents by recipient</li>&#xA;<li>Aggs will create a unique list of senders from your filtered documents</li>&#xA;</ol>&#xA;

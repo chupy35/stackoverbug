@@ -1,0 +1,41 @@
+13228768 retrieving the multivalued array from elasticsearch
+
+I have trouble getting the facet in my index. Basically I want to get the
+details of particular facet say "Company" in a separate array
+
+I tried many queries but it all get entire facet under facet array .How can I
+get only particular facet in a facet array
+
+My index is <https://gist.github.com/4015817>
+
+Please help me .I am badly stuck here
+
+Considering how complex your data structure is, the simples way to extract
+this information might be using [script
+fields](http://www.elasticsearch.org/guide/reference/api/search/script-
+fields.html):
+
+    
+    
+    curl "localhost:9200/index/doc/_search?pretty=true" -d '{
+        "query" : {
+            "match_all" : {
+    
+            }
+        },
+        "script_fields": {
+            "entity_facets": {
+                "script": "result=[];foreach(facet : _source.Categories.Types.Facets) {if(facet.entity==entity) result.add(facet);} result",
+                "params": {
+                    "entity": "Country"
+                }
+    
+            },
+            "first_facet": {
+                "script": "_source.Categories.Types.Facets[0]"    
+            }
+    
+        }
+    }'
+    
+

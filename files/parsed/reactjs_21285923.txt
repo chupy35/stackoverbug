@@ -1,0 +1,1131 @@
+21285923 ReactJS Two components communicating
+
+I just got started with ReactJS and am a little stuck on a problem that I
+have.
+
+My application is essentially a list with filters and a button to change the
+layout. At the moment I'm using three components: `<list />`, `< Filters />`
+and `<TopBar />`, now obviously when I change settings in `< Filters />` I
+want to trigger some method in `<list />` to update my view.
+
+How can I make those 3 components interact with each other, or do I need some
+sort of global data model where I can just make changes to?
+
+The best approach would depend on how you plan to arrange those components. A
+few example scenarios that come to mind right now:
+
+  1. `<Filters />` is a child component of `<List />`
+  2. Both `<Filters />` and `<List />` are children of a parent component
+  3. `<Filters />` and `<List />` live in separate root components entirely.
+
+There may be other scenarios that I'm not thinking of. If yours doesn't fit
+within these, then let me know. Here are some very rough examples of how I've
+been handling the first two scenarios:
+
+## Scenario #1
+
+You could pass a handler from `<List />` to `<Filters />`, which could then be
+called on the `onChange` event to filter the list with the current value.
+
+[JSFiddle for #1 ->](http://jsfiddle.net/iamlacroix/FPc9M/)
+
+    
+    
+    /** @jsx React.DOM */
+    
+    var Filters = React.createClass({
+      handleFilterChange: function() {
+        var value = this.refs.filterInput.getDOMNode().value;
+        this.props.updateFilter(value);
+      },
+      render: function() {
+        return <input type="text" ref="filterInput" onChange={this.handleFilterChange} placeholder="Filter" />;
+      }
+    });
+    
+    var List = React.createClass({
+      getInitialState: function() {
+        return {
+          listItems: ['Chicago', 'New York', 'Tokyo', 'London', 'San Francisco', 'Amsterdam', 'Hong Kong'],
+          nameFilter: ''
+        };
+      },
+      handleFilterUpdate: function(filterValue) {
+        this.setState({
+          nameFilter: filterValue
+        });
+      },
+      render: function() {
+        var displayedItems = this.state.listItems.filter(function(item) {
+          var match = item.toLowerCase().indexOf(this.state.nameFilter.toLowerCase());
+          return (match !== -1);
+        }.bind(this));
+    
+        var content;
+        if (displayedItems.length > 0) {
+          var items = displayedItems.map(function(item) {
+            return <li>{item}</li>;
+          });
+          content = <ul>{items}</ul>
+        } else {
+          content = <p>No items matching this filter</p>;
+        }
+    
+        return (
+          <div>
+            <Filters updateFilter={this.handleFilterUpdate} />
+            <h4>Results</h4>
+            {content}
+          </div>
+        );
+      }
+    });
+    
+    React.renderComponent(<List />, document.body);
+    
+
+* * *
+
+## Scenario #2
+
+Similar to scenario #1, but the parent component will be the one passing down
+the handler function to `<Filters />`, and will pass the filtered list to
+`<List />`. I like this method better since it decouples the `<List />` from
+the `<Filters />`.
+
+[JSFiddle for #2 ->](http://jsfiddle.net/iamlacroix/REg8Q/)
+
+    
+    
+    /** @jsx React.DOM */
+    
+    var Filters = React.createClass({
+      handleFilterChange: function() {
+        var value = this.refs.filterInput.getDOMNode().value;
+        this.props.updateFilter(value);
+      },
+      render: function() {
+        return <input type="text" ref="filterInput" onChange={this.handleFilterChange} placeholder="Filter" />;
+      }
+    });
+    
+    var List = React.createClass({
+      render: function() {
+        var content;
+        if (this.props.items.length > 0) {
+          var items = this.props.items.map(function(item) {
+            return <li>{item}</li>;
+          });
+          content = <ul>{items}</ul>
+        } else {
+          content = <p>No items matching this filter</p>;
+        }
+        return (
+          <div className="results">
+            <h4>Results</h4>
+            {content}
+          </div>
+        );
+      }
+    });
+    
+    var ListContainer = React.createClass({
+      getInitialState: function() {
+        return {
+          listItems: ['Chicago', 'New York', 'Tokyo', 'London', 'San Francisco', 'Amsterdam', 'Hong Kong'],
+          nameFilter: ''
+        };
+      },
+      handleFilterUpdate: function(filterValue) {
+        this.setState({
+          nameFilter: filterValue
+        });
+      },
+      render: function() {
+        var displayedItems = this.state.listItems.filter(function(item) {
+          var match = item.toLowerCase().indexOf(this.state.nameFilter.toLowerCase());
+          return (match !== -1);
+        }.bind(this));
+    
+        return (
+          <div>
+            <Filters updateFilter={this.handleFilterUpdate} />
+            <List items={displayedItems} />
+          </div>
+        );
+      }
+    });
+    
+    React.renderComponent(<ListContainer />, document.body);
+    
+
+* * *
+
+## Scenario #3
+
+When the components can't communicate between any sort of parent-child
+relationship, the [documentation recommends setting up a global event
+system](http://facebook.github.io/react/tips/communicate-between-
+components.html).
+
+This is the way I handled this.  
+Let's say you have a <select> for **Month** and a  <select> for **Day**. The
+number of days depends on the selected month.
+
+Both lists are owned by a third object, the left panel. Both <select> are also
+children of the leftPanel <div>  
+It's a game with the callbacks and the handlers in the _LeftPanel_ component.
+
+To test it, just copy the code into two separated files and run the
+_index.html_. Then select a month and see how the number of days changes.
+
+**dates.js**
+
+    
+    
+        /** @jsx React.DOM */
+    
+    
+        var monthsLength = [0,31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        var MONTHS_ARR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    
+        var DayNumber = React.createClass({
+            render: function() {
+                return (
+                    <option value={this.props.dayNum}>{this.props.dayNum}</option>
+                );
+            }
+        });
+    
+        var DaysList = React.createClass({
+            getInitialState: function() {
+                return {numOfDays: 30};
+            },
+            handleMonthUpdate: function(newMonthix) {
+                this.state.numOfDays = monthsLength[newMonthix];
+                console.log("Setting days to " + monthsLength[newMonthix] + " month = " + newMonthix);
+    
+                this.forceUpdate();
+            },
+            handleDaySelection: function(evt) {
+                this.props.dateHandler(evt.target.value);
+            },
+            componentDidMount: function() {
+                this.props.readyCallback(this.handleMonthUpdate)
+            },
+            render: function() {
+                var dayNodes = [];
+                for (i = 1; i <= this.state.numOfDays; i++) {
+                    dayNodes = dayNodes.concat([<DayNumber dayNum={i} />]);
+                }
+                return (
+                    <select id={this.props.id} onChange = {this.handleDaySelection}>
+                        <option value="" disabled defaultValue>Day</option>
+                            {dayNodes}
+                    </select>
+                    );
+            }
+        });
+    
+        var Month = React.createClass({
+            render: function() {
+                return (
+                    <option value={this.props.monthIx}>{this.props.month}</option>
+                );
+            }
+        });
+    
+        var MonthsList = React.createClass({
+            handleUpdate: function(evt) {
+                console.log("Local handler:" + this.props.id + " VAL= " + evt.target.value);
+                this.props.dateHandler(evt.target.value);
+    
+                return false;
+            },
+            render: function() {
+                var monthIx = 0;
+    
+                var monthNodes = this.props.data.map(function (month) {
+                    monthIx++;
+                    return (
+                        <Month month={month} monthIx={monthIx} />
+                        );
+                });
+    
+                return (
+                    <select id = {this.props.id} onChange = {this.handleUpdate}>
+                        <option value="" disabled defaultValue>Month</option>
+                            {monthNodes}
+                    </select>
+                    );
+            }
+        });
+    
+        var LeftPanel = React.createClass({
+            dayRefresh: function(newMonth) {
+                // Nothing - will be replaced
+            },
+            daysReady: function(refreshCallback) {
+                console.log("Regisering days list");
+            this.dayRefresh = refreshCallback;
+            },
+            handleMonthChange: function(monthIx) {
+                console.log("New month");
+                this.dayRefresh(monthIx);
+            },
+            handleDayChange: function(dayIx) {
+                console.log("New DAY: " + dayIx);
+            },
+            render: function() {
+                return(
+                    <div id="orderDetails">
+                        <DaysList id="dayPicker" dateHandler={this.handleDayChange} readyCallback = {this.daysReady} />
+                        <MonthsList data={MONTHS_ARR} id="monthPicker" dateHandler={this.handleMonthChange}  />
+                    </div>
+                );
+            }
+        });
+    
+    
+    
+        React.renderComponent(
+            <LeftPanel />,
+            document.getElementById('leftPanel')
+        );
+    
+
+And the HTML for running the left panel component **index.html**
+
+    
+    
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Dates</title>
+    
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+        <script src="//fb.me/react-0.11.1.js"></script>
+        <script src="//fb.me/JSXTransformer-0.11.1.js"></script>
+    </head>
+    
+        <style>
+    
+            #dayPicker {
+                position: relative;
+                top: 97px;
+                left: 20px;
+                width: 60px;
+                height: 17px;
+            }
+    
+            #monthPicker {
+                position: relative;
+                top: 97px;
+                left: 22px;
+                width: 95px;
+                height: 17px;
+            }
+    
+            select {
+                font-size: 11px;
+            }
+    
+        </style>
+    
+    
+        <body>
+            <div id="leftPanel">
+            </div>
+    
+            <script type="text/jsx" src="dates.js"></script>
+    
+        </body>
+    </html>
+    
+
+There are multiple ways to make components communicate. Some can be suited to
+your usecase. Here is a list of some I've found useful to know.
+
+# React
+
+### Parent / Child direct communication
+
+    
+    
+    const Child = ({fromChildToParentCallback}) => (
+      <div onClick={() => fromChildToParentCallback(42)}>
+        Click me
+      </div>
+    );
+    
+    class Parent extends React.Component {
+      receiveChildValue = (value) => {
+        console.log("Parent received value from child: " + value); // value is 42
+      };
+      render() {
+        return (
+          <Child fromChildToParentCallback={this.receiveChildValue}/>
+        )
+      }
+    }
+    
+
+Here the child component will call a callback provided by the parent with a
+value, and the parent will be able to get the value provided by the children
+in the parent.
+
+If you build a feature/page of your app, it's better to have a single parent
+managing the callbacks/state (also called `container` or `smart component`),
+and all childs to be stateless, only reporting things to the parent. This way
+you can easily "share" the state of the parent to any child that need it.
+
+* * *
+
+### Context
+
+React Context permits to hold state at the root of your component hierarchy,
+and be able to inject this state easily into very deeply nested components,
+without the hassle to have to pass down props to every intermediate
+components.
+
+Until now, context was an experimental feature, but a new API is available in
+React 16.3.
+
+    
+    
+    const AppContext = React.createContext(null)
+    
+    class App extends React.Component {
+      render() {
+        return (
+          <AppContext.Provider value={{language: "en",userId: 42}}>
+            <div>
+              ...
+              <SomeDeeplyNestedComponent/>
+              ...
+            </div>
+          </AppContext.Provider>
+        )
+      }
+    };
+    
+    const SomeDeeplyNestedComponent = () => (
+      <AppContext.Consumer>
+        {({language}) => <div>App language is currently {language}</div>}
+      </AppContext.Consumer>
+    );
+    
+
+The consumer is using the [render prop / children function
+pattern](https://stackoverflow.com/a/31564812/82609)
+
+Check this [blog post](https://medium.com/dailyjs/reacts-%EF%B8%8F-new-
+context-api-70c9fe01596b) for more details.
+
+Before React 16.3, I'd recommend using [react-
+broadcast](https://github.com/ReactTraining/react-broadcast) which offer quite
+similar API, and use former context API.
+
+* * *
+
+### Portals
+
+Use a portal when you'd like to keep 2 components close together to make them
+communicate with simple functions, like in normal parent / child, but you
+don't want these 2 components to have a parent/child relationship in the DOM,
+because of visual / CSS constraints it implies (like z-index, opacity...).
+
+In this case you can use a "portal". There are different react libraries using
+[portals](https://github.com/tajo/react-portal), usually used for
+[modals](https://github.com/rackt/react-modal), popups, tooltips...
+
+Consider the following:
+
+    
+    
+    <div className="a">
+        a content
+        <Portal target="body">
+            <div className="b">
+                b content
+            </div>
+        </Portal>
+    </div>
+    
+
+Could produce the following DOM when rendered inside `reactAppContainer`:
+
+    
+    
+    <body>
+        <div id="reactAppContainer">
+            <div className="a">
+                 a content
+            </div>
+        </div>
+        <div className="b">
+             b content
+        </div>
+    </body>
+    
+
+[More details here](https://stackoverflow.com/a/39828187/82609)
+
+* * *
+
+# Event bus
+
+As stated in the React
+[documentation](http://facebook.github.io/react/tips/communicate-between-
+components.html):
+
+> For communication between two components that don't have a parent-child
+relationship, you can set up your own global event system. Subscribe to events
+in componentDidMount(), unsubscribe in componentWillUnmount(), and call
+setState() when you receive an event.
+
+There are many things you can use to setup an event bus. You can just create
+an array of listeners, and on event publish, all listeners would receive the
+event. Or you can use something like
+[EventEmitter](https://github.com/Olical/EventEmitter) or
+[PostalJs](https://github.com/postaljs/postal.js)
+
+* * *
+
+# Flux
+
+[Flux](https://facebook.github.io/flux/) is basically an event bus, except the
+event receivers are stores. This is similar to the basic event bus system
+except the state is managed outside of React
+
+Original Flux implementation looks like an attempt to do Event-sourcing in a
+hacky way.
+
+[Redux](https://github.com/rackt/redux) is for me the Flux implementation that
+is the closest from event-sourcing, an benefits many of event-sourcing
+advantages like the ability to time-travel. It is not strictly linked to React
+and can also be used with other functional view libraries.
+
+Egghead's Redux [video tutorial](https://egghead.io/series/getting-started-
+with-redux) is really nice and explains how it works internally (it really is
+simple).
+
+* * *
+
+# Cursors
+
+Cursors are coming from
+[ClojureScript/Om](https://www.youtube.com/watch?v=DMtwq3QtddY) and widely
+used in React projects. They permit to manage the state outside of React, and
+let multiple components have read/write access to the same part of the state,
+without needing to know anything about the component tree.
+
+Many implementations exists, including
+[ImmutableJS](https://github.com/facebook/immutable-
+js/tree/master/contrib/cursor), [React-
+cursors](https://github.com/dustingetz/react-cursor) and
+[Omniscient](https://github.com/omniscientjs/omniscient)
+
+**Edit 2016** : it seems that people agree cursors work fine for smaller apps
+but it does not scale well on complex apps. Om Next does not have cursors
+anymore (while it's Om that introduced the concept initially)
+
+* * *
+
+# Elm architecture
+
+The [Elm architecture](https://github.com/evancz/elm-architecture-tutorial) is
+an architecture proposed to be used by the [Elm language](http://elm-
+lang.org/). Even if Elm is not ReactJS, the Elm architecture can be done in
+React as well.
+
+Dan Abramov, the author of Redux, did an
+[implementation](https://github.com/gaearon/react-elmish-example) of the Elm
+architecture using React.
+
+Both Redux and Elm are really great and tend to empower event-sourcing
+concepts on the frontend, both allowing time-travel debugging, undo/redo,
+replay...
+
+The main difference between Redux and Elm is that Elm tend to be a lot more
+strict about state management. In Elm you can't have local component state or
+mount/unmount hooks and all DOM changes must be triggered by global state
+changes. Elm architecture propose a scalable approach that permits to handle
+**ALL** the state inside a single immutable object, while Redux propose an
+approach that invites you to handle **MOST** of the state in a single
+immutable object.
+
+While the conceptual model of Elm is very elegant and the architecture permits
+to scale well on large apps, it can in practice be difficult or involve more
+boilerplate to achieve simple tasks like giving focus to an input after
+mounting it, or integrating with an existing library with an imperative
+interface (ie JQuery plugin). [Related issue](https://github.com/evancz/elm-
+architecture-tutorial/issues/49).
+
+Also, Elm architecture involves more code boilerplate. It's not that verbose
+or complicated to write but I think the Elm architecture is more suited to
+statically typed languages.
+
+* * *
+
+# FRP
+
+Libraries like RxJS, BaconJS or Kefir can be used to produce FRP streams to
+handle communication between components.
+
+You can try for example [Rx-React](https://github.com/fdecampredon/rx-react)
+
+I think using these libs is quite similar to using what the ELM language
+offers with [signals](http://elm-lang.org/guide/reactivity#signals).
+
+[CycleJS](https://github.com/cyclejs) framework does not use ReactJS but uses
+[vdom](https://github.com/Matt-Esch/vdom). It share a lot of similarities with
+the Elm architecture (but is more easy to use in real life because it allows
+vdom hooks) and it uses RxJs extensively instead of functions, and can be a
+good source of inspiration if you want to use FRP with React. [CycleJs Egghead
+videos](https://egghead.io/series/cycle-js-fundamentals) are nice to
+understand how it works.
+
+* * *
+
+# CSP
+
+CSP (Communicating Sequential Processes) are currently popular (mostly because
+of Go/goroutines and core.async/ClojureScript) but you can use them also in
+javascript with [JS-CSP](https://github.com/ubolonton/js-csp).
+
+James Long has done a [video](https://www.youtube.com/watch?v=W2DgDNQZOwo)
+explaining how it can be used with React.
+
+# Sagas
+
+A saga is a backend concept that comes from the DDD / EventSourcing / CQRS
+world, also called "process manager".  It is being popularized by the [redux-
+saga](https://github.com/yelouafi/redux-saga) project, mostly as a replacement
+to redux-thunk for handling side-effects (ie API calls etc). Most people
+currently think it only services for side-effects but it is actually more
+about decoupling components.
+
+It is more of a compliment to a Flux architecture (or Redux) than a totally
+new communication system, because the saga emit Flux actions at the end. The
+idea is that if you have widget1 and widget2, and you want them to be
+decoupled, you can't fire action targeting widget2 from widget1. So you make
+widget1 only fire actions that target itself, and the saga is a "background
+process" that listens for widget1 actions, and may dispatch actions that
+target widget2. The saga is the coupling point between the 2 widgets but the
+widgets remain decoupled.
+
+If you are interested take a look at [my answer
+here](https://stackoverflow.com/questions/34570758/why-do-we-need-middleware-
+for-async-flow-in-redux/34623840#34623840)
+
+* * *
+
+# Conclusion
+
+If you want to see an example of the same little app using these different
+styles, check the branches of this
+[repository](https://github.com/DjebbZ/react-meetup-data-flow).
+
+I don't know what is the best option in the long term but I really like how
+Flux looks like event-sourcing.
+
+If you don't know event-sourcing concepts, take a look at this very pedagogic
+blog: [Turning the database inside out with apache
+Samza](http://www.confluent.io/blog/turning-the-database-inside-out-with-
+apache-samza/), it is a must-read to understand why Flux is nice (but this
+could apply to FRP as well)
+
+I think the community agrees that the most promising Flux implementation is
+[Redux](https://github.com/gaearon/redux), which will progressively allow very
+productive developer experience thanks to hot reloading. Impressive livecoding
+ala Bret Victor's [Inventing on Principle
+video](https://stackoverflow.com/questions/9448215/tools-to-support-live-
+coding-as-in-bret-victors-inventing-on-principle-talk/31388262#31388262) is
+possible!
+
+There is such possibility even if they are not Parent - Child relationship -
+and that's Flux. There is pretty good (for me personally) implementation for
+that called Alt.JS (with Alt-Container).
+
+For example you can have Sidebar that is dependent on what is set in component
+Details. Component Sidebar is connected with SidebarActions and SidebarStore,
+while Details is DetailsActions and DetailsStore.
+
+You could use then AltContainer like that
+
+    
+    
+    <AltContainer stores={{
+                        SidebarStore: SidebarStore
+                    }}>
+                        <Sidebar/>
+    </AltContainer>
+    
+    {this.props.content}
+    
+
+Which would keep stores (well I could use "store" instead of "stores" prop).
+Now, {this.props.content} CAN BE Details depending on the route. Lets say that
+/Details redirect us to that view. Details would have for example a checkbox
+that would change Sidebar element from X to Y if it would be checked.
+
+Technically there is no relationship between them and it would be hard to do
+without flux. BUT WITH THAT it is rather easy.
+
+Now let's get to DetailsActions. We will create there
+
+    
+    
+    class SiteActions {
+    constructor() {
+        this.generateActions(
+            'setSiteComponentStore'
+        );
+    }
+    
+    setSiteComponent(value) {
+        this.dispatch({value: value});
+    }
+    }
+    
+
+and DetailsStore
+
+    
+    
+    class SiteStore {
+    constructor() {
+        this.siteComponents = {
+            Prop: true
+        };
+    
+        this.bindListeners({
+            setSiteComponent: SidebarActions.COMPONENT_STATUS_CHANGED
+        })
+    }
+    
+    setSiteComponent(data) {
+        this.siteComponents.Prop = data.value;
+    }
+    }
+    
+
+And now, this is the place where magic begin.
+
+As You can see there is bindListener to SidebarActions.ComponentStatusChanged
+which will be used IF setSiteComponent will be used.
+
+now in SidebarActions
+
+    
+    
+        componentStatusChanged(value){
+        this.dispatch({value: value});
+    }
+    
+
+We have such thing. It will dispatch that object on call. And it will be
+called if setSiteComponent in store will be used (that you can use in
+component for example during onChange on Button ot whatever)
+
+Now in SidebarStore we will have
+
+    
+    
+        constructor() {
+        this.structures = [];
+    
+        this.bindListeners({
+            componentStatusChanged: SidebarActions.COMPONENT_STATUS_CHANGED
+        })
+    }
+    
+        componentStatusChanged(data) {
+        this.waitFor(DetailsStore);
+    
+        _.findWhere(this.structures[0].elem, {title: 'Example'}).enabled = data.value;
+    }
+    
+
+Now here you can see, that it will wait for DetailsStore. What does it mean?
+more or less it means that this method need to wait for DetailsStoreto update
+before it can update itself.
+
+tl;dr One Store is listening on methods in a store, and will trigger an action
+from component action, which will update its own store.
+
+I hope it can help you somehow.
+
+If you want to explore options of communicating between components and feel
+like it is getting harder and harder, then you might consider adopting a good
+design pattern: [Flux](https://facebook.github.io/flux/).
+
+It is simply a collection of rules that defines how you store and mutate
+application wide state, and use that state to render components.
+
+There are many Flux implementations, and [Facebook's official
+implementation](https://github.com/facebook/flux) is one of them. Although it
+is considered the one that contains most boilerplate code, but it is easier to
+understand since most of the things are explicit.
+
+Some of Other alternatives are [flummox](https://github.com/acdlite/flummox/)
+[fluxxor](https://github.com/BinaryMuse/fluxxor)
+[fluxible](https://github.com/yahoo/fluxible) and
+[redux](https://github.com/rackt/redux).
+
+Extending answer of @MichaelLaCroix when a scenario is that the components
+can't communicate between any sort of parent-child relationship, the
+documentation recommends setting up a global event system.
+
+In the case of `<Filters />` and `<TopBar />` don't have any of the above
+relationship, a simple global emitter could be used like this:
+
+`componentDidMount` \- Subscribe to event
+
+`componentWillUnmount` \- Unsubscribe from event
+
+[React.js and EventSystem
+code](https://gist.github.com/tsuz/1c584c248e63d3a9b835e3f4e2223571)
+
+**EventSystem.js**
+
+    
+    
+    class EventSystem{
+    
+        constructor() {
+            this.queue = {};
+            this.maxNamespaceSize = 50;
+        }
+    
+        publish(/** namespace **/ /** arguments **/) {
+            if(arguments.length < 1) {
+                throw "Invalid namespace to publish";
+            }
+    
+            var namespace = arguments[0];
+            var queue = this.queue[namespace];
+    
+            if (typeof queue === 'undefined' || queue.length < 1) {
+                console.log('did not find queue for %s', namespace);
+                return false;
+            }
+    
+            var valueArgs = Array.prototype.slice.call(arguments);
+    
+            valueArgs.shift(); // remove namespace value from value args
+    
+            queue.forEach(function(callback) {
+                callback.apply(null, valueArgs);
+            });
+    
+            return true;
+        }
+    
+        subscribe(/** namespace **/ /** callback **/) {
+            const namespace = arguments[0];
+            if(!namespace) throw "Invalid namespace";
+            const callback = arguments[arguments.length - 1];
+            if(typeof callback !== 'function') throw "Invalid callback method";
+    
+            if (typeof this.queue[namespace] === 'undefined') {
+                this.queue[namespace] = [];
+            }
+    
+            const queue = this.queue[namespace];
+            if(queue.length === this.maxNamespaceSize) {
+                console.warn('Shifting first element in queue: `%s` since it reached max namespace queue count : %d', namespace, this.maxNamespaceSize);
+                queue.shift();
+            }
+    
+            // Check if this callback already exists for this namespace
+            for(var i = 0; i < queue.length; i++) {
+                if(queue[i] === callback) {
+                    throw ("The exact same callback exists on this namespace: " + namespace);
+                }
+            }
+    
+            this.queue[namespace].push(callback);
+    
+            return [namespace, callback];
+        }
+    
+        unsubscribe(/** array or topic, method **/) {
+            let namespace;
+            let callback;
+            if(arguments.length === 1) {
+                let arg = arguments[0];
+                if(!arg || !Array.isArray(arg)) throw "Unsubscribe argument must be an array";
+                namespace = arg[0];
+                callback = arg[1];
+            }
+            else if(arguments.length === 2) {
+                namespace = arguments[0];
+                callback = arguments[1];
+            }
+    
+            if(!namespace || typeof callback !== 'function') throw "Namespace must exist or callback must be a function";
+            const queue = this.queue[namespace];
+            if(queue) {
+                for(var i = 0; i < queue.length; i++) {
+                    if(queue[i] === callback) {
+                        queue.splice(i, 1); // only unique callbacks can be pushed to same namespace queue
+                        return;
+                    }
+                }
+            }
+        }
+    
+        setNamespaceSize(size) {
+            if(!this.isNumber(size)) throw "Queue size must be a number";
+            this.maxNamespaceSize = size;
+            return true;
+        }
+    
+        isNumber(n) {
+            return !isNaN(parseFloat(n)) && isFinite(n);
+        }
+    
+    }
+    
+
+**NotificationComponent.js**
+
+    
+    
+    class NotificationComponent extends React.Component {
+    
+        getInitialState() {
+            return {
+                // optional. see alternative below
+                subscriber: null
+            };
+        }
+    
+        errorHandler() {
+            const topic = arguments[0];
+            const label = arguments[1];
+            console.log('Topic %s label %s', topic, label);
+        }
+    
+        componentDidMount() {
+            var subscriber = EventSystem.subscribe('error.http', this.errorHandler);
+            this.state.subscriber = subscriber;
+        }
+    
+        componentWillUnmount() {
+            EventSystem.unsubscribe('error.http', this.errorHandler);
+    
+            // alternatively
+            // EventSystem.unsubscribe(this.state.subscriber);
+        }
+    
+        render() {
+    
+        }
+    }
+    
+
+I saw that the question is already answered, but if you'd like to learn more
+details, there are a total of **3 cases of communication between components**
+:
+
+  * Case 1: Parent to Child communication
+  * Case 2: Child to Parent communication
+  * Case 3: Not-related components (any component to any component) communication
+
+I once was where you are right now, as a beginner you sometimes feel out of
+place on how the react way to do this. I'm gonna try to tackle the same way I
+think of it right now.
+
+## States are the cornerstone for communication
+
+Usually what it comes down to is the way that you alter the states in this
+component in your case you point out three components.
+
+`<List />` : Which probably will display a list of items depending on a filter
+`<Filters />`: Filter options that will alter your data. `<TopBar />`: List of
+options.
+
+To orchestrate all of this interaction you are going to need a higher
+component let's call it App, that will pass down actions and data to each one
+of this components so for instance can look like this
+
+    
+    
+    <div>
+      <List items={this.state.filteredItems}/>
+      <Filter filter={this.state.filter} setFilter={setFilter}/>
+    </div>
+    
+
+So when `setFilter` is called it will affect the filteredItem and re-render
+both component;. In case this is not entirely clear I made you an example with
+checkbox that you can check in a single file:
+
+    
+    
+    import React, {Component} from 'react';
+    import {render} from 'react-dom';
+    
+    const Person  = ({person, setForDelete}) => (
+              <div>
+                <input type="checkbox" name="person" checked={person.checked} onChange={setForDelete.bind(this, person)} />
+                {person.name}
+              </div>
+    );
+    
+    
+    class PeopleList extends Component {
+    
+      render() {
+    
+        return(
+          <div>
+           {this.props.people.map((person, i) => {
+             return <Person key={i} person={person} setForDelete={this.props.setForDelete} />;
+           })}
+           <div onClick={this.props.deleteRecords}>Delete Selected Records</div>
+         </div>
+        );
+      }
+    
+    } // end class
+    
+    class App extends React.Component {
+    
+      constructor(props) {
+        super(props)
+        this.state = {people:[{id:1, name:'Cesar', checked:false},{id:2, name:'Jose', checked:false},{id:3, name:'Marbel', checked:false}]}
+      }
+    
+      deleteRecords() {
+        const people = this.state.people.filter(p => !p.checked);
+    
+        this.setState({people});
+     }
+    
+      setForDelete(person) {
+        const checked = !person.checked;
+        const people = this.state.people.map((p)=>{
+          if(p.id === person.id)
+            return {name:person.name, checked};
+          return p;
+        });
+    
+        this.setState({people});
+      }
+    
+      render () {
+    
+        return <PeopleList people={this.state.people} deleteRecords={this.deleteRecords.bind(this)} setForDelete={this.setForDelete.bind(this)}/>;
+      }
+    }
+    
+    render(<App/>, document.getElementById('app'));
+    
+
+The following code helps me to setup communication between two siblings. The
+setup is done in their parent during render() and componentDidMount() calls.
+It is based on <https://reactjs.org/docs/refs-and-the-dom.html> Hope it helps.
+
+    
+    
+    class App extends React.Component<IAppProps, IAppState> {
+        private _navigationPanel: NavigationPanel;
+        private _mapPanel: MapPanel;
+    
+        constructor() {
+            super();
+            this.state = {};
+        }
+    
+        // `componentDidMount()` is called by ReactJS after `render()`
+        componentDidMount() {
+            // Pass _mapPanel to _navigationPanel
+            // It will allow _navigationPanel to call _mapPanel directly
+            this._navigationPanel.setMapPanel(this._mapPanel);
+        }
+    
+        render() {
+            return (
+                <div id="appDiv" style={divStyle}>
+                    // `ref=` helps to get reference to a child during rendering
+                    <NavigationPanel ref={(child) => { this._navigationPanel = child; }} />
+                    <MapPanel ref={(child) => { this._mapPanel = child; }} />
+                </div>
+            );
+        }
+    }
+    
+
+**OK,** there are few ways to do it, but I exclusively want focus on using
+store using **Redux** which make your life much easier for these situation
+rather than give you a quick solution only for this case, using pure React
+will end up mess up in real big application and communicating between
+**Components** becomes harder and harder as the application grows...
+
+So what **Redux** does for you?
+
+Redux is like local storage in your application which can be used whenever you
+need a data be used in different places in your application...
+
+Basically Redux idea comes from flux originally, but with some fundamental
+changes including concept of having one source of truth by creating only one
+store...
+
+Look at the graph below to see some differences between **Flux** and
+**Redux**...
+
+[![Redux and
+Flux](https://i.stack.imgur.com/nUM2P.jpg)](https://i.stack.imgur.com/nUM2P.jpg)
+
+Consider applying **Redux** in your application from the start if your
+application needs communication between Components...
+
+Also reading these words from Redux Documentation could be helpful to start
+with:
+
+> As the requirements for JavaScript single-page applications have become
+increasingly complicated, **our code must manage more state than ever
+before**. This state can include server responses and cached data, as well as
+locally created data that has not yet been persisted to the server. UI state
+is also increasing in complexity, as we need to manage active routes, selected
+tabs, spinners, pagination controls, and so on.
+
+>
+
+> Managing this ever-changing state is hard. If a model can update another
+model, then a view can update a model, which updates another model, and this,
+in turn, might cause another view to update. At some point, you no longer
+understand what happens in your app as you have lost control over the when,
+why, and how of its state. When a system is opaque and non-deterministic, it's
+hard to reproduce bugs or add new features.
+
+>
+
+> As if this wasn't bad enough, consider the new requirements becoming common
+in front-end product development. As developers, we are expected to handle
+optimistic updates, server-side rendering, fetching data before performing
+route transitions, and so on. We find ourselves trying to manage a complexity
+that we have never had to deal with before, and we inevitably ask the
+question: is it time to give up? The answer is no.
+
+>
+
+> This complexity is difficult to handle as we're mixing two concepts that are
+very hard for the human mind to reason about: mutation and asynchronicity. I
+call them Mentos and Coke. Both can be great in separation, but together they
+create a mess. Libraries like React attempt to solve this problem in the view
+layer by removing both asynchrony and direct DOM manipulation. However,
+managing the state of your data is left up to you. This is where Redux enters.
+
+>
+
+> Following in the steps of **Flux, CQRS, and Event Sourcing** , **Redux
+attempts to make state mutations predictable by imposing certain restrictions
+on how and when updates can happen**. These restrictions are reflected in the
+three principles of Redux.
+

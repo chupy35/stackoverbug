@@ -1,0 +1,202 @@
+14115475 easy way to make an elasticsearch server read-only
+
+It's really easy to just upload a bunch of json data to an elasticsearch
+server to have a basic query api, with lots of options
+
+I'd just like to know if there's and easy way to publish it all preventing
+people from modifying it
+
+From the default setting, the server is open ot receive a DELETE or PUT http
+message that would modify the data.
+
+Is there some kind of setting to configure it to be read-only? Or shall I
+configure some kind of http proxy to achieve it?
+
+(I'm an elasticsearch newbie)
+
+With either Elastic or Solr, it's not a good idea to depend on the search
+engine for your security. You should be using security in your container, or
+even putting the container behind something _really_ bulletproof like Apache
+HTTPD, and then setting up the security to forbid the things you want to
+forbid.
+
+Elasticsearch is meant to be used in a trusted environment and by itself
+doesn't have any access control mechanism. So, the best way to deploy
+elasticsearch is with a web server in front of it that would be responsible
+for controlling access and type of the queries that can reach elasticsearch.
+Saying that, it's possible to limit access to elasticsearch by using
+[elasticsearch-jetty](https://github.com/sonian/elasticsearch-jetty) plugin.
+
+If you want to expose the Elasticsearch API as read-only, I think the best way
+is to put Nginx in front of it, and deny all requests except GET. An example
+configuration looks like this:
+
+    
+    
+    # Run me with:
+    #
+    #     $ nginx -c path/to/this/file
+    #
+    # All requests except GET are denied.
+    
+    worker_processes  1;
+    pid               nginx.pid;
+    
+    events {
+        worker_connections  1024;
+    }
+    
+    http {
+    
+      server {
+    
+        listen       8080;
+        server_name  search.example.com;
+    
+        error_log   elasticsearch-errors.log;
+        access_log  elasticsearch.log;
+    
+        location / {
+          if ($request_method !~ "GET") {
+            return 403;
+            break;
+          }
+    
+          proxy_pass http://localhost:9200;
+          proxy_redirect off;
+    
+          proxy_set_header  X-Real-IP  $remote_addr;
+          proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header  Host $http_host;
+        }
+    
+      }
+    
+    }
+    
+
+Then:
+
+    
+    
+    curl -i -X GET http://localhost:8080/_search -d '{"query":{"match_all":{}}}'
+    HTTP/1.1 200 OK
+    
+    curl -i -X POST http://localhost:8080/test/test/1 -d '{"foo":"bar"}'
+    HTTP/1.1 403 Forbidden
+    
+    curl -i -X DELETE http://localhost:8080/test/
+    HTTP/1.1 403 Forbidden
+    
+
+Note, that a malicious user could still mess up your server, for instance
+sending incorrect script payloads, which would make Elasticsearch get stuck,
+but for most purposes, this approach would be fine.
+
+If you would need more control about the proxying, you can either use more
+complex Nginx configuration, or write a dedicated proxy eg. in Ruby or
+Node.js.
+
+See this [example](https://gist.github.com/3369662#file-proxy-rb) for a more
+complex Ruby-based proxy.
+
+You can set a readonly flag on your index, this does limit some operations
+though, so you will need to see if thats acceptable.
+
+    
+    
+    curl -XPUT http://<ip-address>:9200/<index name>/_settings -d'
+    {
+        "index":{
+            "blocks":{
+                "read_only":true
+            }
+        }
+    }'
+    
+
+As mentioned in one of the other answers, really you should have ES running in
+a trusted environment, where you can control access to it.
+
+More information on index settings here :
+<http://www.elasticsearch.org/guide/reference/api/admin-indices-update-
+settings/>
+
+I know it's an old topic. I encountered the same problem, put ES behind Nginx
+in order to make it read only but allow kibana to access it.
+
+The only request from ES that Kibana needs in my case is
+"url_public/_all/_search".
+
+So I allowed it into my Nginx conf.
+
+Here my conf file :
+
+    
+    
+    server {
+    
+        listen port_es;
+        server_name ip_es;
+    
+        rewrite ^/(.*) /$1 break;
+        proxy_ignore_client_abort on;
+        proxy_redirect url_es url_public;
+        proxy_set_header  X-Real-IP  $remote_addr;
+        proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header  Host $http_host;
+    
+        location ~ ^/(_all/_search) {
+            limit_except GET POST OPTIONS {
+                    deny  all;
+            }
+            proxy_pass url_es;
+        }
+    
+        location / {
+    
+            limit_except GET {
+                    deny  all;
+            }
+            proxy_pass url_es;
+        }
+    }
+    
+
+So only GET request are allowed unless the request is _all/_search. It is
+simple to add other request if needed.
+
+I use this elasticsearch plugin:
+
+<https://github.com/sscarduzio/elasticsearch-readonlyrest-plugin>
+
+It is very simple, easy to install & configure. The GitHub project page has a
+config example that shows how to limit requests to HTTP GET method only; which
+will not change any data in elasticsearch. If you need only whitelisted IP#'s
+(or none) to use other methods (PUT/DELETE/etc) that can change data then it
+has got you covered as well.
+
+Something like this goes into your elasticsearch config file
+(/etc/elasticsearch/elasticsearch.yml or equivalent), adapted from the GitHub
+page:
+
+    
+    
+    readonlyrest:
+        enable: true
+        response_if_req_forbidden: Sorry, your request is forbidden
+        # Default policy is to forbid everything, let's define a whitelist
+        access_control_rules:
+    
+        # from these IP addresses, accept any method, any URI, any HTTP body
+        #- name: full access to internal servers
+        #  type: allow
+        #  hosts: [127.0.0.1, 10.0.0.10]
+    
+        # From external hosts, accept only GET and OPTION methods only if the HTTP request body is empty
+        - name: restricted access to all other hosts
+          type: allow
+          methods: [OPTIONS,GET]
+          maxBodyLength: 0
+    
+

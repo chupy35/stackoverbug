@@ -1,0 +1,20 @@
+15735050 Indexing nested documents in Elasticsearch with same field names
+
+If I have a object of class `Car` that has an nested object of class `Engine`
+where both classes have the field named "id" do I have to do anything special
+when I create the mapping? Or is it sufficient to add the type "nested" to the
+engine mapping.
+
+Elasticsearch head GUI is showing unexpected rows, but the search seems to
+give the correct result so it would be good to know if I need to do anything
+else in the mapping if two or more objects have the same field name.
+
+Seems like the structured query builder returns the engine document with the
+id that I search for when I select `car.id` from the dropdown.
+
+There shouldn't be any problem, you can just use the dot notation to refer to
+the fields in the nested documents.
+
+Also, if you have a single engine per car you don't need to declare the engine
+as nested in your mapping.
+

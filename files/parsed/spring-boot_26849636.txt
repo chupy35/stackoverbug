@@ -1,0 +1,47 @@
+26849636 Embedded Tomcat, executable jar, ServletContext.getRealPath()
+
+I'm using a standard spring boot approach (a Java project) where we use
+embedded Tomcat and package as an executable jar.
+
+I place some static resoures e.g `index.html` in a static folder under
+`src/main/resources` of my project. A library we use expects to load some
+resources using the servlet context by doing
+`servletContext.getRealPath("XXXX")`.
+
+When I run this project in Eclipse the real path for
+`servletContext.getRealPath("/")` resolves to
+`C:\Users\<me>\workspace\springboot-project\src\main\webapp\`. I have no idea
+why it uses this folder when it does not exist in the project? If I create the
+executable jar and run this then `servletContext.getRealPath("/")` gives
+`C:\Users\<me>\AppData\Local\Temp\tomcat-docbase.5693809153072003983.8080\`.
+This directory does exist but has nothing in it.
+
+I can obviously see my resources fine if requested via HTTP I just can't get
+at them as expected via the servlet context.
+
+Any ideas?
+
+Resources in `src/main/resources/static` aren't served directly by Tomcat.
+They're served by Spring through its DispatcherServlet and a
+`ResourceHttpRequestHandler` that's auto-configured by Spring Boot. By
+default, this resource handler is configured to serve resources from the
+following locations:
+
+  1. `classpath:/META-INF/resources/`
+  2. `classpath:/resources/`
+  3. `classpath:/static/`
+  4. `classpath:/public/`
+
+It's 3 that's making your resources in `src/main/resources/static` available.
+
+Using `getRealPath()` is always going to be problematic as it requires the
+resource to be available as a file on the filesystem, i.e. it can't be inside
+the war or jar that you're running, and there's no guarantee that that will be
+the case. Using `ClassLoader.getResource()` or `ServletContext.getResource()`
+is a much more robust way to find and load resources within your web
+application as it doesn't rely on the resource being directly on the
+filesystem.
+
+You haven't said which library it is that's using `getRealPath()`. Perhaps it
+can be updated or be configured to use a different resource loading strategy?
+

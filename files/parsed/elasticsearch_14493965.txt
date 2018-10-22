@@ -1,0 +1,131 @@
+14493965 Elasticsearch TermsFacet giving wrong count
+
+I had problem with Elasticsearch Term Facet
+
+i put data as follows :
+
+    
+    
+    curl -X DELETE "http://localhost:9200/articles'
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "One",   "tags" : "foo","datetime":"2005-12-23 23:10:52"}'
+    
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "Two",   "tags" : "bar","datetime":"2005-12-23 23:10:53"}'
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "Three", "tags" : "baz","datetime":"2005-12-23 23:10:54"}'
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "four", "tags" : "baz","datetime":"2005-12-23 23:10:55"}'
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "five", "tags" : "foo","datetime":"2005-12-23 23:10:56"}'
+    
+
+so whenever i query for terms facet it gives correct result following is my
+Elasticsearch query :
+
+    
+    
+    curl  'http://localhost:9200/articles/article/_search?pretty=true' -d '{
+    
+       "query": {
+           "match_all": {}
+       },
+        "facets" : { "myfacet" : { "terms" : {"field" : "tags"}}
+        }
+    }'
+    
+
+But, when i added filter to Facet it won't show any facet count following is
+query :
+
+    
+    
+    curl  'http://localhost:9200/articles/article/_search?pretty=true' -d '{
+    
+       "query": {
+           "match_all": {}
+       },
+       "facets" : {
+            "myfacet" : { "terms" : {"field" : "tags"},
+                 "filter" : { "range" :{
+     "datetime" : {"from" : "2005-12-23   3:10:52","to" : "2005-12-23 23:10:56" }
+    
+            }
+                }
+        }
+        }
+    }'
+    
+
+I get result as follows
+
+    
+    
+    facets" : {
+        "myfacet" : {
+          "_type" : "filter",
+          "count" : 0
+        }
+      }
+    
+
+so, anyone know's why it is giving such count.
+
+The dates are in an invalid format, have a look at the supported date time
+formats that elasticsearch supports (too long, don't read, any date that is
+supported by jodatime is supported by elasticsearch).
+
+    
+    
+    http://www.elasticsearch.org/guide/reference/mapping/date-format.html
+    
+
+With that being said, you just have to modify your dates in your insert
+statements and put them in a valid date format, like `2005-12-23T23:10:55Z`.
+Then just change your query to the proper time range in that time format, and
+that should give you the result.
+
+Also be careful when writing these queries, as I noticed the date you used in
+your from clause is not valid.
+
+Here are the modified curl scripts:
+
+    
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "One",   "tags" : "foo","datetime":"2005-12-23T23:10:52Z"}'
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "Two",   "tags" : "bar","datetime":"2005-12-23T23:10:53Z"}'
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "Three", "tags" : "baz","datetime":"2005-12-23T23:10:54Z"}'
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "four", "tags" : "baz","datetime":"2005-12-23T23:10:55Z"}'
+    
+    curl -X POST "http://localhost:9200/articles/article" -d '{"title" : "five", "tags" : "foo","datetime":"2005-12-23T23:10:56Z"}'
+    
+
+and the modified search:
+
+    
+    
+     curl  'http://localhost:9200/articles/article/_search?pretty=true' -d '{
+    
+       "query": {
+          "match_all": {}
+        },
+        "facets" : {
+         "myfacet" : { 
+             "terms" : {"field" : "tags"},
+             "filter" : { "range" :{
+                             "datetime" : {
+                                 "from" : "2005-12-23T23:10:52Z",
+                                  "to" : "2005-12-23T23:10:54Z" 
+                              }   
+                           }
+                        }
+                      }
+                 }
+    }'
+    
+
+Hope this helps, Matt
+

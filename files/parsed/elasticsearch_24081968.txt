@@ -1,0 +1,45 @@
+24081968 Unassigned and recovering shards after heavy updating
+
+Shard won't recover after heavy updating. Anything I can do?
+
+Is it a matter of waiting for the shard to recover? I see this over and over
+on the affected node, which happens to be the master:
+
+    
+    
+    [IndexShardGatewayRecoveryException[[global][2] failed to recover shard]; nested:
+    ElasticsearchIllegalArgumentException[No version type match [6]]; ]]
+    [2014-06-06 12:32:43,249][WARN ][indices.cluster] [Centurion] [global][5] failed to start shard
+    org.elasticsearch.index.gateway.IndexShardGatewayRecoveryException: [global][5] failed to recover shard
+        at org.elasticsearch.index.gateway.local.LocalIndexShardGateway.recover(LocalIndexShardGateway.java:241)
+        at org.elasticsearch.index.gateway.IndexShardGatewayService$1.run(IndexShardGatewayService.java:132)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:744)
+    Caused by: org.elasticsearch.ElasticsearchIllegalArgumentException: No version type match [51]
+        at org.elasticsearch.index.VersionType.fromValue(VersionType.java:307)
+        at org.elasticsearch.index.translog.Translog$Index.readFrom(Translog.java:506)
+        at org.elasticsearch.index.translog.TranslogStreams.readTranslogOperation(TranslogStreams.java:52)
+        at org.elasticsearch.index.gateway.local.LocalIndexShardGateway.recover(LocalIndexShardGateway.java:218)
+        ... 4 more
+    
+
+Judging from `org.elasticsearch.index.translog` in the stack trace, this feels
+like a corrupted transaction log, which could have happened if the process
+crashed while trying to flush its updates out to disk. I've seen similar
+occasionally while hosting Elasticsearch over at
+[Bonsai.io](https://bonsai.io/).
+
+If you remove the contents of the index translog directory, you should be able
+to proceed past that error and continue with shard recovery, though you'll
+need to reindex any documents that were updated around the time of the crash.
+
+To avoid this in the future, you'll want to benchmark and tune your update
+process.
+
+It's best to use the Bulk API instead of single-object updates, for more
+efficient memory management and less time and effort spent on GC. For update-
+heavy workloads, you'll also want to experiment with the number of primary
+shards. I'd recommend testing one primary shard per node, or one primary shard
+per CPU core per node.
+

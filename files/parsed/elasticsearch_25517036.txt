@@ -1,0 +1,70 @@
+25517036 elasticsearch - "range" and "terms" together is not possible?
+
+I'm trying to run this `_search` query:
+
+    
+    
+    {
+        "query": {
+            "range": {
+                "created_time": {
+                    "gt": "now-24h"
+                }
+            },
+            "terms": {
+                "from_id": [
+                    "144458",
+                    "112275"
+                ]
+            }
+        }
+    }
+    
+
+But it returns this error:
+
+    
+    
+    {
+        error: SearchPhaseExecutionException[Failed to execute phase [query_fetch], all shards failed; shardFailures {[GAIodkFdTI-mHRS2_IE-JQ][content][0]: SearchParseException[[content][0]: query[created_time:{1409011409797 TO *]],from[-1],size[-1]: Parse Failure [Failed to parse source [{"query":{"range":{"created_time":{"gt":"now-24h"}},"terms":{"from_id":["144458","112275"]}}}]]]; nested: ElasticsearchParseException[Expected field name but got START_OBJECT "terms"]; }]
+        status: 400
+    }
+    
+
+If I remove `range` block or `terms` block, it works fine. They don't work
+only when trying together.
+
+Is this a problem with elasticsearch? Is this possible?
+
+I think you need a boolean query. You can't place two queries under the same
+"query" key.
+
+If you want to AND both queries, then this should work:
+
+    
+    
+    {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "created_time": {
+                                "gt": "now-24h"
+                            }
+                        }
+                    },
+                    {
+                        "terms": {
+                            "from_id": [
+                                "144458",
+                                "112275"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+

@@ -1,0 +1,112 @@
+15219275 How do I construct this elasticsearch query object?
+
+My documents are indexed like this:
+
+    
+    
+    {
+        title: "stuff here",
+        description: "stuff here",
+        keywords: "stuff here",
+        score1: "number here",
+        score2: "number here"
+    }
+    
+
+I want to perform a query that:
+
+  * Uses the title, description, and keywords fields for matching the text terms.
+  * It doesn't have to be complete match. Eg. If someone searches "I have a big nose", and "nose" is in one of the document titles but "big" is not, then this document should still be returned.
+
+Edit: I tried this query and it works. Can someone confirm if this is the
+right way to do it? Thanks.
+
+    
+    
+    {
+        query:{
+            'multi_match':{
+                'query': q,
+                'fields': ['title^2','description', 'keywords'],
+            }
+        }
+    }
+    
+
+Below is the code that will create the query you can use. I wrote it in **c#**
+but it will work in other languages in the same way.
+
+What you need to do is to create a **BooleanQuery** and set that at least 1 of
+its condition has to match. Then add a condition for every document field you
+want to be checked with **Occur.SHOULD** enum value:
+
+    
+    
+    BooleanQuery searchQuery = new BooleanQuery();
+    searchQuery.SetMinimumNumberShouldMatch(1);
+    
+    QueryParser parser = new QueryParser(Lucene.Net.Util.Version.LUCENE_29, "title", new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_29));
+    Query titleQuery = parser.Parse("I have a big nose");
+    searchQuery.Add(titleQuery, BooleanClause.Occur.SHOULD);
+    
+    parser = new QueryParser(Lucene.Net.Util.Version.LUCENE_29, "description", new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_29));
+    Query descriptionQuery = parser.Parse("I have a big nose");
+    searchQuery.Add(titleQuery, BooleanClause.Occur.SHOULD);
+    
+    parser = new QueryParser(Lucene.Net.Util.Version.LUCENE_29, "keywords", new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_29));
+    Query keywordsQuery = parser.Parse("I have a big nose");
+    searchQuery.Add(titleQuery, BooleanClause.Occur.SHOULD);
+    
+    Query queryThatShouldBeExecuted.Add(searchQuery, BooleanClause.Occur.MUST);
+    
+
+Here is the link to an example in java
+<http://www.javadocexamples.com/java_source/org/apache/lucene/search/TestBooleanMinShouldMatch.java.html>
+
+The according JSON object to perform a HTTP Post request would be this:
+
+    
+    
+    {
+      "bool": {
+        "should": [
+          {
+            "query_string": {
+              "query": "I have a big nose",
+              "default_field": "title"
+            }
+          },
+          {
+            "query_string": {
+              "query": "I have a big nose",
+              "default_field": "description"
+            }
+          },
+          {
+            "query_string": {
+              "query": "I have a big nose",
+              "default_field": "keywords"
+            }
+          }
+        ],
+        "minimum_number_should_match": 1,
+        "boost": 1
+      }
+    }
+    
+
+Your way is definitely the way to go!
+
+The [multi_match](http://www.elasticsearch.org/guide/reference/query-
+dsl/multi-match-query.html) query is usually the one that you want to expose
+to the end users, while the
+[query_string](http://www.elasticsearch.org/guide/reference/query-dsl/query-
+string-query.html) is similar, but also more powerful and dangerous since it
+exposes the [lucene query syntax](http://www.lucenetutorial.com/lucene-query-
+syntax.html). Rule of thumb: don't use query string if you don't need it.
+
+Also, searching on multiple fields is easy just providing the list of fields
+you want to search on, as you did, without the need for a [bool
+query](http://www.elasticsearch.org/guide/reference/query-dsl/bool-
+query.html).
+

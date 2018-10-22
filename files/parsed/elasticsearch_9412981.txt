@@ -1,0 +1,46 @@
+9412981 What is the key word "Snowball" mean in Elastic search?
+
+When i'm using elastic search , i've to indecies it first. In this process i
+blindly using `"SNOWBALL" , "KEYWORD"` n analyzer coloumn. What is the main
+use of Analyzer (I know it is a booster) but it helps me in elastic search n
+What is the key word "Snowball" mean?
+
+    
+    
+    'data.description': {'analyzer': 'snowball', 'type': 'string'},
+    'data.title': {'analyzer': 'snowball', 'type': 'string'}
+    
+
+**Analyzers** are process which extracts indexable terms from text given for
+indexing.
+
+For example
+
+In the text "i am a dinosaur from modern age" When this is analyzed against
+"stop word" analyzer only dinosaur, modern and age keywords are stored in the
+index. Which means if you search for "am", though the word is present in the
+text you indexed, it wont point to that indexed document.
+
+Similarly **snowball** is a combination of _stopword_ , _lowercase_ and
+standard analyzer -
+<https://www.elastic.co/guide/en/elasticsearch/reference/2.4/analysis-
+snowball-analyzer.html>
+
+> The snowball filter is used to stem words based on a specific stemmer. A
+stemmer uses some rules to determine the proper stem of a word. That means
+different stemmers may return different results.
+
+>
+
+> For example, the words “indexing”, “indexable”, “indexes”, “indexation”, etc
+will be stemmed as “index”. It’s particularly interesting to retrieve a
+document with the title “Make my string indexable” when you search “Indexing a
+string”. [(c)](http://obtao.com/blog/2013/10/configure-elasticsearch-on-an-
+efficient-way/)
+
+To configurate this filter see
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-
+snowball-tokenfilter.html>
+
+P.S. <http://snowball.tartarus.org/> | <http://snowballstem.org/>
+

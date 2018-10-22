@@ -1,0 +1,40 @@
+24729434 Spring Boot repackage target OutOfMemoryError
+
+When I do `mvn package` every thing is successful. I can see the JAR and
+required dependencies are in place. But when I try to run the generated JAR,It
+waits for a while and complains `OutOfMemoryError`
+
+My POM
+
+    
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+
+Sorry for the trouble guys.
+
+I was using `mvn clean install package` instead of `mvn clean package` hence
+the problem. Silly me.
+

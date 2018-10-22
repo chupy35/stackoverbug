@@ -1,0 +1,115 @@
+23960921 How to add filter to a more like this query in Elastic Search?
+
+I want to use a More like this query in Elastic Search to find similar
+documents. However I need to filter the documents on which the query is
+executed.
+
+Example below: I want to find blog items that are similar to blog with id
+123456, but written by author 120 or author 123.
+
+When executing this query, I get back similar blogs from ALL authors and thus
+not filtered ...
+
+    
+    
+    {
+      "query":{
+        "more_like_this" : {
+    
+            "fields" : ["body" ],  
+            "docs" : [
+                  {
+                    "_id" : "123456"
+                  }
+                ],
+            "percent_terms_to_match" : 0.4,
+                "min_term_freq" : 1
+          }
+      }
+     },
+    
+    "filter":{
+      "and":[            
+              {
+                "type":{ "value":"blog" }
+              },
+              {
+                "terms":{ "authorId": ["120", "123"] }
+              }
+            ]
+    }
+    }
+    
+
+Try filtered query like this:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "more_like_this": {
+                        "fields": [
+                            "body"
+                        ],
+                        "docs": [
+                            {
+                                "_id": "123456"
+                            }
+                        ],
+                        "percent_terms_to_match": 0.4,
+                        "min_term_freq": 1
+                    }
+                },
+                "filter": {
+                    "and": [
+                        {
+                            "type": {
+                                "value": "blog"
+                            }
+                        },
+                        {
+                            "terms": {
+                                "authorId": [
+                                    "120",
+                                    "123"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    
+
+Hope it helps...!
+
+The accepted answer is for earlier versions of ElasticSearch. This one works
+great on 2.x+ also not using any depreciated APIs
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "more_like_this": {
+                        "fields": ["meta.keywords"],
+                        "like": [{"_id": "5732759249d2b21f95641d50"}]
+                    }
+                },
+                "filter" : {
+                    "bool": {
+                        "must": [                            
+                            {"match": { "foo.bar": "A"}},
+                            {"match": { "baz": "new"}}
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    
+

@@ -1,0 +1,42 @@
+17421634 How disable remote access in elasticsearch
+
+When running a elasticsearch server. We can access `www.example.com:9200`
+
+But i want block remote access only allow local access.
+
+How to setting?
+
+Elasticsearch allows you to disable the http endpoint just setting
+`http.enabled` to false in the settings. It also allows to have a local node
+which will only be reachable in the same jvm. On the other hand you are asking
+how to allow only local access to the rest endpoint, which is different and
+require the use of additional tools.
+
+In fact, it's not a good idea to expose elasticsearch to the internet. I would
+use a proxy like apache or Nginx to limit the access to it and open for
+instance only some of the available endpoints, but that's needed only if you
+have external users that want to send messages directly to elasticsearch.
+Usually that's not the case. Or if you just want to deny access to it for all
+external users, because it's for instance only your website or application
+that needs access to it, just use a firewall and setup a proper rule to close
+the 9200 port.
+
+Instead of disabling whole HTTP protocol by changing `http.enabled` in
+`/etc/elasticsearch/elasticsearch.yml` settings (because some of your APIs can
+use the HTTP endpoint which was my case), you can just set `network.host:
+localhost` in the same file.
+
+This will make your `:9200` HTTP access to be available only from your local
+machine/server.
+
+You should set http.host to "127.0.0.1". This way you can access http on port
+9200 from host itself, however not from outside. This also allows you to put a
+proxy which listens on some other port and filters and passes the requests
+selectively to elasticsearch node on localhost:9200.
+
+For example, you may want to reject the request for shutdown, do a basic
+authentication using nginx and then pass all query requests to elasticsearch
+cluster url at <http://localhost:9200>.
+
+This doesn't involve firewall.
+

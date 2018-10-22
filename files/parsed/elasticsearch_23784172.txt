@@ -1,0 +1,150 @@
+23784172 Debugging ElasticSearch boolean queries
+
+I'm faced with an issue with an automatically-generated elasticSearch query.
+When running it, six of the seven shards I'm using on the index return a
+success, and the seventh returns this error:
+
+    
+    
+    index: "shard"
+    reason: "ClassCastException[
+      org.elasticsearch.common.mvel2.compiler.BlankLiteral cannot be cast to java.lang.Boolean]"
+    shard: 1
+    status: 500
+    successful: 6
+    total: 7
+    
+
+How can I figure out what this is coming from, considering that the explain
+endpoint yields absolutely nothing due to the root query being a `bool`?
+
+The query is as follows:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "filtered": {
+                "query": {
+                  "range": {
+                    "date": {
+                      "lte": "2014-05-21T21:59:59+00:00",
+                      "gte": "2013-01-23T23:00:00+00:00"
+                    }
+                  }
+                },
+                "filter": {
+                  "not": {
+                    "terms": {
+                      "idCountry": [
+                        "9999"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "filtered": {
+                "query": {
+                  "nested": {
+                    "path": "reports",
+                    "query": {
+                      "terms": {
+                        "reports.36317.flag": [
+                          "o"
+                        ],
+                        "minimum_should_match": 1
+                      }
+                    }
+                  }
+                },
+                "filter": {
+                  "nested": {
+                    "path": "reports",
+                    "filter": {
+                      "exists": {
+                        "field": "reports.36317"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "script_fields": {
+        "idTone": {
+          "script": "_source.reports[reportId].empty || _source.reports[reportId].idTone.empty ? _source.idLanguage : _source.reports[reportId].idTone",
+          "params": {
+            "reportId": "36317"
+          }
+        },
+        "tags": {
+          "script": "_source.reports[reportId].empty || _source.reports[reportId].tags.empty ? 'none' : _source.reports[reportId].tags",
+          "params": {
+            "reportId": "36317"
+          }
+        },
+        "flag": {
+          "script": "_source.reports[reportId].empty || _source.reports[reportId].flag.empty ? 'O' : _source.reports[reportId].flag",
+          "params": {
+            "reportId": "36317"
+          }
+        },
+        "synthesioRank": {
+          "script": "_source.reports[reportId].empty || _source.reports[reportId].synthesioRank.empty || _source.reports[reportId].synthesioRank == null ? '0' : _source.reports[reportId].synthesioRank",
+          "params": {
+            "reportId": "36317"
+          }
+        },
+        "idUserEngagement": {
+          "script": "_source.reports[reportId].empty || _source.reports[reportId].idUserEngagement == null ? '0' : _source.reports[reportId].idUserEngagement",
+          "params": {
+            "reportId": "36317"
+          }
+        },
+        "idStatus": {
+          "script": "_source.reports[reportId].empty || _source.reports[reportId].idStatus == null ? '0' : _source.reports[reportId].idStatus",
+          "params": {
+            "reportId": "36317"
+          }
+        }
+      },
+      "fields": [
+        "access",
+        "content",
+        "title",
+        "date",
+        "geo",
+        "idItem",
+        "idSiteType",
+        "idSite",
+        "idSource",
+        "idSourceType",
+        "idTopic",
+        "media",
+        "url",
+        "idLanguage",
+        "idDocument",
+        "idCountry"
+      ]
+    }
+    
+
+The thrown exception has to do with mvel, the scripting language used for the
+script_fields in your case.
+
+The fact that only 1 shard fails maybe means that the execution of one of your
+scripted fields fails against one specific document in that shard.
+
+You could try and remove those fields, one by one, along with any filter
+requesting that field, to spot the one that fails.
+
+Note : the Explain API is designed to help understand scoring computation
+inside a sorted query. It won't help you in any way regarding a failing query.
+

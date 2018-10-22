@@ -1,0 +1,39 @@
+20685627 How to treat each keyword as a prefix in Elastic Search
+
+I am used to FTS techs doing this for me but imagine I input `mongo fac` into
+Elastic Search.
+
+I expect it to be able to find `mongo factory` or `mongodb something` equally,
+however, it does not.
+
+Assume I have a single field called `title`. I have three documents with the
+`title`s:
+
+  * Mongo Factory
+  * Mongodb something
+  * cheese
+
+I have a single `boolean` `should` clause with:
+
+    
+    
+    array('prefix' => array(
+        'title' => 'mongo fac'
+    )),
+    
+
+Using default analyzers, no special configuration, `mongo factory` will be
+found but not `mongodb something`.
+
+What I want is for `monogdb something` to appear in the results as well,
+basically for Elastic Search to tokenize the keywords; as well as searching
+for `mongo fac` it should also search for `mongo` and `fac`.
+
+Except for tokenizing myself what else can I do to get elastic search to work
+the way I want to, perferrably using their tokenizer as a means to tokenize my
+keywords?
+
+For reference to others who come across this question: I didn't find a valid
+solution in the end so I just wrote a function to tokenise the words myself
+and form separate prefix queries and it works as it should.
+

@@ -1,0 +1,94 @@
+23123203 elasticsearch - routing VS. indexing for query performance
+
+I'm planning a strategy for querying millions of docs in date and user
+directions.
+
+  * Option 1 - indexing by user. routing by date.
+  * Option 2 - indexing by date. routing by user.
+
+What are the differences or advantages when using routing or indexing?
+
+Indexing is the process of parsing[Tokenized, filtered] the document that you
+indexed[ **Inverted Index** ]. Its like appendix of an text book.
+
+When the indexed data exceeds one server limit. instead of upgrading server
+configurations, add another server and share data with them. This process is
+called as **sharding**.
+
+If we search it will search in all shards and perform map reduce and return
+results.If we group similar data together and search some data in specific
+data means it reduce processing power and increase speed.
+
+**Routing** is used to **store group of data in particular shards**.To select
+a field for routing. The field should be present in all docs,field should not
+contains different values.
+
+**Note** :Routing should used in multi shards environment[not in single node].
+If we use routing in single node .There is no use of it.
+
+One of the design patterns that Shay Banon @ Elasticsearch recommends is:
+**index by time range** , **route by user** and use **aliasing**.
+
+Create an index for each day (or a date range) and route documents on user
+field, so you could 'retire' older logs and you don't need queries to execute
+on all shards:
+
+    
+    
+    $ curl -XPOST localhost:9200/user_logs_20140418 -d '{
+        "mappings" : {
+            "user_log" : {
+                "_routing": {
+                  "required": true,
+                  "path": "user"
+                },
+                "properties" : {
+                  "user" : { "type" : "string" },
+                  "log_time": { "type": "date" }
+                }
+            }
+        }
+    }'
+    
+
+Create an alias to filter and route on users, so you could query for documents
+of user 'foo':
+
+    
+    
+    $ curl -XPOST localhost:9200/_aliases -d '{
+      "actions": [{
+        "add": {
+          "alias": "user_foo",
+          "filter": {"term": {"user": "foo"}},
+          "routing": "foo"
+        }
+      }]
+    }'
+    
+
+Create aliases for time windows, so you could query for documents 'this_week':
+
+    
+    
+    $ curl -XPOST localhost:9200/_aliases -d '{
+      "actions": [{
+        "add": {
+          "index": ["user_logs_20140418", "user_logs_20140417", "user_logs_20140416", "user_logs_20140415", "user_logs_20140414"],
+          "alias": "this_week"
+        }, 
+        "remove": {
+          "index": ["user_logs_20140413", "user_logs_20140412", "user_logs_20140411", "user_logs_20140410", "user_logs_20140409", "user_logs_20140408", "user_logs_20140407"],
+          "alias": "this_week"
+        }
+      }]
+    }'
+    
+
+Some of the advantages of this approach:
+
+  * if you search using aliases for users, you hit only shards where the users' data resides
+  * if a user's data grows, you could consider creating a separate index for that user (all you need is to point that user's alias to the new index)
+  * no performance implications of over allocation of shards
+  * you could 'retire' older logs by simply closing (when you close indices, they consume practically no resources) or deleting an entire index (deleting an index is simpler than deleting documents within an index)
+

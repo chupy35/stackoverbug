@@ -1,0 +1,39 @@
+24752686 elasticsearch. How to count distinct value by date?
+
+I have the same issue to count distinct value by date, that is the same issue
+mentioned here: <http://elasticsearch-users.115913.n3.nabble.com/Count-
+distinct-value-by-date-td4036320.html> This issue was posted a year ago. Is
+there any new update? Thank you.
+
+There isn't a concept of "distinct" in ElasticSearch, but by using nested
+[aggregations](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations.html#search-aggregations), you can accomplish the same thing:
+
+  1. Group by datetime
+  2. Subgroup by unique identifier
+  3. Count the results to get distinct counts
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "aggs": {
+        "dt": {
+          "date_histogram": {
+            "field": "datetime",
+            "interval": "day"
+          },
+          "aggs": {
+            "id": {
+              "terms": {
+                "field": "unique_identifier"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+

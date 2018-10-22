@@ -1,0 +1,160 @@
+13626617 Specify which fields are indexed in ElasticSearch
+
+I have a document with a number of fields that I never query on so I would
+like to turn indexing on those fields off to save resources. I believe I need
+to [disable the `_all`
+field](http://www.elasticsearch.org/guide/reference/mapping/all-field.html),
+but how do I specify which fields are indexed then?
+
+By default all the fields are indexed within the
+[_all](http://www.elasticsearch.org/guide/reference/mapping/all-field.html)
+special field as well, which provides the so called catchall feature out of
+the box. However, you can specify for each field in your mapping whether you
+want to add it to the _all field or not, through the `include_in_all` option:
+
+    
+    
+    "person" : {
+        "properties" : {
+            "name" : {
+                "type" : "string", "store" : "yes", "include_in_all" : false
+            }
+        }
+    }
+    
+
+The above example disables the default behaviour for the name field, which
+won't be part of the _all field.
+
+Otherwise, if you don't need the _all field at all for a specific type you can
+disable it like this, again in your mapping:
+
+    
+    
+    "person" : {
+        "_all" : {"enabled" : false},
+        "properties" : {
+            "name" : {
+                "type" : "string", "store" : "yes"
+            }
+        }
+    }
+    
+
+When you disable it your fields will still be indexed separately, but you
+won't have the catchall feature that _all provides. You will need then to
+query your specific fields instead of relying on the _all special field,
+that's it. In fact, when you query and don't specify a field, elasticsearch
+queries the _all field under the hood, unless you override the default field
+to query.
+
+Each string field has `index` param in the mapping config, which [defaults
+to](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#string) `analyzed`. That means that besides the _all field
+each field is indexed solely.
+
+And for the [_all
+field](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+all-field.html) it is said in reference that:
+
+> By default, it is enabled and all fields are included in it for ease of use.
+
+So, to completely disable indexing for a field you have to specify (if the
+_all field is enabled):
+
+    
+    
+        "mappings": {
+            "your_mapping": {
+                "properties": {
+                    "field_not_to_index": {
+                        "type": "string",
+                        "include_in_all": false,
+                        "index": "no"
+                    }
+                }
+            }
+        }
+    
+
+For the fields that should be queried on whether include them in the _all
+field (with `"index": "no"` to save resources) if you query through the _all
+field, or if you query on those fields solely use the `index` param with any
+positive value (`analyzed` or `not_analyzed`) and disable the _all field to
+save resources.
+
+Following is an important doc page to understand the index settings in elastic
+search
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/mapping-
+intro.html>
+
+For your problem, ideally you should set the "index" flag to no in the field
+properties.
+
+Set dynamic index and _all index to false. Specify the required fields in
+mapping. <https://www.elastic.co/guide/en/elasticsearch/guide/current/dynamic-
+mapping.html>
+
+    
+    
+    {
+       "mappings":{
+          "candidates":{
+             "_all":{
+                "enabled":false
+             },
+              "dynamic": "false", 
+             "properties":{
+                "tags":{
+                   "type":"text"
+                },
+                "derivedAttributes":{
+                   "properties":{
+                    "city":{
+                         "type":"text"
+                      },
+                      "zip5":{
+                         "type":"keyword"
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+You can utilize `enabled` field to disable particular field or entire mapping.
+[ElasticSearch
+Doc](https://www.elastic.co/guide/en/elasticsearch/reference/6.2/enabled.html)
+
+Disable Field mapping (i.e. `session_data` field)
+
+    
+    
+    {
+      "mappings": {
+        "_doc": {
+          "properties": {
+            "session_data": { 
+              "enabled": false
+            }
+          }
+        }
+      }
+    }
+    
+
+Disable entire mapping
+
+    
+    
+    {
+      "mappings": {
+        "_doc": { 
+          "enabled": false
+        }
+      }
+    }
+    
+

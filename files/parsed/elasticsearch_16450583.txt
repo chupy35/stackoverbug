@@ -1,0 +1,16 @@
+16450583 What are the side effects of using a large max_gram for an nGram
+tokenizer in elasticsearch?
+
+I want to understand the implications of using a large setting for max_gram
+when using the nGram tokenizer. I know it will explode the size of the index,
+but then what? Will it make searches slower? will it cause things to error
+out? etc
+
+It'll make searches slower for sure, because lots of tokens will be generated
+for comparison.
+
+In general, you should analyze your business and find out what size of ngram
+is suitable for your field. Ex: for a product ID, you can support search ngram
+for max 20 chars (max_gram=20), because usually people only remember 5 or 6
+chars of a product ID, 20 is good enough.
+

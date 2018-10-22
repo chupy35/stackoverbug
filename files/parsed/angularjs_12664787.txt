@@ -1,0 +1,165 @@
+12664787 What providers / services are available in module.config?
+
+I want to use $document to grab a server value from an input field.
+
+    
+    
+    var base_url = $document[0].getElementById('BaseUrl').value;
+    
+
+The base url is used for grabbing templates.
+
+    
+    
+    var base_url = $document[0].getElementById('BaseUrl').value;
+    
+    $routeProvider.when('/alert', {
+      controller: function () { },
+      templateUrl: base_url + '/partials/instances.html'
+    });
+    
+
+Since $document throws an error that it's unknown I am guessing that it's not
+available at config? Is there a way to find out what is available and what
+not? I could also use $http to get data from the server but that's also not
+available.
+
+AngularJS modules are bootstrapped in 2 phases:
+
+  * `Configuration phase` where only providers and constants are available.
+  * `Run phase` where services are instantiated based on registered providers. In this phase constants are still available but not providers.
+
+The AngularJS [documentation](http://docs.angularjs.org/guide/module)
+(section: "Module Loading & Dependencies") gives the insight into this:
+
+> A module is a collection of configuration and run blocks which get applied
+to the application during the bootstrap process. In its simplest form the
+module consist of collection of two kinds of blocks:
+
+>
+
+> **Configuration blocks** \- get executed during the provider registrations
+and configuration phase. Only providers and constants can be injected into
+configuration blocks. This is to prevent accidental instantiation of services
+before they have been fully configured.
+
+>
+
+> **Run blocks** \- get executed after the injector is created and are used to
+kickstart the application. Only instances and constants can be injected into
+run blocks. This is to prevent further system configuration during application
+run time.
+
+Given the above you can only inject constants and providers (marked with the
+`Provider` suffix in the API docs). This probably answers your question but
+doesn't help to solve your problem of templates loading...
+
+I wonder if you couldn't simply use the base tag in HTML and then simply use
+relative paths (to the base) without specifying absolute paths? Sth like
+(provided that the base is correctly configured):
+
+    
+    
+    $routeProvider.when('/alert', {
+      controller: function () { },
+      templateUrl: 'partials/instances.html'
+    });
+    
+
+Although the question has generally been answered, here's a little addition
+targeting the concrete example used in the question:
+
+How to use an angular constant to define the baseUrl of your partials (or to
+define other constants representing server values and making them available
+for configuration):
+
+    
+    
+    // file: app.js
+    'use strict';
+    
+    /* App Module */
+    angular.module( 'myApp', [] )
+    
+      // define the templateBaseUrl
+      .constant( 'templateBaseUrl', 'themes/angular/partials/' );
+    
+      // use it in configuration
+      .config(['$routeProvider','templateBaseUrl', function($routeProvider,templateBaseUrl) {
+        $routeProvider
+          .when( '/posts', {
+            templateUrl : templateBaseUrl + 'post-list.html',
+            controller  : PostListCtrl
+          })
+          .when( '/posts/:postId-:slug', {
+            templateUrl : templateBaseUrl + 'post-view.html',
+            controller  : PostViewCtrl
+          })
+          .when( '/about', {
+            templateUrl : templateBaseUrl + 'about.html',
+            controller  : AboutPageCtrl
+          })
+          .when( '/contact', {
+            templateUrl : templateBaseUrl + 'contact.html',
+            controller  : ContactPageCtrl
+          })
+          .otherwise({
+            redirectTo: '/posts'
+          })
+        ;
+      }]);
+    
+
+In my opinion, this has several benefits:
+
+  * If you move your views, you only need to update your code in one single location
+  * If your partials are deeply nested within your project layout, "templateBaseUrl" doesn't cause as much noise as the whole path would
+  * You could even change between relative and absolute path
+  * [An answer to a similar question](https://stackoverflow.com/questions/12858859/routing-in-subdirectory-in-angular-js) suggests the use of html's base element to remove the need of prepending a baseUrl to each templateUrl. But this also affected all other resources on the website. Configuring only the base url for the templates has no side effects
+
+Generally, I don't use this solution with a hard coded value like above. It is
+only an example to show what to do in the most simple manner. To be able to
+copy your app around on your server, define the value outside of app.js, in
+your index file and generate the necessary pathes server side:
+
+    
+    
+    // file: index.php
+    <?php
+      // only depends on your project layout
+      $angularPartialsBaseUrl = 'themes/angular/partials/';
+      // this will change when you move the app around on the server
+      $themeBaseUrl  = $_SERVER['REQUEST_URI'] . 'themes/angular';
+    ?><!DOCTYPE html>
+    <html ng-app="myApp">
+    <head>
+        <title>Yii Blog Demo</title>
+    
+        <script>
+          var myNS = myNS || {};
+          myNS.appConfig = myNS.appConfig || {};
+          myNS.appConfig.templateBaseUrl = '<?php echo $angularPartialsBaseUrl; ?>';
+        </script>
+    
+        <script src="<?php echo $themeBaseUrl; ?>/js/vendor/angular/angular.js"></script>
+        <script src="<?php echo $themeBaseUrl; ?>/js/app.js"></script>
+    
+    </head>
+    
+    [...]
+    
+
+And in app.js:
+
+    
+    
+    // file: app.js
+    'use strict';
+    
+    /* App Module */
+    angular.module( 'myApp', [] )
+    
+      // define the templateBaseUrl using external appConfig
+      .constant( 'templateBaseUrl', myNS.appConfig.templateBaseUrl );
+    
+

@@ -1,0 +1,21 @@
+25042927 Why are queries not being logged?
+
+I've got an enviroment set on Dev that should keep a log with every query ran,
+but it's not writing anything. I'm using the slow-log feature for it...
+
+These are my thresholds on the elasticsearch.yml:
+
+<http://pastebin.com/raw.php?i=qfwnruhD>
+
+And this is my whole logging.yml:
+
+<http://pastebin.com/raw.php?i=aXg8xHNE>
+
+I'm using ElasticSearch 1.3.1 in this enviroment.
+
+You should set the threshold to 0ms if you want to log all queries. On a
+smaller index I was testing on, lots of queries were taking less than 1ms.
+
+If that doesn't work, perhaps elasticsearch isn't using the config file you
+are updating.
+

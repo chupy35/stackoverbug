@@ -1,0 +1,12 @@
+20385894 Where are all the ElasticSearch Config Params listed?
+
+I'm messing around with a lot of the elastic search configuration parameters
+in the elasticsearch.yml file. I keep finding gems of knowledge on blog pages
+enumerating new configuration parameters. Is there a list someplace that
+enumerates all of them?
+
+Thanks
+
+You might try this. (right sidebar)
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules.html>
+

@@ -1,0 +1,86 @@
+22796103 null_value mapping in Elasticsearch
+
+I have created a mapping for a `tweetb` type in a `twitter` index:
+
+    
+    
+    curl -XPUT http://www.mydomain:9200/twitter/tweetb/_mapping -d '{
+      "twitter": {
+        "mappings": {
+          "tweetb": {
+            "properties": {
+              "message": {
+                "type": "string",
+                "null_value": "NA"
+              }
+            }
+          }
+        }
+      }
+    }'
+    
+
+Then, I put one document:
+
+    
+    
+    curl -XPUT http://www.mydomain.com:9200/twitter/tweetb/1 -d '{"message": null}'
+    
+
+Then, I tried to get the inserted doc back:
+
+    
+    
+    curl -XGET http://www.mydomain:9200/twitter/tweetb/1
+    
+
+And that returned:
+
+    
+    
+    {
+      "_index": "twitter",
+      "_type": "tweetb",
+      "_id": "1",
+      "_version": 2,
+      "found" : true,
+      "_source" : { "message": null }
+    }
+    
+
+I was expecting `"message" : "NA"` in the `_source` field. However, it looks
+like `"null_value"` isn't working. Am I missing something?
+
+The `"null_value"` field mapping does not change the value stored, rather it
+changes the value that is used in searches.
+
+If you try searching for your `"message"` using `"NA"`, then it should appear
+in the results:
+
+    
+    
+    curl -XPOST http://www.mydomain.com:9200/twitter/tweetb/_search -d '{
+      "query" : {
+        "match" : { "message" : "NA" }
+      }
+    }'
+    
+
+Of interest, it should respond with the actual value being `null`. Now, if you
+add a new document whose raw value is literally `"NA"` and perform the search,
+then you should see _both_ results returned for the above query--one with a
+value and the other with `null` defined.
+
+Perhaps of similar interest, this works for other queries as well _based on
+how it is indexed_ , which is why a lowercase `n.*` matches, but `N.*` semi-
+surprisingly will not match:
+
+    
+    
+    curl -XPOST http://www.mydomain.com:9200/twitter/tweetb/_search -d '{
+      "query" : {
+        "regexp" : { "message" : "n.*" }
+      }
+    }'
+    
+

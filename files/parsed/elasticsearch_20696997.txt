@@ -1,0 +1,246 @@
+20696997 Match and highlight documents using different queries for different
+fields in ElasticSearch
+
+My objective is to create a query which will find the "best" 20 documents
+using a normal `query_string` query on fields A, B, and C of a document and
+trying to do an exact or exact-subset match on field D. For example: if field
+D is 'AAA.BBB.CCC.DDD' then queries for "AAA.BBB" should match (and "BBB.CCC",
+and "AAA.BBB.CCC", etc). Oh yeah, I'd also like to have the highlighted
+results.
+
+My closest attempt to date is to use an ngram tokenizer/analyzer on field D
+and just allowing A, B, C to be indexed as normal.
+
+    
+    
+    {
+        "settings": {
+            "number_of_shards": 5,
+            "index": {
+                "analysis": {
+                    "tokenizer": {
+                        "customNgram": {
+                            "type": "nGram",
+                            "min_gram": "3",
+                            "max_gram": "5"
+                        }
+                    },
+                    "analyzer": {
+                        "lllNgram": {
+                            "type": "custom",
+                            "filter": "lowercase",
+                            "tokenizer": "customNgram"
+                        }
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "lessons": {
+                "_id": {
+                    "path": "id"
+                },
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "A": {
+                        "type": "string",
+                        "store": "yes"
+                    },
+                    "B": {
+                        "type": "string",
+                        "store": "yes"
+                    },
+                    "C": {
+                        "type": "string",
+                        "store": "yes"
+                    },
+                    "D": {
+                        "type": "string",
+                        "store": "yes",
+                        "analyzer": "lllNgram"
+                    }
+                }
+            }
+        }
+    }
+    
+
+Then using a query like so:
+
+    
+    
+    {
+        "size":20,
+        "query":{
+            "filtered":{
+                "query":{
+                    "match_all":{}
+                },
+                "filter":{
+                    "or":[
+                        {
+                            "query":{
+                                "query_string":{
+                                    "query":"XYZZY TOP",
+                                    "fields":["A","B","C"]
+                                }
+                            }
+                        },
+                        {
+                            "query":{
+                                "match":{
+                                    "D": {
+                                        "query":"XYZZY TOP",
+                                        "operator" : "and"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+             }
+        },
+        "highlight":{
+            "pre_tags":["<em>"],
+            "post_tags":["<\/em>"],
+            "fields":{
+                "A":{},
+                "B":{},
+                "C":{},
+                "D":{}
+            }
+        }
+    }
+    
+
+The problem with this is that field D seems to never match anything... ever...
+no matter what. The resultset also does not contain any highlighting with this
+query.
+
+SO, please help me to understand what I have done wrong in my query.
+
+There're a couple of issues in your mapping/query:
+
+  * Wrong ngram size: you define `ngram(3, 5)`, so maximum of length for generated terms is only 5, and you query for `AAA.BBB` (length=7). It can match in your mapping, but it's ineffective and it's a wrong design in this case (wrong in using it for both indexing and searching), you can extend it to `ngram(3, 20)` and use it just for indexing time.
+  * Ineffective mapping: you dont need to define ngram for both indexing/searching. Instead you can define `index_analyzer = lllNgram`, then use an analyzer that not modify the data for search_analyzer, eg `search_analyzer = keyword_lowercase_analyzer` in my example. `index_analyzer` is used when indexing data, so we need to define rules to generate all possible terms to match (ngram in this case), `search_analyzer` is used when parsing query before comparing with indexed data, so we just need to define rule to keep it as original in this case (just lowercase it)
+  * Inconsequence query: why did you have to use a filtered query ? It'll omit the ES scores and you can't get `the "best" 20 documents` results.
+
+Here's a workable mapping/query:
+
+    
+    
+    {
+        "settings": {
+            "number_of_shards": 5,
+            "index": {
+                "analysis": {
+                    "tokenizer": {
+                        "customNgram": {
+                            "type": "nGram",
+                            "min_gram": "3",
+                            "max_gram": "20"
+                        }
+                    },
+                    "analyzer": {
+                        "lllNgram": {
+                            "type": "custom",
+                            "filter": "lowercase",
+                            "tokenizer": "customNgram"
+                        },
+                        "keyword_lowercase_analyzer": {
+                            "tokenizer": "keyword",
+                            "filter": ["lowercase"]
+                        }
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "lessons": {
+                "_id": {
+                    "path": "id"
+                },
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "A": {
+                        "type": "string",
+                        "store": "yes"
+                    },
+                    "B": {
+                        "type": "string",
+                        "store": "yes"
+                    },
+                    "C": {
+                        "type": "string",
+                        "store": "yes"
+                    },
+                    "D": {
+                        "type": "string",
+                        "store": "yes",
+                        "index" : "analyzed",
+                        "index_analyzer" : "lllNgram",
+                        "search_analyzer" : "keyword_lowercase_analyzer",
+                        "term_vector" : "with_positions_offsets"
+                    }
+                }
+            }
+        }
+    }
+    
+
+Querying:
+
+    
+    
+    {
+      "size": 20,
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "query_string": {
+                "query": "AAA.BBB",
+                "fields": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              }
+            },
+            {
+              "match": {
+                "D": {
+                  "query": "AAA.BBB",
+                  "operator": "or"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "highlight": {
+        "pre_tags": [
+          "<em>"
+        ],
+        "post_tags": [
+          "</em>"
+        ],
+        "fields": {
+          "A": {},
+          "B": {},
+          "C": {},
+          "D": {}
+        }
+      }
+    }
+    
+
+Note:
+
+  * I used `with_positions_offsets` for faster highlighting terms. Yon can refer here for more info: <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html>
+  * You can install `inquisitor` plugin to test analyzers, it'll help you find out the problems like this.
+

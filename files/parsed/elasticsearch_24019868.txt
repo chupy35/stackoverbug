@@ -1,0 +1,245 @@
+24019868 UTF8 encoding is longer than the max length 32766
+
+I've upgraded my Elasticsearch cluster from 1.1 to 1.2 and I have errors when
+indexing a somewhat big string.
+
+    
+    
+    {
+      "error": "IllegalArgumentException[Document contains at least one immense term in field=\"response_body\" (whose UTF8 encoding is longer than the max length 32766), all of which were skipped.  Please correct the analyzer to not produce such terms.  The prefix of the first immense term is: '[7b 22 58 48 49 5f 48 6f 74 65 6c 41 76 61 69 6c 52 53 22 3a 7b 22 6d 73 67 56 65 72 73 69]...']",
+      "status": 500
+    }
+    
+
+The mapping of the index :
+
+    
+    
+    {
+      "template": "partner_requests-*",
+      "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 1
+      },
+      "mappings": {
+        "request": {
+          "properties": {
+            "asn_id": { "index": "not_analyzed", "type": "string" },
+            "search_id": { "index": "not_analyzed", "type": "string" },
+            "partner": { "index": "not_analyzed", "type": "string" },
+            "start": { "type": "date" },
+            "duration": { "type": "float" },
+            "request_method": { "index": "not_analyzed", "type": "string" },
+            "request_url": { "index": "not_analyzed", "type": "string" },
+            "request_body": { "index": "not_analyzed", "type": "string" },
+            "response_status": { "type": "integer" },
+            "response_body": { "index": "not_analyzed", "type": "string" }
+          }
+        }
+      }
+    }
+    
+
+I've searched the documentation and didn't find anything related to a maximum
+field size. According to the [core
+types](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html) section I don't understand why I should "correct the
+analyzer" for a `not_analyzed` field.
+
+I needed to change the `index` part of the mapping to `no` instead of
+`not_analyzed`. That way the value is not indexed. It remains available in the
+returned document (from a search, a get, …) but I can't query it.
+
+So you are running into an issue with the maximum size for a single term. When
+you set a field to not_analyzed it will treat it as one single term. The
+maximum size for a single term in the underlying Lucene index is 32766 bytes,
+which is I believe hard coded.
+
+Your two primary options are to either change the type to binary or to
+continue to use string but set the index type to "no".
+
+There is a better option than the one John posted. Because with that solution
+you can't search on the value anymore.
+
+**Back to the problem:**
+
+The problem is that by default field values will be used as a single term
+(complete string). If that term/string is longer than the 32766 bytes it can't
+be stored in Lucene .
+
+Older versions of Lucene only registers a warning when terms are too long (and
+ignore the value). Newer versions throws an Exception. See bugfix:
+<https://issues.apache.org/jira/browse/LUCENE-5472>
+
+**Solution:**
+
+The best option is to define a (custom) analyzer on the field with the long
+string value. The analyzer can split out the long string in smaller
+strings/terms. That will fix the problem of too long terms.
+
+Don't forget to also add an analyzer to the "_all" field if you are using that
+functionality.
+
+Analyzers can be tested with the REST api.
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+analyze.html>
+
+If you really want `not_analyzed` on on the property because you want to do
+some exact filtering then you can use `"ignore_above": 256`
+
+Here is an example of how I use it in php:
+
+    
+    
+    'mapping'    => [
+        'type'   => 'multi_field',
+        'path'   => 'full',
+        'fields' => [
+            '{name}' => [
+                'type'     => 'string',
+                'index'    => 'analyzed',
+                'analyzer' => 'standard',
+            ],
+            'raw' => [
+                'type'         => 'string',
+                'index'        => 'not_analyzed',
+                'ignore_above' => 256,
+            ],
+        ],
+    ],
+    
+
+In your case you probably want to do as John Petrone told you and set
+`"index": "no"` but for anyone else finding this question after, like me,
+searching on that Exception then your options are:
+
+  * set `"index": "no"`
+  * set `"index": "analyze"`
+  * set `"index": "not_analyzed"` and `"ignore_above": 256`
+
+It depends on if and how you want to filter on that property.
+
+I got around this problem by changing my analyzer .
+
+    
+    
+    {
+        "index" : {
+            "analysis" : {
+                "analyzer" : {
+                    "standard" : {
+                        "tokenizer": "standard",
+                        "filter": ["standard", "lowercase", "stop"]
+                    }
+                }
+            }
+        }
+    }
+    
+
+If you are using `searchkick`, upgrade elasticsearch to `>= 2.2.0` & make sure
+you are using searchkick `1.3.4` or later.
+
+This version of searchkick sets `ignore_above = 256` by default, thus you
+won't get this error when UTF > 32766.
+
+This is discussed [here](https://github.com/ankane/searchkick/issues/728).
+
+In Solr v6+ I changed the field type to text_general and it solved my problem.
+
+    
+    
+    <field name="body" type="string" indexed="true" stored="true" multiValued="false"/>   
+    <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
+    
+
+Using logstash to index those long messages, I use this filter to truncate the
+long string :
+
+    
+    
+        filter {
+            ruby {
+                code => "event.set('message_size',event.get('message').bytesize) if event.get('message')"
+            }
+            ruby {
+                code => "
+                    if (event.get('message_size'))
+                        event.set('message', event.get('message')[0..9999]) if event.get('message_size') > 32000
+                        event.tag 'long message'  if event.get('message_size') > 32000
+                    end
+                "
+             }
+         }
+    
+
+It adds a _message_size_ field so that I can sort the longest messages by
+size.
+
+It also adds the _long message_ tag to those that are over 32000kb so I can
+select them easily.
+
+It doesn't solve the problem if you intend to index those long messages
+completely, but if, like me, don't want to have them in elasticsearch in the
+first place and want to track them to fix it, it's a working solution.
+
+I've stumbled upon the same error message with Drupal's [Search api
+attachments](https://www.drupal.org/project/search_api_attachments) module:
+
+> Document contains at least one immense term in field="saa_saa_file_entity"
+(whose UTF8 encoding is longer than the max length 32766), all of which were
+skipped. Please correct the analyzer to not produce such terms.
+
+Changing the fields type from `string` to `Fulltext` (in
+_/admin/config/search/search-api/index/elastic_index/fields_ ) solved the
+problem for me.
+
+One way of handling tokens that are over the lucene limit is to use the
+`truncate` filter. Similar to `ignore_above` for keywords. To demonstrate, I'm
+using `5`. Elasticsearch suggests to use ignore_above = 32766 / 4 = `8191`
+since UTF-8 characters may occupy at most 4 bytes.
+<https://www.elastic.co/guide/en/elasticsearch/reference/6.3/ignore-
+above.html>
+
+    
+    
+    curl -H'Content-Type:application/json' localhost:9200/_analyze -d'{
+      "filter" : [{"type": "truncate", "length": 5}],
+      "tokenizer": {
+        "type":    "pattern"
+      },
+      "text": "This movie \n= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }'
+    
+
+Output:
+
+    
+    
+    {
+      "tokens": [
+        {
+          "token": "This",
+          "start_offset": 0,
+          "end_offset": 4,
+          "type": "word",
+          "position": 0
+        },
+        {
+          "token": "movie",
+          "start_offset": 5,
+          "end_offset": 10,
+          "type": "word",
+          "position": 1
+        },
+        {
+          "token": "AAAAA",
+          "start_offset": 14,
+          "end_offset": 52,
+          "type": "word",
+          "position": 2
+        }
+      ]
+    }
+    
+

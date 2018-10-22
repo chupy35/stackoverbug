@@ -1,0 +1,43 @@
+25357576 Elasticsearch Pattern_capture filter emits a token that is not
+matched with pattern also
+
+I have a case where I have to extract domain part from emails that are found
+in a text. I used uax_url_email tokenizer to create emails as a single. And I
+have a pattern_capture filter which will emit "@(.+)" pattern string. But
+uax_url_email also return words also which is not an email and the pattern
+capture filter does not filter that. Any suggestions?
+
+    
+    
+    "custom_analyzer":{
+     "tokenizer": "uax_url_email",
+      "filter": [
+           "email_domain_filter"
+       ]
+    }
+    "filter": {
+      "email_domain_filter":{
+               "type": "pattern_capture",
+               "preserve_original": false,
+                "patterns": [
+                          "@(.+)"
+                  ]
+       }
+    }
+    
+
+input string : " **my email id is xyz@gmail.com** "
+
+Output tokens: **my, email, id, is, gmail.com**
+
+But I need only **gmail.com**
+
+"If none of the patterns match, or if preserveOriginal is true, the original
+token will be preserved."
+
+<https://lucene.apache.org/core/4_4_0/analyzers-
+common/org/apache/lucene/analysis/pattern/PatternCaptureGroupTokenFilter.html>
+
+Try adding a pattern that matches the other tokens but does not contain a
+capture group (e.g. ".*")
+

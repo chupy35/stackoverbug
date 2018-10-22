@@ -1,0 +1,165 @@
+10876548 Not getting all the results
+
+This is my question related to my previous question that I asked [search stops
+after the first match](https://stackoverflow.com/questions/10783994/search-
+stops-after-the-first-match#comment14130234_10783994)
+
+Here I am giving you the mapping.
+
+    
+    
+    {
+        "copy_order_snapshot": {
+            "properties": {
+                "line_item_info": {
+                    "dynamic": "true",
+                    "properties": {
+                        "m_product_details": {
+                            "dynamic": "true",
+                            "properties": {
+                                "accessories_colour": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "other_details": {
+                            "dynamic": "true",
+                            "properties": {
+                                "accessories_material_type": {
+                                    "type": "string"
+                                }
+                                "status": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "product_details": {
+                            "dynamic": "true",
+                            "properties": {
+                                "accessories_colour": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "order_data": {
+                    "dynamic": "true",
+                    "properties": {
+                        "state": {
+                            "type": "string"
+                        },
+                        "status": {
+                            "type": "string"
+                        }                    
+                    }
+                }
+            }
+        }
+    }
+    
+
+In my previous question I was talking about `attribute_set_id` , here the same
+case is with `status`. The `order_details->status is "enabled"` while the
+other status are as `"1" and "canceled"`. When I search for
+
+    
+    
+    {
+        "query":{
+            "term":{
+                "status":"enabled"
+             }
+        }
+    }
+    
+
+I get the result
+
+but if I search for
+
+    
+    
+    {
+        "query":{
+            "term":{
+                "status":"1"
+            }
+        }
+    }
+    
+
+or
+
+    
+    
+    {
+        "query":{
+            "term":{
+                "status":"canceled"
+            }
+        }
+    }
+    
+
+I get no results.
+
+Please help.
+
+It happens because of ambiguous field name "status". During query processing,
+elasticsearch resolves the field name "status" into the first fully qualified
+field name that it matches. When I ran it on my machine, it got resolved into
+line_item_info.other_details.status.
+
+    
+    
+    $ curl "localhost:9200/test-orders/_validate/query?q=status:blah&explain=true&pretty=true"
+    {
+      "valid" : true,
+      "_shards" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+      },
+      "explanations" : [ {
+        "index" : "test-orders",
+        "valid" : true,
+        "explanation" : "line_item_info.other_details.status:blah"
+      } ]
+    }
+    
+
+If you want your query to match all status fields, you might need to use fully
+qualified names (such as `line_item_info.other_details.status`,
+`line_item_info.m_product_details.status`, etc.) and combine them using [Dis
+Max](http://www.elasticsearch.org/guide/reference/query-dsl/dis-max-
+query.html) or [Bool
+Queries](http://www.elasticsearch.org/guide/reference/query-dsl/bool-
+query.html).
+
+For example:
+
+    
+    
+    $ curl -XGET http://localhost:9200/test-orders/copy_order_snapshot/_search -d '{
+        "query":{
+            "bool" : {
+                "should" : [
+                    {
+                        "term" : { "line_item_info.m_product_details.status" : "1" }
+                    },
+                    {
+                        "term" : { "line_item_info.other_details.status" : "enabled" }
+                    }
+                ]
+            }
+        }
+    }'
+    
+

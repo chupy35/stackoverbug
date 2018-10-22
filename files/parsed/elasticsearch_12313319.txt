@@ -1,0 +1,31 @@
+12313319 How to do facet search with mpdreamz Nest
+
+does anybody know how to do facet search with Nest? My index is
+<https://gist.github.com/3606852> would like to search for some keyword in
+'NumberEvent' and dispaly the result if the keyword exist.Please help me !!!
+
+This is using the assumption that the `MyPoco` class exists and maps to your
+elasticsearch document. If it doesn't you can use `dynamic` but you'l have to
+swap the lambda based field selectors with strings.
+
+    
+    
+    var result = client.Search<MyPoco>(s=>s
+        .From(0)
+        .Size(10)
+        .Filter(ff=>ff.
+            .Term(f=>f.Categories.Types.Events.First().NumberEvent.event, "keyword")
+        )
+        .FacetTerm(q=>q.OnField(f=>f.Categories.Types.Facets.First().Person.First().entity))
+    );
+    
+
+`result.Documents` now holds your documents
+
+`result.Facet<TermFacet>(f =>
+f.Categories.Types.Facets.First().Person.First().entity);` now holds your
+facets
+
+Your document seems a bit strange though in the sense that it already has
+Facets with counts in them.
+

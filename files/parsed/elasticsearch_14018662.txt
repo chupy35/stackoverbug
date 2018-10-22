@@ -1,0 +1,89 @@
+14018662 How to disable routing in parent and child mapping for Elasticsearch?
+
+I have explicitly disabled routing for my Elasticsearch(ES) mapping:
+
+    
+    
+    {
+     "chow-clfg": {
+      "_parent": {
+       "type": "chow-demo"
+      },
+      "_routing": {
+       "required": false
+      },
+      "_id": {
+       "path": "clfg"
+      },
+      "dynamic": "true",
+      "_ttl": {
+       "enabled": true,
+       "default": "1h"
+      },
+      "properties": {
+       "clfg": {
+        "analyzer": "keyword",
+        "type": "string"
+       },
+       "@timestamp": {
+        "format": "dateOptionalTime",
+        "type": "date"
+       },
+       "count": {
+        "type": "long"
+       }
+      }
+     }
+    }
+    
+
+After doing curl command to delete and update the new mapping, I still get the
+routing enabled when I do a _cluster/state command:
+
+    
+    
+    "mappings" : {
+     "chow-clfg" : {
+      "_id" : {
+       "path" : "clfg"
+      },
+      "_routing" : {
+       "required" : true
+      },
+      "_ttl" : {
+       "enabled" : true,
+       "default" : 3600000
+      },
+      "properties" : {
+       "@timestamp" : {
+        "format" : "dateOptionalTime",
+        "type" : "date"
+       },
+       "clfg" : {
+        "analyzer" : "keyword",
+        "type" : "string"
+       },
+       "count" : {
+        "type" : "long"
+       }
+      },
+      "_parent" : {
+       "type" : "chow-demo"
+      }
+    }
+    
+
+So it leaves me with the following questions:
+
+  1. How can I disable the routing if it is not a necessary requirement to have in a parent/child mapping?
+  2. If routing is a requirement, can routing be done on a field that is not unique?
+
+Child documents have to be stored in the same shard as their parent documents.
+That's why routing for children documents is required. By default, documents
+are routed by their id values, therefore child documents are using parent's id
+for routing. You can change it. As long as parents and all their children are
+using the same routing value you should be fine. The routing field doesn't
+have to be unique but to achieve a good performance it should be more or less
+uniformly distributed. Otherwise, you might end up with a lot of records in
+one shard and only a few records in another.
+

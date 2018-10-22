@@ -1,0 +1,132 @@
+12311778 AngularJS query resource once and use data throughout app
+
+My App has several views,each view has a controller.
+
+I have several API resources returning standard JSON arrays.Whenever a view
+changes,the resources are re-queried for new data which is fairly slow. I'd
+prefer to provide my controllers with the API resources without requerying
+each time.
+
+Whats the best way to do this?
+
+If I understand correctly then this is what services are for. They're kind of
+like a central place for controllers share data.
+
+I looked over the jsfiddle for the code used in this tutorial:
+
+<http://onehungrymind.com/angularjs-communicating-between-controllers/>
+
+    
+    
+    var myModule = angular.module('myModule', []);
+    myModule.factory('mySharedService', function($rootScope) {
+        var sharedService = {};
+    
+        sharedService.message = '';
+    
+        sharedService.prepForBroadcast = function(msg) {
+            this.message = msg;
+            this.broadcastItem();
+        };
+    
+        sharedService.broadcastItem = function() {
+            $rootScope.$broadcast('handleBroadcast');
+        };
+    
+        return sharedService;
+    });
+    
+    function ControllerZero($scope, sharedService) {
+        $scope.handleClick = function(msg) {
+            sharedService.prepForBroadcast(msg);
+        };
+    
+        $scope.$on('handleBroadcast', function() {
+            $scope.message = sharedService.message;
+        });        
+    }
+    
+    function ControllerOne($scope, sharedService) {
+        $scope.$on('handleBroadcast', function() {
+            $scope.message = 'ONE: ' + sharedService.message;
+        });        
+    }
+    
+    function ControllerTwo($scope, sharedService) {
+        $scope.$on('handleBroadcast', function() {
+            $scope.message = 'TWO: ' + sharedService.message;
+        });
+    }
+    
+    ControllerZero.$inject = ['$scope', 'mySharedService'];        
+    
+    ControllerOne.$inject = ['$scope', 'mySharedService'];
+    
+    ControllerTwo.$inject = ['$scope', 'mySharedService'];​
+    
+
+* * *
+
+**EDIT**
+
+For resource calls, I have a service right now that uses them like this. Sorry
+that its in coffeescript
+
+    
+    
+    .factory('EventService', (SubEvent, User) ->
+        subevents = {}
+    
+        return {
+            getSubevent: (subevent_id) ->
+                SubEvent.get {subevent_id: subevent_id}, (subevent) ->
+    
+                    participants = (participant.user for participant in subevent.participants)
+                    User.query {participants: participants}, (users) ->
+                        for user,i in users
+                            subevent.participants[i].user = user
+    
+                        subevents[subevent_id] = subevent
+        }
+    )
+    
+
+  1. Place your shared resource into a service (this is almost always how you share data between controllers).
+  2. Cache the results within the service so the expensive query need only be performed once.
+
+Since both [`$http`](http://code.angularjs.org/1.1.5/docs/api/ng.%24http) and
+[`$resource`](http://code.angularjs.org/1.1.5/docs/api/ngResource.%24resource)
+support caching out of the box, you don't need to write your own caching. To
+tweak the default caching behavior, check out
+[`$cacheFactory`](http://code.angularjs.org/1.1.5/docs/api/ng.%24cacheFactory).
+
+Here's an example from an application I'm working on:
+
+    
+    
+    var app = angular.module('app', ['ngResource']);
+    
+    app
+      .factory('Worklogs', function($resource) {
+        return $resource('/tempo/worklogs', {}, {
+          'query':  {method:'GET', isArray:true, cache: true}
+        });
+      })
+      .controller('FirstCtrl', function($scope, Worklogs, $log, $filter){
+        $scope.search = SearchParameters;
+        $scope.worklogs = Worklogs.query({dateFrom: $scope.search.dateFrom, dateTo: $scope.search.dateTo});
+      })
+      .controller('SecondCtrl', function($scope, Worklogs, $log, $filter){
+        $scope.search = SearchParameters;
+        $scope.worklogs = Worklogs.query({dateFrom: $scope.search.dateFrom, dateTo: $scope.search.dateTo});
+      })
+    
+
+The first time a controller loads and each time new parameters are passed into
+`query()`, the Worklogs service makes an HTTP request. Whenever a controller
+is changed and a previous query is repeated, Worklogs are loaded from the
+cache (and no HTTP request is made).
+
+I'm using AngularJS 1.1.5 since the 1.0.x branch is missing loads of cool
+stuff...probably including this.
+

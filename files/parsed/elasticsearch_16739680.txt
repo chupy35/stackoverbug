@@ -1,0 +1,158 @@
+16739680 Elasticsearch / Posting and searching attachments
+
+I'm trying to get Elasticsearch to index a .txt file so that I can search the
+content. I've made some progress, but having no luck with the searching part.
+
+Here is my mappings:
+
+    
+    
+    mappings: {
+        file: {
+            properties: {
+                allow_token_share: {
+                    type: string
+                },
+                file: {
+                    type: string
+                },
+                deny_token_document: {
+                    type: string
+                },
+                _name: {
+                    type: string
+                },
+                _content_type: {
+                    type: string
+                },
+                type: {
+                    type: string
+                },
+                uri: {
+                    type: string
+                },
+                deny_token_share: {
+                    type: string
+                },
+                allow_token_document: {
+                    type: string
+                }
+            }
+        }
+    }   
+    
+
+Here's the document I got indexed:
+
+    
+    
+    {
+        _index: f_drive,
+        _type: file,
+        _id: file:/C:/Users/ttobinca.EPIC/Documents/Dev/Epicsearch/TestDocs/Test.txt,
+        _version: 1,
+        _score: 1,
+        _source: {
+            uri: C:\Users\ttobinca.EPIC\Documents\Dev\Epicsearch\TestDocs\Test.txt,
+            allow_token_document: __nosecurity__,
+            deny_token_document: __nosecurity__,
+            allow_token_share: __nosecurity__,
+            deny_token_share: __nosecurity__,
+            type: attachment,
+            _content_type: text/plain,
+            _name: Test.txt,
+            file: SSBsaWtlIGhhbWJ1cmdlcnMgYW5kIGhvdGRvZ3MsIGJ1dCBtb3N0bHkgY2hvY29sYXRlLg0KDQpIZWxsbyB3b3JsZC4=
+        }
+    }
+    
+
+The content of the file is:
+
+> I like hamburgers and hotdogs, but mostly chocolate.
+
+>
+
+> Hello world.
+
+First question is, is this document indexed correctly?  And if so, how do I go
+about searching the content of this document? Running this query returns no
+results:
+
+    
+    
+    {
+      "query": {
+        "query_string": {
+          "query": "hamburgers"
+        }
+      }
+    }
+    
+
+But this returns the document.
+
+    
+    
+    {
+      "query": {
+        "query_string": {
+          "query": "SSBsaWtlIGhhbWJ1cmdlcnMgYW5kIGhvdGRvZ3MsIGJ1dCBtb3N0bHkgY2hvY29sYXRlLg0KDQpIZWxsbyB3b3JsZC4="
+        }
+      }
+    }
+    
+
+Indexing of binary content is not supported by default. YOu have to install
+and use the [mapper-attachment
+plugin](https://github.com/elasticsearch/elasticsearch-mapper-attachments).
+That will enable a custom `attachment` type that you can use in your mapping.
+That way elasticsearch will use apache tika to extract text from the binary
+and index it as text. Only after that you'll be able to get results with your
+text query.
+
+Do take into account that using the attachment plugin you are executing the
+parsing of the binary content on the server side, within an elasticsearch
+node, which is probably not a great idea since you then would have to reserve
+power and memory on that node for that process instead of using it for
+indexing and searching text.
+
+There is an alternative solution - plugin at <http://elasticwarehouse.org>.
+You can upload binary file using _ewupload? then perform search via
+elasticwarehousestorage index using "filetext" or "filemeta" elements
+
+Install plugin:
+
+    
+    
+    plugin -install elasticwarehouseplugin -u http://elasticwarehouse.org/elasticwarehouse/elasticsearch-elasticwarehouseplugin-1.2.2-1.7.0-with-dependencies.zip
+    
+
+Restart cluster, then:
+
+    
+    
+    curl -XPOST "http://127.0.0.1:9200/_ewupload?folder=/myfolder&filename=Test.txt" --data-binary @Test.txt
+    
+
+Sample response:
+
+    
+    
+    {"id":"nWvrczBcSEywHRBBBwfy2g","version":1,"created":true}
+    
+
+Search example:
+
+    
+    
+    curl -XGET "http://127.0.0.1:9200/elasticwarehousestorage/files/_search" -d '{
+    "query": {
+        "term": {
+           "filetext": {
+              "value": "hamburgers"
+           }
+        }
+    }
+    }'
+    
+

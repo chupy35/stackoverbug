@@ -1,0 +1,41 @@
+21923594 Best way to combined AND and OR in Elasticsearch query
+
+I have documents containing a `tags` array and a `city` field. I try to query
+something like this in ES:
+
+**(javascript OR html OR css) AND Los Angeles**
+
+Best way to do that?  
+URI solution?
+
+Here is Elasticsearch query to get `(javascript OR html OR css) AND Los
+Angeles`
+
+    
+    
+    {
+        "filter": {
+            "and": {
+               "filters": [
+                  {
+                        "term": {
+                           "city": "Los Angeles"
+                        }
+                  },
+                  {
+                    "or": {
+                       "filters": [
+                          {
+                              "terms": {
+                                 "tags": ["javascript","html","css"]
+                              }
+                          }
+                       ]
+                    }
+                  }
+               ]
+            }
+        }
+    }
+    
+

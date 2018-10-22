@@ -1,0 +1,22 @@
+13376059 Elasticsearch query against multiple types
+
+I have two types stored in ES:
+
+  * Photos (fields: photo-id, description, createDateAsLong)
+  * VisitHistory (username, photo-id - with 30days TTL)
+
+Is it possible to query ES for records of type Photos which photo-id doesn't
+exists in VisitHistory (for some username value). I mean a query which is
+equivalent of sql query like this:
+
+SELECT * FROM Photos WHERE photo-id NOT IN (SELECT photo-id FROM VisitHistory
+WHERE username = 'somefoousername');
+
+If you make Photos a parent document and VisitHistory a
+[child](http://www.elasticsearch.org/guide/reference/mapping/parent-
+field.html) document of Photos, you should be able to use a combination of
+[`not`](http://www.elasticsearch.org/guide/reference/query-dsl/not-
+filter.html) and
+[`has_child`](http://www.elasticsearch.org/guide/reference/query-dsl/has-
+child-filter.html) filters to build such request.
+

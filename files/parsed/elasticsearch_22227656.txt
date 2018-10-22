@@ -1,0 +1,95 @@
+22227656 Search for types with particular fields in elasticsearch?
+
+Say I have the following two docs
+
+DOC 1
+
+    
+    
+     { "name" : "Frank",
+       "age" : 82
+     }
+    
+
+DOC 2
+
+    
+    
+     { "gender" : "male",
+       "age" : 74
+     }
+    
+
+How could I retrieve a list of documents that have `name` as a field, i.e. in
+the above (admittedly poor) example I would run some query that returns me the
+id for Doc 1 since that has `name`. If this is possible, I would then like to
+extend it so I could search for those docs that have `name` `AND` `age` as
+fields.
+
+Can't you use the exists filter?
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-exists-filter.html>
+
+The following sample works for me.
+
+    
+    
+    PUT existsindex
+    {
+      "settings": {
+        "number_of_replicas": 0,
+        "number_of_shards": 1
+      }
+    }
+    
+    PUT existsindex/local/1
+    {
+      "name":"Ian",
+      "member":"yes"
+    }
+    
+    PUT existsindex/local/2
+    {
+      "name":"Roy"
+    }
+    
+    GET existsindex/_search
+    {
+      "filter": {
+        "exists": {
+          "field": "member"
+        }
+      }
+    }
+    
+
+You can use a combination of the [exists
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-exists-filter.html) and [bool
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-filter.html) to do this. You would essentially filter all the
+documents for those with the specified fields. An example is below.
+
+    
+    
+    {
+      "filter": {
+        "bool": {
+          "must": [
+            {
+              "exists": {
+                "field": "name"
+              }
+            },
+            {
+              "exists": {
+                "field": "age"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+

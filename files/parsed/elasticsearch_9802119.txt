@@ -1,0 +1,34 @@
+9802119 Performance based on length of "terms"
+
+I have following criteria in the query. The terms list for seen by can grow
+significantly large. There are also a couple of similar kind of list in
+"must_not" clause and those can be grow large too.
+
+    
+    
+              {
+                "terms": {
+                  "seen_by": [
+                    "54",
+                    "3",
+                    "418",
+                    "411",
+                    "1",
+                    "101"
+                  ]
+                }
+              }
+    
+
+What will be the performance difference if the list of terms in conditions
+grows or shrinks?
+
+It's difficult to answer this question without knowing details about your data
+size, terms distribution and queries. In general, the number of terms is
+contributing linearly into search time. Basically, the search engine has to
+pull a list of documents for every term in your query. Because of this, it's
+typically not recommended to execute queries with very large number of terms
+and elasticsearch is actually limiting the number of clauses in boolean
+queries to 1024 (it can be changed using indices.query.bool.max_clause_count
+setting).
+

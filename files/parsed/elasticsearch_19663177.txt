@@ -1,0 +1,22 @@
+19663177 Elasticsearch for multiple sites (sources)
+
+We have a large number of websites, and since this is our first time to use
+Elastic Search I don't know how should we configure ES to:
+
+  1. We want to use ES as the only search engine for these sites, should we setup separate ES instance for each site? (I imagine this may take much more resources than just one ES?)(on the other hand, will putting all documents from all site to only 1 ES instance generate too much overhead for each search?)
+  2. When we do a search, we will search for documents within 1 specific site only, however (and would be nice to somehow prevent other sites to search documents not belonging to them)
+  3. Would be nice to have, but not a must, is the ability to search for documents on ALL sites if possible.
+
+You should setup one cluster for all websites. The biggest advantage of
+elasticsearch is that it scales pretty well so handling several requests from
+different clients shouldnt be a problem for your cluster if you scale it big
+enough. Each site should have an own index(an index is like a container that
+holds your documents). Elasticsearch allows to search over one or several
+indices. That means that you dont have the problem of searching all documents
+if you dont want too. Each site can search in its own index _or_ if you want
+so over all indices.
+
+I am new to ES, but i think you can get what you want with having one ES
+instance and setting up routing.
+<http://www.elasticsearch.org/blog/customizing-your-document-routing/>
+

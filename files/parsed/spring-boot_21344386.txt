@@ -1,0 +1,26 @@
+21344386 Getting application context from a CommandLinerRunner
+
+How can we get access to ApplicationContext from a CommandLineRunner class. Is
+there a better newer way than using ApplicationContextAware
+
+Autowiring would work, either as a field
+
+    
+    
+    @Autowired
+    private ApplicationContext context;
+    
+
+or a method
+
+    
+    
+    @Autowired
+    public void context(ApplicationContext context) { this.context = context; }
+    
+
+Same as `ApplicationContextAware` really.
+
+It's a smell in any case - maybe if you think about your use case you will
+find a way to do it without the context?
+

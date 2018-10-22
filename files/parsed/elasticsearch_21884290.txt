@@ -1,0 +1,53 @@
+21884290 How to wrap an ElasticSearch filter in a query
+
+In order to use the
+[percolator](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+percolate.html) in ElasticSearch, I need to index search queries. However, we
+mainly use filters for searching. In order to index these filters, they have
+to be [wrapped inside a
+query](https://groups.google.com/forum/#!topic/elasticsearch/NF24hTwtFVg).
+
+I know of two different approaches to accomplish this. Wrap the filter in a
+[filtered
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filtered-query.html):
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "filter": { ... }
+        }
+      }
+    }
+    
+
+or using a [constant_score
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-constant-score-query.html):
+
+    
+    
+    {
+      "query": {
+        "constant_score": {
+          "filter": { ... }
+        }
+      }
+    }
+    
+
+Which method is preferred? Why?
+
+While both will yield the same results, and should have very close
+performance, I'd prefer using the `filtered`-query. It communicates the
+intention quite clearly. A few months down the road you may be starting at the
+same query and wonder why you cared about scores. :)
+
+According to this [link](https://discuss.elastic.co/t/constant-score-vs-
+filtered-and-a-follow-up-about-custom-filters-score/15182), "A filtered query
+with a match_all query is automatically converted internally to a
+constant_score one". So sounds like the best option is to use `constant_score`
+and omit an internal step.
+

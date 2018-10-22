@@ -1,0 +1,70 @@
+21731540 Is it possible to ensure n-matches to a search in Elasticsearch?
+
+I am trying to figure out how to implement the following in Elasticsearch, and
+feel as though I have read documentation before on how to do it but can no
+longer find it.
+
+I have 3 fields I will be searching on; profileIds, title, and description.
+
+For profile ids I'm just searching for an exact term match, which is trivial
+enough.
+
+I will be having a list of phrases to match against title and description, but
+I only want to match if there's a total of 3 or more matches with any keyword
+against the title or description (it doesn't have to be the same keyword on
+the same field).
+
+I get that I should have a nested Or query setup like so: (matches profile
+ids, (has 3 matches on title OR description for any of the keywords)) but the
+part I am struggling with is saying "3 matches".
+
+Is this possible in Elasticsearch?
+
+You can try with [bool
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/query-
+dsl-bool-query.html) together with [terms
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/query-
+dsl-terms-query.html) and using `minimum_should_match`.
+
+Example:
+
+    
+    
+    {
+      "query": {
+         "bool": {
+            "must": [
+               {
+                  "term": {
+                     "profile_ids": {
+                        "value": "42"
+                     }
+                  }
+               }
+            ],
+            "should": [
+               {
+                  "terms": {
+                     "title": ["foo", "bar", "baz"],
+                     "minimum_should_match": 3
+                  }
+               },
+               {
+                  "terms": {
+                     "description": ["a", "b", "c", "d"],
+                     "minimum_should_match": 3
+                  }
+               }
+            ],
+            "minimum_should_match": 1
+         }
+      }
+    }
+    
+
+So both of the `terms` queries must match on at least 3 keywords. And then one
+of those two should match while the `profile_ids` must always match.
+
+Note that if you have less than 3 keywords the `terms` query will match if all
+terms match.
+

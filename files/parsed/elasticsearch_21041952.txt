@@ -1,0 +1,39 @@
+21041952 Using a combined field as id mapping in ElasticSearch
+
+From this question I can see that it is possible [Use existing field as id in
+elasticsearch](https://stackoverflow.com/questions/16653393/use-existing-
+field-as-id-in-elasticsearch)
+
+My question is, if can do similar thing but concatenating fields.
+
+    
+    
+    {
+    "RecordID": "a06b0000004SWbdAAG",
+    "SystemModstamp": "01/31/2013T07:46:02.000Z",
+    "body": "Test Body"
+    }
+    
+
+And then do something like
+
+    
+    
+    {
+      "your_mapping" : {
+          "_id" : {
+              "path" : "RecordID" + "body"
+         }
+     }
+    }
+    
+
+So the id is automatically formed from concatenating those fields.
+
+No you can't, you can only make the _id point to a field that's within the
+document, using the dot notation as well if needed (e.g. `level1,level2.id`).
+
+I'd suggest to have a field that contains the whole id in your documents, or
+even better to take the id out and provide it in the url, as configuring a
+path causes the document to be parsed when not needed.
+

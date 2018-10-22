@@ -1,0 +1,23 @@
+18229223 Which should be used for searching XGET or XPOST
+
+Which should be used ( **XGET** or **XPOST** ) for quering ElasticSearch.
+Whether **XGET** or **XPOST** have faster response for searching. Thanks.
+
+Arguments for GET:
+
+  * A search is conceptually a GET
+  * GET requests are typically optimized for caching, although this may be 
+  * Some elasticsearch searches can be done as a GET request without requiring a request body
+
+Arguments for POST:
+
+  * It's harder to perform a GET request with a request body because a lot of clients don't support it (including javascript XHR in modern browsers)
+  * GET requests are typically optimized for caching even when you don't want it (although there are many ways to prevent it such as adding a query string argument, such as `?time=1376535485`)
+  * People just don't expect a GET to have a request body ( see [HTTP GET with request body](https://stackoverflow.com/questions/978061/http-get-with-request-body) )
+  * Caching requires an extra layer in front of elasticsearch (such as apache or nginx), although this may be a moot point since having an extra layer allows for gzip compression.
+
+Personally, I prefer POST for simplicity's sake. Elasticsearch is already
+blazing fast and there's little need to cache requests beyond what
+elasticsearches already does internally unless you're dealing with a very high
+usage scenario.
+

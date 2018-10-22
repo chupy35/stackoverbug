@@ -1,0 +1,4 @@
+31191953
+Why is the majority of documentation for ElasticSearch in curl?
+<p>I'm just curious because there isn't a lot of documentation for other API's like Java. </p>&#xA;&#xA;<p>Do most companies and people who use elastic search purely use it through curl? It seems a bit cumbersome to use it in that manner. </p>&#xA;
+<p>Using curl is probably the closest thing to writing the documentation in a language that everyone understands. Regardless of the language, everything speaks the HTTP protocol underneath.</p>&#xA;&#xA;<p>If they wrote the documentation in Ruby/Python/Java, whoever they left out might be unhappy. So by using curl, a tool which all web developers learn eventually, they are writing the documentation in a language-agnostic way.</p>&#xA;

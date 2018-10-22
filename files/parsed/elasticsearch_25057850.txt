@@ -1,0 +1,48 @@
+25057850 ElasticSearch fields not working
+
+I have the inquisitor plugin to query iis logs, but for some reason when i try
+to reduce the number of the returned fields it doesn't work at all.
+
+This query works as expected:
+
+    
+    
+    {
+     "query": {
+    
+        "term":
+    { "geoip.country_name" : "ukraine"}  
+    
+    } }
+    
+
+but when i add fields it does not.
+
+    
+    
+    {
+     "fields" : ["port"],
+     "query": {
+    
+        "term":
+    { "geoip.country_name" : "ukraine"}  
+    
+    }
+    }
+    
+
+Use _source, instead of fields,
+
+I think 'port' is a nested object, which you cannot get by using 'fields'
+
+so do as,
+
+    
+    
+    {
+            "_source" : ["path"]
+    }
+    
+
+So, your source, only contains path.
+

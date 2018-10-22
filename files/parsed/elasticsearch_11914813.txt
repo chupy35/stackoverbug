@@ -1,0 +1,184 @@
+11914813 Sort the basic of Number of documents in ElasticSearch
+
+I am saving user relations in ES Index
+
+i.e
+
+{'id' => 1, 'User_id_1' => '2001', 'relation' => 'friend', 'User_id_2' =>
+'1002'} {'id' => 2, 'User_id_1' => '2002', 'relation' => 'friend', 'User_id_2'
+=> '1002'}
+
+{'id' => 3, 'User_id_1' => '2002', 'relation' => 'friend', 'User_id_2' =>
+'1001'} {'id' => 4, 'User_id_1' => '2003', 'relation' => 'friend', 'User_id_2'
+=> '1003'}
+
+no suppose i want to get the user_id_2 who has most friends,
+
+in above case its 1002 as 2001, and 2002 are its friends. (Count = 2)
+
+I just can't figure out the query
+
+Thanks.
+
+EDIT:
+
+Well as suggested by @imotov, term facets is very good choice, but
+
+The problem I have is 2 Indexes
+
+1st index is for saving the main docs and 2nd index for saving the relations
+
+now problem is
+
+Suppose I have 100 USER Docs in my main index, only 50 of them has made
+relations, so I'll have only 50 USER Docs in my relationship index
+
+So when i implement the "term facet", it sorts the results and gives the
+correct output i want, but I am missing those left 50 users who don't have any
+relations yet, i need them in my final output after the 50 sorted users.
+
+First of all, we need to ensure that relationships saved in ES are unique. It
+can be done by replacing arbitrary ids with ids constructed from user_id_1,
+relation and user_id_2. We also need to make sure that analyzer for user_ids
+doesn't produce multiple tokens. If ids are strings, they have to be indexed
+not_analyzed. With these two conditions satisfied, we can simply use [terms
+facet](http://www.elasticsearch.org/guide/reference/api/search/facets/terms-
+facet.html) query for the field user_id_2 on the result list limited by
+relation:friend. This query will retrieve top user_id_2 ids sorted by number
+of occurrences in the index. All together it could look something like this:
+
+    
+    
+    curl -XPUT http://localhost:9200/relationships -d '{
+        "mappings" : {
+            "relation" : {
+                "_source" : {"enabled" : false },
+                "properties" : {
+                    "user_id_1": { "type": "string", "index" : "not_analyzed"},
+                    "relation": { "type": "string", "index" : "not_analyzed"},
+                    "user_id_2": { "type": "string", "index" : "not_analyzed"}
+                }
+            }
+        }
+    }'
+    
+    curl -XPUT http://localhost:9200/relationships/relation/2001-friend-1002 -d '{"user_id_1": "2001", "relation":"friend", "user_id_2": "1002"}'
+    curl -XPUT http://localhost:9200/relationships/relation/2002-friend-1002 -d '{"user_id_1": "2002", "relation":"friend", "user_id_2": "1002"}'
+    curl -XPUT http://localhost:9200/relationships/relation/2002-friend-1001 -d '{"user_id_1": "2002", "relation":"friend", "user_id_2": "1001"}'
+    curl -XPUT http://localhost:9200/relationships/relation/2003-friend-1003 -d '{"user_id_1": "2003", "relation":"friend", "user_id_2": "1003"}'
+    curl -XPOST http://localhost:9200/relationships/_refresh
+    echo
+    
+    
+    curl -XGET 'http://localhost:9200/relationships/relation/_search?pretty=true&search_type=count' -d '{
+      "query": {
+        "term" : {
+          "relation" : "friend"
+        }
+      },
+      "facets" : {
+          "popular" : {
+              "terms" : {
+                  "field" : "user_id_2"
+              }
+          }
+      }
+    }'
+    
+
+Please, note that due to distributed nature of facets calculation, counts
+reported by the facet query might be lower than the actual number of records
+if multiple shards are used. See [elasticsearch issue
+1832](https://github.com/elasticsearch/elasticsearch/issues/1832)
+
+EDIT:
+
+There are two solutions for the edited question. One solution is to use facet
+on two fields:
+
+    
+    
+    curl -XPUT http://localhost:9200/relationships -d '{
+        "mappings" : {
+            "relation" : {
+                "_source" : {"enabled" : false },
+                "properties" : {
+                    "user_id_1": { "type": "string", "index" : "not_analyzed"},
+                    "relation": { "type": "string", "index" : "not_analyzed"},
+                    "user_id_2": { "type": "string", "index" : "not_analyzed"}
+                }
+            }
+        }
+    }'
+    curl -XPUT http://localhost:9200/users -d '{
+        "mappings" : {
+            "user" : {
+                "_source" : {"enabled" : false },
+                "properties" : {
+                    "user_id": { "type": "string", "index" : "not_analyzed"}
+                }
+            }
+        }
+    }'
+    
+    curl -XPUT http://localhost:9200/users/user/1001 -d '{"user_id": 1001}'
+    curl -XPUT http://localhost:9200/users/user/1002 -d '{"user_id": 1002}'
+    curl -XPUT http://localhost:9200/users/user/1003 -d '{"user_id": 1003}'
+    curl -XPUT http://localhost:9200/users/user/1004 -d '{"user_id": 1004}'
+    curl -XPUT http://localhost:9200/users/user/1005 -d '{"user_id": 1005}'
+    curl -XPUT http://localhost:9200/relationships/relation/2001-friend-1002 -d '{"user_id_1": "2001", "relation":"friend", "user_id_2": "1002"}'
+    curl -XPUT http://localhost:9200/relationships/relation/2002-friend-1002 -d '{"user_id_1": "2002", "relation":"friend", "user_id_2": "1002"}'
+    curl -XPUT http://localhost:9200/relationships/relation/2002-friend-1001 -d '{"user_id_1": "2002", "relation":"friend", "user_id_2": "1001"}'
+    curl -XPUT http://localhost:9200/relationships/relation/2003-friend-1003 -d '{"user_id_1": "2003", "relation":"friend", "user_id_2": "1003"}'
+    curl -XPOST http://localhost:9200/relationships/_refresh
+    curl -XPOST http://localhost:9200/users/_refresh
+    echo
+    
+    
+    curl -XGET 'http://localhost:9200/relationships,users/_search?pretty=true&search_type=count' -d '{
+        "query": {
+            "indices" : {
+              "indices" : ["relationships"],
+              "query" : {
+                  "filtered" : {
+                      "query" : {
+                          "term" : {
+                              "relation" : "friend"
+                          }
+                      },
+                      "filter" : {
+                          "type" : {
+                              "value" : "relation"
+                          }
+                      }
+                  }
+              },
+              "no_match_query" : {
+                  "filtered" : {
+                      "query" : {
+                          "match_all" : { }
+                      },
+                      "filter" : {
+                          "type" : {
+                              "value" : "user"
+                          }
+                      }
+                  }
+    
+              }      
+            }
+        },
+        "facets" : {
+            "popular" : {
+              "terms" : {
+                  "fields" : ["user_id", "user_id_2"]
+              }
+            }
+        }
+    }'
+    
+
+Another solution is to add "self" relation to the relationships index for
+every user when user is created. I would prefer the second solution since it
+seems to be less complicated.
+

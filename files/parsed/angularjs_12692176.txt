@@ -1,0 +1,88 @@
+12692176 Non-string types in AngularJS directive attributes
+
+I want to create a properties pane, where the number of properties can vary
+depending on which object is selected.
+
+I have created by own directive called `property` that displays the name and
+the value of a property, using code like this:
+
+    
+    
+    <div ng-app="MyApp">
+      <div class="properties-pane" ng-controller="PropertiesPane">
+        <div ng-repeat="property in properties">
+          <property name="{{property.name}}" value="{{property.value}}">
+        </div>
+      </div>
+    </div>
+    
+
+Simple, isn't it? This works just fine, except that `property.value` will be
+converted to a string (as it's an attribute on a DOM element). What am I to do
+if the property value is some other data type? For example an object. See the
+rest of the implementation (in Coffeescript):
+
+    
+    
+    MyApp = angular.module('MyApp', [])
+    
+    MyApp.controller 'PropertiesPane', ($scope) ->
+      $scope.properties = [
+        # Note that value is an object, not a string:
+        {name: 'First', value: {x:0, y:0, z:42}},
+        {name: 'Second', value: {x:0, y:20, z:0}},
+        {name: 'Third', value: {x:1, y:1, z:1}},
+      ]
+    
+    MyApp.directive 'property', ($compile) ->
+      restrict: 'E'
+      transclude: false
+      replace: true
+      scope: {name: '@name', value: '@value'}
+      template: '<div>{{name}} {{value.x}}, {{value.y}}, {{value.z}}</div>'
+      #                          ^^^^^^^      ^^^^^^^      ^^^^^^^
+      #   this doesn't work as value is a string, not an object
+    
+
+As value.x, y and z are undefined on a string, the result is of course:
+
+First , ,  
+Second , ,  
+Third , ,
+
+The output I want is:
+
+First 0, 0, 42  
+Second 0, 20, 0  
+Third 1, 1, 1
+
+I suspect there's something fundamentally wrong in my thinking of how to
+programatically add elements. What's the Angularish way to implement something
+like this?
+
+**EDIT: Solution**
+
+To refer to `value` as an object by reference instead of as a string value,
+use `=` instead of `@` in the directive:
+
+    
+    
+    scope: {name: '@', value: '='}
+    
+
+And in the template:
+
+    
+    
+    <property name="{{property.name}}" value="property.value">
+    
+
+Note that I removed the `{{}}`.
+
+What about `name='property.name'` and `scope: { name: '=', value: '=' }`?
+
+This should do the magic.
+
+To know more see [this](http://docs.angularjs.org/guide/directive) and
+search(ctrl+f) for '@', the first result is what you want ;)
+

@@ -1,0 +1,62 @@
+14379575 Configure port number of ElasticSearch
+
+We are using ElasticSearch 0.20.2 and run the daemon using
+
+> bin/elasticsearch [-f]
+
+The bin/elasticsearch script sets ES_HOME on its own and there seem to be no
+way to influence the path of the configuration file read. ES always reads the
+settings from
+
+> $ES_HOME/config/elasticsearch.yml
+
+However I must be able for specifying the path to our own configuration file
+**without** overriding the existing **elasticsearch.yml** that comes with
+ElasticSearch.
+
+How do I do that?
+
+you can always set it up externally while starting elasticsearch:
+
+    
+    
+    $ elasticsearch -f -Des.config=<NewConfig>
+    
+
+You need to modify `path.conf`. It would look like:
+
+    
+    
+    bin/elasticsearch -f -Des.path.conf=/path/to/config/dir
+    
+
+That will then read `/path/to/config/dir/elasticsearch.yml` and
+`/path/to/config/dir/elasticsearch.json` (if present).
+
+Also keep in mind that you can just specify any option you'd like via `-Des.`
+in the same way I did with `path.conf` above.
+
+You have to insert following line in your `elasticsearch.yml` file.
+
+    
+    
+    http.port: port_number
+    
+
+I did same in my setup, its working for me.
+
+Just change the `http.port` in `elasticsearch.yml` (commonly in
+`/etc/elasticsearch/elasticsearch.yml`) and remove # from the front and
+restart your server.
+
+For multi-version testing, you should specify two different ports:
+
+    
+    
+    bin/elasticsearch -E http.port=9400 -E transport.tcp.port=9500
+    
+
+This way, if you have another version of elasticsearch on the same machine,
+they won't talk to each other. If you do want them to communicate, leave the
+transport port as default, or make it the same on both instances.
+

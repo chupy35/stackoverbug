@@ -1,0 +1,78 @@
+22719987 spring boot not launching static web content
+
+Am trying to launch index.html in my spring boot app but see 404. What
+dependency am I missing?
+
+build.gradle (multi project)
+
+    
+    
+    project('sub-project')
+    {
+    apply plugin: 'spring-boot'
+    compile (
+        "org.springframework.boot:spring-boot-starter-web:1.0.0.RC5",
+        "org.springframework.boot:spring-boot-starter-actuator:1.0.0.RC5"
+    .. few more app specific dependencies
+    )
+    
+
+project structure:
+
+    
+    
+    MainProject
+      -- sub-project
+         src
+           main
+              resources
+                 index.html
+    
+
+Application class:
+
+    
+    
+    @Configuration
+    @EnableAutoConfiguration
+    class Application {
+        public static void main(String[] args) {
+            SpringApplication.run([SpringServlet, Application, "classpath:/META-INF/com/my/package/bootstrap.xml"] as Object[], args)
+        }
+    }
+    
+    **Launching http://localhost:8080/index.html throws 404.**
+    
+
+Found the root cause. Changing the SpringServlet's Url mappings to "Rest"
+resources specific path fixed it. Earlier "/*" was also interpreted by
+SpringServlet and was not able to render the index.html.
+
+    
+    
+    class Application extends SpringBootServletInitializer {
+        public static void main(String[] args) {
+            SpringApplication.run([Application, "classpath:/META-INF/com/my/package/mgmt/bootstrap.xml"] as Object[], args)
+        }
+    
+        protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+            return application.sources(Application);
+        }
+    
+        @Bean
+        ServletRegistrationBean jerseyServlet() {
+            ServletRegistrationBean registration = new ServletRegistrationBean(new SpringServlet(), "/rest/*");
+            Map<String, String> params = ["com.sun.jersey.config.property.packages": "com.my.package.mgmt.impl;com.wordnik.swagger.jersey.listing"]
+            registration.setInitParameters(params)
+            return registration;
+        }
+    
+        @Bean
+        ServletRegistrationBean jerseyJaxrsConfig() {
+            ServletRegistrationBean registration = new ServletRegistrationBean(new DefaultJaxrsConfig(), "/api/*");
+            Map<String, String> params = ["swagger.api.basepath": "http://localhost:8080/api", "api.version": "0.1.0"]
+            registration.setInitParameters(params)
+            return registration;
+        }
+    
+

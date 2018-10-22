@@ -1,0 +1,50 @@
+16967809 How to autocomplete and perform contains for same field
+
+Trying to use the autocomplete functionality which I have in place using the
+following mappings
+
+analysis : filter : placename_ngram : max_gram=15, min_gram = 2, type =
+edge_ngram analyzer :index: filter : lowercase, placename_ngram, tokenizer :
+keyword placename_search : filter: lowercase: tokenizer keyword
+
+This works great for type ahead but when I'm trying to find a value like
+"contains in" it doesn't return the record.
+
+Such as If I'm doing a text query on "Lake".
+
+I will only get
+
+Lake... Lake Wood,
+
+But will not get Smithtown Lake
+
+I have the field setup as multi-field and can do wildcard to find the values
+but not sure if this is efficient.
+
+I believe I can use NGRAM but that seems like alot of overhead considering I
+only need index terms by whitespace (or by word). Not every permetation.
+
+Any thoughts?
+
+When I change the tokenizer on both to "standard"....It will then find these
+records...but my autocomplete gets messed up and brings back Smithtown Lake
+when typing Lak..... (which in this case I don't want).
+
+Thanks for your help
+
+Have a look at this [question where they were doing 2 different queries on the
+same field.](https://stackoverflow.com/questions/16606546/elasticsearch-how-
+to-search-with-different-analyzers/)
+
+Basically you are there, but you need to write 2 different queries, one for
+autocomplete-time and the other for full-blown-search-time.
+
+You even describe wanting to have "Smithtown Lake" returned during search but
+not during autocomplete, you **need** to have different queries you want
+different results!
+
+I think Shingles is exactly what you are looking for. You can say it is NGram
+for Terms. [Checkout
+this.](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+shingle-tokenfilter.html)
+

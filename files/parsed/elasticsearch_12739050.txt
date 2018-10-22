@@ -1,0 +1,67 @@
+12739050 Elastic search bulk api specify update/create behavior for each
+source/record
+
+Somewhere I got the impression that I have the options of both "create" and
+"create or update". I would like to be able to specify the behavior on _id
+conflicts for each source in a bulk upload. Some of them should should create
+if the identified record does not exist and update if it does. Others should
+create if the record does not exists and do nothing if it does.
+
+The example below seems to do an "update or create"
+
+    
+    
+    { "index" : { "_index" : "test", "_type" : "type1", "_id" : "1" } }
+    { "field1" : "value1" }
+    
+
+Hopefully this will only "create" and not update if a record exists for the
+index/type/id
+
+    
+    
+    { "create" : { "_index" : "test", "_type" : "type1", "_id" : "3" } }
+    { "field1" : "value3" }
+    
+
+I'm open to suggestion of the best way to make this happen. I'll post whatever
+I figure out if someone doesn't get there first.
+
+I think that operation type feature should answer.
+
+Extract from
+[doc](http://www.elasticsearch.org/guide/reference/api/index_.html)
+
+Operation Type The index operation also accepts an `op_type` that can be used
+to force a create operation, allowing for **put-if-absent** behavior. When
+create is used, the index operation will fail if a document by that id already
+exists in the index.
+
+Here is an example of using the `op_type` parameter:
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/twitter/tweet/1?op_type=create' -d '{
+        "user" : "kimchy",
+        "post_date" : "2009-11-15T14:12:12",
+        "message" : "trying out Elastic Search"
+    }'
+    
+
+Another option to specify create is to use the following URI:
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/twitter/tweet/1/_create' -d '{
+        "user" : "kimchy",
+        "post_date" : "2009-11-15T14:12:12",
+        "message" : "trying out Elastic Search"
+    }'
+    
+
+Looks like you will be able to do this in 2.0 with the scripting feature.
+<https://github.com/elasticsearch/elasticsearch/issues/2008>
+
+Right now I am doing it with two requests. Frist a _create to add any new
+documents and then a update to make changes to existing documents.
+

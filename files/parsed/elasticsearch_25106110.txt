@@ -1,0 +1,84 @@
+25106110 Elasticsearch sort by dynamic price
+
+This is the scenario:
+
+Imagine that a register user creates a new entity with the `price: 1 |
+currency: EUR` and other registered user creates a new entity with `price: 1 |
+currency: USD` and so on...
+
+What I'm trying to do is sort by price the records depending on the currency
+selected by the frontend user (EUR or USD).
+
+I can not index, for example `price_eur` or `price_usd`, because the rates
+change every hour, but if is possible, what is the best way to update the
+price for 10000 records?.
+
+1 - Below are my suggestions, it works, but I think could be a better
+approach, any suggestion?
+
+2 - If there is not, what will be the better performance approach?
+
+3 - ES has some magic filed to play and used, for expample `price_in_eur`?
+
+**Function score**
+
+    
+    
+    {
+        "query": {
+            "function_score": {
+                "functions": [
+                    {
+                        "script_score": {
+                            // 1 EUR = 0.74452 USD
+                            "script": "('EUR' == _source.currency ? doc['boat.price'].value : doc['boat.price'].value * 0.744520)"
+                         }
+                    }
+                ],
+                "query": {
+                    "filtered": {
+                        "query": { "match_all":{} }
+                    }
+                }
+            } 
+        },
+        "sort": { "_score": { "order": "desc" }}
+    }
+    
+
+**Sort script**
+
+    
+    
+    {
+        "fields": ["_source"],
+        "query": { "match_all": {} },  
+        "sort": {
+            "_script": {
+                // 1 EUR = 0.74452 USD
+                "script": "('EUR' == _source.currency ? doc['boat.price'].value : doc['boat.price'].value * 0.744520)",
+                "type" : "number",
+                "order": "asc"
+    
+            }
+        }
+    }
+    
+
+Thanks for your time.
+
+There is no direct way by which ES will do the price conversion for you
+automatically. The way you are doing is the correct way of accomplishing the
+task. You should go for a function score query since it'll be better compared
+to a single script based sorting. As the
+[docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-sort.html) states:
+
+> Note, it is recommended, for single custom based script based sorting, to
+use function_score query instead as sorting based on score is faster.
+
+Using a function score query will be better since sorting on a score value is
+faster.
+
+Thanks
+

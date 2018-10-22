@@ -1,0 +1,150 @@
+24071939 Return key value from alternate field in aggregation
+
+Is it possible to get Elastic Search to return an aggregate key based on a
+different document field?
+
+We're placing both a foreign id, and the foreign name in our type, then
+aggregating over the id, but would like to get the name returned. Names are
+not unique, so they are not appropriate to aggregate over. I'm aware that
+they're also not necessarily unique over the record set, but would accept a
+name sampled from a single record of the set.
+
+For example, say our data is regarding sales of a product. Each sale has the
+product id and product name associated with it.
+
+    
+    
+    // Sales
+    { "product_id": 1, "product_name": "Beer", "quantity": 3, … }
+    { "product_id": 1, "product_name": "Beer", "quantity": 2, … }
+    { "product_id": 2, "product_name": "Wine", "quantity": 6, … }
+    
+
+Query:
+
+    
+    
+    "aggregations": {
+        "product": {
+          "terms": {
+            "field": "product_id"
+          },
+          "aggregations": {
+            "day": {
+              "count": {
+                "value_count": {
+                  "field": "quantity"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+Result:
+
+    
+    
+    …
+    "aggregations": {
+      "product": {
+        "buckets": [
+        {
+          "key": "1",
+          "doc_count": 2,
+          "count": {
+            "value": 5
+          }
+        },{
+          "key": "2",
+          "doc_count": 1,
+          "count": {
+            "value": 6
+        }
+        ]
+      }
+    }
+    …
+    
+
+Wanted Result:
+
+    
+    
+    …
+    "aggregations": {
+      "product": {
+        "buckets": [
+        {
+          "key": "Beer",
+          "doc_count": 2,
+          "count": {
+            "value": 5
+          }
+        },{
+          "key": "Wine",
+          "doc_count": 1,
+          "count": {
+            "value": 6
+        }
+        ]
+      }
+    }
+    …
+    
+
+After reading the docs on scripts, I don't think this is possible, since it
+evaluates on the value only, and doesn't seem to have access to the entire doc
+(since there isn't a doc, but a set of docs).
+
+If you have all powers over your indexation process, I'd suggest just adding a
+new field on your own (not analyzed), based on the product_id, and aggregating
+on that field instead.
+
+I don't think (but I may be mistaken) that what you want to do is possible.
+
+You could use a child aggregation to get the name, so your query would be
+something like:
+
+    
+    
+    "aggregations": {
+        "product": {
+          "terms": {
+            "field": "product_id"
+          },
+          "aggregations": {
+            "name": {
+              "terms": {
+                "field": "product_name"
+              }
+            },
+            "day": {
+              "count": {
+                "value_count": {
+                  "field": "quantity"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+You can do it with scripts if you use only the script attribute alone (this
+then has access to the entire doc). Then split it in your client: e.g.
+
+    
+    
+    "aggs": {
+        "types_of": {
+          "terms": {
+            "script": "doc['product_name'].value + '|' + doc['product_id'].value"
+          }
+        }
+      }
+    
+

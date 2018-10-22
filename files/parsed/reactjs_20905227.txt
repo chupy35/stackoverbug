@@ -1,0 +1,280 @@
+20905227 Reactjs: Unexpected token '<' Error
+
+i am just starting with Reactjs and was writing a simple component to display  
+`li` tag and came across this error:
+
+> Unexpected token '<'
+
+I have put the example at jsbin below
+<http://jsbin.com/UWOquRA/1/edit?html,js,console,output>
+
+Please let me know what i am doing wrong.
+
+You need to either transpile/compile that JSX code to javascript or use the
+in-browser transformator
+
+Look at <http://facebook.github.io/react/docs/getting-started.html> and take
+note of the `<script>` tags, you need those included for JSX to work in the
+browser.
+
+**UPDATE:** In React 0.12+, the JSX pragma is no longer necessary.
+
+* * *
+
+Make sure include the JSX pragma at the top of your files:
+
+    
+    
+    /** @jsx React.DOM */
+    
+
+Without this line, the `jsx` binary and in-browser transformer will leave your
+files unchanged.
+
+Here is a working example from your jsbin:
+
+HTML:
+
+    
+    
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <script src="//fb.me/react-with-addons-0.9.0.js"></script>
+    <meta charset=utf-8 />
+    <title>JS Bin</title>
+    </head>
+    <body>
+      <div id="main-content"></div>
+    </body>
+    </html>
+    
+
+jsx:
+
+    
+    
+    <script type="text/jsx">
+    /** @jsx React.DOM */
+    var LikeOrNot = React.createClass({
+        render: function () {
+          return (
+            <p>Like</p>
+          );
+        }
+    });
+    
+    React.renderComponent(<LikeOrNot />, document.getElementById('main-content'));
+    </script>
+    
+
+Run this code from a single file and your it should work.
+
+in my case, i had failed to include the type attribute on my script tag.
+
+    
+    
+    <script type="text/jsx">
+    
+
+I solved it using **type = "text/babel"**
+
+    
+    
+    <script src="js/reactjs/main.js" type = "text/babel"></script>
+    
+
+The issue **Unexpected token ' <'** is because of missing the babel preset.
+
+Solution : You have to configure your webpack configuration as follows
+
+    
+    
+              {
+                test   :/\.jsx?$/,
+                exclude:/(node_modules|bower_components)/,
+                loader :'babel',
+                query  :{
+                    presets:['react','es2015']
+                }
+            }
+    
+
+here .jsx checks both .js and .jsx formats.
+
+you can simply install the babel dependency using node as follows
+
+    
+    
+    npm install babel-preset-react
+    
+
+Thank you
+
+For correct tag parsing you'll need to use this babel version :
+<https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.js> and
+attribute "type='text/babel'" in the script. Besides, your custom script
+should be within "body" tags.
+
+You can use code like this:
+
+    
+    
+    import React from 'react';
+    import ReactDOM from 'react-dom';
+    
+    var LikeOrNot = React.createClass({
+        displayName: 'Like',
+        render: function () {
+          return (
+            React.createElement("li", null, "Like")
+          );
+        }
+    });
+    ReactDOM.render(<LikeOrNot />, document.getElementById('main-content'));
+    
+
+And don't forget add `<div id='main-content'></div>` into the `body` in your
+`html`
+
+But in your package.json file you should use this dependencies:
+
+    
+    
+      "dependencies": {
+    ...
+        "babel-core": "^6.18.2",
+        "babel-preset-react": "^6.16.0",
+    ...
+    }
+    "devDependencies": {
+    ...   
+        "babel": "^6.5.2",
+        "babel-loader": "^6.2.7",
+        "babel-preset-es2015": "^6.18.0",
+        "jsx-loader": "^0.13.2",
+    ...
+    }
+    
+
+It's work for me but i used webpack also, with this options (into
+webpack.config.js):
+
+    
+    
+      module: {
+        loaders: [
+          { 
+            test: /\.jsx?$/,         // Match both .js and .jsx files
+            exclude: /node_modules/, 
+            loader: "babel-loader", 
+            query:
+            {
+              presets: ['es2015', 'react']
+            }
+          }
+        ]
+      }
+    
+
+In my case, besides the `babel` presets, I also had to add this to my
+`.eslintrc`:
+
+    
+    
+    {
+      "extends": "react-app",
+      ...
+    }
+    
+
+if we consider your real site configuration, than you need to run ReactJS in
+the head
+
+    
+    
+    <!-- Babel ECMAScript 6 injunction -->  
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+
+and add attribute to your js file - type="text/babel" like
+
+    
+    
+    <script src="../js/r1HeadBabel.js" type="text/babel"></script>
+    
+
+then the below code example will work:
+
+    
+    
+    ReactDOM.render(
+      <h1>Hello, world!</h1>,
+      document.getElementById('root')
+    ); 
+    
+
+Use the following code. I have added reference to React and React DOM. Use
+ES6/Babel to transform you JS code into vanilla JavaScript. Note that Render
+method comes from ReactDOM and make sure that render method has a target
+specified in the DOM. Sometimes you might face an issue that the render()
+method can't find the target element. This happens because the react code is
+executed before the DOM renders. To counter this use jQuery ready() to call
+the render() method of React. This way you will be sure about DOM being
+rendered first. You can also use defer attribute on your app script.
+
+HTML code:
+
+    
+    
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset=utf-8 />
+    <title>JS Bin</title>
+    </head>
+    <body>
+      <div id='main-content'></div>
+    <script src="CDN link to/react-15.1.0.js"></script>
+    <script src="CDN link to/react-dom-15.1.0.js"></script>
+    
+    </body>
+    </html>
+    
+
+JS code:
+
+    
+    
+    var LikeOrNot = React.createClass({
+        render: function () {
+          return (
+            <li>Like</li>
+          );
+        }
+    });
+    
+    ReactDOM.render(<LikeOrNot />,
+                    document.getElementById('main-content'));
+    
+
+Hope this solves your issue. :-)
+
+I have this error and could not solve this for two days.So the fix of error is
+very simple. In body ,where you connect your `script`, add `type="text/jsx"`
+and this`ll resolve the problem.
+
+If you're like me and prone to silly mistakes, also check your package.json if
+it contains your babel preset:
+
+    
+    
+      "babel": {
+        "presets": [
+          "env",
+          "react",
+          "stage-2"
+        ]
+      },
+    
+

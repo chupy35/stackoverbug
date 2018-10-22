@@ -1,0 +1,30 @@
+15204921 Is there a graphic tool to display (and maybe change) elasticsearch
+mappings?
+
+I am using <https://github.com/mobz/elasticsearch-head>, which is awesome (!),
+but it does not have that functionality.
+
+After putting several mapping into the index, I'd like to be able to view them
+graphically. Is that possible?
+
+You can make new indexes, with new mappings. I've used this to translate
+logstash mappings from one type to another. I have used [this reindex
+plugin](https://github.com/karussell/elasticsearch-reindex) to much success.
+It makes the streaming one index into another much simpler and takes
+essentially only 2 http requests.
+
+Something like this:
+
+    
+    
+    $ curl -XPOST http://elnode:9200/<New Index Name> -d @<new mapping>.json
+    $ curl -XPUT  http://elnode:9200/<New Index Name>/logs/_reindex\?searchIndex=<Old Index Name>\&searchType=logs
+    
+
+Now you have a new index of new mapping with old index's data. You could then
+delete the old and make an alias with the old index's name that points to the
+new.
+
+A bit of work, but I'd needed it for keeping old logstash data in a new
+format.
+

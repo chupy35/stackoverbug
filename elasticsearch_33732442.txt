@@ -1,0 +1,3 @@
+33732442
+Query fetching case-sensitive results in elasticsearch
+<p>I have a field like this in my indexed documents&#xA; "screen_name : "9GAG"</p>&#xA;&#xA;<p>And this is my query:</p>&#xA;&#xA;<pre><code>{&#xA;  "query": {&#xA;    "term": {&#xA;      "screen_name": "9gag"&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>Im getting zero hits. But when I replace  "9gag" with "9GAG" it works fine. Why is this happening and how can this be fixed?</p>&#xA;

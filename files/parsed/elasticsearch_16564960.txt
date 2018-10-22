@@ -1,0 +1,87 @@
+16564960 ElasticSearch count returned result
+
+I want to count number of document returned as a result of a query with size
+limit. For example, I run following query:
+
+    
+    
+    curl -XGET http://localhost:9200/logs_-*/a_logs/_search?pretty=true -d '
+    {
+    "query" : {
+        "match_all" : {  }
+    },
+    "size" : 5,
+    "from" : 8318
+    }'
+    
+
+and I get:
+
+    
+    
+    {
+    "took" : 5,
+    "timed_out" : false,
+    "_shards" : {
+    "total" : 159,
+    "successful" : 159,
+    "failed" : 0
+    },
+      "hits" : {
+      "total" : 8319,
+      "max_score" : 1.0,
+      "hits" : [ {
+    ....
+    
+
+Total documents matching my query are 8319, but I fetched at max 5. Only 1
+document was returned since I queried "from" 8318.
+
+In the response, I do not know how many documents are returned. I want to
+write a query such that the number of documents being returned are also
+present in some field. Maybe some facet may help, but I could not figure out.
+Kindly help.
+
+Looking through the documentation, it's not clear how to make the query return
+this -- if indeed the API supports it. If you just want to have the count of
+the returned hits, the easiest way seems to be to actually count them yourself
+after parsing the response.
+
+Your query :
+
+    
+    
+    {
+    "query" : {
+        "match_all" : {  }
+    },
+    
+
+=> Means that you ask all your data
+
+"size" : 5,
+
+=> You want to display only 5 results
+
+"from" : 8318
+
+=> You start from the 8318 records
+
+ElasticSearch respons :
+
+....
+
+    
+    
+    "hits" : {
+      "total" : 8319,
+    
+
+... => Elastic search told you that there is 8319 results in his index.
+
+You ask him all the result and you start from the 8318.
+
+8319 - 8318 = 1 So you have 1 result.
+
+Try by removing the from.
+

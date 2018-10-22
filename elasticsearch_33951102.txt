@@ -1,0 +1,4 @@
+33951102
+Running scripts in elasticsearch without enabling dynamic scripting
+<p>Enabling dynamic scripting has proven costly to our servers. How can I run scripts without enabling dynamic scripting?</p>&#xA;
+<p>You can write the script to disk and then access it with <code>file</code> parameter like this</p>&#xA;&#xA;<pre><code>"script": {&#xA;    "file": "your_custom_script",&#xA;    "lang": "groovy",&#xA;    "params": {&#xA;        "your_param_value": 3&#xA;    }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>store the file <code>your_custom_script.groovy</code> in your ES <code>config/scripts</code> folder.</p>&#xA;&#xA;<p>Refer to <a href="https://www.elastic.co/blog/running-groovy-scripts-without-dynamic-scripting" rel="nofollow">this blog</a> for more info. Although I am not sure how much performance benefit you will get.</p>&#xA;

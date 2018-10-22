@@ -1,0 +1,28 @@
+13035568 Angular.js: value() not injected in config()
+
+> **Possible Duplicate:**  
+>  [AngularJS dependency injection of value inside of
+module.config](https://stackoverflow.com/questions/12903338/angularjs-
+dependency-injection-of-value-inside-of-module-config)
+
+I am having trouble getting the value() injected into the app.config(). Here's
+the code (coffeescript)
+
+    
+    
+    window.app = angular.module("app", [])
+    
+    app.value("template_path", "assets/angular/templates/users")
+    
+    app.config(["$routeProvider","template_path" ($routeProvider, template_path) ->
+      console.log template_path
+    
+
+it is throwing an "Unknown provider: template_path from app" error
+
+Could it be that the config() method cannot be injected with value() set
+values? I am using 1.0.2
+
+Yes, you were suspecting correctly: values can't be injected into the config
+block. **The config block can only have constants and providers injected**.
+

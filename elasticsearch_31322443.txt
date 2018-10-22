@@ -1,0 +1,4 @@
+31322443
+Elastic Search Default Mapping Configuration
+<p>I am looking for Elastic Search configuration for index mapping which can be used by all index.</p>&#xA;&#xA;<p>For example - We will create index per customer with same set of mappings. So for this can we set this mapping somewhere in Elastic Search? So that we can create index directly without sending mapping all the time?</p>&#xA;&#xA;<p>Thanks,&#xA;Sameer</p>&#xA;
+<p>You're probably looking for a template, which you can define to apply to a new index with a given name.  Check out the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.6/indices-templates.html" rel="nofollow">official doc</a> or maybe <a href="http://svops.com/blog/elasticsearch-mappings-and-templates/" rel="nofollow">this blog</a> will help.</p>&#xA;

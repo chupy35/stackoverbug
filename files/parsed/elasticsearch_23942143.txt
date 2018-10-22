@@ -1,0 +1,43 @@
+23942143 Trouble with spaces in query to elasticsearh
+
+I'm experiencing trouble with requesting fileds making requests on field with
+spaces. Mapping looks like this:
+
+    
+    
+    "myIndexName": {
+        "mappings": {
+            "myType": {
+                "properties": {
+                    "myPropertyWithSpaces": {
+                        "type": "string",
+                        "analyzer": "analyzer_keyword"
+                    }
+                }
+            }
+        }
+    }
+    
+
+There "analyzer_keyword" is cutom analyzer with keyword tokenizer and
+lowercase filter. When I'm sending "_analyze" request with "analyzer_keyword"
+analyzer and query like "firstWord secondWord" I get only token "firstword
+secondword" - everything works as expected. But querystring request returns
+nothing if I don't change space character to "?" wildcard; interesting, that
+lowercasing still works and such behaviour doesn't change if I'm telling
+elasticsearch to use this "analyzer_keyword" explicitly.
+
+    
+    
+    "query": {
+    "query_string": {
+        "query": "firstWord secondWord",
+        "default_field": "myPropertyWithSpaces",
+        "analyzer": "analyzer_keyword"
+    }
+    
+
+Found solution in simple escaping space character as "\ ". Works correctly and
+prevents queryString processor from injecting any "AND OR" operators or
+whatever.
+

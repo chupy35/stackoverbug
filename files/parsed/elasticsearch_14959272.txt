@@ -1,0 +1,88 @@
+14959272 Elasticsearch comparison OR
+
+I have a query:
+
+    
+    
+    {
+        "query": {
+            "bool" : {
+                "must": [
+                    { "match": { "tags": "htc" } },
+                    { "match": { "votype" : 1} },
+                    { "match": { "subtype": 1 } },
+                    { "match": { "deleted": 0 } },
+                    { "match": { "build_status": 4 } },
+                    { "match": { "publish": 1 } }
+                ]
+            }
+        },
+    
+        "sort": [
+            { "created": "desc" }
+        ],
+    
+        "size": 30,
+        "from": 0
+    }
+    
+
+and i want put into value list of values
+
+    
+    
+    { "match": { "votype": [1 or 2 or 3] } }
+    
+
+SQL analog:
+
+    
+    
+    SELECT * FROM tablename WHERE type IN(1, 2);
+    
+
+but don `t know how to
+
+don't work:
+
+    
+    
+    { "match": { "votype": [1,3] } },
+    { "match": { "votype": "1 2" } },
+    { "match": { "votype": "1OR2" } }
+    
+
+Does this work?
+
+    
+    
+    { "match": { "votype": "1 2 3" } }
+    
+
+my solution
+
+    
+    
+    {
+        "query": {
+            "bool" : {
+                "must": [
+                    { "terms" : { "tags": ["htc"], "minimum_match": 1 } },
+                    { "terms" : { "votype" : [1,2], "minimum_match": 1 } },
+                    { "terms" : { "deleted": [0], "minimum_match": 1 } },
+                    { "terms" : { "build_status": [4], "minimum_match": 1 } },
+                    { "terms" : { "publish": [1], "minimum_match": 1 } }
+                ]
+    
+            }
+        },
+    
+        "sort": [
+            { "created": "desc" }
+        ],
+    
+        "size": 30,
+        "from": 0
+    }
+    
+

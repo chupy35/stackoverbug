@@ -1,0 +1,112 @@
+16157951 Not able to make filtered query work with geo_distance. Elasticsearch
+
+Here's my problem. I have some data stored in an index with the field
+`"location"`. Here's the mapping
+
+    
+    
+    {
+        "data":{
+            "properties":{
+            ...
+            "location":{
+                "type": "geo_point",
+                "lat_lon": true,
+                "store": "yes"
+            },
+            ...
+            }
+        }
+    }
+    
+
+Here's is an example of the data present in the index
+
+    
+    
+    {
+      "metadata": {
+        "total": 2887,
+        "maxScore": 4.8634477
+      },
+      "data": [
+        {
+          "_index": "data",
+          "_type": "data",
+          "_id": "8-HtWNILQrqrobwchhgNIQ",
+          "_score": 4.8634477,
+          "_source": {
+            "generique": "Chemin",
+            "_datasetId": "5175b2b4a652945a0500000d",
+            "liaison": "",
+            "specifique": "Sainte-Foy",
+            "direction": "",
+            "nomTopo": "Chemin Sainte-Foy",
+            "ville": "Québec",
+            "arrond": "Sainte-Foy-Sillery-Cap-Rouge",
+            "location": {
+              "lon": -71.322135,
+              "lat": 46.768526
+            }
+          }
+        },
+        {
+          "_index": "data",
+          "_type": "data",
+          "_id": "sSZ3u-uDQIuPDc2qnPir0g",
+          "_score": 4.8634477,
+          "_source": {
+            "generique": "Chemin",
+            "_datasetId": "5175b2b4a652945a0500000d",
+            "liaison": "",
+            "specifique": "Sainte-Foy",
+            "direction": "",
+            "nomTopo": "Chemin Sainte-Foy",
+            "ville": "Québec",
+            "arrond": "Sainte-Foy-Sillery-Cap-Rouge",
+            "location": {
+              "lon": -71.286977,
+              "lat": 46.784508
+            }
+          }
+        }
+      ]
+    }
+    
+
+If I want to perform a request with geo_distance it returned irrelevant data.
+
+Here's the request
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query_string": {
+            "query": "_datasetId:5175b2b4a652945a0500000d"
+          },
+          "filter": {
+            "geo_distance": {
+              "location": {
+                "lat": 46.815569,
+                "lon": -71.208401
+              },
+              "distance": "1km"
+            }
+          }
+        }
+      }
+    }
+    
+
+The data received doesn't contain the right `"_datasetId"` and doesn't contain
+`"location"` close from the one given in the query.
+
+I hope I'm clear enough Thanks.
+
+I actually got an answer from the mailing list and I wanted to share it.
+
+<https://groups.google.com/forum/?fromgroups=#!topic/elasticsearch/cxZMZX-
+bWFA>
+

@@ -1,0 +1,181 @@
+24079056 Nested ElasticSearch query results in too many items
+
+The nested ElasticSearch query below returns some results it should not hit. A
+lot of results do not contain the requested order number but are listed
+nevertheless. I'm not getting all documents though so the query is definitely
+reducing the result set on some level.
+
+    
+    
+    {
+      "query": {
+        "nested": {
+          "path": "orders",
+          "query": {
+            "match": {
+              "orderNumber": "242347"
+            }
+          }      
+        }
+      }
+    }
+    
+
+The query result (truncated):
+
+    
+    
+    {
+      "took":0,
+      "timed_out":false,
+      "_shards": {
+        "total":1,
+        "successful":1,
+        "failed":0
+      },
+      "hits": {
+        "total":60,
+        "max_score":9.656103,
+        "hits":[
+          {
+            "_index": "index1",
+            "_type":"documenttype1",
+            "_id":"mUmudQrVSC6rn68ujDJ8iA",
+            "_score":9.656103,
+            "_source" : {
+              "documentId": 12093894,
+              "orders": [
+              {
+                "customerId": 129048669,
+                "orderNumber": "242347", // <-- CORRECT HIT ON ORDER
+              },
+              {
+                "customerId": 229405848,
+                "orderNumber": "431962"
+              }
+              ]
+            }
+          },
+          {
+            "_index":"index1",
+            "_type":"documenttype1",
+            "_id":"9iO5QBCpT_6kmH3CoBTdWw",
+            "_score":9.656103, 
+            "_source" : {
+              "documentId": 43390283,
+              // <-- ORDER ISN'T HERE BUT THE DOCUMENT IS HIT NEVERTHELESS!
+              "orders": [
+              {
+                "customerId": 229405848,
+                "orderNumber": "431962"
+              },
+              {
+                "customerId": 129408979,
+                "orderNumber": "142701"
+              }
+              ]
+            }
+          }
+          // Left out 58 more results most of which do not contain
+          // the requested order number.
+        ]
+      }
+    }
+    
+
+As you can see, there is a hit (actually, there are quite a few of them) that
+shouldn't be there because none of the orders contain the requested order
+number.
+
+This is the mapping for `documenttype1`:
+
+    
+    
+    {
+       "index1":{
+          "properties":{
+             "documentId":{
+                "type":"integer"
+             },
+             "orders":{
+                "type":"nested",
+                "properties":{
+                   "customerId":{
+                      "type":"integer"
+                   },
+                   "orderNumber":{
+                      "type":"string",
+                      "analyzer":"custom_internal_code"
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+Finally, here are the settings to clarify the `custom_internal_code` analyzer
+as referred to in the mapping shown above:
+
+    
+    
+    {
+       "index1":{
+          "settings":{
+             "index.analysis.analyzer.custom_internal_code.filter.1":"asciifolding",
+             "index.analysis.analyzer.custom_internal_code.type":"custom",
+             "index.analysis.analyzer.custom_internal_code.filter.0":"lowercase",
+             "index.analysis.analyzer.custom_internal_code.tokenizer":"keyword",
+          }
+       }
+    }
+    
+
+It seems that you should use bool query instead of match.
+
+**But.** If you want just filter your records, your should use nested filter
+instead of query. It works faster, because you have not to calculate scores.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-nested-filter.html>
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "nested": {
+              "path": "orders",
+              "filter": {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "orderNumber": "242347"
+                      }
+                    }
+                  ]
+                }
+              },
+              "_cache": true
+            }
+          }
+        }
+      }
+    }
+    
+
+for a exact search use termquery [1] and make orderNumber not_analyzed [2].
+
+[1]
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-term-query.html#query-dsl-term-query>
+
+[2]
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/mapping-
+intro.html#_literal_index_literal>
+

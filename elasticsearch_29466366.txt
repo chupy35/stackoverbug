@@ -1,0 +1,4 @@
+29466366
+ElasticSearch Mapping and Default Values When Wrong Format
+<p>I have a field in elastic search with <code>"type": "integer"</code></p>&#xA;&#xA;<p>If a string (or any NaN value is passed), I want to just have it default to some integer value (like 0).</p>&#xA;&#xA;<p>Is there a way to do this in ES?</p>&#xA;
+<p>There is a way you can do it.</p>&#xA;&#xA;<ol>&#xA;<li>First change coerce to false , so that even if string integer like "23" ( and not 23 ) , comes , it wont parse it.&#xA;LINK - <a href="http://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-core-types.html" rel="nofollow">http://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-core-types.html</a></li>&#xA;<li>Next put null_value as 0&#xA;LINK - <a href="http://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-core-types.html" rel="nofollow">http://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-core-types.html</a></li>&#xA;</ol>&#xA;

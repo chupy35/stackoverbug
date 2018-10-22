@@ -1,0 +1,20 @@
+20555400 Efficient "real time" retrieval of all docs in ElasticSearch
+
+So I need to be able to get _all_ the documents returned by a query from
+ElasticSearch. The obvious thing to do is to do a scan/scroll series of
+requests, but there are big warnings all over the docs: **thou shalt not** use
+scrolls if you expect quick results. And here I actually do need quick
+results.
+
+So what's the prescribed solution? I can't find any resources on the net
+except scrolls. Obviously I could just send an enormous `size` parameter with
+the query, but wouldn't that actually be slower than a scroll request, since
+it would have to load so much in memory? What's the proper way to do this?
+
+If we are talking about thousands of small records I would just try to
+retrieve them all in a single request and see how performance looks like
+before trying more complicated solutions. Because you are retrieving all
+records at the same time, you can use
+[QUERY_AND_FETCH](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-search-type.html#query-and-fetch) search type to speed things up.
+

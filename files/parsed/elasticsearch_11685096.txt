@@ -1,0 +1,23 @@
+11685096 Getting an indexes item count with ElasticSearch
+
+I am writing some code where we are inserting 200,000 items into an
+ElasticSearch index.
+
+Whilst this works fine, when we get a count of items in the index to ascertain
+everything went in, we are not getting the same number. However, if we wait a
+second or two, the count is correct.
+
+Therefore, is there a programmatic way we can get a real count from
+ElasticSearch without having to `sleep` or similar?
+
+Newly indexed records become visible in search results only after the
+[Refresh](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+refresh.html) operation. Refresh is called automatically with frequency
+specified by
+[`index.refresh_interval`](http://www.elasticsearch.org/guide/reference/api/admin-
+indices-update-settings.html) setting, which is 1s by default. When writing
+elasticsearch tests, it's customary to call refresh after indexing to make
+sure that all indexed records are available in searches. However, excessive
+refresh calls (after each record, for example) in production code might hamper
+the elasticsearch indexing performance.
+

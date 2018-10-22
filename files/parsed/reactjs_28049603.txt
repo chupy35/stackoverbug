@@ -1,0 +1,216 @@
+28049603 Get reference to React component in event handler
+
+I can attach my event handler to a React component. Is there a way to get a
+reference to this component inside event hander?
+
+    
+    
+    var Foobar = React.createClass({
+        action: function () {
+            // ...
+        },
+        render: function () {
+            var child = React.Children.only(this.props.children),
+                props = _.omit(this.props, 'children');
+            return React.addons.cloneWithProps(child, props);
+        }
+    });
+    
+    var App = React.createClass({
+        handleMouseEnter: function (event) {
+            // How to get reference to Foobar without using this.refs['foo']?
+            // I need to call *action* on it.
+        },
+        render: function () {
+            return (
+                <div>
+                    <Foobar ref="foo" onMouseEnter={this.handleMouseEnter}>
+                        ...
+                    </Foobar>
+                </div>
+            );
+        }
+    });
+    
+
+`handleMouseEnter` in the example you offered (and the clarification that
+onClick would be a handler passed to Foobar) is by default auto-bound by React
+to the context of the `App` instance in both cases.
+
+With this in mind, `this.refs.foo` or `this.refs['foo']` should work fine in
+the context you've described, and would be the correct approach.
+
+A more clean solution assuming there's no compelling reason to keep the
+handler in App would be to keep the handler entirely contained within Foobar,
+something like this:
+
+    
+    
+    var Foobar = React.createClass({
+        action: function () {
+            // ...
+        },
+        render: function () {
+            var child = React.Children.only(this.props.children),
+                props = _.omit(this.props, 'children');
+            return (
+                <div onClick={this.action} onMouseEnter={this.action}>
+                    React.addons.cloneWithProps(child, props);
+                </div>
+            );
+        }
+    });
+    
+    var App = React.createClass({
+        render: function () {
+            return (
+                <Foobar />
+            );
+        }
+    });
+    
+
+You'll have to propagate the handler to the root element of your child
+component, something like this:
+
+    
+    
+    var Foobar = React.createClass({
+        action: function (e) {
+            this.props.onClick(this);
+        },
+        render: function () {
+            return <div onClick={this.action}>{this.props.children}</div>;
+        }
+    });
+    
+    var App = React.createClass({
+        handleMouseEnter: function (foobar) {
+           console.log(foobar);
+        },
+        render: function () {
+            return (
+                <Foobar ref="foo" onClick={this.handleMouseEnter} />
+            );
+        }
+    });
+    
+
+I think I understand the question vbarbarosh is asking, or at least I had a
+similar one that led me to this post. So if this doesn't answer the original
+question hopefully it can help others who land here.
+
+In my case I have a React component with _n_ number of children for defining
+configuration options for a UI action. Each child has a different ref
+identifying what config option the input represents and I want to be able to
+directly access the ref so I can then call methods exposed on my child
+component. (I could expose data attrs and use jQuery to extract, but that
+seems like a lot of extra hoops  & performance issues)
+
+My first attempt was this:
+
+    
+    
+    ...
+    <Config ref="showDetails" onChange={this.handleChange} />
+    <Config ref="showAvatar" onChange={this.handleChange} />
+    ...
+    
+
+Ideally, I wanted to bind all the change events to a single handler, then
+extract the ref from the target that dispatched the event. Unfortunately the
+dispatched `SyntheticEvent` does **not** provide a way to get the ref of the
+target so I can't make a direct call to `this.ref[name].methodIWantToCall()`.
+
+What I did find was an article in the React docs that lead me to a solution:
+
+<https://facebook.github.io/react/tips/communicate-between-components.html>
+
+What we can do is take advantage of JavaScript binding and pass in additional
+arguments.
+
+    
+    
+    ...
+    <Config ref="showDetails" onChange={this.handleChange.bind(this, 'showDetails')} />
+    ...
+    
+
+Now in my handler I get the addition data and can access my refs:
+
+    
+    
+    handleChange: function(refName, event) {
+      this.refs[refName].myMethodIWantToCall()
+    }
+    
+
+The trick is that when binding, the argument order is changed and the first
+argument is now the bound value passed in and the event is now the second
+argument. Hope that helps!
+
+In case you added the handler programatically you can pass the component as a
+param just by wrapping the handler callback with another function at the
+`addEventListener`.
+
+I have this example using the scroll event:
+
+    
+    
+    componentDidMount() {
+        document.getElementById('theElementId').addEventListener('scroll', (e) => {
+            this.handleScroll(e, this);
+        });
+    }
+    
+    handleScroll(event, _self) {
+        // Now you can access to the element using the param _self
+    }
+    
+    render() {
+        return (
+            <div id="theElementId"></div>
+        )
+    }
+    
+
+Another option is to use the bind method which will change the value of
+`this`:
+
+    
+    
+    componentDidMount() {
+        document.getElementById('theElementId').addEventListener('scroll', this.handleScroll.bind(this));
+    }
+    
+    handleScroll(event) {
+        // Now you can access to the element using the param this
+    }
+    
+
+Well looking at your App Component, you could try this:
+
+    
+    
+    var App = React.createClass({
+    handleMouseEnter: function (event) {
+        // reference it by using: this.refs[event._targetInst._currentElement.ref]
+        // same result as calling: this.refs.foo
+        console.log(this.refs[event._targetInst._currentElement.ref])
+    },
+    render: function () {
+        return (
+            <div>
+                <Foobar ref="foo" onMouseEnter={this.handleMouseEnter}>
+                    ...
+                </Foobar>
+            </div>
+            );
+        }
+    });
+    
+
+Hope this helps. :) Also, I'm using the ES6 way of writing/declaring React
+Components, which also changes the behaviour of "this" a little bit. Not sure
+if this might also play a role here.
+

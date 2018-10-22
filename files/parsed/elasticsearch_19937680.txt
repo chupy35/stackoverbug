@@ -1,0 +1,106 @@
+19937680 query_string vs group match in elasticsearch
+
+What is the difference between such query:
+
+    
+    
+    "query": {
+    "bool": {
+     ...
+      "should": [
+        {
+          "match": {
+            "description": {
+              "query": "test"              
+            }
+          }
+        },
+        {
+          "match": {
+            "address": {
+              "query": "test",              
+            }
+          }
+        },
+        {
+          "match": {
+            "country": {
+              "query": "test"              
+            }
+          }
+        },
+        {
+          "match": {
+            "city": {
+              "query": "test"
+            }
+          }
+        }        
+      ]
+    }}
+    
+
+and that one:
+
+    
+    
+    "query": {
+    "bool": {
+     ...      
+      "should": [        
+        {
+          "query_string": {
+            "query": "test",
+            "fields": [
+              "description",
+              "address",
+              "country",
+              "city"              
+            ]
+          }
+        }
+      ]
+    }}
+    
+
+Performance, relevance?
+
+Thanks in advance!
+
+I terms of performance, I would say that the second query will have
+performance benefits because, the first query requires the query string to be
+analyzed for all the four `match` sections, while in the second there is only
+one query string that needs to be analyzed.
+
+Apart from that, there are some comparisons done over
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-match-query.html#_comparison_to_query_string_field) that you can look at.
+
+I am not quite sure about the relevancy differences, but that you can always
+fire these two queries and see if there is any difference in relevance from
+the results fetched.
+
+The query is analyzed depending on the field analyzer (unless you specify the
+analyzer in the query itself), thus querying multiple fields with a single
+query doesn't necessarily mean analyzing the query only once.
+
+Keep in mind that the `query_string` supports the [lucene query
+syntax](http://www.lucenetutorial.com/lucene-query-syntax.html): AND and OR
+operators, querying on specific fields, wildcard, phrase queries etc.
+therefore it needs to be parsed, which I don't think makes a lot of difference
+here in terms of performance, but it is error prone and might lead to errors.
+If you don't need all that power, stick to the match query, and if you want to
+perform the same query on multiple fields, have a look at the [multi_match
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-multi-match-query.html), which does what you did with your query_string
+but translates internally to multiple match queries.
+
+Also, the scores returned if you compare the output of multiple match queries
+and your query_string might be quite different. Using a bool query you
+effectively build a lucene boolean query, while the query_string uses by
+default `"use_dis_max":"true"`, which means it uses internally a [dis_max
+query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-dis-max-query.html) by default. Same happens using the multi_match query.
+If you set `use_dis_max` to false a bool query is going to be used internally
+instead.
+

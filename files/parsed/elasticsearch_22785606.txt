@@ -1,0 +1,41 @@
+22785606 ElasticHQ vs Marvel
+
+I looking for, a document, an article or an benchmark about the difference
+between ElasticHQ and Marvel.
+
+I would like to know which is the best ? What are your experience feedback in
+relation to one of the two tools ?
+
+thanks in advance,
+
+I don't know of any such articles, however, I have used both ElasticHQ and
+Marvel on Elasticsearch clusters. In my experience I would now always go with
+Marvel.
+
+The major drawback for you though might be that Marvel isn't free. It's free
+for development environments only. As far as I'm concerned this is the only
+real "draw-back". However, for enterprise users such as myself this is
+actually a benefit that gives some guarantee of support and continued
+development.
+
+Other than this, why would I go with Marvel over ElasticHQ? One reason really,
+Marvel is aesthetically very beautifully designed and well laid out. Both
+Marvel and ElasticHQ have like for like features as these are actually limited
+by the Elasticsearch API end-points.
+
+If the license fee is an issue, go with ElasticHQ, if not then go with Marvel.
+
+I'm the founder of ElasticHQ. What Garry says is correct, but I can only be
+fair and speak for ElasticHQ as some of the differences that may or may not
+matter to you...
+
+  * ElasticHQ has a bit more features in the realm of Management (not the monitoring parts), ie. creating indices, mappings, flushing, optimizing, etc...
+  * ElasticHQ also has a neat Diagnostics utility that uses rules to alert you to anything out of the norm.
+  * ElasticHQ is Apache-Licensed and Open Source. Free to use, fork, contribute. No vendor lock-in.
+  * ElasticHQ does NOT require you to deploy anything on the ElasticSearch cluster. It runs completely in the browser.
+
+Fair to mention there are other monitoring/management systems out there, such
+as BigDesk, or Sematext that should also be included in any bake-off.
+
+My $.02.
+

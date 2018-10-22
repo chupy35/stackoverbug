@@ -1,0 +1,102 @@
+16509090 Paginating through a cached search query in elasticsearch
+
+How can I get the data from a query paginated, from a cached copy of a query?
+
+When searching, we get 10 results (max) by default. We can also specify
+"size", and "from".
+
+However, (looking at a trivial query, just to make it simpler) I wonder, if I
+paginate so:
+
+    
+    
+    curl -XPOST 'http://localhost:9200/index1/type1/_search' -d '{
+      "query": {
+        "match_all": {}
+      },
+      "from": 0,
+      "size": 10
+    }'
+    
+    curl -XPOST 'http://localhost:9200/index1/type1/_search' -d '{
+      "query": {
+        "match_all": {}
+      },
+      "from": 10,
+      "size": 10
+    }'
+    
+    curl -XPOST 'http://localhost:9200/index1/type1/_search' -d '{
+      "query": {
+        "match_all": {}
+      },
+      "from": 20,
+      "size": 10
+    }'
+    
+
+is the query executed each time on the server, and then a "page" is returned?
+Or is the query cached and executed only the first time?
+
+I could see a use for both usecases:
+
+  1. If it is executed anew each time, this will reflect changes to documents that might happen.
+  2. If it is cached, it will create a lot less of a load on the server. Specifically this can be used to create a "streaming" from the server to some "reducer" on the client side. (In that case, I would expect the query to return a link to the next page).
+
+How can I enforce these two cases. Which one is the default?
+
+Also, what would happen if my query would run a sorting script? for example:
+
+    
+    
+    curl -XPOST 'http://localhost:9200/index1/type1/_search' -d '{
+      "query": {
+        "match_all": {}
+      },
+      "sort": {
+        "_script": {
+          "script": "Math.random()",
+          "type": "number",
+          "order": "asc"
+        }
+      },
+      "from": 0,
+      "size": 10
+    }'
+    
+    curl -XPOST 'http://localhost:9200/index1/type1/_search' -d '{
+      "query": {
+        "match_all": {}
+      },
+      "sort": {
+        "_script": {
+          "script": "Math.random()",
+          "type": "number",
+          "order": "asc"
+        }
+      },
+      "from": 10,
+      "size": 10
+    }'
+    
+
+will the random sort be applied twice (so I might get some items appearing in
+both queries)? How do I prevent that and "lock" the query to pagination?
+
+Two year old question, unanswered. I'm answering because I hate coming across
+unanswered questions and I'm doing my bit.
+
+A feature that ElasticSearch offers is the [Scroll
+API](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-scroll.html) (available back to
+[v0.9](https://www.elastic.co/guide/en/elasticsearch/reference/0.90/search-
+request-scroll.html) and still available in 1.5 with little changes)
+
+This feature allows you to store a cached query result set (default expiry is
+1 minute). Unless you make another follow up query within this 1m the query
+result set will be sent to the shards for a newer version.
+
+This is very handy when you have a lot of live and moving data. Particularly
+useful when you're migrating data to/from indexes during a migration or update
+of mapping.
+

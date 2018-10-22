@@ -1,0 +1,106 @@
+21604429 Elasticsearch: REST API works but the Java counterpart doesn't
+
+I have one document in Elastic Search:
+
+    
+    
+    {
+       "accountGroupId":1000,
+       "name":"Elastic Burgers",
+       "capacity":33,
+       "startTime":1391604480000,
+       "address":{
+          "streetName":"Rua Carlos Petit",
+          "streetNumber":"111",
+          "complement":"",
+          "neighborhood":"Vila Mariana",
+          "city":"São Paulo",
+          "state":"SP",
+          "country":"Brasil",
+          "zip":"04110000",
+          "position":{
+             "latitude":-23.5845048,
+             "longitude":-46.6358975
+          },
+          "accountGroupId":1000,
+          "status":[
+    
+          ],
+          "id":1000,
+          "createTime":1391010548111,
+          "updateTime":1391010548111
+       },
+       "flyerUrl":"/assets/images/placeholder-merchant.png",
+       "backgroundImageUrl":"/assets/images/placeholder-merchant.png",
+       "onSaleStartTime":1391604480000,
+       "onSaleEndTime":1392990480000,
+       "description":"Lorem Ipsum",
+       "eventCategoryId":1000,
+       "deleted":false,
+       "installmentId":100,
+       "feeId":101,
+       "restricted":false,
+       "venueAccountGroupId":15,
+       "updateTime":1391691790113,
+       "createTime":1391691790113,
+       "id":1002,
+       "venue":"Acme, Inc.",
+       "category":"Festa Faculdade"
+    }
+    
+
+This REST query returns the document:
+
+    
+    
+    curl -XGET 'http://localhost:9200/paguemob/events/_search' -d '{
+        "query": {
+            "multi_match" : {
+                "query" : "festa de faculdade",
+                "fields" : ["name", "address.city", "venue", "category", "description"]
+            }    
+        }
+    }'
+    
+
+But if I run the equivalent query via the Java API, the result is empty:
+
+    
+    
+    client
+      .prepareSearch(index)
+      .setQuery(multiMatchQuery("festa de faculdade", "name", "address.city", "venue", "category", "description"))
+      .setSize(200)
+      .execute()
+      .actionGet()
+      .getHits
+    
+
+What am I doing wrong?
+
+Looking at some of the [ES test
+code](https://github.com/elasticsearch/elasticsearch/blob/f0774eb5d11ea1911e6e5a8722c0ebb073e54ca0/src/test/java/org/elasticsearch/search/query/MultiMatchQueryTests.java#L128)
+I see that in addition to the `multiMatchQuery` itself they also set OR as the
+operator (I would assume that is the default) and `useDisMax` to `false`, and
+set the `type`.
+
+    
+    
+       searchResponse = client().prepareSearch("test")
+       .setQuery(multiMatchQuery("marvel hero captain america", "full_name", "first_name", "last_name", "category")
+       .operator(MatchQueryBuilder.Operator.OR).useDisMax(false).type(type)).get();
+    
+
+I wonder if one of those is the trick?
+
+Also, your example may not show it but are you accessing the hit results array
+in Java correctly?
+
+    
+    
+    searchResponse.getHits().hits()[0]
+    
+
+I spotted the error: I had not set the type for the search. So, adding a
+`.setTypes("events")` to the call did the trick.
+

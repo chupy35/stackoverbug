@@ -1,0 +1,45 @@
+26501792 Rid of repeated spans in React.js?
+
+React renders multiple spans, only with the actual value. Any advice on how to
+fix this:
+
+![enter image description here](https://i.stack.imgur.com/qIOzj.png)
+
+And if it matter, the name of the user isn't suppose to be in a span, but as
+innerHTML of ".chatUser"
+
+The actual render method is short:
+
+    
+    
+    createShortUsername: function() {
+     // shortName is first two letter of first name. 
+     var shortName = this.props.userName.split(" ")[0].slice(0, 2);
+     console.log(shortName);
+     return shortName;
+    },
+    render: function() {
+     return (
+       <div className="chatUser"> {this.createShortUsername()} </div>
+     );
+    }
+    
+
+Thanks!
+
+As suggested by @ivarni, the extra spans were caused by white spaces!
+
+To prevent this write your code without white spaces around the braced
+expressions.
+
+    
+    
+    <ReactElement>{noRoomForWhiteSpace}</ReactElement>
+    
+
+Its actually some special characters(non visible in your editor) that creeps
+into the code.(Likely if you had copy-pasted). For me it was `\u2028`. Check
+the generated javascript file to see what extra characters got into the code.
+To get rid of it, you could remove the line that caused it and type it again(
+as opposed to copying and pasting)
+

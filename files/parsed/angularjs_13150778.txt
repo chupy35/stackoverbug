@@ -1,0 +1,93 @@
+13150778 How to dynamically add in custom directive from other custom
+directive
+
+I've created a directive that has similar functionality to datatables, but
+it's been customized for our app. One thing I have in my directive scope is
+`columnDefinitions`. Each object in that array has a property called `data`.
+I've got it set up so that if it is set to a string, it looks for that
+property on the entity, and it's a function, it will call that function with
+the entity. So basically this:
+
+    
+    
+    scope.getEntityData = function(entity, currColumnDefinitionData) {
+                var entityData = null;
+                if (angular.isString(currColumnDefinitionData))
+                {
+                    entityData = entity[currColumnDefinitionData];
+                }
+                else if(angular.isFunction(currColumnDefinitionData))
+                {
+                    entityData = currColumnDefinitionData(entity);
+                }
+                else
+                {
+                    $log.error("Column defintion data property must be a string or a function. Cannot get entity data.");
+                }
+                return entityData;
+            };
+    
+
+And then in my directive template, something like this:
+
+    
+    
+    <tr ng-repeat="currEntity in entities">
+        <td ng-repeat="currColDef in columnDefinitions">
+            {{getEntityData(currEntity, currColDef.data)}}
+        </td>   
+    </tr>
+    
+
+This works great when I just need to output a string. I now have a case where
+I want it to insert a directive for the data in that column. I first just had
+the data property equal the HTML string. For example:
+
+    
+    
+    data: function(entity) {
+            return '<div my-directive></div>';
+        },
+    
+
+However, that resulted in the string just being inserted into the table cell
+(Angular escaping the text for me)
+
+What I'm wanting to know, is how I can set up my directive so that I can get
+compiled directives into my table cells. I thought about having some way of
+telling myself it was a directive, and then compiling it with the `$compile`
+service, but then I don't know what to return from my function for it all to
+work right. Any ideas would be much appreciated.
+
+Here's how I would do it
+
+The directive:
+
+    
+    
+    angular.module('ui.directives').directive('uiCompile',
+        [ '$compile', function(compile) {
+          return {
+            restrict : 'A',
+            link : function(scope, elem, attrs) {
+              var html = scope.$eval('[' + attrs['uiCompile'] + ']')[0];
+    
+              elem.html(html);
+              compile(elem.contents())(scope);
+            }
+          }
+        } ]);
+    
+
+The template:
+
+    
+    
+    <tr ng-repeat="currEntity in entities">
+        <td ng-repeat="currColDef in columnDefinitions" ui-compile="currColDef"></td>   
+    </tr>
+    
+
+Basically for each column definition compile the content as a template using
+the current scope.
+

@@ -1,0 +1,119 @@
+24743101 Apply geo distance filter on nested field
+
+My mapping contains a nested field like this:
+
+    
+    
+    "Locations": {
+      "type": "nested",
+      "properties": {
+        "Name": {
+          "type": "string"
+        },
+        "GeoPoint": {
+          "type": "geo_point"
+        }
+      }
+    }
+    
+
+So basically what I'm trying to do is store some additional attributes with
+every location of the document.
+
+Unfortunately, it looks like this won't work with a [geo distance
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-geo-distance-filter.html):
+
+    
+    
+    GET /myIndex/myType/_search
+    {
+      "filter": {
+        "geo_distance": {
+          "distance": "100 mi",
+          "Locations.GeoPoint": {
+            lat: 40.70,
+            lon: -74.00
+          }
+        }
+      }
+    }
+    
+
+won't return the any results, whereas the filter works flawlessly if the
+GeoPoint is directly on the document itself instead of on the nested field:
+
+    
+    
+    GET /myIndex/myType/_search
+    {
+      "filter": {
+        "geo_distance": {
+          "distance": "100 mi",
+          "GeoPoint": {
+            lat: 40.70,
+            lon: -74.00
+          }
+        }
+      }
+    }
+    
+
+Is there any way to make geo distance filter work with geo_point on the nested
+field?
+
+A [nested
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-nested-filter.html) does the job:
+
+    
+    
+    GET /myIndex/myType/_search
+    {
+      "filter" : {
+        "nested" : {
+          "path" : "Locations",
+          "filter" : {
+            "geo_distance": {
+              "distance": "100 mi",
+              "GeoPoint": {
+                "lat": 40.70,
+                "lon": -74.00
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+An update for ElasticSearch 5.5 users, @Max's answer has been deprecated for
+the Nested Filter and Nested Query feature using the dot notation instead of
+explicitly wrapping a "nested" field around your query.
+
+For example:
+
+    
+    
+    {
+        "query": {
+            "nested" : {
+                "path" : "obj1",
+                "score_mode" : "avg",
+                "query" : {
+                    "bool" : {
+                        "must" : [
+                        { "match" : {"obj1.name" : "blue"} },
+                        { "range" : {"obj1.count" : {"gt" : 5}} }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    
+
+More information:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-
+nested-filter.html>
+

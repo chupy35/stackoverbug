@@ -1,0 +1,88 @@
+11923627 AngularJS better way to manage partials and controller data
+
+I've been using directives in AngularJS which build a HTML element with data
+fetched from the $scope of the controller. I have my controller set a
+$scope.ready=true variable when it has fetched it's JSON data from the server.
+This way the directive won't have to build the page over and over each time
+data is fetched.
+
+Here is the order of events that occur:
+
+  1. The controller page loads a route and fires the controller function.
+
+  2. The page scans the directives and this particular directive is fired.
+
+  3. The directive builds the element and evaluates its expressions and goes forward, but when the directive link function is fired, it waits for the controller to be "ready".
+
+  4. When ready, an inner function is fired which then continues building the partial.
+
+This works, but the code is messy. My question is that is there an easier way
+to do this? Can I abstract my code so that it gets fired after my controller
+fires an event? Instead of having to make this onReady inner method.
+
+Here's what it looks like (its works, but it's messy hard to test):
+
+    
+    
+    angular.module('App', []).directive('someDirective',function() {
+    
+      return {
+    
+        link : function($scope, element, attrs) {
+    
+          var onReady = function() {
+            //now lets do the normal stuff
+          };
+    
+          var readyKey = 'ready';
+          if($scope[readyKey] != true) {
+            $scope.$watch(readyKey, function() {
+              if($scope[readyKey] == true) {
+                onReady();
+              }
+            });
+          }
+          else {
+            onReady();
+          }
+    
+        }
+    
+      };
+    
+    });
+    
+
+You could use `$scope.$emit` in your controller and
+`$rootScope.on("bradcastEventName",...);` in your directive. The good point is
+that directive is decoupled and you can pull it out from project any time. You
+can reuse same pattern for all directives and other "running" components of
+your app to respond to this event.
+
+There are two issues that I have discovered:
+
+  * Having any XHR requests fire in the background will not prevent the template from loading.
+  * There is a difference between having the data be applied to the `$scope` variable and actually having that data be applied to the bindings of the page (when the $scope is digested). So if you set your data to the scope and then fire an event to inform the partial that the scope is ready then this won't ensure that the data binding for that partial is ready.
+
+So to get around this, then the best solution is to:
+
+  1. Use this plugin to manage the event handling between the controller and any directives below: <https://github.com/yearofmoo/AngularJS-Scope.onReady>
+
+  2. Do not put any data into your directive template HTML that you expect the JavaScript function to pickup and use. So if for example you have a link that looks like this:
+
+`<a data-user-id="{{ user_id }}" href="/path/to/:user_id/page">My Page</a>`
+
+Then the problem is that the directive will have to prepare the `:user_id`
+value from the `data-user-id` attribute, get the href value and replace the
+data. This means that the directive will have to continuously check the `data-
+user-id` attribute to see if it's there (by checking the attrs hash every few
+moments).
+
+Instead, place a different scope variable directly into the URL
+
+`<a href="/path/to/{{ directive_user_id }}/page">My Page</a>`
+
+And then place this in your directive:
+
+> $scope.whenReady(function() { $scope.directive_user_id = $scope.user_id; });
+

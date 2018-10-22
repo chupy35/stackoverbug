@@ -1,0 +1,29 @@
+19666307 ElasticSearch Performance : Continuous read/write vs Bulk write
+
+I am new to Elastic Search. I need to implement a system where I will be
+getting data feed continuously throughout the day. I would like to make this
+data feed searchable so I am using ElasticSearch.
+
+Now, I have two ways to go about this: 1) Store data from the feed in mongo.
+And feed this data to ElasticSearch at regular interval, let say twice a day.
+2) Directly feed data to ElasticSearch which is s continuous process. At the
+same time ElasticSearch has to perform search queries.
+
+I am expecting a volume of around 20 entries per second coming from data feed
+and around 2-3 queries per second being performed by ElasticSearch.
+
+Please advice.
+
+Can you tell us more about your cluster architecture? How many nodes? All
+nodes have data or also gateway nodes? Usually I would say feeding directly to
+elasticsearch shouldn't be a problem. 2-3 queries per second is not much at
+all for elasticsearch.
+
+You should optimize your index structure and application code for it:
+
+  1. Create separate index for each day 
+  2. Increase number of shards (you should experiment, based on your hardware configuration) 
+  3. For old days indexes you should close them or aggregate into big periods (another month indexes) using some batch processing
+
+from my tests 20 inserts/second is not a big load for elasticsearch
+

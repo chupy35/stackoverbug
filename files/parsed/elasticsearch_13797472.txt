@@ -1,0 +1,54 @@
+13797472 ElasticSearch: Selective query
+
+Needed some help. My documents have a version field. Only updated documents
+will have a new record with an incremented version number.
+
+Example:
+
+    
+    
+    {id:1 , version:1,…} 
+    {id:1 , version:2,….} //This has been updated
+    {id:2 , version:1,…} 
+    
+
+In the above example id=1 has two records as it has been updated. While id=2
+has a single record as it hasn’t been updated and is still sitting on version
+1.
+
+Now in elastic search are there any queries that can get a maximum version.
+Example: Get unique documents TILL version 1 should give results:
+
+    
+    
+    {id:1 , version:1,…}
+    {id:2 , version:1,…}
+    
+
+While get unique documents till version 2 should give:
+
+    
+    
+    {id:1 , version:2,….}
+    {id:2 , version:1,…}
+    
+
+(in the above result there is a mix of version 1 and version 2)
+
+Thanks, Karan
+
+There is no simple way to achieve this in elasticsearch (at least until
+something like [Field
+Collapsing/Combining](https://github.com/elasticsearch/elasticsearch/issues/256)
+is implemented). I would suggest maintaing two indices: one for all versions
+with auto-generated ids and another index with only the latest version with
+the record's `id` field as an id. When you need all versions, you can search
+the first index, when you need only the latest version, you can search the
+second.
+
+An alternative solution is to somehow indicate that a record represents the
+latest version. It can be done by adding a boolean field "latest", which means
+that you will have to reindex the record with the previous latest version when
+a new record is added or you can add a child document that will track the
+latest version for every record.
+

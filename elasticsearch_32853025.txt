@@ -1,0 +1,4 @@
+32853025
+Elasticsearch : How to get all indices that ever existed
+<p>is there a way to find out the names of all the indices ever created? Even after the index might have been deleted. Does elastic store such historical info?</p>&#xA;&#xA;<p>Thanks</p>&#xA;
+<p>Using a plugin that keeps an audit trail for all changes that happened in your ES cluster might do the trick. </p>&#xA;&#xA;<p>If you use the <a href="https://github.com/derryx/elasticsearch-changes-plugin" rel="nofollow">changes plugin</a> (or a <a href="https://github.com/salyh/elasticsearch-sample-plugin-audit" rel="nofollow">more recent one</a>), then you can query it for all the changes in all indices using</p>&#xA;&#xA;<pre><code>curl -XGET http://localhost:9200/_changes&#xA;</code></pre>&#xA;&#xA;<p>and your response will contain all the index names that were at least created. Not sure this plugin works with the latest versions of ES, though.</p>&#xA;

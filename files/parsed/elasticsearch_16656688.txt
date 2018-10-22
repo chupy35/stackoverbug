@@ -1,0 +1,51 @@
+16656688 Nested elasticsearch query in Java
+
+Let's say that I've indexed an object that looks like:
+
+    
+    
+    {
+      firstName: "Ben"
+      lastName: "McCann"
+      urls: [{ canonical: "http://www.benmccann.com" }]
+      emails: [{ canonical: "ben@ben.com" }]
+    }
+    
+
+How do I then create a search for "Ben" or "McCann" or "ben@ben.com"?
+
+    
+    
+    SearchRequest request = new SearchRequest(INDEX)
+        .source(new SearchSourceBuilder().query(QueryBuilders.boolQuery()
+            .should(QueryBuilders.matchQuery("firstName", "Ben"))
+            .should(QueryBuilders.matchQuery("lastName", "McCann"))
+            .should(QueryBuilders.nestedQuery("emails", QueryBuilders.matchQuery("emails.canonical", "ben@ben.com")))));
+    
+
+You need to use a [nested
+query](http://www.elasticsearch.org/guide/reference/query-dsl/nested-query/)
+only if you configured the emails field as [nested
+type](http://www.elasticsearch.org/guide/reference/mapping/nested-type/) in
+your mapping. I don't think it makes sense in your case since you have a
+single subfield under emails, called canonicals. You can just use again a
+match query and the dot notation, refering to the field as `emails.canonical`.
+
+If you use a bool query don't forget to set the minimum should match, which
+tells you how many should clauses should match at least out of the ones
+provided in the query. In your case 1 should be fine.
+
+    
+    
+    SearchRequest request = Requests.searchRequest(INDEX)
+        .source(SearchSourceBuilder.searchSource().query(QueryBuilders.boolQuery()
+            .should(QueryBuilders.matchQuery("firstName", "Ben"))
+            .should(QueryBuilders.matchQuery("lastName", "McCann"))
+            .should(QueryBuilders.matchQuery("emails.canonical", "ben@ben.com"))
+            .minimumShouldMatch(1)));
+    
+
+On the other hand, if you did configure the `emails` field as nested in your
+mapping, then you need to use a nested query. I don't see anything wrong in
+what you are doing, you're just missing the minimum should match parameter.
+

@@ -1,0 +1,49 @@
+13041276 elasticsearch offset and limit facets
+
+I'm trying to make a search that both limits and "offsets" (the keyword from
+in elasticsearch) the facet result set, so something like:
+
+    
+    
+    '{
+       "query" : {
+           "nested" : {
+               "_scope" : "my_scope",
+               "path" : "related_award_vendors",
+               "score_mode" : "avg",
+               "query" : {
+                   "bool" : {
+                       "must" : {
+                           "text" : {"related_award_vendors.title" : "inc"}
+                       }
+                   }
+               }
+           }
+       },
+       "facets" : {
+           "facet1" : {
+               "terms_stats" : {
+                   "key_field" : "related_award_vendors.django_id",
+                   "value_field" : "related_award_vendors.award_amount",
+           "order":"term",
+                   "size": 5,
+                    "from":2
+               },
+               "scope" : "my_scope"        }
+       }
+    }'
+    
+
+In the above, it returns id's 1,2,3,4,5 and if I remove "from" it still
+returns 1,2,3,5 in the result set.
+
+The "size" is working correctly. In this case, it's returning five items in
+the result set.
+
+My understanding is that solr can do this. Can this be done in elasticsearch?
+
+The terms stats facet doesn't support the `from` parameter. The only way to
+achieve what you want is to set size to `size + offset` and ignore first
+`offset` entries on the client side. In your example it would mean to request
+7 entries and ignore first 2.
+

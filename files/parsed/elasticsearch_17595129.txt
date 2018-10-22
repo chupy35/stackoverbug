@@ -1,0 +1,80 @@
+17595129 Elasticsearch - index only part of the object
+
+Is it possible to index only some part of the object in `elasticsearch`?
+
+Example:
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/test/item/1' -d '
+    {
+        "record": {
+            "city": "London",
+            "contact": "Some person name"
+        }
+    }
+    
+    $ curl -XPUT 'http://localhost:9200/test/item/2' -d '
+    {
+        "record": {
+            "city": "London",
+            "contact": { "phone": "some-phone-number", "name": "Other person's name" }
+        }
+    }
+    
+    $ curl -XPUT 'http://localhost:9200/test/item/3' -d '
+    {
+        "record": {
+            "city": "Oslo",
+            "headquarters": { "phone": "some-other-phone-number", 
+                              "address": "some address" }
+        }
+    }
+    
+
+I want only city name to be searchable, all remaining part of the object I
+want to leave unindexed and completely arbitrary. For example some fields can
+change it's type from object to object. Is it possible to write mapping that
+allow such behaviour?
+
+**UPDATE**
+
+My final solution looks like this:
+
+    
+    
+    {
+         "test": {
+            "dynamic": "false",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+    
+
+I add "dynamic": "false" on the lowest level of my mapping and it works as
+expected.
+
+You can achieve this by disabling dynamic mapping on entire type or just inner
+object record:
+
+    
+    
+    "mappings": {
+        "doc": {
+            "properties": {
+                "record": {
+                    "type": "object",
+                    "properties": {
+                        "city": {"type": "string"}
+                    },
+                    "dynamic": false
+                }
+            }
+        }
+    }
+    
+

@@ -1,0 +1,99 @@
+18921903 Elasticsearch: can't filter on multiple fields
+
+I'd like to filter a `{ "query" : { "match_all" :{}}}` on elasticsearch but I
+don't figure it out...
+
+Here's what I send to ES _search method.
+
+    
+    
+    curl -XGET http://localhost:9200/users/location/_search '-H Accept: application/json' '-H Content-Type: application/json'
+    -d '{
+       "query":{
+          "match_all":{}
+       },
+       "filter":{
+          "and":{
+             "geo_distance":{
+                "distance":"500km",
+                "location":{
+                   "lat":48.8,
+                   "lon":2.33
+                }
+             },
+             "term":{
+                "status":1
+             }
+          }
+       },
+       "sort":[
+          {
+             "_geo_distance":{
+                "location":[
+                   2.33,
+                   48.8
+                ],
+                "order":"asc",
+                "unit":"km"
+             }
+          }
+       ]
+    }' 
+    
+
+But I always get this error:
+
+    
+    
+    nested: QueryParsingException[[users] [and] filter does not support [distance]]
+    
+
+And if I remove the `"and" :{}` option and only filter on geo_distance, it
+works... Any help would be fantastic.
+
+Cheers
+
+I think your `and` filter is incorrectly written. The error states that the
+`and` filter is having trouble with its parameters, more or less. See
+<http://www.elasticsearch.org/guide/reference/query-dsl/and-filter/>
+
+Try this instead:
+
+    
+    
+    {
+       "query":{
+          "match_all":{}
+       },
+       "filter":{
+          "and": [
+             {
+                 "geo_distance": {
+                    "distance":"500km",
+                    "location":{
+                       "lat":48.8,
+                       "lon":2.33
+                    }
+                 }
+             }, {
+                 "term": {
+                    "status":1
+                 }
+             }]
+          }
+       },
+       "sort":[
+          {
+             "_geo_distance":{
+                "location":[
+                   2.33,
+                   48.8
+                ],
+                "order":"asc",
+                "unit":"km"
+             }
+          }
+       ]
+    }
+    
+

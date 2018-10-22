@@ -1,0 +1,44 @@
+24960348 How to retrieve more data in aggregation?
+
+I am using following aggregation:
+
+    
+    
+    searchOptions.aggs = {
+      categories: {
+        terms: {
+          field: "CategoryId"
+        }
+      }
+    }
+    
+
+This works however I only get `key: 1, docs_count: X` aggregations which is
+useless - I have to get also `CategoryName` along with `CategoryId`...
+
+If you want to get category name for that id then,
+
+    
+    
+    {
+       "size": 0,
+       "aggs": {
+          "category": {
+             "terms": {
+                "field": "categoryId"
+             },
+             "aggs":{
+                 "categoryName" :{
+                     "terms" :{
+                         "field" :"categoryName"
+                     }
+                 }
+             }
+          }
+       }
+    }
+    
+
+So, sub-aggregation(which is nested in above) gives you categoryName for its
+id.
+

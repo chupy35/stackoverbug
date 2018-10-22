@@ -1,0 +1,144 @@
+18977834 Indexing website/url in Elastic Search
+
+I have a `website` field of a document indexed in elastic search. Example
+value: <http://example.com> . The problem is that when I search for `example`,
+the document is not included. How to map correctly the website/url field?
+
+I created the index below:
+
+    
+    
+    {
+      "settings":{
+        "index":{
+            "analysis":{
+            "analyzer":{
+                "analyzer_html":{
+                      "type":"custom",
+                      "tokenizer": "standard",
+                    "filter":"standard",
+                    "char_filter": "html_strip"
+                }
+            }
+            }
+        }
+      },
+      "mapping":{
+        "blogshops": {
+            "properties": {
+                "category": {
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "reviews": {
+                    "properties": {
+                        "user": {
+                            "properties": {
+                                "_id": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      }
+    }
+    
+
+I guess you are using `standard` analyzer, which splits `http://example.dom`
+into two tokens - `http` and `example.com`. You can take a look
+`http://localhost:9200/_analyze?text=http://example.com&analyzer=standard`.
+
+If you want to split `url`, you need to use different
+[analyzer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/) or specify our own [custom
+analyzer](http://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-
+custom-analyzer.html).
+
+You can take a look how would be `url` indexed with [simple
+analyzer](http://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-
+simple-analyzer.html) \-
+`http://localhost:9200/_analyze?text=http://example.com&analyzer=simple`. As
+you can see, now is `url` indexed as three tokens `['http', 'example',
+'com']`. If you don't want to index tokens like `['http', 'www']` etc, you can
+specify your analyzer with [lowercase
+tokenizer](http://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-
+lowercase-tokenizer.html) (this is the one used in simple analyzer) and [stop
+filter](http://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-
+stop-tokenfilter.html). For example something like this:
+
+    
+    
+    # Delete index
+    #
+    curl -s -XDELETE 'http://localhost:9200/url-test/' ; echo
+    
+    # Create index with mapping and custom index
+    #
+    curl -s -XPUT 'http://localhost:9200/url-test/' -d '{
+      "mappings": {
+        "document": {
+          "properties": {
+            "content": {
+              "type": "string",
+              "analyzer" : "lowercase_with_stopwords"
+            }
+          }
+        }
+      },
+      "settings" : {
+        "index" : {
+          "number_of_shards" : 1,
+          "number_of_replicas" : 0
+        },
+        "analysis": {
+          "filter" : {
+            "stopwords_filter" : {
+              "type" : "stop",
+              "stopwords" : ["http", "https", "ftp", "www"]
+            }
+          },
+          "analyzer": {
+            "lowercase_with_stopwords": {
+              "type": "custom",
+              "tokenizer": "lowercase",
+              "filter": [ "stopwords_filter" ]
+            }
+          }
+        }
+      }
+    }' ; echo
+    
+    curl -s -XGET 'http://localhost:9200/url-test/_analyze?text=http://example.com&analyzer=lowercase_with_stopwords&pretty'
+    
+    # Index document
+    #
+    curl -s -XPUT 'http://localhost:9200/url-test/document/1?pretty=true' -d '{
+      "content" : "Small content with URL http://example.com."
+    }'
+    
+    # Refresh index
+    #
+    curl -s -XPOST 'http://localhost:9200/url-test/_refresh'
+    
+    # Try to search document
+    #
+    curl -s -XGET 'http://localhost:9200/url-test/_search?pretty' -d '{
+      "query" : {
+        "query_string" : {
+            "query" : "content:example"
+        }
+      }
+    }'
+    
+
+NOTE: If you don't like to use stopwords here is interesting article [stop
+stopping stop words: a look at common terms
+query](http://www.elasticsearch.org/blog/stop-stopping-stop-words-a-look-at-
+common-terms-query/)
+

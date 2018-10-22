@@ -1,0 +1,37 @@
+12259963 How do I get a directive to be linked in dynamically loaded HTML in
+AngularJS?
+
+> **Possible Duplicate:**  
+>  [AngularJS + JQuery : How to get dynamic content working in
+angularjs](https://stackoverflow.com/questions/11771513/angularjs-jquery-how-
+to-get-dynamic-content-working-in-angularjs)
+
+I have an application based on AngularJS 1.0.1 and Bootstrap 2.0.2.
+
+The application dynamically loads views; I use `angular.bootstrap()` to
+compile and link these fragments, and AngularJS is appears to be working fine,
+linking to my model and responding to events.
+
+I want to put a Bootstrap tooltip on some dynamic elements, and have created a
+directive for this (using the approach laid out by
+[AlexFigueiredoo](http://jsfiddle.net/AlexFigueiredoo/cRr9K/4/)). This
+approach works well when the AngularJS view is on static HTML as you can see
+from the jsFiddle.
+
+However, when the same code is used in an environment where the HTML is
+dynamically loaded, the popup is not working. Investigating, the 'tooltip'
+directive is now not being linked.
+
+I have a [test-case](http://jsfiddle.net/aalcock/hFGb7/10/) on jsFiddle. Do
+bring up your JS console to view the messages.
+
+Note that console.log never shows the directive factory being called, let
+alone linked.
+
+Am I doing something wrong?
+
+i added the tooltip attribute to the end of the tag and it worked for me.
+looks like you forgot the directive on the live example?
+
+<http://jsfiddle.net/CcRrN/>
+

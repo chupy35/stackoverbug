@@ -1,0 +1,94 @@
+12451864 How to bootstrap data as it it were fetched by a $resource service in
+Angular.js
+
+I have this Rails app that serves an index.html.erb by a UsersController. In
+the angular controller that handles that page, I have a $resource service for
+the User
+
+# CoffeeScript
+
+    
+    
+    .factory('User', ['$resource', ($resource) ->
+      $resource 'api/users/:user_id/:action', {authenticity_token:app.csrf},
+        query:
+          method: 'GET'
+          isArray: yes
+        new:
+          method: 'GET'
+          params:
+            user_id: 'new'
+        update:
+          method: 'PUT'
+    ])
+    
+
+And the controller fetches
+
+    
+    
+    window.app = angular.module("app", ['userServices'])
+    .config(["$routeProvider", ($routeProvider) ->
+      $routeProvider
+      .when "/users",
+        templateUrl: "assets/templates/users/index.html"
+        controller: UserCtrl
+    
+      .otherwise redirectTo: "/users"
+    ])
+    
+    # users Controllers
+    UserCtrl = ($scope, User) ->
+      User.query (r) ->
+        $scope.users = r
+        # code..
+    
+
+I think this is a pretty common scenario, but clearly it takes more than one
+trip to the server for just this page. I was wondering if there's a way for
+Angular to use some bootstrap data as it they were returned data from an
+action called in a $resource service.
+
+I have already taken care of the bootstrap data part by assigning it to a
+global variable called Gon with the Gon ruby gem. I know I could simply do
+$scope.users = gon.users. But then these users models won't get the niceties
+like $scope.users[0].$save()
+
+Thank you!
+
+You want to avoid the round trip from User.query, right? If so, how about
+something like this
+
+    
+    
+    <html>
+    <script type='text/javascript>
+      initialUsers = <%= User.someRubyMethod.to_json %>
+    <script>
+    
+
+Then inside of your controller
+
+    
+    
+     $scope.users = intitialUsers;
+    
+
+As it turns out, it's really simple!
+
+For instances, let's say you have all your non-angular models in a variable
+_tasks and the angular $resource model Task, all you need to do is pass the
+_tasks one by one into the constructor function Task like this:
+
+    
+    
+    $scope.tasks = (new Task(task) for task in _tasks)
+    
+
+then each of the $scope.tasks will have all those $update(), $delete() methods
+
+    
+    
+    $scope.tasks[0].$update({due_at: new Date})
+    
+

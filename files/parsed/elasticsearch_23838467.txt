@@ -1,0 +1,59 @@
+23838467 Similar Entry in Elasticsearch
+
+I posted to:
+
+    
+    
+    http://localhost:9200/cities/city/1
+    
+    {
+    "zip": "84359",
+    "city": "Simbach"
+    }
+    
+
+Now i wanted to find Simpach which is exactly 2 letters wrong:
+
+    
+    
+    http://localhost:9200/cities/_search
+    
+    {
+        "query": {
+           "fuzzy": {
+               "city" : {
+                   "value" : "Simpdach",
+                   "fuzziness" : 30
+               }
+    
+           }
+        }
+    
+
+but i dont get any result. I already saw this entry on stackoverflow and i
+cant find out, what i am doing wrong:
+
+[Fuzzy string matching using Levenshtein algorithm in
+Elasticsearch](https://stackoverflow.com/questions/21748164/fuzzy-string-
+matching-using-levenshtein-algorithm-in-elasticsearch)
+
+Check your mapping and make sure `city` field is analyzed. Something like:
+
+    
+    
+    PUT /fuzzy_products/product/_mapping
+    {
+      "product": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "analyzer": "simple
+          }
+        }
+      }
+    }
+    
+
+[Check "simple fuzzy match" section](https://www.found.no/foundation/fuzzy-
+search/). I hope it will be helpful.
+

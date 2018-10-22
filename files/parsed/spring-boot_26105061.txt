@@ -1,0 +1,143 @@
+26105061 Spring Boot without the web server
+
+I have a simple Spring Boot application that gets messages from a JMS queue
+and saves some data to a log file, but does not need a web server. Is there
+any way of starting Spring Boot without the web server?
+
+Spring boot will not include embedded tomcat if you don't have Tomcat
+dependencies on the classpath. You can view this fact yourself at the class
+`EmbeddedServletContainerAutoConfiguration` whose source you can find
+[here](https://github.com/spring-projects/spring-
+boot/blob/v1.1.7.RELEASE/spring-boot-
+autoconfigure/src/main/java/org/springframework/boot/autoconfigure/web/EmbeddedServletContainerAutoConfiguration.java).
+
+The meat of the code is the use of the `@ConditionalOnClass` annotation on the
+class `EmbeddedTomcat`
+
+* * *
+
+Also, for more information check out
+[this](http://spring.io/blog/2014/03/07/deploying-spring-boot-applications)
+and [this](http://spring.io/guides/gs/convert-jar-to-war-maven/) guide and
+[this](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#build-tool-plugins-maven-packaging)
+part of the documentation
+
+if you want to run spring boot without a servlet container, but with one on
+the classpath (e.g. for tests), use the following, as described in the [spring
+boot documentation](http://docs.spring.io/spring-
+boot/docs/1.2.1.RELEASE/reference/htmlsingle/#boot-features-web-environment):
+
+    
+    
+    @Configuration
+    @EnableAutoConfiguration
+    public class MyClass{
+        public static void main(String[] args) throws JAXBException {
+                     SpringApplication app = new SpringApplication(MyClass.class);
+             app.setWebEnvironment(false); //<<<<<<<<<
+             ConfigurableApplicationContext ctx = app.run(args);
+        }
+    }
+    
+
+also, I just stumbled across this property:
+
+    
+    
+    spring.main.web-environment=false
+    
+
+If you want to use one of the "Getting Started" templates from spring.io site,
+but you don't need any of the servlet-related stuff that comes with the
+"default" ("gs/spring-boot") template, you can try the scheduling-tasks
+template (whose pom* contains spring-boot-starter etc) instead:
+
+<https://spring.io/guides/gs/scheduling-tasks/>
+
+That gives you Spring Boot, and the app runs as a standalone (no servlets or
+spring-webmvc etc are included in the pom). Which is what you wanted (though
+you may need to add some JMS-specific stuff, as someone else points out
+already).
+
+[* I'm using Maven, but assume that a Gradle build will work similarly].
+
+You can create something like this:
+
+    
+    
+    @SpringBootApplication
+    public class Application {
+      public static void main(String[] args) {
+        new SpringApplicationBuilder(Application.class).web(false).run(args);
+      }
+    }
+    
+
+And
+
+    
+    
+    @Component
+    public class CommandLiner implements CommandLineRunner {
+    
+      @Override
+      public void run(String... args) throws Exception {
+        // Put your logic here
+      }
+    
+    }
+    
+
+The dependency is still there though but not used.
+
+## Spring Boot 2.0
+
+  * [Application Properties](https://docs.spring.io/spring-boot/docs/2.0.x/reference/html/common-application-properties.html)
+    
+        spring.main.web-application-type=NONE 
+    # REACTIVE, SERVLET
+    
+
+  * or [SpringApplicationBuilder](http://docs.spring.io/spring-boot/docs/2.0.x/api/org/springframework/boot/builder/SpringApplicationBuilder.html#web-org.springframework.boot.WebApplicationType-)
+    
+        @SpringBootApplication
+    public class MyApplication {
+    
+        public static void main(String[] args) {
+            new SpringApplicationBuilder(MyApplication.class)
+                .web(WebApplicationType.NONE) // .REACTIVE, .SERVLET
+                .run(args);
+       }
+    }
+    
+
+* * *
+
+Where [WebApplicationType](http://docs.spring.io/spring-
+boot/docs/2.0.x/api/org/springframework/boot/WebApplicationType.html):
+
+>   * `NONE` \- The application should not run as a web application and should
+not start an embedded web server.
+
+>   * `REACTIVE` \- The application should run as a reactive web application
+and should start an embedded reactive web server.
+
+>   * `SERVLET` \- The application should run as a servlet-based web
+application and should start an embedded servlet web server.
+
+>
+
+The simplest solution. in your application.properties file. add the following
+property as mentioned by a previous answer:
+
+> spring.main.web-environment=false
+
+For version 2.0.0 of Spring boot starter, use the following property :
+
+> spring.main.web-application-type=none
+
+For documentation on all properties use this link :
+<https://docs.spring.io/spring-boot/docs/current/reference/html/common-
+application-properties.html>
+

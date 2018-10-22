@@ -1,0 +1,72 @@
+24560255 subtract two fields in elastic search index
+
+I am trying to do some analysis over the fields indexed in elastic search.
+
+2 of the fields are 'start_time' and 'end_time'. I would basically want to
+group the difference of these 2 fields i.e. ('end_time' - 'start_time') for my
+analysis. But, I'm not able to find a direct answer to this question.
+
+Request you to help in this.
+
+**** Edit ****
+
+Based on the answer by PPearcy below, I have explored terms aggregations and I
+have applied it on the index. However, I have not yet applied `script` in the
+query as I'm still exploring terms aggregation. But, I am facing another
+problem here:-
+
+My index contains 3,513,903 documents with a size of 2.1 GB. Here is my
+query:-
+
+    
+    
+    $ curl -X GET http://localhost:9200/rum_beacon/rum/_search -d '{"aggs":{"resp":{"terms":{"field":"response_start"}}}}' 2>/dev/null| python -c "import sys, json, pprint; j=json.load(sys.stdin); buckets=j['aggregations']['resp']['buckets'];m=map(lambda x: x,buckets); pprint.pprint( m)"
+    
+    [{u'doc_count': 124219, u'key': 0, u'key_as_string': u'0'},
+     {u'doc_count': 73779, u'key': 1, u'key_as_string': u'1'},
+     {u'doc_count': 27135, u'key': 2, u'key_as_string': u'2'},
+     {u'doc_count': 10569, u'key': 3, u'key_as_string': u'3'},
+     {u'doc_count': 6065, u'key': 4, u'key_as_string': u'4'},
+     {u'doc_count': 4498, u'key': 157, u'key_as_string': u'157'},
+     {u'doc_count': 4473, u'key': 144, u'key_as_string': u'144'},
+     {u'doc_count': 4461, u'key': 162, u'key_as_string': u'162'},
+     {u'doc_count': 4443, u'key': 164, u'key_as_string': u'164'},
+     {u'doc_count': 4434, u'key': 155, u'key_as_string': u'155'}]
+    
+
+****The problem:****
+
+I'm not able to get the results for all the response_start fields. I get only
+10 values in the response json.
+
+****What I've tried****
+
+I tried giving the `size` field in the json request, but, I still get only 10
+values in the response:-
+
+    
+    
+    $ curl -X GET http://localhost:9200/rum_beacon/rum/_search -d '{"size":50,"aggs":{"resp":{"terms":{"field":"response_start"}}}}' 2>/dev/null| python -c "import sys, json, pprint; j=json.load(sys.stdin); buckets=j['aggregations']['resp']['buckets'];m=map(lambda x: x,buckets); pprint.pprint( m)"
+    
+    
+    [{u'doc_count': 124219, u'key': 0, u'key_as_string': u'0'},
+     {u'doc_count': 73779, u'key': 1, u'key_as_string': u'1'},
+     {u'doc_count': 27135, u'key': 2, u'key_as_string': u'2'},
+     {u'doc_count': 10569, u'key': 3, u'key_as_string': u'3'},
+     {u'doc_count': 6065, u'key': 4, u'key_as_string': u'4'},
+     {u'doc_count': 4498, u'key': 157, u'key_as_string': u'157'},
+     {u'doc_count': 4473, u'key': 144, u'key_as_string': u'144'},
+     {u'doc_count': 4461, u'key': 162, u'key_as_string': u'162'},
+     {u'doc_count': 4443, u'key': 164, u'key_as_string': u'164'},
+     {u'doc_count': 4434, u'key': 155, u'key_as_string': u'155'}]
+    
+
+Take a look at aggregates on script fields:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations.html>
+
+For your case, you would be doing a terms aggregate on a script field as
+specified here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html>
+

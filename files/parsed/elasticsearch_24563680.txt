@@ -1,0 +1,130 @@
+24563680 Elastic search structure AND/EXISTS
+
+Im new to Elasticsearch and this is driving me crazy. The docs are pretty
+unhelpful and so about 6 hours in I come to the amazing SO community.
+
+I have a query which is implemented all over a large and 95% finished website,
+so I cannot rewrite much at this point.
+
+I need add a check to make sure that the userID is not null. In SQL this would
+take seconds, but I have a pretty large query which is giving me either crazy
+unhelpful error messages or not working. I have tried restructuring, moving
+the "exists" into an existing "and" where it doesnt work at all.
+
+This is what I have:
+
+    
+    
+    GET _search
+    {
+    "from": 0,
+    "size": 30,
+    "query": {
+        "filtered": {
+            "query": {
+                "match_all": {}
+            }, 
+            "filter": {
+                "and": [
+                {
+                "bool": {
+                    "must": [
+                       {
+                            "exists" : { "field" : "userID" }
+                       }
+                    ]
+                }
+                },{
+                    "term": {
+                        "property.rental": false
+                    }
+                }, {
+                    "term": {
+                        "property.status": 100
+                    }
+                }, {
+                    "term": {
+                        "property.showOnHomepage": true
+                    }
+                } 
+             ]
+           }
+        }
+    },
+    "sort": {
+        "_script": {
+            "script": "Math.random()",
+            "type": "number",
+            "params": {},
+            "order": "asc"
+        }
+    },
+    "aggregations": {
+        "min_price": {
+            "min": {
+                "field": "basePrice"
+            }
+        },
+        "max_price": {
+            "max": {
+                "field": "basePrice"
+            }
+        },
+        "avg_price": {
+            "avg": {
+                "field": "basePrice"
+            }
+        }
+    },
+    "filter": {
+        "range": {
+            "property.price": {
+                "lte": 1000000000
+            }
+        }
+    }
+    }
+    
+
+This gives the following results:
+
+    
+    
+    {
+    "took": 7,
+    "timed_out": false,
+    "_shards": {
+      "total": 5,
+      "successful": 5,
+      "failed": 0
+    },
+    "hits": {
+      "total": 0,
+      "max_score": null,
+      "hits": []
+    },
+    "aggregations": {
+      "min_price": {
+         "value": null
+      },
+      "max_price": {
+         "value": null
+      },
+      "avg_price": {
+         "value": null
+      }
+    }
+    }
+    
+
+I simply don't understand where to place the
+
+    
+    
+     "exists" : { "field" : "userID" }
+    
+
+inorder for it to filter out just the properties with null for a userID.
+
+Any help would be amazing.
+

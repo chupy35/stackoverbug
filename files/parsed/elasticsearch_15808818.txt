@@ -1,0 +1,39 @@
+15808818 Sorting on an array of strings in ElasticSearch
+
+I'm using the following to sort documents in Elasticsearch that have a
+'usernamesAssigned' property. usernamesAssigned is an array of strings:
+
+    
+    
+    "sort": [
+        {
+            "_script": {
+                "script": "doc["usernamesAssigned"].values.sort().join()",
+                "type": "string",
+                "lang": "js",
+                "order": "asc"
+            }
+        }
+    ]
+    
+
+I'm wondering if there's a more efficient way to do this without using script
+based sorting?
+
+This is an old question, but I recently wandered across it while trying to
+solve the same problem...
+
+According to the
+[documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-sort.html):
+
+> Elasticsearch supports sorting by array or multi-valued fields. The mode
+option controls what array value is picked for sorting the document it belongs
+to.
+
+So, you should be able to sort like this:
+
+`"sort" : [ {"usernamesAssigned" : {"order" : "asc", "mode" : "min"}} ]`
+
+This has been available since version 0.90.0.Beta1.
+

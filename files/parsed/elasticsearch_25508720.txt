@@ -1,0 +1,23 @@
+25508720 ElasticSearch returning fragments well over the fragment size
+
+I have the following to set my highlighter in elasticsearch
+
+    
+    
+    { 
+      pre_tags: ["<b>"], 
+      post_tags: ["</b>"], 
+      fields: { 
+        title: { number_of_fragments: 0 },                                           
+        body:  { number_of_fragments: 1, fragment_size: 200, type: "plain" }
+      }
+    }
+    
+
+however I am occasionally getting the body highlight to be upwards of 300
+characters in length and I am unsure why - it's rare, but every now and then a
+search result will come through with a really long search fragment.
+
+My temporary fix is that I will truncate the result manually, but I'd prefer
+not to do that.
+

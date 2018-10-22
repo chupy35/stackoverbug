@@ -1,0 +1,62 @@
+16703736 OR query in Elastic Search
+
+I am trying to perform a query on my elastic search dataset. My goal is to get
+all record that match any one of the criteria, so basically a bunch of OR's.
+Here is what my query looks like:
+
+    
+    
+    {
+      "query" : {
+        "filtered" : {
+          "query" : {
+            "match_all":{}
+          }, 
+          "filter" : { 
+            "or" : [
+              {"match" : {"field1" : ["value1", "value1.5"]}}, 
+              {"match" : {"field2" : ["value2", "value2.5"]}}, 
+              {"match" : {"field3" : ["value3", "value3.5"]}}, 
+              {"match" : {"field4" : ["value4", "value4.5"]}}
+            ]
+          }
+        }
+      }
+    }
+    
+
+Field1-Field4 are all stored as arrays in elastic search. I need to get all
+results where any of the query values match any of the values in the stored
+array.
+
+And I need to return the result if anything matches between them. Can anyone
+point out what is wrong with this? I am not getting any results when I know
+they are there.
+
+you're using `match` as type of filter, that doesn't exist afaik.  Instead
+with your current setup you could use `terms` instead.
+<http://www.elasticsearch.org/guide/reference/query-dsl/terms-query/>
+
+SO:
+
+    
+    
+    {
+      "query" : {
+        "filtered" : {
+          "query" : {
+            "match_all":{}
+          }, 
+          "filter" : { 
+            "or" : [
+              {"terms" : {"field1" : ["value1", "value1.5"]}}, 
+              {"terms" : {"field2" : ["value2", "value2.5"]}}, 
+              {"terms" : {"field3" : ["value3", "value3.5"]}}, 
+              {"terms" : {"field4" : ["value4", "value4.5"]}}
+            ]
+          }
+        }
+      }
+    }
+    
+

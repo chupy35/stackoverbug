@@ -1,0 +1,51 @@
+19963927 Best ways to diagnose elasticsearch issues?
+
+The question is a little broad, but I feel there is no one place that helps
+systematically diagnose elastic search issues. The broad categories could be :
+
+  * **Client**
+
+    1. Query errors
+    2. Incorrect Query Results
+    3. Unexplained behaviors
+  * **Server**
+
+    1. Setup issues
+    2. Performance issues
+    3. Critical errors
+    4. Unexplained behaviors
+
+Example for 1)a) would be to say, log the query string on the server (
+reference to how to enable logging would be nice), install the inquistor
+plugin (link to github) and run the query string yourself. etc.
+
+Your question is very broad and to be honest I am not sure I can fully answer
+it, however I will tell you how we monitor and manage our cluster.
+
+1 - We log [query logs and slow query
+logs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-
+configuration.html#logging) to [graylog2](http://graylog2.org/) (it uses es
+under the hood) so we can easily see, report, and alert on all logging from
+our cluster. We can also view slow queries that have occurred.
+
+2 - we send [es
+stats](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+nodes-stats.html) to [statsd](https://github.com/etsy/statsd/) and then graph
+that information in graphite. This way we can see things like cluster state,
+query counts, indexing counts, jvm stats, disk i/o, etc. All parsed from the
+[es stats
+api](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cluster-
+nodes-stats.html) and sent to statsd
+
+3 - we use [fabric scripts](http://docs.fabfile.org/en/1.8/) to deploy/upgrade
+the cluster and manage plugin installation
+
+4 - we use [jenkins](http://jenkins-ci.org/) and
+[jmeter](http://jmeter.apache.org/) to run occasional performance tests
+against the cluster (are we getting slower over time, does the cluster
+deployment work?)
+
+5 - we use [bigdesk](http://bigdesk.org/) and
+[head](http://mobz.github.io/elasticsearch-head/) plugins to keep an eye on
+the cluster and explore how it is doing.
+

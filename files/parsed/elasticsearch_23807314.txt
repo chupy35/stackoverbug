@@ -1,0 +1,196 @@
+23807314 Multiple filters and an aggregate in elasticsearch
+
+How can I use a filter in connection with an aggregate in elasticsearch?
+
+The official documentation gives only trivial examples for
+[filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-and-filter.html) and for
+[aggregations](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-histogram-aggregation.html) and no formal description of
+the query dsl - compare it e.g. with [postgres
+documentation](http://www.postgresql.org/docs/9.3/static/sql-select.html).
+
+Through trying out I found following query, which is accepted by elasticsearch
+(no parsing errors), but ignores the given filters:
+
+    
+    
+    {
+      "filter": {
+        "and": [
+          {
+            "term": {
+              "_type": "logs"
+            }
+          },
+          {
+            "term": {
+              "dc": "eu-west-12"
+            }
+          },
+          {
+            "term": {
+              "status": "204"
+            }
+          },
+          {
+            "range": {
+              "@timestamp": {
+                "from": 1398169707,
+                "to": 1400761707
+              }
+            }
+          }
+        ]
+      },
+      "size": 0,
+      "aggs": {
+        "time_histo": {
+          "date_histogram": {
+            "field": "@timestamp",
+            "interval": "1h"
+          },
+          "aggs": {
+            "name": {
+              "percentiles": {
+                "field": "upstream_response_time",
+                "percents": [
+                  98.0
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+Some people suggest using `query` instead of `filter`. But the official
+documentation generally recommends [the
+opposite](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filters.html) for filtering on exact values. Another issue with `query`:
+while filters offer an
+[`and`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-and-filter.html), `query` does not.
+
+Can somebody point me to documentation, a blog or a book, which describe
+writing non-trivial queries: at least an aggregate plus multiple filters.
+
+Put your filter in a
+[`filtered`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filtered-query.html)-query.
+
+The top-level `filter` is for filtering search hits only, and not
+facets/aggregations. It was renamed to `post_filter` in 1.0 due to this quite
+common confusion.
+
+Also, you might want to look into this post on why you often want to use
+`bool` and not `and`/`or`: <http://www.elasticsearch.org/blog/all-about-
+elasticsearch-filter-bitsets/>
+
+I ended up using a [filter
+aggregation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-filter-aggregation.html) \- not filtered query. So now I
+have 3 nested aggs elements.
+
+I also use `bool` filter instead of `and` as recomended by @alex-brasetvik
+because of <http://www.elasticsearch.org/blog/all-about-elasticsearch-filter-
+bitsets/>
+
+My final implementation:
+
+    
+    
+    {
+      "aggs": {
+        "filtered": {
+          "filter": {
+            "bool": {
+              "must": [
+                {
+                  "term": {
+                    "_type": "logs"
+                  }
+                },
+                {
+                  "term": {
+                    "dc": "eu-west-12"
+                  }
+                },
+                {
+                  "term": {
+                    "status": "204"
+                  }
+                },
+                {
+                  "range": {
+                    "@timestamp": {
+                      "from": 1398176502000,
+                      "to": 1400768502000
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "aggs": {
+            "time_histo": {
+              "date_histogram": {
+                "field": "@timestamp",
+                "interval": "1h"
+              },
+              "aggs": {
+                "name": {
+                  "percentiles": {
+                    "field": "upstream_response_time",
+                    "percents": [
+                      98.0
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "size": 0
+    }
+    
+
+more on @geekQ 's answer: to support filter string with space char,for
+multipal term search,use below:
+
+    
+    
+    {   "aggs": {
+        "aggresults": {
+          "filter": {
+            "bool": {
+              "must": [
+                {
+                  "match_phrase": {
+                    "term_1": "some text with space 1"
+                  }
+                },
+                {
+                  "match_phrase": {
+                    "term_2": "some text with also space 2"
+                  }
+                }
+              ]
+            }
+          },
+          "aggs" : {
+                "all_term_3s" : {
+                    "terms" : {
+                        "field":"term_3.keyword",
+                        "size" : 10000,
+                        "order" : {
+                            "_term" : "asc" 
+                        }
+                    }
+               }
+            }
+        }   },   "size": 0 }
+    
+

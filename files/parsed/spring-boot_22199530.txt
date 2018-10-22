@@ -1,0 +1,30 @@
+22199530 Basic interrogation about Spring boot and @EnableAutoConfiguration
+
+I have a basic question about **Spring Boot:**
+
+Say I am developping a **websocket app**. It seems the idea behind Spring Boot
+is as follows:
+
+As a **developer** I am responsible for:
+
+  1. Including the following mvn dependency: `spring-boot-starter-websocket`
+  2. Annotate my configuration class with: `@EnableAutoConfiguration`
+
+**Spring Boot** is then responsible for applying the following config:
+`WebSocketAutoConfiguration`
+
+In a nutshell, is it how it works? Can someone please confirm of infirm the
+above?
+
+You are absolutely correct.
+
+After adding _spring-boot-starter-websocket_ to your configuration file and
+using the _@EnableAutoConfiguration_ annotation, Spring will use you class
+path to automatically determine which configuration settings and beans need to
+be created for you.
+
+Spring Boot will handle the _WebSocketAutoConfiguration_ and any other
+necessary common configurations.
+
+More information can be found here: <https://spring.io/guides/gs/spring-boot/>
+

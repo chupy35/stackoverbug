@@ -1,0 +1,85 @@
+25057059 Spring Boot: javax.persistence.TransactionRequiredException:
+Executing an update/delete query
+
+I am using Spring Boot and configured my Application like this:
+
+    
+    
+    @Configuration
+    @EnableAutoConfiguration
+    @EnableTransactionManagement
+    @ComponentScan
+    @EntityScan("ch.xy.model")
+    public class Application {
+    
+        @Autowired
+        private ImportDAO importDao;
+    
+    }
+    
+
+ImportDAO looks like that:
+
+    
+    
+    @Repository
+    public class ImportDAO {
+    
+        @PersistenceContext
+        private EntityManager em;
+    
+        @Transactional
+        void removeTempoAccounts() {
+            Query q = em.createQuery("DELETE FROM TempoAccount t WHERE t.manual = false");
+            q.executeUpdate();
+        }
+    }
+    
+
+But when removeTempoAcconts is executed I get:
+
+Exception in thread "main" javax.persistence.TransactionRequiredException:
+Executing an update/delete query at
+org.hibernate.jpa.spi.AbstractQueryImpl.executeUpdate(AbstractQueryImpl.java:71)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) at
+sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+at
+sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:606) at
+org.springframework.orm.jpa.SharedEntityManagerCreator$DeferredQueryInvocationHandler.invoke(SharedEntityManagerCreator.java:360)
+at com.sun.proxy.$Proxy49.executeUpdate(Unknown Source) at
+ch.post.pf.jira.tempocats.pspimport.ImportDAO.removeTempoAccounts(ImportDAO.java:95)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) at
+sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+at
+sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:606) at
+org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:317)
+at
+org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190)
+at
+org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:711)
+at
+org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:157)
+at
+org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:644)
+at
+ch.post.pf.jira.tempocats.pspimport.ImportDAO$$EnhancerBySpringCGLIB$$1883cf82.removeTempoAccounts()
+at ch.post.pf.jira.tempocats.pspimport.PspImport.run(PspImport.java:32) at
+ch.post.pf.jira.tempocats.pspimport.Application.main(Application.java:20)
+
+What's wrong with my configuration?
+
+    
+    
+    @Transactional
+    void removeTempoAccounts() {
+    
+
+Method had default visibility. Therefore the proxy mechanism was not active!
+After changing to public everthing works as expected!
+
+Try to use the @Transactional annotation from Spring package like
+`@org.springframework.transaction.annotation.Transactional` Then it should
+work
+

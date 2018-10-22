@@ -1,0 +1,35 @@
+28627800 How to make an easily embeddable React component that displays any
+other component's state when used as its child?
+
+I'd like to make a React component that, when inserted inside any other
+component, will display its state in a DIV floated to the right of the screen.
+Let name it `StateExplorer`.
+
+Because many `StateExplorers` can be used on the same page, the DIVs will
+stack with the same `z-index`.
+
+The challenge here is to make `StateExplorer` easily non-verbosely embeddable,
+like this:
+
+    
+    
+    <SomeComponent>
+        <StateExplorer/>
+        ....
+    </SomeComponent>
+    
+
+The particular issue here is: how do I hook on componentWillUpdate() so that
+the StateExplorer always displays up-to-date state? I could use a mixin, but
+that throws 2 problems:
+
+  1. `componentWillUpdate()` can be implemented already in the parent component
+  2. adding a mixing adds more verbosity; the ideal case is to just add `StateExplorer` and nothing more.
+
+P.S. I know about React Debug Tools, but it's not so convenient in some cases
+and adds extra steps before you can see state of a single component.
+
+Sounds like what you need is a **Higher-order component**.  Here is a good
+article about it: <https://medium.com/@dan_abramov/mixins-are-dead-long-live-
+higher-order-components-94a0d2f9e750>
+

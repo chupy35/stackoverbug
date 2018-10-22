@@ -1,0 +1,32 @@
+21055703 Elasticsearch: evacuate all data before shutdown of a data node?
+
+Is there a way to tell a node to remove all of its data (spread it back out
+among the other nodes) so that I can shut it down and not deal with a
+rebalance/re-replicate once its down?
+
+If I have 2 copies of each shard, and I drop one node, some of the shards now
+only have 1 live copy and it has to be re-replicated. I'd prefer to not drop
+down to 1 live copy for any period of time if I can.
+
+After posting to the ES mailing list, I was informed the proper answer lies in
+the _cluster/settings api, specifically the
+cluster.routing.allocation.exclude._ip option.
+
+From the docs:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+cluster.html>
+
+    
+    
+    curl -XPUT localhost:9200/_cluster/settings -d '{
+      "transient" : {
+        "cluster.routing.allocation.exclude._ip" : "10.0.0.1"
+      }
+    }'
+    
+
+The IP address can be a comma separated list. To 'un-exclude', just remove the
+IP from the list (or set the list to "" to remove all excluded IPs).
+
+Hopefully this helps others looking for the answer to this same question.
+

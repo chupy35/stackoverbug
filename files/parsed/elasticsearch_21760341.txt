@@ -1,0 +1,148 @@
+21760341 Elasticsearch search for a value across multiple fields
+
+My purpose is to search for a value across multiple fields and return the
+count of these values ​​and the distinct value.
+
+To do this I realized that I have to use the facets.
+
+This is the database schema:
+
+    
+    
+    index:   
+        analysis:   
+            analyzer:
+                custom_search_analyzer:
+                    type: custom
+                    tokenizer: standard
+                    filter   : [standard, snowball, lowercase, asciifolding]
+                custom_index_analyzer:
+                    type: custom
+                    tokenizer: standard
+                    filter   : [standard, snowball, lowercase, asciifolding, custom_filter]
+            filter:
+                custom_filter:
+                    type: edgeNGram
+                    side: front
+                    min_gram: 1
+                    max_gram: 20
+    
+    {
+     "structure": {
+       "properties": {
+         "name": {"type": "string", "search_analyzer": "custom_search_analyzer", "index_analyzer": "custom_index_analyzer"},
+         "locality": {"type": "string", "search_analyzer": "custom_search_analyzer", "index_analyzer": "custom_index_analyzer"},
+         "province": {"type": "string", "search_analyzer": "custom_search_analyzer", "index_analyzer": "custom_index_analyzer"},
+         "region": {"type": "string", "search_analyzer": "custom_search_analyzer", "index_analyzer": "custom_index_analyzer"}
+       }
+     }
+    }
+    
+
+and this is the query that I tried to use:
+
+    
+    
+    {
+    "query": {
+        "bool": {
+          "should": [
+            {
+              "match": {
+                "locality": "bolo"
+              }
+            },
+            {
+              "match": {
+                "region": "bolo"
+              }
+            },
+            {
+              "match": {
+                "name": "bolo"
+              }
+            }
+          ]
+        }
+      },
+      "facets": {
+        "region": {
+          "query": {
+            "term": {
+              "region": "bolo"
+            }
+          }
+        },
+        "locality": {
+          "query": {
+            "term": {
+              "locality": "bolo"
+            }
+          }
+        },
+        "name": {
+          "query": {
+            "term": {
+              "name": "bolo"
+            }
+          }
+        }
+      }
+    }
+    
+
+Of all the tests I've done this is the query that is closest to my desired
+result, however, does not tell me the count of distinct field, I found it to
+count the total field.
+
+For example, the above query returns the following result:
+
+    
+    
+    facets: {
+           region: {
+           _type: query
+           count: 0
+        }
+        locality: {
+           _type: query
+           count: 2
+        }
+        name: {
+           _type: query
+           count: 0
+        }
+    }
+    
+
+I would like to have a result like this (not so obviously written is correct,
+but does understand what I need):
+
+    
+    
+    facets: {
+        ....
+        locality: {
+           _type: query
+           "terms": [
+               {"term": "Bologna", "count": 1},
+               {"term": "Bolognano", "count": 1}
+           ]
+    
+        }
+    
+
+How can I do?
+
+I have already tried to use "terms" instead of "query" in the facets and put
+"index: not_analyzed" in the fields of research, but is only returned if I try
+the exact scope, not part of it!
+
+This can be done using value count aggregation. In value count aggregation ,
+it provides you the number of unique terms. While terms aggregation gives you
+the unique term and its document count.
+
+I believe you are looking for the value count aggregation -
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-metrics-valuecount-aggregation.html>
+

@@ -1,0 +1,125 @@
+27827677 Spring-boot application can only be launched with spring-boot:run
+when forking - java -jar fails
+
+I have a Spring Boot web application that I cannot start when using the
+executable jar directly.
+
+I am using Spring Boot 1.2.0.RELEASE, Maven 3.0.5, Java 1.7.0_72.
+
+I have a requirement to use the hp-roman8 character set - in order to handle
+incoming requests from some remote legacy systems. To provide the hp-roman8
+charset I use net.freeutils.jcharset in version 1.5.  The jcharset artifact is
+installed in my local repository
+
+However when launching my application using java -jar the application fails to
+start and I get "java.nio.charset.UnsupportedCharsetException: hp-roman8" as
+cause.
+
+The same error occurs if I do mvn spring-boot:run unless I configure spring-
+boot-maven-plugin to always fork. With `<fork>true</fork>` spring-boot:run
+starts the application successfully and the hp-roman8 charset is available on
+the classpath.
+
+However `<fork>true</fork>` has no effect on the created jar, so I am still
+unable to launch my application using java -jar - and continue to get the
+"java.nio.charset.UnsupportedCharsetException: hp-roman8".
+
+The jcharset-1.5.jar is included correctly in the created executable jar file
+next to the rest of the dependencies in the path "lib/jcharset-1.5.jar" so I
+don't quite understand why it is not available on the classpath when launching
+the jar.
+
+Have any of you seen similar behavior, or have any ideas as to what I could
+try out in order to troubleshoot or even resolve this problem?
+
+update: I have also tried changing the main-class to use the
+PropertiesLauncher instead (using the `<layout>ZIP</layout>` tag in the plugin
+configuration) - see <http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#build-tool-plugins-maven-packaging>.
+Afterwards I added loader.path to my application.properties. Even if I specify
+the absolute path to jcharset-1.5.jar I still get the
+UnsupportedCharsetException. I also tried using an [exploded
+archive](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#executable-jar-exploded-archives) but
+still no go.
+
+You could use Maven's shade plugin rather than Spring Boot's Maven plugin. The
+main difference is that the shade plugin takes all of your project's
+dependencies and packages them directly in the jar file, i.e. it doesn't use
+nested jars. While this has some disadvantages, it does mean that a single
+class loader is used to load all of your application's classes and, therefore,
+JCharset is available to the application class loader.
+
+When you're using the Shade plugin, you shouldn't use Spring Boot's starter
+parent. You may want to import Boot's dependency management instead.
+
+Your pom would look something like this:
+
+    
+    
+    <?xml version="1.0" encoding="UTF-8"?>
+    <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        <modelVersion>4.0.0</modelVersion>
+    
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-sample-jcharset</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+        <packaging>jar</packaging>
+        <name>spring-boot-sample-jcharset</name>
+        <description>Spring Boot sample showing the use of JCharset in an executable jar</description>
+    
+        <properties>
+            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            <java.version>1.7</java.version>
+        </properties>
+    
+        <dependencyManagement>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-dependencies</artifactId>
+                    <version>1.2.1.RELEASE</version>
+                    <type>pom</type>
+                    <scope>import</scope>
+                </dependency>
+            </dependencies>
+        </dependencyManagement>
+    
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+            </dependency>
+            <!-- Any additional dependencies, including JCharset -->
+        </dependencies>
+    
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>2.3</version>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                            <configuration>
+                                <transformers>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                        <manifestEntries>
+                                            <Main-Class>sample.jcharset.SampleJCharsetApplication</Main-Class>
+                                        </manifestEntries>
+                                    </transformer>
+                                </transformers>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </build>
+    </project>
+    
+

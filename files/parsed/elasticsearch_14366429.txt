@@ -1,0 +1,108 @@
+14366429 Unable to create elasticsearch river on couchdb using dynamic
+template mappings
+
+WHen I try to use dynamic templates to specify mapping such that everything
+other than objects is treated as string, the river fails.
+
+example - I try to first clear all previous indices and rivers for my db -
+tempTest.
+
+    
+    
+    curl -XDELETE 'localhost:9200/_river/tempTest/'
+    
+    curl -XDELETE 'localhost:9200/tempTest/'
+    
+    curl -XPUT localhost:9200/tempTest -d '{
+        "mappings": {
+            "tempTest": {
+                "dynamic_templates" : [
+                    {
+                        "template_obj" : {
+                            "match" : "*",
+                            "match_mapping_type" : "object",
+                            "mapping" : {
+                                "type" : "object"
+                            }
+                        }
+                    },
+                    {
+                        "template_str" : {
+                            "match" : "*",
+                            "mapping" : {
+                                "type" : "string"
+                            }
+                        }
+                    }            
+                ]
+            }
+        }
+    }'
+    
+    
+    curl -XPUT 'localhost:9200/_river/tempTest/_meta' -d '{
+        "type" : "tempTest",
+            "couchdb" : {
+                "host" : "localhost",
+                "port" : 5984,
+                "db" : "tempTest",
+                "filter" : null
+                },
+            "index" : {
+                "index" : "tempTest",
+                "type" : "tempTest",
+                "bulk_size" : "100",
+                "bulk_timeout" : "10ms"
+                }
+    }'
+    
+
+After I do this, I get the following error log in elasticsearch error logs.
+
+    
+    
+    [2013-01-16 13:52:33,500][WARN ][river                    ] [Starsmore, Jonothon] failed to create river [tempTest][tempTest]
+    org.elasticsearch.common.settings.NoClassSettingsException: Failed to load class with value [tempTest]
+        at org.elasticsearch.river.RiverModule.loadTypeModule(RiverModule.java:86)
+        at org.elasticsearch.river.RiverModule.spawnModules(RiverModule.java:57)
+        at org.elasticsearch.common.inject.ModulesBuilder.add(ModulesBuilder.java:44)
+        at org.elasticsearch.river.RiversService.createRiver(RiversService.java:135)
+        at org.elasticsearch.river.RiversService$ApplyRivers$2.onResponse(RiversService.java:270)
+        at org.elasticsearch.river.RiversService$ApplyRivers$2.onResponse(RiversService.java:264)
+        at org.elasticsearch.action.support.TransportAction$ThreadedActionListener$1.run(TransportAction.java:86)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908)
+        at java.lang.Thread.run(Thread.java:619)
+    Caused by: java.lang.ClassNotFoundException: pirates
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:200)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at java.net.URLClassLoader.findClass(URLClassLoader.java:188)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:307)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:301)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:252)
+        at org.elasticsearch.river.RiverModule.loadTypeModule(RiverModule.java:72)
+        ... 9 more
+    
+
+The river type has to be `couchdb`. Try this:
+
+    
+    
+    curl -XPUT 'localhost:9200/_river/tempTest/_meta' -d '{
+        "type": "couchdb",
+        "couchdb": {
+            "host": "localhost",
+            "port": 5984,
+            "db": "tempTest",
+            "filter": null
+        },
+        "index": {
+            "index": "tempTest",
+            "type": "tempTest",
+            "bulk_size": "100",
+            "bulk_timeout": "10ms"
+        }
+    }
+    '
+    
+

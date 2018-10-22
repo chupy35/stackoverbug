@@ -1,0 +1,16 @@
+15822890 How do you write a relative path in elasticsearch.yml?
+
+I want to provide a value for path.data that is relative to the installation
+location of ElasticSearch.
+
+Is it possible to do something like this?
+
+` path.data: {ES_DIR}/../../data `
+
+Yes, it is possible:
+
+    
+    
+    path.data: ${path.home}/../../data
+    
+

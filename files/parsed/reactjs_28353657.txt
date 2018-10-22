@@ -1,0 +1,37 @@
+28353657 Run code synchronously after element removed from DOM
+
+Is there a way to synchronously run code AFTER a component's element is
+removed from the DOM?
+
+In other words I'd like to do this:
+
+    
+    
+    componentDidUnmount: function(){
+      var thisEl = this.getDOMNode();
+      var docEl = document.documentElement;
+      assert(!docEl.contains(thisEl));
+    }
+    
+
+...instead of something hacky like this:
+
+    
+    
+    componentWillUnmount: function(){
+      setTimeout(function(){
+        var thisEl = this.getDOMNode();
+        var docEl = document.documentElement;
+        assert(!docEl.contains(thisEl));
+      }.bind(this), 0);
+    }
+    
+
+You need to handle this in the parent. After componentWillUnmount, your
+component is considered at the end of its life, and can no longer do anything.
+
+The parent's componentDidUpdate will be called after a child's
+componentWillUnmount. A complicated example of this can be found in
+[ReactTransitionGroup.js](https://github.com/facebook/react/blob/master/src/addons/transitions/ReactTransitionGroup.js#L91),
+which is the only use case for this I can think of.
+

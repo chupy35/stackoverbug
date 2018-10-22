@@ -1,0 +1,169 @@
+17658745 ElasticSearch ignoring sort when filtered
+
+ElasticSearch Version: 0.90.1, JVM: 1.6.0_51(20.51-b01-457)
+
+I'm trying to do two things with my ElasticSearch query: 1) filter the results
+based on a boolean (searchable) and "open_date < tomorrow" and 2) two sort by
+the field "open_date" DESC
+
+This produces the following query:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "prefix": {
+                "name": "foobar"
+              }
+            },
+            {
+              "query_string": {
+                "query": "foobar"
+              }
+            },
+            {
+              "match": {
+                "name": {
+                  "query": "foobar"
+                }
+              }
+            }
+          ],
+          "minimum_number_should_match": 1
+        },
+        "filtered": {
+          "filter": {
+            "and": [
+              {
+                "term": {
+                  "searchable": true
+                }
+              },
+              {
+                "range": {
+                  "open_date": {
+                    "lt": "2013-07-16"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "sort": [
+        {
+          "open_date": "desc"
+        }
+      ]
+    }
+    
+
+However, the results that come back are not being sorted by "open_date". If I
+remove the filter:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "prefix": {
+                "name": "foobar"
+              }
+            },
+            {
+              "query_string": {
+                "query": "foobar"
+              }
+            },
+            {
+              "match": {
+                "name": {
+                  "query": "foobar"
+                }
+              }
+            }
+          ],
+          "minimum_number_should_match": 1
+        }
+      },
+      "sort": [
+        {
+          "open_date": "desc"
+        }
+      ]
+    }
+    
+
+... the results come back as expected.
+
+Any ideas?
+
+I'm not sure about the Tire code, but the JSON does not correctly construct a
+filtered query. My guess is that this overflows and causes the sort element to
+also not be correctly parsed.
+
+A filtered query should be constructed like this (see
+<http://www.elasticsearch.org/guide/reference/query-dsl/filtered-query/> ):
+
+    
+    
+    {
+       "query": {
+          "filtered": { // Note: this contains both query and filter
+             "query": {
+                "bool": {
+                   "should": [
+                      {
+                         "prefix": {
+                            "name": "foobar"
+                         }
+                      },
+                      {
+                         "query_string": {
+                            "query": "foobar"
+                         }
+                      },
+                      {
+                         "match": {
+                            "name": {
+                               "query": "foobar"
+                            }
+                         }
+                      }
+                   ],
+                   "minimum_number_should_match": 1
+                }
+             },
+             "filter": {
+                "and": [
+                   {
+                      "term": {
+                         "searchable": true
+                      }
+                   },
+                   {
+                      "range": {
+                         "open_date": {
+                            "lt": "2013-07-16"
+                         }
+                      }
+                   }
+                ]
+             }
+          }
+       },
+       "sort": [
+          {
+             "open_date": "desc"
+          }
+       ]
+    }
+    
+
+Cheers, Boaz
+

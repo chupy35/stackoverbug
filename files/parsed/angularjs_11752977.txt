@@ -1,0 +1,134 @@
+11752977 AngularJS ng-model $scope in ng-repeat is undefined
+
+I apologize in advance if i'm not wording this properly. I have a textbox with
+`ng-model` inside an `ng-repeat` and when I try to get the textbox value it's
+always `undefined`. I just want it to display whatever I type in the
+corresponding textbox.
+
+It seems to be an issue with the `$scope`, so how would I make the
+`$scope.postText` global or at the controller root level so it can be
+accessible?
+
+Here's the JSFiddle to help clear things up:
+<http://jsfiddle.net/stevenng/9mx9B/14/>
+
+In your click expression you can reference the `postText` and access it in
+your `savePost` function. If this wasn't in an ng-repeat you could access the
+single `$scope.postText` successfully but [ng-
+repeat](http://docs.angularjs.org/api/ng.directive%3angRepeat) creates a new
+scope for each item.
+
+[Here](http://jsfiddle.net/VnQqH/) is an updated fiddle.
+
+    
+    
+    <div ng-repeat="post in posts">
+       <strong>{{post}}</strong>
+       <input type="text" ng-model="postText">
+       <a href="#" ng-click="savePost(postText)">save post</a>
+    </div>
+    
+    $scope.savePost = function(post){
+       alert('post stuff in textbox: ' + post);
+    }
+    
+
+As @Gloopy already stated, ng-repeat creates a new child scope for each item
+in your `posts` array. Since each item of the `posts` array is a primitive (a
+string), ng-repeat also creates a `post` property on each child scope, and
+assigns each of them the appropriate value from the array. Inside the ng-
+repeat block is `ng-model="postText"`. This creates a postText property on
+each of the child scopes. Here is what that all looks like (for 2 of the 4
+child scopes):
+
+![ng-repeat scopes](https://i.stack.imgur.com/R3DCA.png)
+
+When a user types some text into one of the input textboxes, the appropriate
+gray box will store the text. (E.g., the 2nd (from the top) gray box will
+store text a user types into the "tech" textbox.) The parent scope cannot see
+the postText properties in the child scope -- this is the problem you had.
+There are three common solutions:
+
+  1. @Gloopy's answer: define a function on the parent scope (which the child scopes can access, because ng-repeat child scopes prototypically inherit from the parent scope) and pass the child scope property value (i.e., postText's value) up to the parent.
+  2. Use objects instead of primitives in your `posts` array. E.g.,  
+`$scope.posts = [ {type: 'tech'}, {type: 'news'}, ...];`  
+Then in your ng-repeat loop, use  
+`<input type="text" ng-model="post.postText">`  
+Because each array item is an object (and not a primitive), each child scope
+gets a reference to the appropriate object in array `posts`, rather than a
+copy (of a value). Therefore, `post.postText` gets created on parent $scope
+property `posts`, and hence it is visible to the parent scope. (So, in this
+case the child scopes would simply call `savePost()` \-- there would be no
+need to pass any values up to the parent scope.)  
+In other words, if a user typed "this is tech related" into the first text
+box, the `posts` array in the parent would be automatically updated as
+follows:  
+`$scope.posts = [ {type: 'tech', postText: 'this is tech related'}, {type:
+'news'}, ...];`  
+One last note: the postText property is not added to the posts object until
+the user types something.
+
+  3. Use `ng-model="$parent.someProperty"` to bind the form element to a property on the parent scope, rather than on the child scope. This solution would be difficult to implement for your scenario, and it is a rather fragile solution, as it depends on the HTML structure for scope inheritance... but I mention it for completeness.
+
+(A fourth solution was presented by @Renan in comments on @Gloopy's answer.
+This is a like solution 1., but with a variation: `this` is used instead of
+passing a value up to the parent. I'm not a fan of this approach as it makes
+it difficult to determine which $scope is being accessed or modified. I think
+it is better that functions defined on $scope only access and modify their own
+$scope.)
+
+For more information (and lots more pictures) about how prototypal scope
+inheritance works in Angular, see [What are the nuances of scope prototypal /
+prototypical inheritance in
+AngularJS?](https://stackoverflow.com/questions/14049480/what-are-the-nuances-
+of-scope-prototypal-prototypical-inheritance-in-angularjs)
+
+This may be a late answer. Please refer this fiddle.
+<http://jsfiddle.net/X5gd2/> Please refer to the firebug's console, when u
+click on the links after typing some texts in the text box. The idea is to
+have a itemcontroller for each of the view that is repeated inside the ng-
+repeat.
+
+The item controller:
+
+    
+    
+    function postItemController($scope){
+        $scope.savePost = function(){
+            console.log($scope.postText + " which belongs to " + $scope.post +" will be saved")
+        }
+    }
+    
+
+Split the model up into heading and value
+
+    
+    
+    angular.module('MyApp',[]);
+    
+    function PostCtrl($scope) {
+         $scope.posts = [{heading:'tech',value:''}, {heading:'news',value:''},     {heading:'sports',value:''},{heading:'health',value:''}];
+    
+        $scope.savePost = function(post){
+            alert( 'post stuff in textbox: ' + post);
+        }
+    }
+    
+
+HTML below..
+
+    
+    
+    <div ng-app="MyApp">
+        <div ng-controller="PostCtrl">
+            <div ng-repeat="post in posts">
+              <strong>{{post.heading}}</strong>
+              <input type="text" ng-model="post.value"> 
+              <a href="#" ng-click="savePost(post.value)">save post</a>   
+            </div>
+        </div>
+    </div>
+    
+
+[Check out this Fiddle..](http://jsfiddle.net/m075vx07/)
+

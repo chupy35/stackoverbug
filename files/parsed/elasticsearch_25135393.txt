@@ -1,0 +1,68 @@
+25135393 Queries on Elasticsearch Configuration and Bulk Import
+
+I am trying to setup elasticsearch with around 5 million records. Each
+document has 150 KV pairs. I am using ES 1.2.1 on Ubuntu 12.04 with 4GB RAM
+and 40GB Disk space. I have used all the default configurations of ES for
+creating index, inserting documents so on and so forth.
+
+Few problems while doing this are:
+
+1) I was able to insert maximum of 30K records from a JSON file using bulk
+api. I also observed that it works smooth for a file size around 15-20MB only.
+Can anyone specify the reason, upper bound and optimal size for bulk import?
+
+2) A JSON file used for bulk api contains thousands of records. So every time
+before actual data I had to write a specification line. For example,
+
+> {"index":{"_index":"indexName","_type":"testName","_id":"someValue"}}
+
+>
+
+> {"field1": "value1","field2":"value2".....}
+
+>
+
+> {"index":{"_index":"indexName","_type":"testName","_id":"someValue"}}
+
+>
+
+> {"field1": "value1","field2":"value2".....}
+
+>
+
+> {"index":{"_index":"indexName","_type":"testName","_id":"someValue"}}
+
+>
+
+> {"field1": "value1","field2":"value2".....}......
+
+Isn't this cumbersome? I mean if I have to insert 100 records, I have to add
+100 specification lines in the file as well?
+
+3) I successfully inserted some 3,30,000 records by repeatedly inserting 30K
+records at once. But then I tried doing this concurrently and started running
+5 threads at a time. ES Crashed!!! Out of memory exceptions was the reason. I
+restarted the ES and found that now only 2,07,000 records are present. Out of
+5 shards only 2 were successful which means data vanished! It is serious issue
+and can break the application.  Can anyone help me on ideal sharding and
+memory requirements for such a huge size of data? Also how we can specify
+these settings at the time of index creation and modify after index creation ?
+
+4) Now after this crash, when I search for a particular record with id 'x', ES
+returns me the data but when I am trying to retrieve same document with Get,
+it fails! What might be gone wrong?
+
+Help is much appreciated. Thanks in advance.
+
+I found the sweet spot to be > 2k and < 10k documents per bulk request and <
+10MB worth of data. ES can only index so fast, so it's not hard to overwhelm
+elasticsearch with too much data to index.
+
+If you haven't tried, you could try using Node client to push bulk requests to
+ES. Unlike http/TransportClient, using node client cuts down on extra network
+chatter due to data allocation within the cluster. It will push the data to
+the node that will store it, instead of blindly pushing the data to a node,
+which may then pass it off to its final destination. If you have any processes
+that take days to index, this could save you some decent time. For processes
+that take a few hours, it's probably not worth it.
+

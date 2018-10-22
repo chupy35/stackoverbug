@@ -1,0 +1,24 @@
+21619946 Configure ports in elasticsearch
+
+I am new to elastic search . In elastic search
+
+    
+    
+      Https ports ranges from 9200-9300 and tcp ports ranges from 9300 to 9400.
+      What if i use all  these ports ranges from 9200 to 9400. 
+      Will it take new port or throws error.Methodology used to Tcp port calculation?.
+      Pls provide me an example.
+    
+
+It should be the case as you don't want to run 100 nodes on a single machine.
+
+So I don't really understand what is exactly your concern here.
+
+That said, if you want to change port, have a look at `elasticsearch.yml`
+file.
+
+Have a look at:
+
+  * <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-transport.html#_tcp_transport>
+  * <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-http.html>
+

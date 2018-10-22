@@ -1,0 +1,39 @@
+28464642 Pass properties to recursive templates?
+
+Is there a more elegant solution than re-passing all the properties again when
+using recursive templates?
+
+    
+    
+    <!-- CommentList.js -->
+    <Comment comment="comment" property="one" property="two"></Comment>
+    
+    <!-- Comment.js -->
+    <p>{comment.message}</p>
+    
+    <!-- loop over comment.children (more comments, same properties) -->
+        <Comment comment="comment" property="one" property="two"></Comment>
+    <!-- end loop -->
+    
+
+If you want to transfer the properties you can use [JSX spread
+attributes](http://facebook.github.io/react/docs/jsx-spread.html) to inject
+the properties of the parent control into a specified element:
+
+The syntax is similar to a syntax in EcmaScript 6 (and something proposed in
+7): `{...props}`.
+
+By using `this.props` for example, you'll get all of the properties of the
+parent class copied into the child. (It could be `{...myObj}` as well ... it
+will copy values from the object named `myObj` in that example.)
+
+So, in your example, it might be:
+
+    
+    
+    return <Comment {...this.props} extra="stuff" />;
+    
+
+[Here](http://facebook.github.io/react/docs/transferring-props.html) are more
+details and a few other options you could consider as well.
+

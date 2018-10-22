@@ -1,0 +1,3 @@
+30346340
+how to update multiple rows in elastic search?
+<p>I have a index in elastic search db.&#xA;i want to update the multiple rows whose date column matches a particular date.&#xA;I can see only updating multiple columns in <a href="https://stackoverflow.com/questions/21405003/solutions-for-elastic-search-document-update-for-multiple-fields-using-java-api">Solutions For Elastic Search document Update For Multiple fields using JAVA Api Code</a></p>&#xA;

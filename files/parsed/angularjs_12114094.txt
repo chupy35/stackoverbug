@@ -1,0 +1,50 @@
+12114094 Populating $scope using .getJSON()
+
+I started playing with Angular.js recently, and got a demo project working
+pretty well. However, when I attempted to load the data from a backend web
+service versus just a hard coded array I started getting hung up. Specifically
+the page doesnt seem to properly data bind after i set the $scope using
+$.getJSON().done(...). Instead of just assigning a value to $scope after
+.getJSON is done, should I be doing it somewhere else/differently? I searched
+high and low and really couldnt find any good examples of angular thats
+pulling intial data from a backend.
+
+Thanks in advance for any help with this!
+
+Since you are trying to update the `$scope` outside of Angular you will have
+to make your model changes using the
+[$apply](http://docs.angularjs.org/api/ng.$rootScope.Scope#$apply) method on
+the scope.
+
+Maybe something like:
+
+    
+    
+        $.getJSON('ajax/test.json', function(data) {
+            $scope.$apply(function(){
+                $scope.modelData = data;
+            });
+        });
+    
+
+The preferred way to access a backend with AngularJS would be to use the
+[$http](http://docs.angularjs.org/api/ng.$http) or
+[$resource](http://docs.angularjs.org/api/ngResource.$resource) service in
+place of jQuery. You won't have to use `$scope.$apply` you can just update
+your `$scope.modelData` directly.
+
+[This post](http://groups.google.com/d/msg/angular/kqFrwiysgpA/eB9mNbQzcHwJ)
+has a good [fiddle](http://jsfiddle.net/johnoscott/dgW73/2/) of updating a
+model outside of Angular code.
+
+or instead of wrapping with apply, just call it at the end of the callback
+function like
+
+    
+    
+      $.getJSON('ajax/test.json', function(data) {
+        $scope.data = data;        
+        $scope.$apply();
+    });
+    
+

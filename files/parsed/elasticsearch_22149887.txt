@@ -1,0 +1,35 @@
+22149887 How is the search snippet and meta "description" of a post
+determined?
+
+Wen you search in stackoverflow, in most cases a search snippet (first 40
+words or so of a post / question) is shown. In some cases, more text is shown
+and this text includes the search terms. Both blocks of text are ending with
+ellipsis symbol.
+
+If you look at the meta tag "description" or "og:description", a similar text
+is included, thus allowing Google to index correctly.
+
+My questions:
+
+  * What search engine is stackoverflow using (elastic search / Lucene) ?
+
+  * How and when is the search snippet determined (in realtime during search action or when saving a post / question ?) 
+
+  * How and when is the meta-description determined.
+
+I ask these questions because I want to prevent that I start coding an
+algorithm to determine the first 40 words or so of an html article (in our
+case a blog post).
+
+thx Marc
+
+[Stackoverflow uses Elasticsearch](http://www.elasticsearch.org/case-
+studies/).
+
+Elasticsearch has a
+[highlighting](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-highlighting.html)-features that take care of these things.
+
+The snippet is determined search time, to find the snippet that is most likely
+to be relevant for the user's query.
+

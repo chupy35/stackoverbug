@@ -1,0 +1,104 @@
+10457833 How would I render a dynamic definition list using AngularJS?
+
+How would I render a dynamic definition list using AngularJS?
+
+Example:
+
+Data:
+
+    
+    
+    [
+        {
+            key: 'a',
+            value: 'x'
+        }, {
+            key: 'b',
+            value: 'y'
+        }
+    ]
+    
+
+Desired HTML:
+
+    
+    
+    <dl>
+        <dt>a</dt>
+        <dd>x</dd>
+        <dt>b</dt>
+        <dd>y</dd>
+    </dl>
+    
+
+The example at <http://docs.angularjs.org/tutorial/step_08>:
+
+    
+    
+    <dl>
+        <dt>Availability</dt>
+        <dd ng-repeat="availability in phone.availability">{{availability}}</dd>
+    </dl>
+    
+
+works for a dynamic number of dds and a static number of dts, but not a
+dynamic number of both.
+
+This is a problem, because you need to wrap it with some element in order to
+do repeating. And that's not gonna be a valid html - you would get into the
+same trouble with unordered lists or tables...
+
+    
+    
+    <dl>
+      <div ng-repeat="i in items">
+        <dt>{{i.key}}</dt>
+        <dd>{{i.value}}</dd>
+      </div>
+    </dl>
+    
+
+I guess the `div` inside `dl` is not allowed by spec, but it works - at least
+in Chrome :-D
+
+We plan to support `ng-repeat` inside a comment to support this.
+
+A new feature which allows ng-repeat-start/ng-repeat-end was added in Angular
+1.2.
+
+With this feature, you can write your html like this:
+
+    
+    
+    <dl>
+      <dt ng-repeat-start="i in items">{{i.key}}</dt>
+      <dd ng-repeat-end>{{i.value}}</dd>
+    </dl>
+    
+
+See [this plnkr](http://plnkr.co/edit/9BhyYhQlQMRZtZKIsZ8G?p=preview) for a
+full working example.
+
+I've created a directive called
+[repeatInside](https://github.com/bigblind/angular-repeat-inside) to solve
+problems like this one.
+
+    
+    
+    <dl repeat-inside="word in dictionary">
+        <dt>{{word.name}}</dt>
+        <dd>{{word.definition}}</dd>
+    </dl>
+    
+
+This answer didn't seem to work for me in Angular v1.2.7 so I wanted to post a
+slight variation that worked well for me:
+
+    
+    
+    <dl>
+        <dt ng-repeat-start="(key, value) in items">{{key}}</dt>
+        <dd ng-repeat-end>{{value}}</dd>
+    </dl>
+    
+

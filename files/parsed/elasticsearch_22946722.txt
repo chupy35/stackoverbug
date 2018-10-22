@@ -1,0 +1,32 @@
+22946722 ElasticSearch update API - add fieldname starting with @ sign
+
+The ES update API can't set a new field if its name starts with an @:
+
+    
+    
+    { 
+      "script" : "ctx._source.@timestamp = 20120101000000"
+    }
+    
+
+anybody else stumbled upon this before? is there `ctx._source.remove()`
+equivalent for adding fieldnames which I could try as a workaround?
+
+You can do it using `["fieldname"]` notation:
+
+    
+    
+    {
+        "script" : "ctx._source[\"@timestamp\"] = 20120101000000"
+    }'
+    
+
+or `put` method:
+
+    
+    
+    { 
+        "script" : "ctx._source.put(\"@timestamp\", 20120101000001)"
+    } 
+    
+

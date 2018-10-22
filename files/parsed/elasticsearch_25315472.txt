@@ -1,0 +1,52 @@
+25315472 How to sort by formatted date with Elastic Search?
+
+Suppose I have the following:
+
+    
+    
+    Name      Date
+    -----   -------------------
+    Alice   2013-02-10 15:17:00
+    Alice   2013-02-10 16:19:00
+    Alice   2013-02-10 17:21:00
+    Bob     2013-02-10 18:23:00
+    Alice   2013-02-10 19:25:00
+    
+
+This is what happens when I sort for date, then for name. It considers the
+hours first. What I really want is this:
+
+    
+    
+    Name      Date
+    -----   -------------------
+    Alice   2013-02-10 15:17:00
+    Alice   2013-02-10 16:19:00
+    Alice   2013-02-10 17:21:00
+    Alice   2013-02-10 19:25:00
+    Bob     2013-02-10 18:23:00
+    
+
+So, I want to sort first by `%Y-%m-%d`, then by name.
+
+Is that possible?
+
+Thanks
+
+It seems that you can use a sort _script for that:
+
+    
+    
+    "sort": {
+    "_script": {
+      "script": "new java.text.SimpleDateFormat('yyyy-MM-dd').format(new Date(doc['date'].value))",
+      "type": "string",
+      "order": "desc"
+    },
+    "name": "asc"
+    
+
+**Be aware that this is a security flaw**. Read more at
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html>
+

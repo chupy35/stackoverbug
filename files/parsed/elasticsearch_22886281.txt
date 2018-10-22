@@ -1,0 +1,38 @@
+22886281 Expand date ranges for aggregations on ElasticSearch
+
+I have create a dimension with a series of values and From/To fields and
+stored it all on elasticsearch.
+
+I now need to create aggregations on some attributes but expanded by day on
+the range of dates given. For instance, I have the following:
+
+    
+    
+    Location       Sales Region  From        To
+    
+    San Francisco  West          1/1/2013    12/01/2013
+    Oakland        West          12/02/2013  04/05/2014
+    
+
+But now, I need an aggregate to return
+
+    
+    
+    Date, Location, Count(*)
+    
+    1/1/2013, San Francisco, 1
+    
+    1/2/2013, San Francisco, 2
+    
+    ...
+    
+    12/02/2013 Oakland 1
+    
+    ...
+    
+    04/05/2014 Oakland 1
+    
+
+Can you give me a tip how to blow up my range so this can happen or if elastic
+search already offers something similar?
+

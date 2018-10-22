@@ -1,0 +1,46 @@
+13576703 Indexing documents in ElasticSearch with PHP curl
+
+I am trying to add documents to ElasticSearch. I have no problems using curl
+from the command line, but I'm having trouble when using curl in PHP. I'm
+following this example from the docs:
+<http://www.elasticsearch.org/guide/reference/api/index_.html>
+
+The following code is giving me this error:
+`{"error":"IndexMissingException[[twitter] missing]","status":404}`
+
+    
+    
+    $search_host = '127.0.0.1';
+    $search_port = '9200';
+    $index = 'twitter';
+    $doc_type = 'tweet';
+    $doc_id = 1;
+    
+        $json_doc = array(
+                    "user" => "kimchy",
+                    "post_date" => "2012-11-15T14:12:12",
+                    "message" => "trying out Elastic Search"
+                );
+        $json_doc = json_encode($json_doc);
+    
+        $baseUri = 'http://'.$search_host.':'.$search_port.'/'.$index.'/'.$doc_type.'/'.$doc_id;
+    
+        $ci = curl_init();
+        curl_setopt($ci, CURLOPT_URL, $baseUri);
+        curl_setopt($ci, CURLOPT_PORT, $search_port);
+        curl_setopt($ci, CURLOPT_TIMEOUT, 200);
+        curl_setopt($ci, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ci, CURLOPT_FORBID_REUSE, 0);
+        curl_setopt($ci, CURLOPT_CUSTOMREQUEST, 'XPUT');
+        curl_setopt($ci, CURLOPT_POSTFIELDS, $json_doc);
+        $response = curl_exec($ci);
+    
+
+You have to set the the curl option `CURLOPT_CUSTOMREQUEST` to `PUT`, not
+`XPUT`.
+
+    
+    
+    curl_setopt($ci, CURLOPT_CUSTOMREQUEST, 'PUT');
+    
+

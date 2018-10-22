@@ -1,0 +1,12 @@
+22593448 2D search radius in elasticsearch
+
+I've been looking into elasticsearch for a new project but i've noticed that
+the geo search seems exclusively for finding things on a sphere.
+
+Is there a way to search within a radius on a 2d plane rather than 3d, I've
+seen that you can search using the planar option but that is still assuming a
+lat and log, i want to do the same thing with x and y only.
+
+For example mongodb supports this
+<http://docs.mongodb.org/manual/tutorial/query-a-2d-index/>
+

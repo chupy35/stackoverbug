@@ -1,0 +1,48 @@
+23747694 ElasticSearch Filtered Subdocument Count
+
+I'd like to count the number of devices having greater than two sessions in a
+date range.
+
+Given the elastic search document and subdocument array below as an example:
+
+    
+    
+    {
+      "_index": "device",
+      "_type": "device_type",
+      "_id": "5ee1a8a2fde077a42e144a1425b6d501",
+      "_score": 1,
+      "_source": {
+        "sessions": [
+          {
+            "sessionIdentifier": "bfa369ca-2ed7-4ccd-adc6-3cc0768e6264",
+            "sessionStartTime": "1399672448000"
+          },
+          {
+            "sessionIdentifier": "22886451-5b0d-4c25-9dac-38a7f4596f67",
+            "sessionStartTime": "1399672449000"
+          },
+          {
+            "sessionIdentifier": "adab71cf-1d32-444c-8931-4783b8813f74",
+            "sessionStartTime": "1399672500000"
+          }
+        ],
+        "numSessions": 3,
+        "deviceIdentifier": "5ee1a8a2fde077a42e144a1425b6d501"
+      }
+    }
+    
+
+a "hit" for date ranges such as:
+
+  1. 1399672448000 <= date <= 1399672500000 (3 sessions)
+  2. 1399672448000 <= date <= 1399672449000 (2 sessions)
+
+and a "miss" for date ranges such as:
+
+  1. 1399672448000 <= date < 1399672449000 (1 session)
+
+Is there a performant way to accomplish this query for arbitrarily large date
+ranges using elastic search? I am not opposed to further denormalization of
+the data or any alternative suggestions.
+

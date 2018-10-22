@@ -1,0 +1,4 @@
+28852616
+how to make elasticsearch suggest a better search term when the one given is not misspelled?
+<p>If someone is searching for "kitchen sink" but mistakenly types in "kitchen ink" (which is a valid search and has results), how would I suggest a "did you mean" for "kitchen sink".</p>&#xA;&#xA;<p>I was thinking I could do fuzzy permutations but that might get intensive - eg.  maybe they meant "kitchen pink" or "kitchen link" etc.  </p>&#xA;
+<p>Have you looked at the <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-suggesters-phrase.html" rel="nofollow">phrase suggester</a>? That's what it's designed for.</p>&#xA;

@@ -1,0 +1,149 @@
+20713839 Elasticsearch Query - how to?
+
+I have the data in the following format in Elastic Search (from sense)
+
+    
+    
+    POST slots/slot/1
+    {
+        locationid:"1",
+        roomid:"10",   
+        starttime: "08:45"   
+    }
+    
+    POST slots/slot/2
+    {
+        locationid:"1",
+        roomid:"10",   
+        starttime: "09:00" 
+    }  
+    
+    
+    POST slots/slot/3
+    {
+        locationid:"2",
+        roomid:"100",   
+        starttime: "08:45"   
+    }  
+    
+    
+    POST slots/slot/4
+    {
+        locationid:"2",
+        roomid:"101",   
+        starttime: "09:00"   
+    }
+    
+    POST slots/slot/5
+    {
+        locationid:"3",
+        roomid:"200",   
+        starttime: "09:30"   
+    }
+    
+
+In short , the data is in the following format.
+
+A Location has multiple rooms and each room has multiple slots of 15 minutes.
+So slot 1 for Room10 starts at 8:45 and ends at 09:00, Slot 2 for same room
+starts at 09:00 and ends at 09:15
+
+    
+    
+    Locationid   RoomId    Starttime
+    --------------------------------------
+        1     10        08:45
+        1     10        09:00
+        2     100       08:45
+        2     101       09:00
+        3     200       09:30
+    
+
+Im trying to write a query/filter which will give me all locations where a
+room is available with two or three slots.
+
+For e.g Find a location that has 08:45 slot and 09:00 slot (configurable)
+Answer should be location 1 only Should Not be location 2 as room 100 has
+08:45 slot but not the 09:00 slot. Room 101 has 09:00 slot but doesnt have the
+08:45 slot
+
+I believe this is not the best approach , but my attempt for the answer
+
+    
+    
+    POST slots/slot/_search?pretty=true&search_type=count
+    {
+    "facets": {
+       "locationswithslots": {
+          "terms": {
+             "field": "locationid",
+                "script" : "term + \"_\" + _source.roomid",
+             "size": 10
+          },
+    
+       "facet_filter":
+       {         
+                "terms": 
+                {
+                   "starttime": 
+                   [
+                      "08:45",
+                      "09:00"
+                   ]
+                }
+    
+    
+       }
+       }
+    }
+    
+
+}
+
+This gives the answer as below
+
+    
+    
+    {
+    "took": 12,
+    "timed_out": false,
+    "_shards": {
+      "total": 5,
+      "successful": 5,
+      "failed": 0
+    },
+    "hits": {
+      "total": 5,
+      "max_score": 0,
+      "hits": []
+     },
+     "facets": {
+      "locationswithslots": {
+         "_type": "terms",
+         "missing": 0,
+         "total": 4,
+         "other": 0,
+         "terms": [
+            {
+               "term": "1_10",
+               "count": 2
+            },
+            {
+               "term": "2_101",
+               "count": 1
+            },
+            {
+               "term": "2_100",
+               "count": 1
+            }
+         ]
+       }
+    }
+    }
+    
+
+Now I need to figure out a way to filter the facets that return count 2 as I
+passed in 2 slots in the filter.
+
+Any other option possible?
+

@@ -1,0 +1,40 @@
+24075357 Elasticsearch autocomplete using nGram, results order
+
+I implement autocomplete with the nGram filter, and everything works fine.
+
+my problem is the suggestions returned seem to be in arbitrary order.
+
+for example, I have a field called "id", they seem to be some numbers like
+"1000", "45100231", but are stored as string. when I type in "10", I hope to
+see "1000" comes first then maybe "102000", etc. so the ideal suggestion order
+I want is: the matching part in prefix comes first, then the middle, then
+suffix. e.g. "1000">"2101">"1110". If the matching parts are all in the
+beginning, just sort by the next digits. e.g. "1000" > "1011" >"10200"
+
+I've been reading lots of posts about elasticsearch sorting but found no
+strategy that really works. anyone got any idea? thanks!
+
+One way I see is keep autocomplete tokens in 3 fields: 1st field keeps
+prefixes (using edgeNgram) 2nd field keeps only middle word ngram parts (but I
+think this requires custom filter) 3nd field keeps only suffixes
+
+so for a value `12345` it generates next set of tokens:
+
+  * prefixes: `12, 123, 1234, 12345`
+  * middle: `23, 34, 234`
+  * suffixes: `2345, 345, 45`
+
+when you have such index, you could use bool filter with matching against this
+3 fields, but with different boost factor, for example you boost prefixes ^10,
+middle ^1 and suffixes ^0.1
+
+I believe the result must be acceptable.
+
+**UPDATE**
+
+for you case only with numbers, I think it's better to use `script_score` from
+this
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/query-dsl-
+function-score-query.html> and manually check in mvel or javascript, if it's
+prefix, middle or suffix, but you should keep just raw_id in separate field.
+

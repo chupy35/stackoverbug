@@ -1,0 +1,415 @@
+22537714 Sort docs by inner field string
+
+Assuming this is a mapping and person is the `type`:
+
+    
+    
+    {
+        "person" : {
+            "properties" : {
+                "name" : {
+                    "type" : "object",
+                    "properties" : {
+                        "first" : {"type" : "string"},
+                        "last" : {"type" : "string"}
+                    }
+                }
+            }
+        } 
+    }
+    
+
+How can I sort the returned `person` documents by their last name? In
+`_search` query I try:
+
+    
+    
+    {
+       "sort": [ {"name.last": "desc" } ]
+    }
+    
+
+* * *
+
+Update **beware extremely long question**
+
+@pickypg is absolutely right that the above works. So this is my more complex
+structure which does not. The mapping:
+
+    
+    
+    curl -XPUT "http://localhost:9200/venue/event/_mapping" -d '
+    {
+        "event" : {
+            "properties" : {
+                "name"      : { "type"  : "string" },
+                "address"   : { "type" : "string"},
+                "_id"       : {
+                    "type" : "object",
+                    "properties" : {
+                        "$oid"      : { "type"  : "string" }
+                    }
+                },
+                "events"  : {
+                    "type" : "object",
+                    "properties": {
+                        "event_id"       : {
+                            "properties" : {
+                                "$oid"      : { "type"  : "string" }
+                            }
+                        },
+                        "title"         : { "type" : "string"}, 
+                        "start_date"    : { "type" : "date" , "format": "basic_date_time_no_millis" }
+                      }
+                }
+    
+            }
+        }
+    }'
+    
+
+What I get before I add documents on `venue/event/_mapping` (`_id` and `$oid`
+is missing):
+
+    
+    
+    {
+        venue: {
+            mappings: {
+                event: {
+                    properties: {
+                        name: {
+                            type: "string"
+                        },
+                        address: {
+                            type: "string"
+                        },
+                        events: {
+                            properties: {
+                                event_id: {
+                                    properties: {
+                                        $oid: {
+                                            type: "string"
+                                        }
+                                    }
+                                },
+                                start_date: {
+                                    type: "date",
+                                    format: "basic_date_time_no_millis"
+                                },
+                                title: {
+                                    type: "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+What is an example document I insert (via bulk-feed: `helpers.bulk()` in
+elasticsearch-py):
+
+    
+    
+    {
+        '_index': 'venue',
+        '_type': 'event',
+        '_id': '52cb45cfc36b444275172903',
+        '_source': {
+            'name': 'S.WalterStewartLibrary',        
+            'address': '170MemorialParkAvenue',
+            '_id': {
+                '$oid': '52cb45cfc36b4442751728f9'
+            },
+            'events': {
+                'title': u'ParentLedSingAlongGroup',
+                'event_id': {
+                    '$oid': '52cb45cfc36b444275172903'
+                },
+                'start_date': u'2014-01-08T20: 15: 00+00: 00',           
+            }
+        }
+    }
+    
+
+What I get after I add documents on `venue/event/_mapping`. `$oid` has moved
+to the `_id`'s parent:
+
+    
+    
+    {
+        venue: {
+            mappings: {
+                event: {
+                    properties: {
+                        $oid: {
+                            type: "string"
+                        },
+                        address: {
+                            type: "string"
+                        },
+                        events: {
+                            properties: {
+                                event_id: {
+                                    properties: {
+                                        $oid: {
+                                            type: "string"
+                                        }
+                                    }
+                                },
+                                start_date: {
+                                    type: "date",
+                                    format: "basic_date_time_no_millis"
+                                },
+                                title: {
+                                    type: "string"
+                                }
+                            }
+                        },
+                        name: {
+                            type: "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+**The query** :
+
+This might work (because the sort in the results displays numbers):
+
+    
+    
+    GET venue/event/_search
+    {
+       "size": 2,
+       "sort": [
+          {
+             "name": "asc"
+          }
+       ]
+    }
+    
+
+result:
+
+    
+    
+    {
+        "took": 11,
+        "timed_out": false,
+        "_shards": {
+            "total": 10,
+            "successful": 10,
+            "failed": 0
+        },
+        "hits": {
+            "total": 1000,
+            "max_score": null,
+            "hits": [
+                {
+                    "_index": "venue",
+                    "_type": "event",
+                    "_id": "531de9d1c36b442c7cf79981",
+                    "_score": null,
+                    "_source": {
+                        "name": "Springville Moose Lodge 14141",
+                        "_id": {
+                            "$oid": "531de9d0c36b442c7cf7997c"
+                        },
+                        "events": {
+                            "title": "Community Meeting, Film Screening & Fish Fry",
+                            "event_id": {
+                                "$oid": "531de9d1c36b442c7cf79981"
+                            },
+                            "start_date": "2014-03-14T19:00:00-04:00"
+                        }
+                    },
+                    "sort": [
+                        "14141"
+                    ]
+                },
+                {
+                    "_index": "venue",
+                    "_type": "event",
+                    "_id": "5303e066c36b4453b45fe459",
+                    "_score": null,
+                    "_source": {
+                        "name": "AnCafe 173 Xuân Thủy",
+                        "address": "173 Xuân Thủy",
+                        "_id": {
+                            "$oid": "5303e066c36b4453b45fe458"
+                        },
+                        "events": {
+                            "end_date": "2014-03-01T10:00:00+00:00",
+                            "title": "2014: Plans for WordPress in Vietnam",
+                            "event_id": {
+                                "$oid": "5303e066c36b4453b45fe459"
+                            },
+                            "start_date": "2014-03-01T08:00:00+00:00"
+                        }
+                    },
+                    "sort": [
+                        "173"
+                    ]
+                }
+            ]
+        }
+    }
+    
+
+This definitely doesn't:
+
+    
+    
+    GET venue/event/_search
+    {
+       "size": 2,
+       "sort": [
+          {
+             "events.title": "asc"
+          }
+       ]
+    }
+    
+
+result (the sort is null):
+
+    
+    
+    {
+        "took": 2,
+        "timed_out": false,
+        "_shards": {
+            "total": 10,
+            "successful": 10,
+            "failed": 0
+        },
+        "hits": {
+            "total": 1000,
+            "max_score": null,
+            "hits": [
+                {
+                    "_index": "venue",
+                    "_type": "event",
+                    "_id": "52e83eb6c36b4473d6c177ba",
+                    "_score": null,
+                    "_source": {
+                        "name": "Canadian Academic Succes School",                    
+                        "address": "5310A Yonge Street",
+                        "_id": {
+                            "$oid": "52cb45cec36b4442751728f6"
+                        },
+                        "events": {
+                            "title": "Valentine's Party",
+                            "event_id": {
+                                "$oid": "52e83eb6c36b4473d6c177ba"
+                            },
+                            "start_date": "2014-02-16T01:00:00+00:00"
+                        }
+                    },
+                    "sort": [
+                        null
+                    ]
+                },
+                {
+                    "_index": "venue",
+                    "_type": "event",
+                    "_id": "52f70fa6c36b446c340e9374",
+                    "_score": null,
+                    "_source": {
+                        "name": "Canadian Academic Succes School",
+                        "address": "5310A Yonge Street",
+                        "_id": {
+                            "$oid": "52cb45cec36b4442751728f6"
+                        },
+                        "events": {
+                            "title": "English Circle 1 (With Brian)",
+                            "event_id": {
+                                "$oid": "52f70fa6c36b446c340e9374"
+                            },
+                            "start_date": "2014-02-10T00:00:00+00:00"
+                        }
+                    },
+                    "sort": [
+                        null
+                    ]
+                }
+            ]
+        }
+    }
+    
+
+From
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-sort.html#_memory_considerations):
+
+    
+    
+    For string based types, the field sorted on should not be analyzed / tokenized.
+    
+
+So for strings that are more than one values long (e.g. a name `Sir Ker`) they
+should not be analyzed in order to get sorted. A good way is to use the new
+[copy_to](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#copy-to) and the new field have `"index": "not_analyzed"`
+
+Example [based on
+this](http://blog.wiercinski.net/2011/uncategorized/elasticsearch-sorting-on-
+string-types-with-more-than-one-value-per-doc-or-more-than-one-token-per-
+field/):
+
+    
+    
+    curl -s -XGET 'es:9200/users/journalist/_mapping' 
+    {
+        "journalist": {
+             "properties": {
+                        "name": {
+                            "type": "string",
+                            "copy_to" : "untouched_name"
+                        }, 
+                        "untouched_name": {
+                            "index": "not_analyzed", 
+                            "type": "string"
+                        }
+            }
+        }
+    }
+    
+
+And then ask to sort the `untouched_name`.
+
+But I think the best is with
+[fields](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#_multi_fields_3):
+
+    
+    
+    "name": {
+            "type": "string",
+            "index": "analyzed",
+            "fields": {
+               "raw": {
+                  "type": "string",
+                  "index": "not_analyzed"
+               }
+            }
+    },
+    
+
+And sort: `name.raw: asc`
+
+~~Now I am searching how to sort`date` type fields. I will add more.~~
+
+It looks like that dates are fine and they do not need to be analyzed like
+strings do.
+
+[One more interesting source from ES forum](http://elasticsearch-
+users.115913.n3.nabble.com/Sorting-failing-in-latest-master-td967979.html)
+

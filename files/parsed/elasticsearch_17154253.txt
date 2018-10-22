@@ -1,0 +1,78 @@
+17154253 How to search for "OR" word inside a Field on ElasticSearch?
+
+I´m having a problem when I try to search into a field that stores the states
+acronyms.
+
+I have the next query:
+
+    
+    
+    {
+        "query": {
+             "query_string": {
+                   "query": "field_state:'OR' AND type:incentive"
+                     }
+                  }
+    } 
+    
+
+And the problem comes when i try to get the results for the Oregon State (OR).
+For all the other states works but with this particular one is like the
+Elasticsearch takes the "OR" as a condition an retrieves all.
+
+Is there a way to make this work????, i have try it with terms, prefix
+filters, and all with the same results.
+
+It sounds like you want to change the default analyzer away from the [Standard
+Analyzer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/standard-analyzer/) (which does a bunch of stuff including
+filtering out english stop words like "or"). Here's an example using the
+[Simple Analyzer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/simple-analyzer/) (which only lowercases):
+
+    
+    
+    curl -XPOST "http://MYHOST/MYINDEX/_close"
+    curl -XPUT "http://MYHOST/MYINDEX/_settings" -d '{
+      "analysis": {
+        "analyzer": {
+          "default": {
+            "type": "simple"
+          }
+        }
+      }
+    }'
+    curl -XPOST "http://MYHOST/MYINDEX/_open"
+    
+
+However if you **only** want to change the analyzer for `field_state`, you can
+update the mapping for that field directly:
+
+    
+    
+    curl -XPUT "http://MYHOST/MYINDEX/MYTYPE/_mapping" -d '{
+      "MYTYPE": {
+        "properties": {
+          "field_state": {
+            "analyzer": "simple",
+            "type": "string"
+          }
+        }
+      }
+    }'
+    
+
+Just note that if you're using the simple analyzer, you may have to search for
+"or" instead of "OR":
+
+    
+    
+    curl -XPOST "http://MYHOST/MYINDEX/MYTYPE/_search" -d '{
+      "query": {
+        "query_string": {
+          "query": "field_state:'or' AND type:incentive"
+        }
+      }
+    }'
+    
+

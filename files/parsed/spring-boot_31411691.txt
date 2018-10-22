@@ -1,0 +1,25 @@
+31411691 Apply further configuration to Jackson2ObjectMapperBuilder before it
+is used
+
+SpringBoot comes with its own pre-configured `Jackson2ObjectMapperBuilder`
+that is used through the framework to configure the various `ObjectMapper`.
+
+The builder doesn't expose all facets of the `ObjectMapper` and I was
+wondering how I could apply additional configuration to the builder before it
+is used?
+
+I can obviously provide my own `Jackson2ObjectMapperBuilder` instance but then
+I would loose the default initialisation provided by SpringBoot...
+
+Is there another way?
+
+Create beans that extend com.fasterxml.jackson.databind.module.SimpleModule,
+there you configure for example your own seriealizers and deserializers.
+
+In the newer spring versions (dont know since when but at least since spring 4
+) these beans are picked up automatically.
+
+In older versions of spring you may need to add the Modules manually to the
+ObjectMapper, which is tricky, because spring creates many beans of type
+ObjetMapper and its not easy to find the right one.
+

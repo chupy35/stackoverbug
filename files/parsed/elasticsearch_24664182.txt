@@ -1,0 +1,81 @@
+24664182 Elastic search wrong response searching 'IN' value
+
+Query:
+
+http://:9200/rif_orig/rif/_search?q=F7Y*&from=0&size=10
+
+Response:
+
+    
+    
+    {
+      "took": 4,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 1,
+        "max_score": 1.0,
+        "hits": [
+          {
+            "_index": "rif_orig",
+            "_type": "rif",
+            "_id": "INF7YCOriginale",
+            "_score": 1.0,
+            "_source": {
+              "IDRIF": "INF7YCOriginale",
+              "R01PRO": "IN",
+              "R01RIF": "F7YC",
+              "R01DES": "CANDELA CHAMPION",
+              "R01PRE": "3.20",
+              "R01CPR": "",
+              "ARTPRO": "IN",
+              "ARTPAG": "1",
+              "ALTORG": "Originale",
+              "timestamp": "201407091018"
+            }
+          }
+        ]
+      }
+    }
+    
+
+Query:
+
+http://:9200/rif_orig/rif/_search?q=IN&from=0&size=10
+
+Response:
+
+    
+    
+    {
+      "took": 5,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 0,
+        "max_score": null,
+        "hits": [
+    
+        ]
+      }
+    }
+    
+
+I've tried q="IN", q=R01PRO:"IN", q=R01PRO:(IN) q=R01PRO:"\"IN"\" same
+results.... 'IN' is a reserved word? How can I escape it. I'm using elastich
+search 0.9 is old but can't upgrade it immediately... Can anyone help me?
+
+What version of Elasticsearch are you using? "IN" is a [stop
+word](http://www.elasticsearch.org/blog/stop-stopping-stop-words-a-look-at-
+common-terms-query/), but stop words are not removed by default in
+Elasticsearch versions that are greater than 1.0. Either you are using an old
+version of Elasticsearch or the removal of stop words has been enabled.
+

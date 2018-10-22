@@ -1,0 +1,79 @@
+19972534 elasticsearch search query for exact match not working
+
+I am using query_string for search. Searching is working fine but its getting
+all records with small letters and capital letters match.But i want to exact
+match with case sensitive? For example : Search field : "title" Current output
+:
+
+  1. title
+  2. Title
+  3. TITLE,
+
+I want to only first(title). How to resolved this issue.
+
+My code in java :
+
+QueryBuilder qbString=null;
+
+qbString=QueryBuilders.queryString("title").field("field_name");
+
+You need to configure your mappings / text processing so tokens are indexed
+without being lowercased.
+
+The "standard"-analyzer lowercases (and removes stopwords).
+
+Here's an example that shows how to configure an analyzer and a mapping to
+achieve this: <https://www.found.no/play/gist/7464654>
+
+With Version 5 + on ElasticSearch there is no concept of analyzed and not
+analyzed for index, its driven by type !
+
+String data type is deprecated and is replaced with text and keyword, so if
+your data type is text it will behave like string and can be analyzed and
+tokenized.
+
+But if the data type is defined as keyword then automatically its NOT
+analyzed, and return full exact match.
+
+SO you should remember to mark the type as keyword when you want to do exact
+match with case sensitive.
+
+code example below for creating index with this definition:
+
+    
+    
+    PUT testindex
+    {
+        "mappings": {
+          "original": {
+            "properties": {
+              "@timestamp": {
+                "type": "date"
+              },
+              "@version": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "APPLICATION": {
+                "type": "text",
+                "fields": {
+                    "exact": {"type": "keyword"}
+                }
+              },
+              "type": {
+                "type": "text",
+                "fields": {
+                    "exact": {"type": "keyword"}
+                }
+              }
+            }
+          }
+        }
+      }
+    
+

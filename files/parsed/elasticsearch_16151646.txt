@@ -1,0 +1,38 @@
+16151646 How to automatically map location to geo_point ? Elasticsearch
+
+I want to know how I can set every fields called `"location"` to be a type
+`"geo_point"`.
+
+Can I use the default mapping for that? If yes I can't find any examples.
+
+Or should I use dynamic templates ?
+
+Thanks
+
+You can use the dynamic templates. Here is an example of how to do it when
+creating an index:
+
+    
+    
+     curl -XPOST localhost:9200/test -d '{
+    "settings": {
+        "number_of_shards": 1
+    },
+    "mappings": {
+        "_default_:": {
+            "_ttl": true,
+            "dynamic_templates": [
+                {
+                    "geo_location": {
+                        "mapping": {
+                            "type": "geo_point"
+                        },
+                        "match": "location"
+                    }
+                }
+            ]
+        }
+    }
+    }'
+    
+

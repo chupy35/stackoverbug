@@ -1,0 +1,88 @@
+22106369 Filter on fields with a value of "no"
+
+I am unable to filter my elasticsearch query to find items with a value of
+"no". I'm using version 0.90.
+
+Create an index with the following items:
+
+    
+    
+    { "foo": "abc", "bar": "yes" }
+    { "foo": "def", "bar": "no" }
+    { "foo": "ghi", "bar": "maybe" }
+    
+
+Now, Try some term queries on `bar`:
+
+    
+    
+    { "query": { "term": { "bar": "yes" } } }
+    // Hits: 1
+    
+    { "query": { "term": { "bar": "maybe" } } }
+    // Hits: 1
+    
+    { "query": { "term": { "bar": "no" } } }
+    // Hits: 0                                   <-- What??
+    
+
+There are no hits when I query with a value of "no".
+
+Look at the facets:
+
+    
+    
+    { "facets": { "bar": { "terms": { "field": "bar" } } } }
+    
+
+Result:
+
+    
+    
+    {
+       ...
+       "facets": {
+          "bar": {
+             "_type": "terms",
+             "missing": 1,
+             "total": 2,
+             "other": 0,
+             "terms": [
+                { "term": "yes", "count": 1 },
+                { "term": "maybe", "count": 1 }
+             ]
+          }
+       }
+    }
+    
+
+There isn't even a facet returned for "no" values. What is going on? How do I
+find items in my index with a value of "no"?
+
+I just downloaded the latest version (1.0.1) and I can see that this is fixed.
+But, I'm on 0.90.3 and the behavior is the same in 0.90.12. Is there a way to
+get this to work in 0.90.*?
+
+This is expected behaviour using the standard analyzer in 0.90. The standard
+analyzer, which is used by default when you index a string, applies a [stop
+word token
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/analysis-
+stop-tokenfilter.html). "No" appears on the list of stop words so is removed
+from the list of terms that get indexed. This is why a search for "no" will
+return nothing.
+
+The reason this behaviour is different in 1.0 is that the benefit of stop
+words was questioned and removed from the default behaviour.
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/_stopwords.html>
+
+If you want to see the same behaviour you could create your own analyzer or
+just use the keyword analyzer instead. This will just convert the string to
+lowercase, not split it and not apply the stop word filter to the terms.
+
+There's a good blog post on the subject here:
+<http://www.elasticsearch.org/blog/stop-stopping-stop-words-a-look-at-common-
+terms-query/> and another Stackoverflow question here: [elasticsearch: how to
+index terms which are stopwords
+only?](https://stackoverflow.com/questions/14640732/elasticsearch-how-to-
+index-terms-which-are-stopwords-only)
+

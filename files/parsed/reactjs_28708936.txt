@@ -1,0 +1,109 @@
+28708936 Creating a non-rendered wrapper component in react.js
+
+I'm wanting to create a React component that does a security check and if that
+passes it'll render out the children of it, if it fails then it won't render
+anything.
+
+I've scaffolded out a component like so:
+
+    
+    
+    var RolesRequired = React.createClass({
+        permitted: roles => ...,
+    
+        render: function () {
+            if (!this.permitted(this.props.roles)) {
+                return null;
+            }
+    
+            return this.props.children;
+        }
+    });
+    
+
+The usage I was planning would be like this:
+
+    
+    
+    <RolesRequired roles={['admin']}>
+        <h1>Welcome to the admin</h1>
+        <div>
+            Admin stuff here
+        </div>
+    </RolesRequired>
+    
+
+How would you return all the children from the `RolesRequired` component?
+
+I came up with this solution:
+
+    
+    
+    var RolesRequired = React.createClass({
+        permitted: roles => ...,
+    
+        render: function () {
+            if (!this.permitted(this.props.roles)) {
+                return null;
+            }
+    
+            return <div>{this.props.children}</div>;
+        }
+    });
+    
+
+What I'm doing is wrapping the children being returned in a `<div>` but I'm
+having to add an unwanted/unneeded DOM element to achieve it.
+
+I think higher order components (HOC) are also a good candidate for this. You
+can basically wrap any component in HOC that defines some behaviour and
+decides if it should render a _wrappe_.
+
+Nicest way to do this would be if you're using a ES2015 transpiler with some
+ES2016 features enabled (namely decorators):
+
+    
+    
+    function withRoles(roles) {
+      return function(Component) {
+        return class ComponentWithRoles extends React.Component {
+          constructor(props) {
+            super(props)
+            // Not sure where the data to get your roles about current user?
+            // from but you could potentially to that here if I'm getting your point
+            // and also setup listeners
+            this.state = { currentUser: 'admin' }
+          }
+    
+          validateRoles() {
+            // you have access to the ``roles`` variable in this scope
+            // you can use it to validate them.
+            return true;
+          }
+    
+          render() {
+            if (this.validateRoles()) {
+              return <Component {...this.props} />;
+              )
+            } else {
+              return <div>Nope...</div>;
+            }
+          }
+        }
+      }
+    }
+    
+    // You can then use this on any component as a decorator
+    @withRoles({ showOnlyFor: [ 'admin' ] })
+    class AdminOnlyComponent extends React.Component {
+      render() {
+        return <div> This is secert stuff </div>
+      }
+    }
+    
+
+I've used ES2016 features because I think it's nicer to get the point across
+but you can implement that with just a simple function wrapping, here's a gist
+by one of the React core members on the topic of HOC:
+<https://gist.github.com/sebmarkbage/ef0bf1f338a7182b6775>
+

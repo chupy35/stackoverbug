@@ -1,0 +1,375 @@
+28365233 Inline CSS styles in React: how to implement a:hover?
+
+I quite like the [inline CSS pattern in
+React](https://speakerdeck.com/vjeux/react-css-in-js) and decided to use it.
+
+However, you can't use the `:hover` and similar selectors. So what's the best
+way to implement highlight-on-hover while using inline CSS styles?
+
+One suggestion from #reactjs is to have a `Clickable` component and use it
+like this:
+
+    
+    
+    <Clickable>
+        <Link />
+    </Clickable>
+    
+
+The `Clickable` has a `hovered` state and passes it as props to the Link.
+However, the `Clickable` (the way I implemented it) wraps the `Link` in a
+`div` so that it can set `onMouseEnter` and `onMouseLeave` to it. This makes
+things a bit complicated though (e.g. `span` wrapped in a `div` behaves
+differently than `span`).
+
+Is there a simpler way?
+
+I'm in the same situation. Really like the pattern of keeping the styling in
+the components but the hover states seems like the last hurdle.
+
+What I did was writing a mixin that you can add to your component that needs
+hover states. This mixin will add a new `hovered` property to the state of
+your component. It will be set to `true` if the user hovers over the main DOM
+node of the component and sets it back to `false` if the users leaves the
+element.
+
+Now in your component render function you can do something like:
+
+    
+    
+    <button style={m(
+            this.styles.container,
+            this.state.hovered && this.styles.hover,
+          )}>{this.props.children}</button>
+    
+
+Now each time the state of the `hovered` state changes the component will
+rerender.
+
+I've also create a sandbox repo for this that I use to test some of these
+patterns myself. Check it out if you want to see an example of my
+implementation.
+
+<https://github.com/Sitebase/cssinjs/tree/feature-interaction-mixin>
+
+You can use Radium - it is an open source tool for inline styles with ReactJS.
+It adds exactly the selectors you need. Very popular, check it out - [Radium
+on npm](https://www.npmjs.com/package/radium)
+
+I think onMouseEnter and onMouseLeave are the ways to go, but I don't see the
+need for an additional wrapper component. Here is how I implemented it:
+
+    
+    
+    var Link = React.createClass({
+      getInitialState: function(){
+        return {hover: false}
+      },
+      toggleHover: function(){
+        this.setState({hover: !this.state.hover})
+      },
+      render: function() {
+        var linkStyle;
+        if (this.state.hover) {
+          linkStyle = {backgroundColor: 'red'}
+        } else {
+          linkStyle = {backgroundColor: 'blue'}
+        }
+        return(
+          <div>
+            <a style={linkStyle} onMouseEnter={this.toggleHover} onMouseLeave={this.toggleHover}>Link</a>
+          </div>
+        )
+      }
+    
+
+You can then use the state of hover (true/false) to change the style of the
+link.
+
+You can use [css modules](https://github.com/css-modules/css-modules) as an
+alternative, and additionally [react-css-
+modules](https://github.com/gajus/react-css-modules) for class name mapping.
+
+That way you can import your styles as follows and use normal css scoped
+locally to your components:
+
+    
+    
+    import React from 'react';
+    import CSSModules from 'react-css-modules';
+    import styles from './table.css';
+    
+    class Table extends React.Component {
+        render () {
+            return <div styleName='table'>
+                <div styleName='row'>
+                    <div styleName='cell'>A0</div>
+                    <div styleName='cell'>B0</div>
+                </div>
+            </div>;
+        }
+    }
+    
+    export default CSSModules(Table, styles);
+    
+
+Here is a [webpack css modules example](https://github.com/css-
+modules/webpack-demo)
+
+Made [Style It](https://github.com/buildbreakdo/style-it) \-- in part --
+because of this reason (others being disagreements with implementation of
+other libs / syntax and inline stylings lack of support for prefixing property
+values). Believe we should be able to simply write CSS in JavaScript and have
+fully self contained components HTML-CSS-JS. With ES5 / ES6 template strings
+we now can and it can be pretty too! :)
+
+`npm install style-it --save`
+
+**Functional Syntax** ([JSFIDDLE](https://jsfiddle.net/y2pnqh9e/27/))
+
+    
+    
+    import React from 'react';
+    import Style from 'style-it';
+    
+    class Intro extends React.Component {
+      render() {
+        return Style.it(`
+          .intro:hover {
+            color: red;
+          }
+        `,
+          <p className="intro">CSS-in-JS made simple -- just Style It.</p>
+        );
+      }
+    }
+    
+    export default Intro;
+    
+
+**JSX Syntax** ([JSFIDDLE](https://jsfiddle.net/y2pnqh9e/31/))
+
+    
+    
+    import React from 'react';
+    import Style from 'style-it';
+    
+    class Intro extends React.Component {
+      render() {
+        return (
+          <Style>
+          {`
+            .intro:hover {
+              color: red;
+            }
+          `}
+    
+            <p className="intro">CSS-in-JS made simple -- just Style It.</p>
+          </Style>
+        );
+      }
+    }
+    
+    export default Intro;
+    
+
+Checkout [Typestyle](http://typestyle.io/#/core) if you are using React with
+Typescript.
+
+Below is a sample code for :hover
+
+    
+    
+    import {style} from "typestyle";
+    
+    /** convert a style object to a CSS class name */
+    const niceColors = style({
+      transition: 'color .2s',
+      color: 'blue',
+      $nest: {
+        '&:hover': {
+          color: 'red'
+        }
+      }
+    });
+    
+    <h1 className={niceColors}>Hello world</h1>
+    
+
+I use a pretty hack-ish solution for this in one of my recent applications
+that works for my purposes, and I find it quicker than writing custom hover
+settings functions in vanilla js (though, I recognize, maybe not a best
+practice in most environments..) So, in case you're still interested, here
+goes.
+
+I create a parent element just for the sake of holding the inline javascript
+styles, then a child with a className or id that my css stylesheet will latch
+onto and write the hover style in my dedicated css file. This works because
+the more granular child element receives the inline js styles via inheritance,
+but has its hover styles overridden by the css file.
+
+So basically, my actual css file exists for the sole purpose of holding hover
+effects, nothing else. This makes it pretty concise and easy to manage, and
+allows me to do the heavy-lifting in my in-line React component styles.
+
+Here's an example:
+
+    
+    
+    const styles = {
+      container: {
+        height: '3em',
+        backgroundColor: 'white',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        justifyContent: 'flex-start',
+        borderBottom: '1px solid gainsboro',
+      },
+      parent: {
+        display: 'flex',
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        justifyContent: 'flex-start',
+        color: 'darkgrey',
+      },
+      child: {
+        width: '6em',
+        textAlign: 'center',
+        verticalAlign: 'middle',
+        lineHeight: '3em',
+      },
+    };
+    
+    var NavBar = (props) => {
+      const menuOptions = ['home', 'blog', 'projects', 'about'];
+    
+      return (
+        <div style={styles.container}>
+          <div style={styles.parent}>
+            {menuOptions.map((page) => <div className={'navBarOption'} style={styles.child} key={page}>{page}</div> )}
+          </div>
+        </div>
+      );
+    };
+    
+    
+    ReactDOM.render(
+      <NavBar/>,
+      document.getElementById('app')
+    );
+    
+    
+    .navBarOption:hover {
+      color: black;
+    }
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js"></script>
+    
+    <div id="app"></div>
+
+Notice that the "child" inline style does not have a "color" property set. If
+it did, this would not work because the inline style would take precedence
+over my stylesheet.
+
+Full CSS support is exactly the reason this huge amount of CSSinJS libraries,
+to do this efficiently, you need to generate actual CSS, not inline styles.
+Also inline styles are much slower in react in a bigger system. Disclaimer - I
+maintain [JSS](http://cssinjs.org).
+
+The most simple way would be just adding paragraph tag in you link and parse
+style to the p. `<Link to='/'><p style={{ color: '#000000' }}>Some
+text</p></Link>`
+
+Adding on to [Jonathan's
+answer](https://stackoverflow.com/a/33000431/4933257%20%22Jonathan's%20answer),
+here are the events to cover the focus and active states, and a using
+`onMouseOver` instead of `onMouseEnter` since the latter will not bubble if
+you have any child elements within the target the event is being applied to.
+
+    
+    
+    var Link = React.createClass({
+    
+      getInitialState: function(){
+        return {hover: false, active: false, focus: false}
+      },
+    
+      toggleHover: function(){
+        this.setState({hover: !this.state.hover})
+      },
+    
+      toggleActive: function(){
+        this.setState({active: !this.state.active})
+      },
+    
+      toggleFocus: function(){
+        this.setState({focus: !this.state.focus})
+      },
+    
+      render: function() {
+        var linkStyle;
+        if (this.state.hover) {
+          linkStyle = {backgroundColor: 'red'}
+        } else if (this.state.active) {
+          linkStyle = {backgroundColor: 'blue'}
+        } else if (this.state.focus) {
+          linkStyle = {backgroundColor: 'purple'}
+        } 
+    
+        return(
+          <div>
+            <a style={linkStyle} 
+              onMouseOver={this.toggleHover} 
+              onMouseOut={this.toggleHover} 
+              onMouseUp={this.toggleActive} 
+              onMouseDown={this.toggleActive} 
+              onFocus={this.toggleFocus}> 
+              Link 
+            </a>
+          </div>
+        )
+      }
+    
+
+In regards to [styled-components](https://www.styled-
+components.com/docs/api#supported-css) and [react-router
+v4](https://reacttraining.com/react-router/) you can do this:
+
+    
+    
+    import {NavLink} from 'react-router-dom'
+    
+    const Link = styled(NavLink)`     
+      background: blue;
+    
+      &:hover {
+        color: white;
+      }
+    `
+    
+    ...
+    <Clickable><Link to="/somewhere">somewhere</Link></Clickable>
+    
+
+This can be a nice hack for having inline style inside a react component (and
+also using :hover CSS function):
+
+` ... <style> {`.galleryThumbnail.selected:hover{outline:2px solid #00c6af}`}
+</style> ... `
+
+onMouseOver and onMouseLeave with setState at first seemed like a bit of
+overhead to me - but as this is how react works, it seems the easiest and
+cleanest solution to me.
+
+rendering a theming css serverside for example, is also a good solution and
+keeps the react components more clean.
+
+if you dont have to append dynamic styles to elements ( for example for a
+theming ) you should not use inline styles at all but use css classes instead.
+
+this is a traditional html/css rule to keep html / JSX clean and simple.
+

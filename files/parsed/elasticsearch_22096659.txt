@@ -1,0 +1,150 @@
+22096659 In elasticsearch, how to group results by location proximity?
+
+I have a bunch of documents with a location field, and for a given search
+query with given coordinates, I would like to group results by whether their
+location is within 25 miles of the given coordinates. However within each
+group I would like the results sorted not by location proximity. Is there any
+elegant way to do this?
+
+As an example, imagine I have the following documents:
+
+    
+    
+    [
+      { id: "1", price: 13.5, coords: $c1 },
+      { id: "2", price: 10, coords: $c2 },
+      { id: "3", price: 15, coords: $c3 },
+      { id: "4", price: 5, coords: $c4 },
+      { id: "5", price: 1, coords: $c5 },
+    ]
+    
+
+where $c1, $c2, $c3 are within 25 miles of $c, and $c4, $c5 are farther than
+25 miles from $c. The order by proximity to $c is $c3, $c2, $c1, $c5, $c4.
+When handling a query of sorting by price low to high, I would like to return
+as
+
+    
+    
+    [
+      [
+        { id: "2", price: 10, coords: $c2 },
+        { id: "1", price: 13.5, coords: $c1 },
+        { id: "3", price: 15, coords: $c3 },
+      ],
+      [
+        { id: "5", price: 1, coords: $c5 },
+        { id: "4", price: 5, coords: $c4 },
+      ]
+    ]
+    
+
+To group results in this way, you could use aggregations (or facets pre-1.0) -
+specifically the geo distance aggregation. This will give you a count of the
+number of results in each group ( <= 25 miles, > 25 miles). Then, to retrieve
+the hits within each group, use a geo distance filter together with your
+original query.
+
+On the sorting, you should be able to use something like
+
+    
+    
+    {
+        "sort" : [
+            { "price" : {"order" : "asc"}}
+        ],
+        "query" : {
+            ...
+        }
+    }
+    
+
+To achieve this in a single API call, you could try the multi-search API. This
+is the _msearch endpoint and would take something like the following:
+
+    
+    
+    GET _msearch
+    {}
+    {
+      "sort": [
+        {
+          "price": {
+            "order": "asc"
+          }
+        }
+      ],
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "geo_distance_range" : {
+                "from" : "0mi",
+                "to" : "25mi"
+                "pin.location" : {
+                    "lat" : $c_lat,
+                    "lon" : $c_long
+                }
+            }
+          }
+        }
+      }
+    }
+    {}
+    {
+      "sort": [
+        {
+          "price": {
+            "order": "asc"
+          }
+        }
+      ],
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "geo_distance_range" : {
+                "from" : "25mi"
+                "pin.location" : {
+                    "lat" : $c_lat,
+                    "lon" : $c_long
+                }
+            }
+          }
+        }
+      }
+    }
+    
+
+Take note of the empty headers ({}) preceding each query. I used Sense to test
+this out and had a few problems with parsing failures - use Ctrl+I to un-
+indent the JSON before sending.
+
+This returns an array of responses, one per query - each response is
+equivalent to the result of using the corresponding query with the Search API.
+
+If your use case is to always display all of the results, the second approach
+would be appropriate and fulfils the requirement for a single API call.
+However, if you want to display the result groups individually, the first
+approach could be more efficient, as you would not be retrieving unused
+results.
+
+If this solution doesn't do what you need, please add a bit more detail to the
+question and I'll think again!
+
+Links:
+
+  * Geo distance aggregation: <http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.x/search-aggregations-bucket-geodistance-aggregation.html>
+
+  * Geo distance filter: <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-geo-distance-filter.html>
+
+  * Sorting:  <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-sort.html>
+
+  * Function score: <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html>
+
+  * Multi-search API: <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-multi-search.html>
+

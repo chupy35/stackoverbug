@@ -1,0 +1,53 @@
+21394767 Failed to derive xcontent from
+org.elasticsearch.common.bytes.BytesArray@0
+
+My curl query works
+
+`curl -v -XGET 'http://localhost:9200/entityitem/5/_mget' -d '{"ids" :
+["5000027585", "5000027615"]}'`
+
+but when I use the rest client to do GET query
+
+`http://localhost:9200/entityitem/5/_mget?source={"ids" : ["5000027585",
+"5000027615"]}`
+
+I get the following error
+
+> Failed to derive xcontent from org.elasticsearch.common.bytes.BytesArray@0
+
+Try this
+
+    
+    
+    http://localhost:9200/entityitem/5/_mget?q=ids:5000027585%20OR%20ids:5000027615
+    
+
+q is query. ids is your field. The URL above is equal to query
+
+> ids:5000027585 OR ids:5000027615
+
+That's the lucene syntax supported by Elasticsearch. Remember to use %20 to
+replace space.
+
+Yeah. It's an issue.
+
+I just fixed it yesterday. See
+<https://github.com/elasticsearch/elasticsearch/issues/4892>
+
+If you get this while following the kibana tutorial you may be trying to
+import the shakespeare.json file. You probably downloaded to downloads folder
+and are running the import command in another folder. Move the input file to
+the current directory...
+
+    
+    
+    mv ~/Downloads/shakespeare.json .
+    
+
+and run your curl xput command to import the shakespeare data.
+
+    
+    
+    curl -XPUT localhost:9200/_bulk --data-binary @shakespeare.json 
+    
+

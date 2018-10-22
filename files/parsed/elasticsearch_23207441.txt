@@ -1,0 +1,87 @@
+23207441 elasticsearch not analyzed still tokenize string
+
+I have an index which contains 4 entries.  
+
+    
+    
+      "hits" : {
+        "total" : 4,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "da_6",
+          "_type" : "tweet",
+          "_id" : "1",
+          "_score" : 1.0, "_source" : {
+        "message" : "hello world"
+    }
+        }, {
+          "_index" : "da_6",
+          "_type" : "tweet",
+          "_id" : "2",
+          "_score" : 1.0, "_source" : {
+        "message" : "hello worldetc"
+    }
+        }, {
+          "_index" : "da_6",
+          "_type" : "tweet",
+          "_id" : "4",
+          "_score" : 1.0, "_source" : {
+        "message" : "etc hello world"
+    }
+        }, {
+          "_index" : "da_6",
+          "_type" : "tweet",
+          "_id" : "3",
+          "_score" : 1.0, "_source" : {
+        "message" : "hello etc world"
+    }
+        } ]
+    
+
+I have set the mapping to "string" / "not_analyzed" when I created the index
+and I am sure it has been applied.
+
+The Mappings:
+
+    
+    
+    "da_6" : {
+        "mappings" : {
+          "tweet" : {
+            "properties" : {
+              "message" : {
+                "type" : "string",
+                "index" : "not_analyzed"
+              }
+            }
+          }
+        }
+      }
+    
+
+When a user types "hello w", I want it to show the 1st one first, then the 2nd
+one and the 3rd one. Since the 4th one doesn't contain "hello w" as a whole
+string, it's not supposed to show in the result.
+
+I've tried `query_string`, search for "hello w*", but it shows all 4 results
+(seems like still tokenize the content.
+
+Is there a search method behaves like `IndexOf (js)` which gives result that
+only contains the given query string ("hello w" in this case)?
+
+Maybe you can use the match_phrase_prefix query, I could return the three
+items you wanted. I did use another mapping. I use the standard analyzer (so
+no index: not_analyzed):
+
+    
+    
+    GET /da_6/_search
+    {
+      "query": {
+        "match_phrase_prefix": {
+          "message": "hello w"
+        }
+      }
+    }
+    
+

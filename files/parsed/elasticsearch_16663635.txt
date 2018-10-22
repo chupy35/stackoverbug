@@ -1,0 +1,19 @@
+16663635 Stored field in elastic search
+
+In the documentation, some types, such as numbers and dates, it specifies that
+store defaults to no. But that the field can still be retrieved from the json.
+
+Its confusing. Does this mean _source?
+
+Is there a way to not store a field at all, and just have it indexed and
+searchable?
+
+None of the field types are stored by default. Only the
+[`_source`](http://www.elasticsearch.org/guide/reference/mapping/source-
+field/) field is. That means you can always get back what you sent to the
+search engine. Even if you ask for specific fields, elasticsearch is going to
+parse the `_source` field for you and give you back those fields.
+
+You can disable the `_source` if you want but then you could only retrieve the
+fields that you explicitly stored, according to your mapping.
+

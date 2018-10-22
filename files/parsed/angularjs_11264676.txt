@@ -1,0 +1,30 @@
+11264676 How can I detect if a new listener is registered?
+
+If another piece of code calls `$scope.$on`, I'd like my service to be
+notified of this so it can subscribe to a websocket with the same named
+channel. Is there an event on `$rootScope` that I can listen for or an
+expression I can $watch?
+
+I tried this: <http://jsfiddle.net/polidore/AZ7Av/>
+
+Where I'm `$watching` `Object.keys($scope.$$listeners).length`, but it doesn't
+seem to get called aside from the initial load.
+
+Thanks!
+
+Instead of calling `$on`, the best way is to make your own function which
+calls `$on` for you while notifying your service.
+
+If you you really need to detect it via the `$on` function, then you can
+override the function like this:
+
+    
+    
+    var old$on = $scope.$on;
+    $scope.$on = function(name, listener) {
+        // Code to notify your service here
+    
+        old$on.apply(this, arguments);
+    }
+    
+

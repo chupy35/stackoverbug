@@ -1,0 +1,127 @@
+16698517 Index fields with hyphens in Elasticsearch
+
+I'm trying to work out how to configure elasticsearch so that I can make query
+string searches with wildcards on fields that include hyphens.
+
+I have documents that look like this:
+
+    
+    
+    {
+       "tags":[
+          "deck-clothing-blue",
+          "crew-clothing",
+          "medium"
+       ],
+       "name":"Crew t-shirt navy large",
+       "description":"This is a t-shirt",
+       "images":[
+          {
+             "id":"ba4a024c96aa6846f289486dfd0223b1",
+             "type":"Image"
+          },
+          {
+             "id":"ba4a024c96aa6846f289486dfd022503",
+             "type":"Image"
+          }
+       ],
+       "type":"InventoryType",
+       "header":{
+       }
+    }
+    
+
+I have tried to use a word_delimiter filter and a whitespace tokenizer:
+
+    
+    
+    {
+    "settings" : {
+        "index" : {
+            "number_of_shards" : 1,
+            "number_of_replicas" : 1
+        },  
+        "analysis" : {
+            "filter" : {
+                "tags_filter" : {
+                    "type" : "word_delimiter",
+                    "type_table": ["- => ALPHA"]
+                }   
+            },
+            "analyzer" : {
+                "tags_analyzer" : {
+                    "type" : "custom",
+                    "tokenizer" : "whitespace",
+                    "filter" : ["tags_filter"]
+                }
+            }
+        }
+    },
+    "mappings" : {
+        "yacht1" : {
+            "properties" : {
+                "tags" : {
+                    "type" : "string",
+                    "analyzer" : "tags_analyzer"
+                }
+            }
+        }
+    }
+    }
+    
+
+But these are the searches (for tags) and their results:
+
+    
+    
+    deck*     -> match
+    deck-*    -> no match
+    deck-clo* -> no match
+    
+
+Can anyone see where I'm going wrong?
+
+Thanks :)
+
+The analyzer is fine (though I'd lose the filter), but your search analyzer
+isn't specified so it is using the standard analyzer to search the tags field
+which strips out the hyphen then tries to query against it (run `curl
+"localhost:9200/_analyze?analyzer=standard" -d "deck-*"` to see what I mean)
+
+basically, "deck-*" is being searched for as "deck *" there is no word that
+has just "deck" in it so it fails.
+
+"deck-clo*" is being searched for as "deck clo*", again there is no word that
+is just "deck" or starts with "clo" so the query fails.
+
+I'd make the following modifications
+
+    
+    
+    "analysis" : {
+        "analyzer" : {
+            "default" : {
+                "tokenizer" : "whitespace",
+                "filter" : ["lowercase"] <--- you don't need this, just thought it was a nice touch
+            }
+        }
+    }
+    
+
+then get rid of the special analyzer on the tags
+
+    
+    
+    "mappings" : {
+        "yacht1" : {
+            "properties" : {
+                "tags" : {
+                    "type" : "string"
+                }
+            }
+        }
+    }
+    
+
+let me know how it goes.
+

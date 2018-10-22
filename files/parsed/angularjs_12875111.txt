@@ -1,0 +1,48 @@
+12875111 Is it valid to inject the $rootScope into Controller in order use or
+override models/method defined under $rootScope in AngularJS?
+
+I've defined some models in `App.run` below which I'm overriding within the
+controller `someCtrl`:
+
+    
+    
+    App.run(['$rootScope', function($rootScope) {
+      $rootScope.attempt = 1;
+    });
+    
+    function someCtrl($scope, $rootScope) {
+      $rootScope.attempt = 2;
+    
+      $rootScope.checkAttempt = function () {
+        return $rootScope.attempt > 1 ? true : false;    
+      };
+    }
+    
+
+There is a button on the page out of `someCtrl's` scope:
+
+    
+    
+    <button class='btn' ng-disabled="checkAttempt()">Who's changing my value?</button>
+    
+
+FYI, I'm aware of creating a service or using emit-broadcaste mechanism to
+share data across controllers but I would like to know How authenticate is it
+to inject $rootScope into a controller?
+
+IMHO, I think its fine to inject `$rootScope` into a controller. I would
+recommend using emit/broadcast.
+
+You don't need to inject $rootScope into a controller. When you inject $scope,
+you automatically have access to anything defined in $rootScope due to scope
+inheritance. See [documentation](http://docs.angularjs.org/#!/guide/scope).
+Scroll down to Scope Hierarchies section.
+
+Well, there is no harm in injecting a `$rootScope` into a controller, services
+or directives but you do try to figure out if its really necessary. The reason
+is that any method or property bound to `$rootScope` makes it global that will
+not be GC'ed unless manually cleaned up and it creates all those problems
+which global variables create.
+
+The best way to share data across multiple controllers is to use a service.
+

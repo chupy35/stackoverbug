@@ -1,0 +1,32 @@
+24876526 ElasticSearch to populate multiple indexes
+
+I want to use ES to index logs coming from different processes. Assume I have
+2 sources: `ServerA` and `ServerB` Logs from the processes are formatted in
+json.  Example log:
+
+    
+    
+    {
+      "level": "DEBUG",
+      "logger": "REPOSITORY",
+      "timestamp": 1405982400689,
+      "attrs": {
+        "profile": "ServerA",
+        "organization": "FOOBAR"
+      },
+      "thread": "main",
+      "message": "Repository.store() : Stored successfully in /central/zone/cef9cccab964"
+    }
+    
+
+How can I get ES to update multiple indexes when it sees a new document ? In
+this case I want indices on the profile and organization values. Do I have to
+
+  1. Create indexes using the ES REST api before ES sees any logs.
+  2. Supply an `_index` field to each json document 
+  3. Have multiple values in the `_index` field to indicate what indexes must be updated ?  i.e should I have:
+
+**"_index": {"ServerA" , "FOOBAR"}**
+
+Please let me know if this is the correct way to do this.
+

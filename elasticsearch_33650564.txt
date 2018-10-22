@@ -1,0 +1,3 @@
+33650564
+How do I convert SQL queries to elasticsearch query?
+<p>We are migrating our search app to elastic search from relational database. </p>&#xA;&#xA;<p>We have few SQL queries which are fixed per user preference and want to move them to elastic search query. </p>&#xA;&#xA;<p>Made the design easy by creating an elastic search index same as a single view in our relational database. The json fields are same as that column names in the view. </p>&#xA;&#xA;<p>is they any easy way we can migrate?</p>&#xA;

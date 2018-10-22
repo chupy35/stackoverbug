@@ -1,0 +1,18 @@
+12590037 Angular-ui jQuery Passthrough Not Working
+
+I'm not sure what I'm doing wrong but for some reason I can not get AngularJS
+UI's jquery passthrough to work correctly.
+
+I think I have the module setup correctly (copied the example from the
+angular-ui site).
+
+Here's a fiddle
+
+<http://jsfiddle.net/huYQ6/2/>
+
+you have to import jQuery before angular to make it use jQuery for
+angular.element (because angular-ui use angular.element to look for
+jQuery.fn.yourFunction), here's a working fiddle:
+
+<http://jsfiddle.net/huYQ6/6/>
+

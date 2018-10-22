@@ -1,0 +1,68 @@
+6226546 ElasticSearch mapping doesn't work
+
+I'm trying to set up an ElasticSearch index with different analyzers for the
+individual fields. However, I can't seem to find a way to set field-specific
+analyzers; here's how I create my (test) index:
+
+    
+    
+    curl -XPOST localhost:9200/twitter
+    curl -XPUT 'http://localhost:9200/twitter/tweet/_mapping' -d '
+    {
+        "tweet" : {
+            "properties" : {
+                "message" : {
+                    "type" : "string",
+                    "search_analyzer" : "snowball", 
+                    "index_analyzer" : "snowball"
+                }
+            }
+        }
+    }'
+    
+
+If I read the documentation correctly, then this should create the index
+'twitter' with the type 'tweet', and content for the 'message' field should be
+analyzed through the snowball stemming analyzer. To test for this, I tried the
+following queries:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/twitter/tweet/1' -d '{
+        "message" : "Look, a fighting War-Unicorn!"
+    }'
+    curl -XGET localhost:9200/twitter/_search?q=fight
+    
+
+If I'm not mistaken, then this should return a hit, as fight is the stem for
+fighting; the problem is, it doesn't, I'm getting zero hits. It appears as if
+ElasticSearch ignores the mapping entirely (even though ElasticSearch accepts
+all of these queries, as I get 'ok' back for each of them.)
+
+I've already tried replacing the default analyzer with a snowball analyzer,
+and then it works; thing is, I totally need to have field-specific analyzers,
+so this isn't going to help me. I also tried different analyzers and things
+like setting "index" to "no", but to no avail.
+
+What am I doing wrong?
+
+To use a field-specific analyzer you need to specify this field in the query.
+Otherwise, default analyzer is used. Try
+
+    
+    
+    curl -XGET 'localhost:9200/twitter/_search?q=message:fight'
+    
+
+or
+
+    
+    
+    curl -XGET 'localhost:9200/twitter/_search?df=message&q=looking'
+    
+
+I recommend to you use <https://github.com/lmenezes/elasticsearch-kopf> can
+test all analyzers and copy mapp from another index and monitor your
+indexes...
+<http://www.elasticsearch.org/guide/en/elasticsearch/client/community/current/health.html>
+

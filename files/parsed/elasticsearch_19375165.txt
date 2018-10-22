@@ -1,0 +1,31 @@
+19375165 elasticsearch:how to define index exactly with analyzer,tokenizer and
+filter
+
+//this is not working and showing error while creating index... //unexcepted
+character c and it come according to custome field
+
+    
+    
+    curl -XPOST localhost:9200/sports0/' -d" 
+      "settings":{
+        "analysis":{
+          "analyzer":{
+            "autocomplete":{
+              "type":"custom",
+              "tokenizer":"standard",
+              "filter":[ "standard", "lowercase", "stop", "kstem", "ngram" ] 
+            `enter code here`}
+          },
+               filter:{  
+                  type:"stop" ,stopwords:"stopwords.txt"
+    }
+        }
+      }
+    }
+    
+
+  * You forgot the first `{`.
+  * Some string aren't wrapped in double quotes.
+
+And please do a better formatting of the json.
+

@@ -1,0 +1,51 @@
+12323079 ElasticSearch results aren't relevant
+
+In ElasticSearch, I've created two documents with one field, "CategoryMajor"
+
+In doc1, I set CategoryMajor to "Restaurants"
+
+In doc2, I set CategoryMajor to "Restaurants Restaurants Restaurants
+Restaurants Restaurants"
+
+If I perform a search for CategoryMajor:Restaurants, doc1 shows up as MORE
+RELEVANT than doc2. Which is not typical Lucene behavior, which gives more
+relevance the more times a term shows up. doc2 should be MORE RELEVANT than
+doc1.
+
+How in do I fix this?
+
+You can add &explain=true to your GET query to see that score of doc2 is
+lowered by "fieldNorm" factor. This is caused by default lucene similarity
+calculation formula, which lowers score for longer documents. Please read this
+document about default lucene similarity formula:
+
+<http://lucene.apache.org/core/3_6_0/api/all/org/apache/lucene/search/Similarity.html>
+
+To disable this behaviour add "omit_norms=true" for CategoryMajor field to
+your index mapping by sending PUT request to:
+
+    
+    
+    http://localhost:9200/index/type/_mapping
+    
+
+with request body:
+
+    
+    
+    {
+        "type": {
+             properties": {
+                "CategoryMajor": {
+                    "type": "string",
+                    "omit_norms": "true"
+               }
+            }
+        }
+    }
+    
+
+I'm not certain, but it may be necessary to delete your index, create it
+again, put above mapping and then reindex your documents. Reindexing after
+changing mapping is necessary for sure :).
+

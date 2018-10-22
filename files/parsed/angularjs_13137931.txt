@@ -1,0 +1,27 @@
+13137931 Issue on angular Model changed (duplicate dom elements)
+
+i'm using angular js in my website and i'm getting a strange behavior when i
+update my model.
+
+My model is an json complex object like this:
+
+    
+    
+    $scope.DataSource = {prop1:"", prop2:[{a:1, b:b2}, {a:3, b:4}], prop3:"value"}
+    
+
+use a controller to edit object an use custom directives to edit separatelly
+child objects like in prop2 ( in this case are tabs ).
+
+My problem is that when i update $scope.DataSource the previous generated DOM
+elements are not removed or updated, i just get a duplicated UI for each
+object in Prop2.
+
+is there any way to force angular to update or remove previous generated
+elements? preventing a duplicated tabs(in this case)?
+
+Duplicated DOM elements are likely the result of duplicated data in the scope
+associated with the view. Without any code, it is not clear if the scope
+generating the view is tied to a controller or a directive. Try logging the
+scope that the view is generated from to the console.
+

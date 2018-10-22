@@ -1,0 +1,31 @@
+13591786 Testing index changes in Elasticsearch
+
+I have an elasticsearch index that contains a few million documents. The
+script that builds the index takes a few hours to go from start to finish.
+This makes it pretty impractical for testing out code changes against
+production database data.
+
+On production, I have a million items. Each one is indexed in the server. I
+find out that my code incorrectly populates one of the fields. In my local dev
+environment using a much smaller set of test data, my code seems to have
+resolved the problem. However, past experience suggests that my users do crazy
+things, and that my test data rarely covers every single case. (There are
+complicated permissions and other things that interact with each other to
+determine a simple Boolean value for one field, and sometimes those really
+complicated fields go in directions I hadn't anticipated in the test data.)
+
+In order to minimize screwing up my production index, I want to run my updated
+elasticsearch indexing code against the production database to make sure that
+it works for all users. Specifically, I just want to run it against a handful
+of user's data that I know are having problems. I can't simply just export
+this data to my local dev environment, because the data is so complex. Therein
+lies the problem.
+
+I want to avoid having to rebuild a separate index every time I want to test a
+change. (Obviously, if I build a separate index and then don't update it
+regularly, then the next time I test will have outdated data.)
+
+Thoughts? Ideas? Suggestions? Bad jokes? Am I just gonna have to rebuild an
+index every time? Are there any shortcuts I can take to minimize the time I
+sit around waiting for the index to complete?
+

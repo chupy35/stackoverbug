@@ -1,0 +1,119 @@
+14565888 How can I view the contents of an ElasticSearch index?
+
+I configured a custom analyzer and put some documents into the index. Now I
+want to debug my settings so I can see which n-grams actually made it into the
+index.
+
+When I used Solr before, there was a possibility to see which strings were
+saved in the index as keys and also their frequency.
+
+If you didn't index too much data into the index yet, you can use term facet
+query on the field that you would like to debug to see the tokens and their
+frequencies:
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/test-idx'
+    echo
+    curl -XPUT 'http://localhost:9200/test-idx' -d '
+    {
+        "settings": {
+            "index.number_of_shards" : 1,
+            "index.number_of_replicas": 0
+        },
+        "mappings": {            
+            "doc": {
+                "properties": {
+                    "message": {"type": "string", "analyzer": "snowball"}
+                }
+            }
+        }
+    
+    }'
+    echo
+    curl -XPUT 'http://localhost:9200/test-idx/doc/1' -d '
+    {
+      "message": "How is this going to be indexed?"
+    }
+    '
+    echo
+    curl -XPOST 'http://localhost:9200/test-idx/_refresh'
+    echo
+    curl -XGET 'http://localhost:9200/test-idx/doc/_search?pretty=true&search_type=count' -d '{
+        "query": {
+            "match": {
+                "_id": "1"
+            }
+        },
+        "facets": {
+            "tokens": {
+                "terms": {
+                    "field": "message"
+                }
+            }
+        }
+    }
+    '
+    echo
+    
+
+You can even add the size of the terms (indexed terms). Have a look at
+[Elastic Search: how to see the indexed
+data](https://stackoverflow.com/questions/8954785/elastic-search-how-to-see-
+the-indexed-data)
+
+You can view any existing index by using the below CURL. Please replace the
+index-name with your actual name before running and it will run as is.
+
+**View the index content**
+
+    
+    
+    curl -H 'Content-Type: application/json' -X GET https://localhost:9200/index_name?pretty
+    
+
+And the output will include an index(see settings in output) and its mappings
+too and it will look like below output -
+
+    
+    
+    {
+      "index_name": {
+        "aliases": {},
+        "mappings": {
+          "collection_name": {
+            "properties": {
+              "test_field": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              }
+           }
+        },
+        "settings": {
+          "index": {
+            "creation_date": "1527377274366",
+            "number_of_shards": "5",
+            "number_of_replicas": "1",
+            "uuid": "6QfKqbbVQ0Gbsqkq7WZJ2g",
+            "version": {
+              "created": "6020299"
+            },
+            "provided_name": "index_name"
+          }
+        }
+      }
+    }
+    
+
+**View ALL the data under this index**
+
+    
+    
+    curl -H 'Content-Type: application/json' -X GET https://localhost:9200/index_name/_search?pretty
+    
+

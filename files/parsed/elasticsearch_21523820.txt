@@ -1,0 +1,62 @@
+21523820 Elasticsearch not searching some fields
+
+I have just updated a website, the update adds new fields to elasticsearch.
+
+In my dev environment, it all works fine. but on the live site, the new fields
+are not being found.
+
+Eg. I have added a new field with the value : 1
+
+However, when adding a filtered query of
+
+{"field":1}
+
+It does not find any matching results.
+
+When I look in the documents, I can see docs with the field set to 1
+
+Would the reason for this be that the new field was added after the mappings
+was set? I am not all that familiar with elasticsearch, So I am not really
+sure where to start looking to fix it.
+
+Any help would be appreciated.
+
+Update:
+
+querying from URL shows nothing either
+
+    
+    
+    _search/?pretty=true&size=50&q=field1:*
+    
+
+however there is another field that was added at the same time which I can
+search on. I can see field1 in the result set but it just wont allow me to
+search on it.
+
+Only difference i see in the mapping is that the one that is working is set to
+type:long whereas the one not working is set as type:string
+
+It's OK to add a field after the mapping was set. ElasticSearch will guess the
+mapping for you. (in fact, it's one of their selling features --- no need to
+define the mapping, just throw the data at it)
+
+There are a few things that can go wrong:
+
+  1. Verify that data is actually in the index. To do that, just navigate to the `_search` url with no parameters, you should see the field if it is indexed.
+
+  2. Look at your mapping. Could it be that the field is explicitly set not to be indexed?
+
+  3. Another possibility is that your query is wrong (but that is unlikely, since you're saying it works in the development environment)
+
+Is it a length issue on the ngram? what was your "min_gram" settings?  When
+you check on your index settings like this:
+
+    
+    
+    GET <host>/<index_name>/_settings
+    
+
+Does it work when you filter for a two digit field?  Are all the field values
+one digit?
+

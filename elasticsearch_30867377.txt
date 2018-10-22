@@ -1,0 +1,3 @@
+30867377
+Why elasticsearch request body query analyzer not working?
+<p>When I use the simplest get query ( /index/_search?q=北京 ) , the results seems normal. But when I use the request body query , like below:</p>&#xA;&#xA;<pre><code>{&#xA;    'query': {&#xA;        'query_string':{&#xA;            'query': '北京'&#xA;        }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>It seems elasticsearch not use analyzer I specific by the mapping setting, even I add the analyzer setting in the query body.</p>&#xA;&#xA;<p>Can anyone help me find out what's wrong? Thank you.</p>&#xA;

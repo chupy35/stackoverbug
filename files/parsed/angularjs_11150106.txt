@@ -1,0 +1,28 @@
+11150106 How can I show or hide some buttons depend on the user's rights, in
+angularjs?
+
+With angularjs, we usually use plain HTML to write views. Now I have a
+question: how can I show or hide some buttons depend on the user's rights?
+
+For example, current page is displaying an article. If the current user is the
+author or the article, or administrator, then "Delete" button will be
+displayed.
+
+But since the view is plain HTML, how can I control it?
+
+I can post an request to pass some data(e.g. current user id, article id) to
+server to check, but if there are many buttons, I need to request many times,
+which is not effective.
+
+Is there any better way to do this?
+
+You can use the [ngShow
+directive](http://docs.angularjs.org/api/ng.directive%3angShow). I put
+together [a little demo](http://jsfiddle.net/sveinatle/Takey/1/), but the
+important bit is simply:
+
+    
+    
+    <button ng-show="user.id==post.postedby">Delete</button>
+    
+

@@ -1,0 +1,114 @@
+13467770 Null pointer Exception when retrieving multivalued array field
+
+I have trouble Accessing some multivalued array in my Elasticsearch index I
+use the query in  [retrieving the multivalued array from
+elasticsearch](https://stackoverflow.com/questions/13228768/retrieving-the-
+multivalued-array-from-elasticsearch) But I got null poiter exception for some
+of my documents in the index where the array given for search is present .This
+occures when I use queryString query instead of match_all
+
+    
+    
+    {
+    took: 3
+    timed_out: false
+    _shards: {
+        total: 2
+        successful: 1
+        failed: 1
+        failures: [
+            {
+                status: 500
+                reason: NullPointerException[null]
+            }
+        ]
+    }
+    
+
+My query is
+
+    
+    
+    {
+     "query":{
+      "query_string":{
+      "query":"report","default_field":"Content"
+     }
+    },
+    "script_fields": {
+    "entity_facets": {
+    "script": "result=[];foreach(facet : _source.Categories.Types.Events)      
+    
+    {if(facet.event==event) result.add(facet);} result",
+     "params": {
+     "event":"AnalystEvent"
+      }
+      }
+     }
+    
+
+}
+
+**EDIT :** I have an index  <https://gist.github.com/4129488> which I got by
+running query
+
+    
+    
+     {
+      "from": "0",
+      "size": "100",
+      "query": {
+       "bool": {
+       "must": [
+       {
+        "bool": {
+        "must": [
+        {
+         "query_string": {
+         "query": "confronted",
+         "default_field":"Content"
+        }
+       },
+       {
+        "range": {
+        "actualTimeStamp": {
+        "from": "23-07-2012 10:04:52",
+        "to": "23-09-2012 10:04:52"
+       }
+     }
+     }
+      ]
+     }
+     },
+     {
+      "bool": {
+      "should": [
+      {
+        "fuzzy": {
+        "SourceName": {
+         "value": "Economic_Times"
+       }
+       }
+       },
+       {
+         "fuzzy": {
+         "SourceName": {
+         "value": "reuters"
+        }
+       }
+      }
+     ]
+     }
+    }
+    ]
+    }
+    }
+    }
+    
+
+But I didn' get this index when using script field on th above query !!
+
+You, probably, have a record, which doesn't store _source, or its _source
+doesn't have Categories, or categories don't have any Types or Types don't
+have any Events. Just add if statements to check for these conditions.
+

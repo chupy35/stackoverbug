@@ -1,0 +1,39 @@
+21651545 ElasticSearch don't penalise verbose content
+
+We're using ElasticSearch to return recipes from our database.
+
+Our problem is that ElasticSearch penalises verbose content:
+
+For a search term like "Chicken Pasta", the ranking would come out as:  1\.
+"Chicken Pasta" 2\. "Tasty Chicken Pasta"
+
+Further, 1\. "Horrible Chicken Pasta" 2\. "Very Tasty Chicken Pasta"
+
+For our domain, within certain parts of recipes, we don't want to penalise
+verbose content. I.e. many ingredients should be, within certain constraints,
+just as good as just a few ingredients.
+
+I'd really appreciate some advice on how we could solve this issue.
+
+Nick
+
+You can use custom scoring functions to calculate the score of the results
+yourself. Here is a great webcast explaining custom scoring functions:
+
+<http://www.elasticsearch.org/videos/introducing-custom-scoring-functions/>
+
+The query that you have to use is the:
+
+    
+    
+    function_score
+    
+
+query to provide your own scoring. You'll find the most important information
+about the function_score query in the following document:
+
+    
+    
+    http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html
+    
+

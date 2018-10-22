@@ -1,0 +1,100 @@
+11953348 AngularJS: callback after render (work with DOM after render)
+
+How can run a method `$scope.myWork()` after render template? I want to set
+the `$scope.value` and after that I need to change something with JQuery (eg.
+in DOM of template content). `$scope.$watch('value', function (){....})` is
+working "before" render (DOM of template is not available yet). Thanks.
+
+Create a [directive](http://docs.angularjs.org/guide/directive) that runs your
+code in the link function. The link function is called after the template is
+built.
+
+See [ng-click](http://docs.angularjs.org/api/ng.directive:ngClick) to get an
+idea.
+
+I use `terminal` and `transclude` in a attribute directive to call a scoped
+method after a model is updated and view is rendered (in my case to resize a
+iframe after a $Resource.query):
+
+    
+    
+    .directive('postRender', [ '$timeout', function($timeout) {
+    var def = {
+        restrict : 'A', 
+        terminal : true,
+        transclude : true,
+        link : function(scope, element, attrs) {
+            $timeout(scope.resize, 0);  //Calling a scoped method
+        }
+    };
+    return def;
+    }])
+    
+
+The $timeout is black magic. It _should_ be possible to declare the JS method
+as the attribute value and $parse it.
+
+So I use it in a `ng-repeat` (in my case a tree is rendered recursively):
+
+    
+    
+    <div post-render ng-repeat="r in regions | orderBy:'name'" ng-include="'tree_region_renderer.html'">
+    
+
+Jens answer above will work , but note that on newer AngularJS versions (for
+example 1.2.3) you cannot have that postRender directive in combination with
+ng-repeat as attributes on the same tag since they both have transclude: true.
+In that case you either must remove transclude or have a separate tag with the
+postRender directive attribute.  
+Also be aware of priority of attributes when using terminal: true since you
+might end up having an attribute non- effective due to a higher priorotized
+one on the same tag.
+
+I also had this problem, other solutions didn't work well for me, and it
+seemed like the kind of thing Protractor must have solved. A quick review of
+[Protractor's client-side
+scripts](https://github.com/angular/protractor/blob/63e330d24f75162a8a603bdde6d0a68a8af555ca/lib/clientsidescripts.js#L64)
+shows it uses `angular.getTestability(element)` to know when to actually run
+the tests. The method waits until there are no pending timeouts or http
+requests and then runs your callback. Here's my directive:
+
+    
+    
+    export function afterRender ($timeout) {
+    "ngInject";
+      return {
+          restrict: 'A',
+          terminal: true,
+          link: function (scope, element, attrs) {
+            angular.getTestability(element).whenStable(function() {
+              console.log('[rendered]');
+            });
+          }
+      };
+    }
+    
+
+I found this page when looking for a way to profile DOM rendering. I found a
+far simple solution which is working for my use case.
+
+Attach an ng-init handler to the DOM element and in the handler function, use
+$timeout to yield execution. Example:
+
+HTML:
+
+    
+    
+    <div ng-init="foo()">
+    
+
+JS:
+
+    
+    
+    $scope.foo = function() {
+        $timeout(function() {
+            // This code runs after the DOM renders
+        });
+    });
+    
+

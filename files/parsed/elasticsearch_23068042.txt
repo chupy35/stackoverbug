@@ -1,0 +1,80 @@
+23068042 What is recommended analyzer / filter for human names in Elastic
+search
+
+I wonder whether there are recommendations for using analyzers / filters to
+index/search for human names.
+
+Examples of names that might pose difficulties:
+
+  * Marc versus Mark
+  * Peter de Langhe versus Peter delange
+  * Verhaeven versus Verhaven
+  * François versus Francois
+
+thx Marc
+
+Here's an analyzer and filter to get you started. It's hard to cover all the
+cases, but an `asciifolding` filter will solve your issues with the _François
+versus Francois_ case.
+
+In the example below, it will preserve the original so that a query for both
+François and Francois will resolve to the same resultset.
+
+    
+    
+            "analyzer": {
+                "name_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "standard",
+                    "filter": [
+                        "lowercase",
+                        "trim",
+                        "my_ascii_folding"
+                    ]
+                }
+            },
+            "filter": {
+                "my_ascii_folding" : {
+                    "type" : "asciifolding",
+                    "preserve_original" : true
+                }
+            }
+    
+
+[Source](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+asciifolding-tokenfilter.html)
+
+By defining a synonym filter, you can define a list of commonly similar names
+in your language (maybe a line like `François => Francois` in your synonyms
+file for example) that will do the trick in the short run.
+
+Lastly a `pattern_replace` char filter with a `"([A-Za-z]+)ae([A-Za-z]+)" =>
+"$1a$2"` pattern can turn all the `Verhaeven` into `Verhaven`
+
+Something like...
+
+    
+    
+            "char_filter": {
+                "ae_char_filter": {
+                    "type": "pattern_replace",
+                    "pattern": "([A-Za-z]+)ae([A-Za-z]+)",
+                    "replacement": "$1a$2"
+                }
+            }
+    
+
+Even _Peter de Langhe versus Peter delange_ can be solved with a
+`pattern_replace` char filter:
+
+    
+    
+            "char_filter": {
+                "de_char_filter": {
+                    "type": "pattern_replace",
+                    "pattern": "([A-Za-z]+) de ([A-Za-z]+)",
+                    "replacement": "$1 de$2"
+                }
+            }
+    
+

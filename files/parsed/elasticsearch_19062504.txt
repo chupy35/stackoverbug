@@ -1,0 +1,64 @@
+19062504 Counting with range and terms in Elasticsearch
+
+I'm attempting to do a `count` query such that I return the number of
+unsuccessful attempts to log into my system within the last 10 minutes. I
+created this query:
+
+    
+    
+    {
+      "term": {
+        "success":false
+      },
+      "range": {
+        "_timestamp": {
+          "gt": "now-10m"
+        }
+      }
+    }
+    
+
+However, this returns all of the unsuccessful attempts for any time,
+disregarding the `range` filter in my query. Am I structuring this query
+correctly? The query works when I do a `search` with terms and ranges.
+
+In other words, the output of the above query and `curl -XGET
+localhost:9200/application/_count` is the same (I have only tested
+unsuccessful attempts).
+
+The `range` is a filter, so I think you have to create a `filtered` query to
+take it correctly into account :
+
+    
+    
+    {
+      "filtered": {
+        "query": {
+          "term": {
+            "success":false
+          },
+        },
+        "filter: {
+          "range": {
+            "_timestamp": {
+              "gt": "now-10m"
+            }
+          }
+        }
+      }
+    }
+    
+
+Try using the search_type parameter instead of using the countAPI. This is
+actually preferred:
+
+    
+    
+    curl -XGET localhost:9200/application/_search&search_type=count -d'{
+        query:....
+    }'
+    
+
+Documentation:
+<http://www.elasticsearch.org/guide/reference/api/search/search-type/>
+

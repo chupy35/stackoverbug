@@ -1,0 +1,151 @@
+12059956 AngularJS Pre-served $params variables for a controller defined
+inside of a route
+
+Is it possible to pass your own variables in a defined route in AngularJS?
+
+The reason why I'm doing this is because I have to data representations of the
+same page (one is a filtered view in terms of the JSON data) and all I need to
+do is give a boolean flag to the $params array to let the controller function
+know that this page is either filtered or non-filtered.
+
+Something like this:
+
+    
+    
+    var Ctrl = function($scope, $params) {
+      if($params.filtered) {
+        //make sure that the ID is there and use a different URL for the JSON data
+      }
+      else {
+        //use the URL for JSON data that fetches all the data
+      }
+    };
+    
+    Ctrl.$inject = ['$scope', '$routeParams'];
+    
+    angular.modlule('App', []).config(['$routeProvider', function($routes) {
+    
+      $routes.when('/full/page',{
+        templateURL : 'page.html',
+        controller : Ctrl
+      });
+    
+      $routes.when('/full/page/with/:id',{
+        templateURL : 'page.html',
+        controller : Ctrl,
+        params : {
+          filtered : true
+        }
+      });
+    
+    }]);
+    
+
+AFAIK it is not currently possible to specify additional parameters for a
+route. Having said this your use case could be easily covered by testing if
+:id is defined as part of
+[$routeParams](http://docs.angularjs.org/api/ng.%24routeParams).
+
+The thing is that AngularJS will match your routes either on '/full/page' or
+'/full/page/with/:id' so just by testing $routeParams for id presence in your
+controller:
+
+`if ($routeParams.id)`
+
+you would know in which case your are.
+
+The alternative is to use different controllers for different routes.
+
+According to [`$routeProvider`
+documentation](https://docs.angularjs.org/api/ngRoute/provider/%24routeProvider),
+the `route` parameter of `$routeProvider.when()` has property `resolve`:
+
+> An optional map of dependencies which should be injected into the
+controller.
+
+Something like this should work:
+
+    
+    
+    function Ctrl($scope, isFiltered) {
+      if(isFiltered) {
+        //make sure that the ID is there and use a different URL for the JSON data
+      }
+      else {
+        //use the URL for JSON data that fetches all the data
+      }
+    }
+    Ctrl.$inject = ['$scope', 'isFiltered'];
+    
+    angular.modlule('App', []).config(['$routeProvider', function($routeProvider) {
+    
+      $routeProvider.when('/full/page',{
+        templateURL: 'page.html',
+        controller: Ctrl
+      });
+    
+      $routeProvider.when('/full/page/with/:id',{
+        templateURL: 'page.html',
+        controller: Ctrl,
+        resolve: {
+          isFiltered: function() { return true; }
+        }
+      });
+    
+    }]);
+    
+
+mething like this must be work for filter:
+
+    
+    
+    function caseFilterCtrl($scope, $routeParams, $http) {
+        $http.get('./data/myDatas.json').success( function(data){
+                                            var arr = new Array();
+                                            for(var i=0; i < data.length; i++){
+                                                if(data[i].filter == $routeParams.id){
+                                                    arr.push(data[i]);                              }
+                                                }
+                                            $scope.filtered= arr;
+                                            });
+        }
+    
+     caseFilterCtrl.$inject = ['$scope', '$routeParams', '$http']; //for minified bug issue
+    
+
+and the routage :
+
+    
+    
+    angular.module('myFilterApp', []).
+        config(['$routeProvider', function($routeProvider){ 
+                    $routeProvider.when('/filter/:id', {templateUrl: './view/partial/filter.html', controller: caseFilterCtrl});
+                    $routeProvider.otherwise({redirectTo: '/filter/01'});
+                }
+                ]);
+    
+
+You can get sneak params directly through `$route.current.$$route`.
+
+    
+    
+    function Ctrl($scope, $route) {
+      var filtered = $route.current.$$route.params.filtered;
+    }
+    
+    angular.modlule('App', []).config(['$routeProvider', function($routeProvider) {
+    
+      $routeProvider.when('/full/page/with/:id',{
+        templateURL: 'page.html',
+        controller: Ctrl,
+        params : {
+          filtered : true
+        }
+      });
+    
+    }]);
+    
+
+Although it work, I'd still prefer a `resolve` solution. `params` (or any name
+of your choice) could be overwritten by angularjs in future releases.
+

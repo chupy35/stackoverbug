@@ -1,0 +1,42 @@
+18465994 Multi get returns source as null after bulk update
+
+I am using elastic search multi get for reading documents after bulk update.
+Its returning some document sources as null.
+
+    
+    
+     MultiGetRequestBuilder builder = client.prepareMultiGet();
+    
+     builder.setRefresh(true);
+    
+     builder.add(indexName, type, idsList);
+    
+     MultiGetResponse multiResponse = builder.execute().actionGet();
+    
+     for (MultiGetItemResponse response : multiResponse.getResponses())
+     {
+             String customerJson = response.getResponse().getSourceAsString();
+             System.out.println("customerJson::" + customerJson);
+     }
+    
+
+Any issues in my code? Thanks in advance.
+
+When you say "some return sources as null", I assume the get response is
+marking them as not existing..?
+
+If that's the case, then maybe :
+
+  1. some indexation request in the bulk are failing dur to mapping/random error.
+
+  2. You need to refresh your index between the indexation and the multiget (i.e : your docs are not available for search yet)
+
+transportClient.admin().indices().prepareRefresh(index).execute();
+
+good luck
+
+EDIT : You answered your own question in the comment, but for readability's
+sake : when using get or multiget, if a routing key was used when indexing, it
+must be specified again during the get, else, a wrong shard is determined
+using default routing and the get fails.
+

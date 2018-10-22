@@ -1,0 +1,93 @@
+26172393 ReactJS Invalid Checksum
+
+I keep getting the following error when attempting server side rendering using
+ReactJS & node.
+
+    
+    
+    React attempted to use reuse markup in a container but the checksum was invalid.
+    
+
+I've seen an [answer](https://stackoverflow.com/questions/20978946/facebook-
+react-js-how-do-you-render-statefull-components-on-the-server) that passing
+the same props on the server and client resolves this issue. In my example, I
+don't have any props, so I'm not sure that the answer applies to my problem.
+
+You can view my full example on my [github](https://github.com/maestroh/react-
+server-rendering) account.
+
+I'm including the important code below. Any insight is greatly appreciated.
+
+**JSX**
+
+    
+    
+    /** @jsx React.DOM */
+    var React = require('react');
+    var index = React.createClass({
+        render: function() {
+            return (
+              <html>
+              <head>
+                <script src="bundle.js"></script>
+              </head>
+              <body>
+                <div>
+                  hello
+               </div>
+              </body>
+             </html>
+         );
+       }
+    });
+    
+    if (typeof window !== "undefined") {
+      React.renderComponent(<index/>, document.documentElement);
+    } else {
+      module.exports = index;
+    }
+    
+
+**Server**
+
+    
+    
+    require('node-jsx').install();
+    var express = require('express'),
+        app     = express(),
+        React = require('react'),
+        index = require('./index.jsx');
+    
+    var render = function(req, res){
+      var component = new index();
+      var str = React.renderComponentToString(component);
+      res.set('Content-Type', 'text/html');
+      res.send(str);
+      res.end();
+    }
+    
+    app.get('/',render);
+    app.use(express.static(__dirname));
+    
+    app.listen(8080);
+    
+
+Change
+
+    
+    
+    React.renderComponent(<index/>, document.documentElement);
+    
+
+to
+
+    
+    
+    React.renderComponent(<index/>, document);
+    
+
+and the notice goes away.
+
+![Screenshot](https://www.evernote.com/shard/s23/sh/03afeb69-56f0-4990-80aa-35ef13581b4d/179f7d5d7858c65aa1109c5109b5cd3f/deep/0/localhost-8080-and-
+ReactJS-Invalid-Checksum---Stack-Overflow.png)
+

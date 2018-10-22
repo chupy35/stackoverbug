@@ -1,0 +1,21 @@
+23994144 has_parent does not work when parent and cihld index types are same
+in ElasticSearch
+
+I would like to design a comment/reply system in `ElasticSearch` using
+[parent/child](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+parent-field.html). If I use separate types like `/twitter/tweet` and
+`/twitter/reply` both `has_parent` and `has_child` query and filters works.
+However, when I store all messages in `/twitter/tweet` and set mapping as
+below only `has_child` query works, since `has_parent` does not work I am not
+able to reach replies belongs to specific tweet. Is it wrong to create a
+`parent/child` relation on same document type of an index?
+
+    
+    
+    curl -XPOST localhost:9200/twitter/tweet/_mapping -d '{
+    "tweet":{
+     "_parent": {"type": "tweet"}
+    }
+    }'
+    
+

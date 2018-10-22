@@ -1,0 +1,58 @@
+21538393 Elasticsearch routing issues with Parent-child - objects are stored
+in different shards
+
+Parent & Child objects are being stored in different shards
+
+Here is how I'm implementing the Parent and child objects.
+
+I've custom routing parameter for my parent object. Parent ID is specified
+while adding child object.
+
+If there is no custom routing parameter, everything works just fine. But if I
+specify custom routing parameter to my Parent object, child objects are not
+stored in same shard, which is causing the search queries to fail.
+
+Is there a way to fix the issue without forcing the custom routing value on
+Child ?
+
+I'm using ES 1.0 Beta2 version .
+
+Thanx
+
+By default the parent document uses its `_id` as the routing value, and the
+child document uses the value of `parent` as its routing value. The value of
+`parent` is the same as the `_id` of the parent, so they end up on the same
+shard.
+
+If you use a custom `routing` value on the parent, then you need to specify it
+on the `child` as well, eg:
+
+    
+    
+    PUT /myindex/parent/1?routing=custom_val
+    {...}
+    
+    PUT /myindex/child/2?parent=1&routing=custom_val
+    {...}
+    
+
+An alternative is to use an alias with a configured routing value:
+
+    
+    
+    PUT /myindex/_alias/myalias
+    { "routing": "custom_value" }
+    
+
+Then you can index into the alias instead, without specifying the `routing` on
+every request:
+
+    
+    
+    PUT /myalias/parent/1
+    {...}
+    
+    PUT /myalias/child/2?parent=1
+    {...}
+    
+

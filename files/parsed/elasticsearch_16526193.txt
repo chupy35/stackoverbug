@@ -1,0 +1,71 @@
+16526193 what is the difference between _source and _all in Elasticsearch
+
+The difference between the two, who hold all of the fields, eludes me.
+
+If my document has:
+
+    
+    
+    {"mydoc":
+      {"properties":
+          {"name":{"type":"string","store":"true"}},
+          {"number":{"type":"long","store":"false"}},
+          {"title":{"type":"string","include_in_all":"false","store":"true"}}
+    
+      }
+    }
+    
+
+I understand that _source is a field that has all the fields. But so does
+_all? Does this mean that "name" are saved several times (twice? in _src and
+in _all), increasing the disk space the document takes?
+
+Is "name" stored once for the field, once for _source, and once for _all? what
+about "number", is he stored in all, even though not in _source?
+
+When should I use _source in my query, and when _all?
+
+What is the usecase where I can disable "_all", and what functionality would
+then be denied me?
+
+It's pretty much the same as the difference between indexed fields and stored
+fields in lucene.
+
+You use indexed fields when you want to search on them, while you store fields
+that you want to return as search results.
+
+The `_source` field is meant to store the whole source document that was
+originally sent to elasticsearch. It's use as search result, to be retrieved.
+You can't search on it. In fact it is a stored field in lucene and not
+indexed.
+
+The `_all` field is meant to index all the content that come from all the
+fields that your documents are composed of. You can search on it but never
+return it, since it's indexed but not stored in lucene.
+
+There's no redundancy, the two fields are meant for a different usecase and
+stored in different places, within the lucene index. The `_all` field becomes
+part of what we call the inverted index, use to index text and be able to
+execute full-text search against it, while the `_source` field is just stored
+as part of the lucene documents.
+
+You would never use the `_source` field in your queries, only when you get
+back results since that's what elasticsearch returns by default. There are a
+few features that depend on the `_source` field, that you lose if you disable
+it. One of them is the [update
+API](http://www.elasticsearch.org/guide/reference/api/update/). Also, if you
+disable it you need to remember to configure as `store:yes` in your mapping
+all the fields that you want to return as search results. I would rather say
+don't disable it unless it bothers you, since it's really helpful in a lot of
+cases. One other common usecase would be when you need to reindex your data;
+you can just retrieve all your documents from elasticsearch itself and just
+resend them to another index.
+
+On the other hand, the `_all` field is just a default catch all field, that
+you can use when you just want to search on all fields available and you don't
+want to specify them all in your queries. It's handy but I wouldn't rely on it
+too much on production, where it's better to run more complex queries on
+different fields, with different weights each. You might want to disable it if
+you don't use it, this will have a smaller impact than disabling the `_source`
+in my opinion.
+

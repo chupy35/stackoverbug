@@ -1,0 +1,189 @@
+22811364 How to do nested AND and OR filters in ElasticSearch?
+
+My filters are grouped together into categories. I would like to retrieve
+documents where a document can match any filter in a category, but if two (or
+more) categories are set, then the document must match any of the filters in
+ALL categories.
+
+If written in pseudo-SQL it would be:
+
+    
+    
+    SELECT * FROM Documents WHERE (CategoryA = 'A') AND (CategoryB = 'B' OR CategoryB = 'C')
+    
+
+I've tried Nested filters like so:
+
+    
+    
+    {
+        "sort": [{
+            "orderDate": "desc"
+        }],
+        "size": 25,
+        "query": {
+            "match_all": {}
+        },
+        "filter": {
+            "and": [{
+                "nested": {
+                    "path":"hits._source",
+                    "filter": {
+                        "or": [{
+                            "term": {
+                                "progress": "incomplete"
+                            }
+                        }, {
+                            "term": {
+                                "progress": "completed"
+                            }
+                        }]
+                    }
+                }
+            }, {
+                "nested": {
+                    "path":"hits._source",
+                    "filter": {
+                        "or": [{
+                            "term": {
+                                "paid": "yes"
+                            }
+                        }, {
+                            "term": {
+                                "paid": "no"
+                            }
+                        }]
+                    }
+                }
+            }]
+        }
+    }
+    
+
+But evidently I don't quite understand the ES syntax. Is this on the right
+track or do I need to use another filter?
+
+Although I have not understand completely your structure this might be what
+you need.
+
+You have to think tree-wise. You create a bool where you must (=and) fulfill
+the embedded bools. Each embedded checks if the field does not exist or else
+(using should here instead of must) the field must (terms here) be one of the
+values in the list.
+
+Not sure if there is a better way, and do not know the performance.
+
+    
+    
+    {
+        "sort": [
+            {
+                "orderDate": "desc"
+            }
+        ],
+        "size": 25,
+        "query": {
+            "query": {           #
+                "match_all": {}  # These three lines are not necessary
+            },                   #
+            "filtered": {
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "bool": {
+                                    "should": [
+                                        {
+                                            "not": {
+                                                "exists": {
+                                                    "field": "progress"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "terms": {
+                                                "progress": [
+                                                    "incomplete",
+                                                    "complete"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "bool": {
+                                    "should": [
+                                        {
+                                            "not": {
+                                                "exists": {
+                                                    "field": "paid"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "terms": {
+                                                "paid": [
+                                                    "yes",
+                                                    "no"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    
+
+This should be it (translated from given pseudo-SQL)
+
+    
+    
+    {
+       "sort": [
+          {
+            "orderDate": "desc"
+          }
+        ],
+        "size": 25,
+        "query":
+        {
+            "filtered":
+            {
+                "filter":
+                {
+                    "and":
+                    [
+                        { "term": { "CategoryA":"A" } },
+                        {
+                            "or":
+                            [
+                                { "term": { "CategoryB":"B" } },
+                                { "term": { "CategoryB":"C" } }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    
+
+I realize you're not mentioning facets but just for the sake of completeness:
+
+You could also use a `filter` as the basis (like you did) instead of a
+`filtered query` (like I did). The resulting json is almost identical with the
+difference being:
+
+  * a filtered query will filter both the main results as well as facets
+  * a filter will only filter the main results NOT the facets. 
+
+Lastly, Nested filters (which you tried using) don't relate to 'nesting
+filters' like you seemed to believe, but related to filtering on nested-
+documents (parent-child)
+

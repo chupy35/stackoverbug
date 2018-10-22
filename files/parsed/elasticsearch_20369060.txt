@@ -1,0 +1,71 @@
+20369060 NOT condition in elasticsearch
+
+I am trying to implement `NOT` condition in elasticsearch query.  Can I
+Implement `filter` inside `bool` or I need to write separate  filter as below.
+Any optimum solution is there?
+
+    
+    
+    {
+       "query": {
+          "bool": {
+         "must": [
+            {
+               "query_string": {
+              "query": "fashion"
+               }
+            },
+            {
+               "term": {
+              "post_status": "publish"
+               }
+            }
+         ]
+          }
+       },
+       "filter": {
+          "not": {
+         "filter": {
+            "term": {
+               "post_type": "page"
+            }
+         }
+          }
+       }
+    }
+    
+
+You can use a must_not clause:
+
+    
+    
+    {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "_all": "fashion"
+                        }
+                    },
+                    {
+                        "term": {
+                            "post_status": "publish"
+                        }
+                    }
+                ],
+                "must_not": {
+                    "term": {
+                        "post_type": "page"
+                    }
+                }
+            }
+        }
+    }
+    
+
+Also, I'd recommend using a match filter instead of query_string, as
+query_string requires the much more strict Lucene syntax (and is therefor more
+error prone), whereas match works more like a search box: it will
+automatically transform a human readable query to a Lucene query.
+

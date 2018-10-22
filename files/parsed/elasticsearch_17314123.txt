@@ -1,0 +1,88 @@
+17314123 Search by size of object type field elastic search
+
+I have a mapping like this:
+
+    
+    
+    {
+      "post": {
+        "properties": {
+          "author_gender": {
+            "type": "string",
+            "index": "not_analyzed",
+            "omit_norms": true,
+            "index_options": "docs"
+          },
+          "author_link": {
+            "type": "string",
+            "index": "no"
+          },
+          "content": {
+            "type": "string"
+          },
+          "mentions": {
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "profile_image_url": {
+                "type": "string"
+              },
+              "screen_name": {
+                "type": "string"
+              }
+            }
+          }
+       }
+    }
+    
+
+I need to search by the size of the `mentions` object. I have tried this:
+
+    
+    
+    {
+      "filter": {
+        "script": {
+          "script": "doc['mentions'].values.length == 2"
+        }
+      }
+    }
+    
+
+This is not working. Gives an error
+
+> nested: ElasticSearchIllegalArgumentException[No field found for [mentions]
+in mapping with types [post]];
+
+I have also tried replacing the script part with
+`doc['mentions.id'].value.length == 2`. It is also erroring
+
+> nested: ArrayIndexOutOfBoundsException[10];
+
+How to query records with `mentions` object size 2 ?
+
+The elasticsearch guide recommends using **_size()_** instead of **_length_**
+for objects. So try this:
+
+    
+    
+    {
+     "filter": {
+       "script": {
+         "script": "doc['mentions.id'].values.size() == 2"
+        }
+      }
+    }
+    
+
+All the best.
+
+ElasticSearch will not store array of objects like you think. Instead,
+multiple arrays are stored for each object properties.
+
+So that's why you must use "sub array" instead.
+

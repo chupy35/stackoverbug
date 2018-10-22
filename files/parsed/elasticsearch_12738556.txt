@@ -1,0 +1,9 @@
+12738556 Can I set a TTL for an ElasticSearch index?
+
+I can set a ttl for a type in the template but can I set a ttl for the entire
+index? Hmm... I could test this with some guess and check. I'll get around to
+that and post the answer if I find one.
+
+There's no way internal to ES to automate index deletion. You'll have to
+handle that through the API with your client.
+

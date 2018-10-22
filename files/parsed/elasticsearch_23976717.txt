@@ -1,0 +1,13 @@
+23976717 Using Elasticsearch to return the N most recent tags?
+
+I'm storing blog posts in ElasticSearch. Each blog post has an array of tags,
+and each post can have 0 or more tags. I know how to use a terms facet to
+return the N most popular tags. What I'd like is a search that returns the N
+most recent tags instead. I suppose I could just query the posts individually,
+date sorted most recent and build the result set of recent tags by hand
+(removing duplicate tags), but I'm hoping there's a query I can use to do that
+within ES instead. Is this possible?
+
+you could save tags as child documents and append create date, then sort by
+create date field
+

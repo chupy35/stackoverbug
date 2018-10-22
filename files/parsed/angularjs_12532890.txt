@@ -1,0 +1,66 @@
+12532890 Lazy-load external JavaScript in one of AngularJS controller
+
+Some of my routes needs functionality from external JS. I don't want to load
+them all at once since those JS are needed only in certain routes (e.g.
+`/upload` needs some JS for photo uploading, `/photos` needs another JS for
+lightbox, `/funny` needs JS for animation stuff, etc).
+
+What's the best practice for lazily loading those external JavaScripts?
+
+Those routes can be accessed multiple times (e.g. user can go to `/upload`
+then `/photos` then `/upload` again)
+
+The only way I know to handle cases like this is using the "resolve" method of
+a route. This method can be used to define a dependency to be loaded before
+the route's controller is instantiated. One of the different possible return
+types of this method is a promise. Thus you might use this to start loading
+your external JavaScript code asynchronously and return a promise that is
+resolved as soon as your external scripts are loaded.
+
+The documentation for this can be found here:
+<https://docs.angularjs.org/api/ngRoute/provider/$routeProvider> in the "when"
+section.
+
+@alex3683's answer is probably the correct AngularJS way, but I don't grasp
+the concept, so instead I make use of jQuery's `getScript()`. So, in
+CoffeeScript:
+
+    
+    
+    yourModule.factory 'foo', ->
+        $.getScript 'https://script-to-load', ->
+            # whatever you want to do once the script is loaded
+    
+
+And just call it from your controller. Since AngularJS services are lazy and
+singleton, this will only load the script once.
+
+In addition to what Alex has stated, if you will be lazy loading AngularJS
+artefacts such as controllers and directives, you would have to use the
+relevant provider to register them instead of the module API. Artefacts
+registered using the module API after the application has been bootstrapped,
+will not be available to the application. For example, you would define a lazy
+controller like this...
+
+    
+    
+    $controllerProvider.register('SomeLazyController', function($scope)
+    {
+       $scope.key = '...'; 
+    });
+    
+
+instead of this...
+
+    
+    
+    angular.module('app').controller('SomeLazyController', function($scope)
+    {
+        $scope.key = '...';
+    });
+    
+
+I have written a blog post detailing this as well as how to use the 'resolve'
+method that Alex speaks about, to implement lazy loading in AngularJS.
+<http://ify.io/lazy-loading-in-angularjs/>
+

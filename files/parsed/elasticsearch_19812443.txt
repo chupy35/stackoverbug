@@ -1,0 +1,29 @@
+19812443 Moving ES data to a new server using cluster replication
+
+This is my first posting, and my first ES problem so please bear with me. I'm
+trying to move from an existing ES cluster to a new cluster.  
+The existing indexes are the same, and they both exist on the same subnet. It
+ocured to me that if I simply repoint my new cluster nodes to the old cluster,
+the data would replicate for me.  
+Then I simply remove the old nodes from the cluster, shut the whole thing
+down, and rename the cluster on my new nodes.
+
+Are there any caveats or gotchas to this method? One extra point - I am adding
+a new index to the new cluster, but it's existence shouldn't matter as it will
+be replicated to the old nodes.
+
+It should work exactly as your describe Glenn. The one thing I would consider
+is if your nodes are across subnets any potential Firewalls that may come into
+play. I would also suggest doing the work in this order
+
+  1. Bring new nodes into the cluster.
+  2. Increase replicas (if needed).
+  3. Disable old nodes one by one ensure enough time to replicate shards. 
+
+Adding to the point above (unable to comment) once you have shards moved onto
+your new node, you can disable allocation to a node you wish to fade out of
+the cluster
+
+<http://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-
+allocation.html>
+

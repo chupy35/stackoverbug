@@ -1,0 +1,106 @@
+17940026 Partial Search using Analyzer in ElasticSearch
+
+I am using elasticsearch to build the index of URLs.
+
+I extracted one URL into 3 parts which is "domain", "path", and "query".
+
+For example: `testing.com/index.html?user=who&pw=no` will be separated into
+
+    
+    
+    domain = testing.com
+    path = index.html
+    query = user=who&pw=no
+    
+
+There is problems when I wanted to partial search domain in my index such as
+"user=who" or "ing.com".
+
+Is it possible to use "Analyzer" when I search even I didn't use "Analyzer"
+when indexing?
+
+How can I do partial search based on the analyzer ?
+
+Thank you very much.
+
+2 approaches:
+
+## 1\. Wildcard search - easy and slow
+
+    
+    
+    "query": {
+        "query_string": {
+            "query": "*ing.com",
+            "default_field": "domain"
+        }
+    }
+    
+
+## 2\. Use an nGram tokenizer - harder but faster
+
+**Index Settings**
+
+    
+    
+    "settings" : {
+        "analysis" : {
+            "analyzer" : {
+                "my_ngram_analyzer" : {
+                    "tokenizer" : "my_ngram_tokenizer"
+                }
+            },
+            "tokenizer" : {
+                "my_ngram_tokenizer" : {
+                    "type" : "nGram",
+                    "min_gram" : "1",
+                    "max_gram" : "50"
+                }
+            }
+        }
+    }
+    
+
+**Mapping**
+
+    
+    
+    "properties": {
+        "domain": {
+            "type": "string",
+            "index_analyzer": "my_ngram_analyzer"
+        },
+        "path": {
+            "type": "string",
+            "index_analyzer": "my_ngram_analyzer"
+        },
+        "query": {
+            "type": "string",
+            "index_analyzer": "my_ngram_analyzer"
+        }
+    }
+    
+
+**Querying**
+
+    
+    
+    "query": {
+        "match": {
+            "domain": "ing.com"
+        }
+    }
+    
+
+Trick with query string is split string like `"user=who&pw=no"` to tokens
+`["user=who&pw=no", "user=who", "pw=no"]` at index time. That allows you to
+make easily queries like `"user=who"`. You could do this with pattern_capture
+token filter, but there may be better ways to do this as well.
+
+You can also make hostname and path more searchable with path_hierarchy
+tokenizer, for example `"/some/path/somewhere"` becomes
+`["/some/path/somewhere", "/some/path/", "/some"]`. You can index also
+hostname with with path_hierarchy hierarcy tokenizer by using setting
+`reverse: true` and `delimiter: "."`. You may also want to use some stopwords-
+filter to exclude top-level domains.
+

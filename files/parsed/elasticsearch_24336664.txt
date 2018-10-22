@@ -1,0 +1,49 @@
+24336664 weight function_score functions in Elastic Search
+
+I want to weight each function in function_score differently. I have a regular
+text query mixed with a date based decay and a geo query. I want to reduce the
+weighting on the date based decay. On some old docs I saw a `scale_weight`
+option for function_score, but I don't see it any more. Here is my query:
+
+`"query": { "function_score": { "query": { "query_string": { "query": "my
+query", "default_operator": "OR" } }, "functions": [ { "script_score": {
+"script": "_score * doc[\"rgScore\"].value" } }, { "gauss": { "location": {
+"origin": { "lat": 49.4928119, "lon": -117.2948343 }, "scale": "100km",
+"offset": "10km", "decay": 0.5 } } }, { "exp": { "start": { "origin":
+"2014-06-20", "scale": "90d", "offset": "0d", "decay": 0.01 } } } ], "filter":
+{ "range": { "start": { "gte": "2014-06-20" } } } } },`
+
+The documentation for [**function score
+query**](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html) describes how to do this, and you can also
+check out [this
+**tutorial**](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/decay-
+functions.html).
+
+In summary, you can add a weight (for versions after 1.4.0.Beta1) or
+boost_factor (for versions before that) property to each function, and it will
+modify the contribution of each clause appropriately.
+
+For your case, something like:
+
+    
+    
+    {
+        "exp": {
+            "start": {
+                "origin": "2014-06-20",
+                "scale": "90d",
+                "offset": "0d",
+                "decay": 0.01
+             }
+         },
+         "weight" : 0.2
+    }
+    
+
+Should work - if you have a version prior to 1.4.0.Beta1, try replacing
+"weight" with "boost_factor."
+
+The weight is always relative to the other function clauses, so you may have
+to adjust those as well to get the results you want.
+

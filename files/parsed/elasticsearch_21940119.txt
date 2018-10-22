@@ -1,0 +1,95 @@
+21940119 ElasticSearch how to setup geo_point
+
+I'm trying to setup a geo_point object on ES 1.0.0 and run a simple proof of
+concept query against it but the query is failing to return any hits. Here are
+my setup steps:
+
+1) Create the mapping:
+
+    
+    
+    PUT jay/geotest/_mapping
+    {
+        "geotest" : {
+            "properties" : {
+                "name" : {
+                    "type" : "string"
+                },
+                "pin" : {
+                    "type": "geo_point"   
+                }
+            }
+        }
+    }
+    
+
+2) verify the mapping:
+
+    
+    
+    GET jay/geotest/_mapping
+    
+
+3) Add a piece of data
+
+    
+    
+    put jay/geotest/1
+    {
+       "name": "test1",
+       "pin": {
+          "lat": 0,
+          "lon": 0
+       }
+    }
+    
+
+4) query for that data:
+
+    
+    
+    GET jay/geotest/_search?search_type=count
+    {
+        "filtered" : {
+            "filter" : {
+                "geo_distance" : {
+                    "distance" : "100km",
+                    "pin" : {
+                        "lat" : 0,
+                        "lon" : 0
+                    }
+                }
+            }
+        }
+    }
+    
+
+My expected result is that I will get one hit returned but instead nothing is
+returned by the query.
+
+Thanks in advance!
+
+I think you're missing the "query" part of the request.
+
+    
+    
+    POST jay/geotest/_search
+    {
+       "query": {
+          "filtered": {
+             "filter": {
+                "geo_distance": {
+                   "distance": "100km",
+                   "pin": {
+                      "lat": 0,
+                      "lon": 0
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+I've just tested your steps, and making that change returns the document.
+

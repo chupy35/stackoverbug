@@ -1,0 +1,75 @@
+19258681 Getting count and grouping by date range in elastic search
+
+Is there a way to get the count of rows and group them by hour, day or month.
+
+For instance, assume I have the messages
+
+    
+    
+    _source{
+    "timestamp":"2013-10-01T12:30:25.421Z",
+    "amount":200
+    }
+    _source{
+    "timestamp":"2013-10-01T12:35:25.421Z",
+    "amount":300
+    }
+    _source{
+    "timestamp":"2013-10-02T13:53:25.421Z",
+    "amount":100
+    }
+    _source{
+    "timestamp":"2013-10-03T15:53:25.421Z",
+    "amount":400
+    }
+    
+
+Is there a way to get something alone the lines of {date, sum} (not
+necessarily in this format, just wondering if there is any way i can achieve
+this)
+
+    
+    
+    {
+    {"2013-10-01T12:00:00.000Z", 500},
+    {"2013-10-02T13:00:00.000Z", 100},
+    {"2013-10-03T15:00:00.000Z", 400}
+    }
+    
+
+Thank you
+
+Try with aggregations.
+
+    
+    
+    {     
+      "aggs": {
+        "amount_per_month": {
+          "date_histogram": {
+            "field": "timestamp",
+            "interval": "week"
+          },
+          "aggs": {
+            "total_amount": {
+              "sum": {
+                "field": "amount"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+In addition, if you wanna count number of indexes replace sum content by:
+
+    
+    
+    "sum": {
+      "script": "1"
+    }
+    
+
+Hope it helps.
+

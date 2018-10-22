@@ -1,0 +1,126 @@
+28238286 ReactJS dangerouslySetStyle?
+
+I am using ReactJS and am aware of `dangerouslySetInnerHTML` but I want to be
+able to set an element's `style` attribute to a raw string. I've searched and
+had a look through the React source but I can't find anything.
+
+Is there a way to do this?
+
+You have to manually set the attribute on the dom node to do this. The
+simplest way would be with a wrapper component:
+
+    
+    
+    <CustomAttribute tag="div" dangerouslySetAttributes={{style: 'color:red'}}>
+      red text
+    </CustomAttribute>
+    
+
+And the actual component
+
+    
+    
+    var DSA = 'dangerouslySetAttributes';
+    var CustomAttribute = React.createClass({
+      setAttributes: function(oldAttrs, attrs){
+        var el = this.getDOMNode();
+        Object.keys(attrs).forEach(function(key){
+          if (oldAttrs[key] !== attrs[key]) 
+            el.setAttribute(key, attrs[key]);
+        });
+      },
+      componentDidMount: function(){ 
+        this.setAttributes({}, this.props[DSA]);
+      },
+      componentWillReceiveProps: function(nextProps){ 
+        this.setAttributes(this.props[DSA], nextProps[DSA]);
+      },
+      render: function(){
+        var Tag = this.props.tag || 'div';
+        return <Tag>{this.props.children}</Tag>
+      },
+    });
+    
+
+*not tested
+
+I looked more thoroughly through the React source and in
+**/src/vendor/core/camelize.js** I found this:
+
+    
+    
+    /**
+     * Copyright 2013-2014, Facebook, Inc.
+     * All rights reserved.
+     *
+     * This source code is licensed under the BSD-style license found in the
+     * LICENSE file in the root directory of this source tree. An additional grant
+     * of patent rights can be found in the PATENTS file in the same directory.
+     *
+     * @providesModule camelize
+     * @typechecks
+     */
+    
+    var _hyphenPattern = /-(.)/g;
+    
+    /**
+     * Camelcases a hyphenated string, for example:
+     *
+     *   > camelize('background-color')
+     *   < "backgroundColor"
+     *
+     * @param {string} string
+     * @return {string}
+     */
+    function camelize(string) {
+      return string.replace(_hyphenPattern, function(_, character) {
+        return character.toUpperCase();
+      });
+    }
+    
+    module.exports = camelize;
+    
+
+So it is a little inefficient in that it turns a hypenated style attribute
+into camel case and then React turns it back again but it does work.
+
+Why not using [classnames](https://github.com/JedWatson/classnames)? When you
+receive new state from your resource then React will take care of rendering
+the correct style attributes.
+
+Basically the code is:
+
+    
+    
+    classNames({
+    'random-string': condition ? true : false
+    });
+    
+
+Why don't you set the entire markup, including styles, in
+dangerouslySetInnerHTML, like such:
+
+    
+    
+    var markup = "<div style='"+dynamicStyleString+"'>Content</div>"
+    
+    <div dangerouslySetInnerHTML={{__html: markup}}></div>
+    
+
+That should get the job done
+
+    
+    
+    Its simple to use dangerouslySetInnerHTML:
+     <div dangerouslySetInnerHTML={{__html: this.props.value}}></div>
+    
+    https://facebook.github.io/react/tips/dangerously-set-inner-html.html
+    
+    It will work same as like normal html/JS:
+    
+     <div id="name"></div>
+     <script>
+      document.getElementById('name').innerHTML = "test test";
+     </script>
+    
+

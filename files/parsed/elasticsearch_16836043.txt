@@ -1,0 +1,76 @@
+16836043 Elasticsearch wildcard character is not matching numbers
+
+I am searching elasticsearch index by using following query string:
+
+    
+    
+    curl -XGET 'http://localhost:9200/index/type/_search' -d '{
+        "query": {                
+                    "query_string" : {
+                        "default_field" : "keyword",
+                        "query" : "file*.tif"
+                    }
+        }
+    }'
+    
+
+Schema for keyword field is as follows:
+
+    
+    
+    "keyword" : {"type" : "string", "store" : "yes", "index" : "analyzed" }
+    
+
+The problem with above query is it doesn't retrieve results for keyword like
+file001.tif while file001_copy.tif is retrieved. `Match` query is retrieving
+results correctly. Is this a limitation of `Query_String` or am I missing
+something?
+
+You can see your problem by analyzing the string that you're indexing
+
+    
+    
+    curl "localhost:9200/_analyze" -d "file001.tif" | python -mjson.tool
+    {
+    "tokens": [
+        {
+            "end_offset": 7, 
+            "position": 1, 
+            "start_offset": 0, 
+            "token": "file001", 
+            "type": "<ALPHANUM>"
+        }, 
+        {
+            "end_offset": 11, 
+            "position": 2, 
+            "start_offset": 8, 
+            "token": "tif", 
+            "type": "<ALPHANUM>"
+        }
+    ]
+    }
+    
+    curl "localhost:9200/_analyze" -d "file001_copy.tif" | python -mjson.tool
+    {
+    "tokens": [
+        {
+            "end_offset": 16, 
+            "position": 1, 
+            "start_offset": 0, 
+            "token": "file001_copy.tif", 
+            "type": "<ALPHANUM>"
+        }
+    ]
+    }
+    
+
+The standard analyzer file001.tif is splitting the tokens up to **file001**
+and **tif**
+
+but file001_copy.tif is not. so when you go search for file its only hitting
+file001_copy.tif because its the only thing that fits your criteria (has to
+have a token that has 'file' + 0 or more characters AND 'tif' in it)
+
+You probably want to use a whitespace or keyword analyzer in tandem with a
+lowercase filter, to make it work the way you want to.
+

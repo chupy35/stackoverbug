@@ -1,0 +1,10 @@
+11348851 AngularJS: What is the equivalent to Ember.js' CollectionView?
+
+I'm currently evaluating a few JavaScript frameworks and right now I'm working
+with AngularJS. I was wondering how I would go about accomplishing the
+equivalent to Ember.js' CollectionView in AngularJS? I can't seem to find what
+I'm looking for and I just need to be pointed in the right direction.
+
+I'm not sure but I think what you want is [ng-
+repeat](http://docs.angularjs.org/api/ng.directive%3angRepeat)
+

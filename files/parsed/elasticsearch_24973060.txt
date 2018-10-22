@@ -1,0 +1,45 @@
+24973060 Elastic Search ignoring _tag
+
+I am executing below ES query using java :
+
+    
+    
+    query = 2bU: "70501" AND 2c2: <u>asasas</u>~
+    
+        SearchResponse response = client.prepareSearch("XYZ")
+        .setTypes("MYTYPE")
+        .setQuery(QueryBuilders.queryString(query))
+        .setFrom((start-1)*.SEARCH_RESULT_PERPAGE).setSize(SEARCH_RESULT_PERPAGE)
+        .execute()
+        .actionGet();
+    
+        SearchHit[] results = response.getHits().getHits();
+    
+
+just cos of this `<u>asasas</u>` I got exception
+
+    
+    
+    Encountered: <EOF> after : "/u>~"]; nested: TokenMgrError[Lexical error at line 1,
+    column 37.  Encountered: <EOF> after : "/u>~"]; 
+    
+
+Here is the full exception
+
+    
+    
+    org.elasticsearch.action.search.SearchPhaseExecutionException: Failed to execute phase [query], all shards failed; shardFailures {[Q702PZY9Ramp-_zZE4hNew][titan][0]: SearchParseException[[titan][0]: from[0],size[2]: Parse Failure [Failed to parse source [{"from":0,"size":2,"query":{"query_string":{"query":"2bU: \"70501\" AND 2c2: <u>asasas</u>~"}}}]]]; nested: QueryParsingException[[titan] Failed to parse query [2bU: "70501" AND 2c2: <u>asasas</u>~]]; nested: ParseException[Cannot parse '2bU: "70501" AND 2c2: <u>asasas</u>~': Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; nested: TokenMgrError[Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; }{[Q702PZY9Ramp-_zZE4hNew][titan][1]: SearchParseException[[titan][1]: from[0],size[2]: Parse Failure [Failed to parse source [{"from":0,"size":2,"query":{"query_string":{"query":"2bU: \"70501\" AND 2c2: <u>asasas</u>~"}}}]]]; nested: QueryParsingException[[titan] Failed to parse query [2bU: "70501" AND 2c2: <u>asasas</u>~]]; nested: ParseException[Cannot parse '2bU: "70501" AND 2c2: <u>asasas</u>~': Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; nested: TokenMgrError[Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; }{[Q702PZY9Ramp-_zZE4hNew][titan][2]: SearchParseException[[titan][2]: from[0],size[2]: Parse Failure [Failed to parse source [{"from":0,"size":2,"query":{"query_string":{"query":"2bU: \"70501\" AND 2c2: <u>asasas</u>~"}}}]]]; nested: QueryParsingException[[titan] Failed to parse query [2bU: "70501" AND 2c2: <u>asasas</u>~]]; nested: ParseException[Cannot parse '2bU: "70501" AND 2c2: <u>asasas</u>~': Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; nested: TokenMgrError[Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; }{[Q702PZY9Ramp-_zZE4hNew][titan][3]: SearchParseException[[titan][3]: from[0],size[2]: Parse Failure [Failed to parse source [{"from":0,"size":2,"query":{"query_string":{"query":"2bU: \"70501\" AND 2c2: <u>asasas</u>~"}}}]]]; nested: QueryParsingException[[titan] Failed to parse query [2bU: "70501" AND 2c2: <u>asasas</u>~]]; nested: ParseException[Cannot parse '2bU: "70501" AND 2c2: <u>asasas</u>~': Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; nested: TokenMgrError[Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; }{[Q702PZY9Ramp-_zZE4hNew][titan][4]: SearchParseException[[titan][4]: from[0],size[2]: Parse Failure [Failed to parse source [{"from":0,"size":2,"query":{"query_string":{"query":"2bU: \"70501\" AND 2c2: <u>asasas</u>~"}}}]]]; nested: QueryParsingException[[titan] Failed to parse query [2bU: "70501" AND 2c2: <u>asasas</u>~]]; nested: ParseException[Cannot parse '2bU: "70501" AND 2c2: <u>asasas</u>~': Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; nested: TokenMgrError[Lexical error at line 1, column 37.  Encountered: <EOF> after : "/u>~"]; }]
+    
+
+Look at the section of reserved characters here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html>
+
+There you can find that a / is a reserved character that needs to be escaped.
+Try the following:
+
+    
+    
+    <\/u>
+    
+

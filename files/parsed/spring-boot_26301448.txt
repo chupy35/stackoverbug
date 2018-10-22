@@ -1,0 +1,89 @@
+26301448 spring-boot returns 404 on html
+
+I can't explain why my spring-boot app won't render my html pages anymore. I
+am running Spring-Boot 1.1.7 and have my index.html under
+src/main/resources/templates/. I am using AutoConfiguration, but when I try to
+navigate to my home page, nothing is rendered and I get the following in my
+logs:
+
+    
+    
+    o.s.web.servlet.DispatcherServlet        : Initializing servlet 'dispatcherServlet'
+    o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring FrameworkServlet 'dispatcherServlet'
+    o.s.web.servlet.DispatcherServlet        : FrameworkServlet 'dispatcherServlet': initialization started
+    o.s.web.servlet.DispatcherServlet        : Using MultipartResolver [org.springframework.web.multipart.support.StandardServletMultipartResolver@61c5f48e]
+    o.s.web.servlet.DispatcherServlet        : Unable to locate LocaleResolver with name 'localeResolver': using default [org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver@6e708e83]
+    o.s.web.servlet.DispatcherServlet        : Unable to locate ThemeResolver with name 'themeResolver': using default [org.springframework.web.servlet.theme.FixedThemeResolver@1bfeaf29]
+    o.s.web.servlet.DispatcherServlet        : Unable to locate RequestToViewNameTranslator with name 'viewNameTranslator': using default [org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@72f6365c]
+    o.s.web.servlet.DispatcherServlet        : Unable to locate FlashMapManager with name 'flashMapManager': using default [org.springframework.web.servlet.support.SessionFlashMapManager@38fb05a7]
+    o.s.web.servlet.DispatcherServlet        : Published WebApplicationContext of servlet 'dispatcherServlet' as ServletContext attribute with name [org.springframework.web.servlet.FrameworkServlet.CONTEXT.dispatcherServlet]
+    o.s.web.servlet.DispatcherServlet        : FrameworkServlet 'dispatcherServlet': initialization completed in 24 ms
+    o.s.web.servlet.DispatcherServlet        : Servlet 'dispatcherServlet' configured successfully
+    o.s.web.servlet.DispatcherServlet        : DispatcherServlet with name 'dispatcherServlet' processing GET request for [/]
+    s.w.s.m.m.a.RequestMappingHandlerMapping : Looking up handler method for path /
+    s.w.s.m.m.a.RequestMappingHandlerMapping : Did not find handler method for [/]
+    o.s.w.s.handler.SimpleUrlHandlerMapping  : Matching patterns for request [/] are [/**]
+    o.s.w.s.handler.SimpleUrlHandlerMapping  : URI Template variables for request [/] are {}
+    o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapping [/] to HandlerExecutionChain with handler [org.springframework.web.servlet.resource.ResourceHttpRequestHandler@54a232cd] and 1 interceptor
+    o.s.web.servlet.DispatcherServlet        : Last-Modified value for [/] is: -1
+    o.s.w.s.r.ResourceHttpRequestHandler     : Ignoring invalid resource path []
+    o.s.w.s.r.ResourceHttpRequestHandler     : No matching resource found - returning 404
+    o.s.web.servlet.DispatcherServlet        : Null ModelAndView returned to DispatcherServlet with name 'dispatcherServlet': assuming HandlerAdapter completed request handling
+    o.s.web.servlet.DispatcherServlet        : Successfully completed request
+    o.s.web.servlet.DispatcherServlet        : DispatcherServlet with name 'dispatcherServlet' processing GET request for [/error]
+    s.w.s.m.m.a.RequestMappingHandlerMapping : Looking up handler method for path /error
+    s.w.s.m.m.a.RequestMappingHandlerMapping : Returning handler method [public org.springframework.web.servlet.ModelAndView org.springframework.boot.autoconfigure.web.BasicErrorController.errorHtml(javax.servlet.http.HttpServletRequest)]
+    o.s.web.servlet.DispatcherServlet        : Last-Modified value for [/error] is: -1
+    o.s.w.s.v.ContentNegotiatingViewResolver : Requested media types are [text/html, text/html;q=0.8] based on Accept header types and producible media types [text/html])
+    o.s.w.s.v.ContentNegotiatingViewResolver : Returning [org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration$SpelView@54ca4ff0] based on requested media type 'text/html'
+    o.s.web.servlet.DispatcherServlet        : Rendering view [org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration$SpelView@54ca4ff0] in DispatcherServlet with name 'dispatcherServlet'
+    o.s.web.servlet.DispatcherServlet        : Successfully completed request
+    
+
+Here is my configuration:
+
+    
+    
+    @ComponentScan
+    @EnableAutoConfiguration
+    @EnableGlobalMethodSecurity(securedEnabled = true)
+    public class MyApplication {
+    
+        public static void main(String[] args) {
+            ApplicationContext edm = SpringApplication.run( MyApplication.class, args );
+        }
+    }
+    
+
+and I do have Spring-Security configured as:
+
+    
+    
+    @Configuration
+    @EnableWebMvcSecurity
+    public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    
+        @Autowired
+        private CustomUserDetailsService customUserDetailsService;
+    
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+                    .authorizeRequests()
+                    .antMatchers("/").permitAll()
+                    .antMatchers("/menu").permitAll()
+                    .antMatchers("/error").permitAll()
+                    .antMatchers("/resources/**").permitAll()
+                    .antMatchers("/css/**").permitAll()
+                    .antMatchers("/js/**").permitAll()
+                    .antMatchers("/fonts/**").permitAll()
+                    .antMatchers("/libs/**").permitAll();
+    }
+    
+
+As I understand it, Spring-Boot MVC will give me the index.html, view
+resolvers, converters, etc. I was originally using a WebMvcConfigurerAdapter
+but I took that out as a part of trying to solve this. I don't think I really
+need it as I believe springmvc will just render each html that I link to
+provided its in the /template directory. Except that it isn't finding them.
+

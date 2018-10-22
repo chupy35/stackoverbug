@@ -1,0 +1,3 @@
+33836909
+Elasticsearch reindexing with no replica
+<p>Lets say I have a cluster of four nodes with no replicas because I don't care losing data at all. &#xA;When I lose one of the nodes, will the rest nodes reindex the data? Is there anything going to happen apart from losing 25% of the data?</p>&#xA;

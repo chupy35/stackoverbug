@@ -1,0 +1,37 @@
+14523775 ElasticSearch doubles my _id field when filtering on it
+
+I don't understand why ES doubles my _id field in an array when I'm filtering
+on it.
+
+    
+    
+    curl -X GET "http://localhost:9200/pgep-development_broadcasts/broadcast/_search?pretty=true" -d '{"query":{"match_all":{}},"fields":["_id", "title"]}'
+    {
+      "took" : 7,
+      "timed_out" : false,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 1,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "pgep-development_broadcasts",
+          "_type" : "broadcast",
+          "_id" : "50ed959dcc93282abc000062",
+          "_score" : 1.0,
+          "fields" : {
+            "_id" : [ "50ed959dcc93282abc000062", "50ed959dcc93282abc000062" ],
+            "title" : "24 heures d'info"
+          }
+        } ]
+      }
+    }
+    
+
+You are probably hitting this bug
+<https://github.com/elasticsearch/elasticsearch/issues/2161>. If this is the
+case, you can simply stop storing id field.
+

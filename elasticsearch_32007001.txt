@@ -1,0 +1,3 @@
+32007001
+elasticsearch: Is it possible to know if the index is in "refreshed" state
+<p>I need to do an operation requiring all pending transaction to be in the index.</p>&#xA;&#xA;<p>One option would to be a manual call to _refresh, I'm wondering if there is a way to know if the index is in a "refreshed" state. </p>&#xA;&#xA;<p>That way I can call _refresh only when necessary.</p>&#xA;

@@ -1,0 +1,171 @@
+12405005 AngularJS, bind scope of a switch-case?
+
+To get a grip on AngularJS I decided to play around with one of the examples,
+specifically, simply adding a "complete" screen to the Todo-example, when the
+user has entered 5 todos it uses a switch-case to switch to another div. Code
+is available here <http://jsfiddle.net/FWCHU/1/> if it's of any use.
+
+However, it appears that each switch-case gets its own scope ($scope.todoText
+is not available), however it can be accessed using "this" from within
+addTodo() in this case. So far so good, but say I want to access todoText
+(which is inside the switch-case) outside of the switch-case, how would I go
+about doing that? Can I bind the switch-case scope to the model perhaps, is it
+accessible in some other way or should this be solved in some other way?
+
+PS. I'm **not** trying to find ANY solution to the code above, I'm pretty sure
+I know how to solve it without using switch-cases, I want to understand how
+scopes work in this case!
+
+**Update2:** Now that I know a little more about AngularJS, here's a much
+better answer.
+
+> say I want to access todoText (which is inside the switch-case) outside of
+the switch-case, how would I go about doing that?
+
+There is no way for parent scopes to access child scopes. (One reason for this
+restriction, [according to Angular
+developers](https://groups.google.com/d/msg/angular/LDNz_TQQiNE/ygYrSvdI0A0J),
+is for easier memory management of scopes.) (Well, you could use $$childHead
+and $$childTail to access child scope, but you shouldn't!)
+
+> Can I bind the switch-case scope to the model perhaps, is it accessible in
+some other way or should this be solved in some other way?
+
+There are three common ways to access the parent model from the child scope:
+
+  1. Do what @Gloopy suggests: create an object in the parent scope, then refer to properties on that object in the child scope.
+  2. Use $parent in the child scope to access the parent scope and its properties, even primitive properties.
+  3. Call a method on the parent scope
+
+To convert your fiddle to use $parent:
+
+    
+    
+    <input type="text" ng-model="$parent.todoText" ...
+    
+    $scope.addTodo = function() {
+       $scope.todos.push({text: $scope.todoText, ...
+       $scope.todoText = '';
+    
+
+As I mentioned in the comments on Gloopy's answer, ng-repeat and ng-switch
+both have the new child scope prototypically inherit from the parent scope.
+ng-repeat also copies the loop variable/item to the new child scope (and the
+nuances that @Gloopy describes with primitives vs object applies). ng-switch
+does not copy anything from the parent scope.
+
+To see what the inner/child scope looks like, add the following after the ng-
+switch-when:
+
+    
+    
+    <a ng-click="showScope($event)">show scope</a>
+    
+
+and add this to your controller:
+
+    
+    
+    $scope.showScope = function(e) {
+        console.log(angular.element(e.srcElement).scope());
+    }
+    
+
+**Update1:** (strikethroughs added to bad advice, []'s added for clarity)
+
+For this scenario, where AngularJS is creating additional inner scopes
+(implicitly), and you don't really want/need another controller, I like
+Gloopy's solution. A service (what I originally suggested below) is [the wrong
+way to do this] ~~probably overkill here~~. I also like that Gloopy's solution
+does not require the use of 'this' in the controller methods.
+
+**Original Answer** : (strikethroughs added to bad advice, []'s added for
+clarity)
+
+To see where scopes are being created (if you haven't tried this already, it
+is handy):
+
+    
+    
+    .ng-scope { margin: 4px; border: 1px dashed red }
+    
+
+~~To access todoText outside the switch-case (hence outside of its scope),
+you're essentially asking about inter-controller communication, since multiple
+scopes are involved. You have a few options, but a service is probably best.
+Store the data (that needs to be shared) inside the service, and inject that
+service into each controller that needs access to the data.
+
+For your specific example, I think you'd need to attach a controller to each
+switch-case and inject the service into it, to get access to the shared data.
+
+See also [AngularJS: How can I pass variables between
+controllers?](https://stackoverflow.com/questions/12008908/pass-variables-
+between-controllers).~~
+
+The other options:
+
+Using $scope.$parent in the inner scope is [one way to do this -- see Update2
+above] ~~not recommended, since then a controller would be making assumptions
+about how the data is presented.~~
+
+Using $rootScope is not recommended, except maybe for simple, one-off
+applications. That shared data may start to take on a life of its own, and
+$rootScope is not the place for that to happen. Services are easier to reuse,
+to add behavior to, etc.
+
+Using $scope.$emit is another option, but it seems messy and a bit odd:
+emitting events to share data (instead of triggering behavior).
+
+[Using an object in the parent scope is probably best -- see @Gloopy's
+answer.]
+
+Mark has some great suggestions! Make sure you also check out the [AngularJS
+Batarang Chrome
+Extension](https://chrome.google.com/webstore/detail/ighdmehidhipcmcojjgiloacoafjmpfk)
+to see the various scopes and their values (among other things). Note it
+doesn't appear to work well with jsFiddle.
+
+I'm not sure how to access inner scopes directly but here is one way to access
+the same text in the outer scope by binding to an object instead of a
+primitive.
+
+1) Declare `todoText` as an object instead of a primitive in your controller:
+
+    
+    
+    $scope.todoText = {text: ''};
+    
+
+2) Bind to `todoText.text` instead of just `todoText`:
+
+    
+    
+    <form ng-submit="addTodo()">
+        <input type="text" ng-model="todoText.text" size="30" placeholder="add new todo here">
+        <input class="btn-primary" type="submit" value="add">
+    </form>
+    
+
+3) Modify the existing functions to use `todoText.text`:
+
+    
+    
+    $scope.addTodo = function() {
+        $scope.todos.push({text:$scope.todoText.text, done:false, width: Math.floor(Math.random() * 100) + 50});
+        $scope.todoText.text = '';
+    };
+    
+
+Take a look at [this fiddle](http://jsfiddle.net/uvBwH/) and note that the
+text displayed beneath the textbox when you type something in is accessing the
+`todoText.text` on the outside scope.
+
+If you change the code back to use a primitive (like in [this
+fiddle](http://jsfiddle.net/uvBwH/1/)) the parent scope `todoText` won't
+reflect any changes you make to the textbox. This is likely more to do with
+how JavaScript copies reference values (see [this
+post](https://stackoverflow.com/questions/518000/is-javascript-a-pass-by-
+reference-or-pass-by-value-language) for more info) and less an AngularJS
+specific thing.
+

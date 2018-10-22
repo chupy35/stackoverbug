@@ -1,0 +1,20 @@
+17285957 Only index certain fields from Wikipedia River
+
+I'm trying to use the [Wikipedia
+River](https://github.com/elasticsearch/elasticsearch-river-wikipedia)
+
+Is there a way / How can I customize the mapping so that ElasticSearch only
+index the title fields (I'd still like to access the whole text)?
+
+The mapping is useful more to decide how you index data rather than what you
+index, unless you set it to `dynamic: false` which means that elasticsearch
+effectively accepts only the fields that are explicitly declared in the
+mapping.
+
+The problem is that the wikipedia river always sends a set of fields for every
+document and this behaviour is not currently configurable, thus there's no way
+to index only a subset of those fields (e.g. only `title` and `_source`). What
+you could do is modify your search request so that you get back only the
+fields that you are interested in, but the content of the index will stay the
+same.
+

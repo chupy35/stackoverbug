@@ -1,0 +1,64 @@
+23536331 Using prefix query in eleasticsearch for an integer field
+
+I am trying to use the prefix query to return a list of possible matches. The
+prefix field is an integer that is not analyzed. I would expect that:
+
+    
+    
+    {
+    "prefix": {"id":"1"} 
+    }
+    
+
+Would return all documents where the id starts with 1 (e.g. 1, 10, 11,12,13
+etc}. However, it only returns an exact match (e.g. 1).
+
+Does the prefix query work on integer fields?
+
+I'm still learning elasticsearch too, but I believe the field has to be a
+string. You can work around this by using a multi_field type and adding a
+string field that you can run your prefix query against. I use the following
+for a number of fields (integers and non-integers) that I need to run prefix
+queries against:
+
+Under settings.analysis in your mapping, add:
+
+    
+    
+      "analyzer": {
+        "str_filtered_search_analyzer": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase"
+          ]
+        },
+        "str_prefix_analyzer": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase",
+            "prefix"
+          ]
+        }
+      }
+    
+
+And then under mappings.type.properties (replace type with your type e.g.
+user):
+
+    
+    
+      "id": {
+        "type": "multi_field",
+        "fields": {
+          "id": {
+            "type": "integer"
+          },
+          "prefix": {
+            "type": "string",                
+            "index_analyzer": "str_prefix_analyzer",
+            "search_analyzer": "str_filtered_search_analyzer"
+          }
+        }
+      }
+    
+

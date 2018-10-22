@@ -1,0 +1,57 @@
+24045389 How to return parent id of a child document in Elastic Search?
+
+I have a parent-child relationship in Elastic Search. When I do a search on
+the child documents, I also want to get for each child the id of the parent.
+
+I saw that you can use _parent in filtering, but can I also use it in the
+"fields" array that I want to return ?
+
+Example of my query:
+
+    
+    
+    {
+      //Fields to return
+      "fields":[
+        "_parent.id",     >> Does not work
+        "_parent.title",  >> Does not work
+        "commentText"
+      ], 
+    
+    
+      //Query (Filtered query)
+      "query":{
+        "filtered":{
+          //Filter
+          "filter":{
+            "and":[        
+              {
+                "type":{ "value": "comment" }
+              }
+            ]   
+          },
+          //Query
+          "query": {
+            "multi_match": {
+              "query": "xxx",
+              "type": "best_fields",
+              "fields": [
+                "commentText"
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+
+I think _parent only stores the parent id. Try something like this:
+
+    
+    
+    "fields":[
+        "_parent",     
+        "commentText"
+      ]
+    
+

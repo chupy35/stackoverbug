@@ -1,0 +1,120 @@
+7431889 How can I retrieve matching children only?
+
+Consider a very simple model where we have locations and each location can
+have zero or more events. A location would have properties such as name,
+description and geo point data (lon/lat). An event should be attached to one
+location (its parent) and should have a name and description.
+
+    
+    
+    {
+        "location" : {
+            "properties": {
+                "name": { "type": "string", "boost": 2.0, "analyzer": "snowball" },
+                "description": { "type": "string", "analyzer": "snowball" },
+                "geo": { "type": "geo_point" },
+                "exhibits": {
+                    "type": "nested",
+                    "properties": {
+                        "name": { "type": "string", "boost": 2.0, "analyzer": "snowball" },
+                        "description": { "type": "string", "analyzer": "snowball" }
+                    }
+                }
+            }
+        }
+    }
+    
+
+What I want to be able to do, is to query for the child documents (events)
+performing a full text search on their names and descriptions. I would like to
+get the matching events back and be able to also get their parent location's
+name. I would also like to narrow down the result set by location's
+coordinates. I don't want to get any events that do not match the query. Is
+that possible in Elastic Search? What types of queries should I use?
+
+I have tried putting events as an array property under location (see above)
+and using the `nested` query but it does not return the kind of results I want
+(I think it returns the whole location, including all events, even the ones
+that do not match my query). I have tried putting events into a separate index
+(mapping?) providing the _parent property and then performing the
+`top_children` query on locations, but I don't get any results.
+
+    
+    
+    {
+        "exhibit": {
+            "_parent": { "type": "locations" },
+            "properties": {
+                "name": { "type": "string", "boost": 2.0, "analyzer": "snowball" },
+                "description": { "type": "string", "analyzer": "snowball" }
+            }
+        }
+    }
+    
+
+Could anyone shed some light? I don't know where to begin...
+
+Here's the working solution to my problem, perhaps it will be useful to
+somebody.
+
+Location mapping:
+
+    
+    
+    {
+        "location" : {
+            "properties": {
+                "name": { "type": "string", "boost": 2.0, "analyzer": "snowball" },
+                "description": { "type": "string", "analyzer": "snowball" },
+                "geo": { "type": "geo_point" }
+            }
+        }
+    }
+    
+
+Exhibit mapping:
+
+    
+    
+    {
+        "exhibit": {
+            "_parent": { "type": "locations" },
+            "properties": {
+                "name": { "type": "string", "boost": 2.0, "analyzer": "snowball" },
+                "description": { "type": "string", "analyzer": "snowball" }
+            }
+        }
+    }
+    
+
+Query:
+
+    
+    
+    {
+        "fields": [ "_parent", "name", "_source" ],
+        "query": {
+            "bool": {
+                "should": [ 
+                    { "text": { "name": "candy" } },
+                    { "text": { "description": "candy" } } 
+                ]
+            }
+        },
+        "filter": { 
+            "and": [
+                {
+                    "terms" : {
+                        "_parent": [ "4e7089a9b97d640b30695b7a", "4e7089eeb97d640b30695b7b" ]
+                    }
+                },
+                { "range": { "start": { "lte": "2011-09-22" } } },
+                { "range": { "end": { "gte": "2011-09-22" } } }
+            ]
+        }
+    }
+    
+
+You should query using the `_parent` field and passing it an array of IDs of
+locations to which you want to limit the exhibits.
+

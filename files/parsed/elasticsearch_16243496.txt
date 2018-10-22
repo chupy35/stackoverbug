@@ -1,0 +1,131 @@
+16243496 Nested boolean queries in elastic search
+
+I am trying to make a query in elastic search that will do the following: I
+want it to check for a result that has (metropolitan_area of 16 AND starts_at
+of 05072013) OR (metropolitan_id of 16 AND starts_at "blank".
+
+This is my current query, but I feel like it needs to be nested somehow and I
+am unsure how to do that.
+
+    
+    
+    {
+      "query" : { 
+        "bool" : {
+          "must" : [
+            {
+              "term" : {"user" : "a"}
+            }, 
+            { 
+              "term" :{"metropolitan_area" : "16"}
+            }
+          ], 
+          "must_not" : [], 
+          "should" :   []
+        }
+      }, 
+      "filter" : {
+        "or" : {
+          "filters" : [
+            {
+              "term" : {"user":"519"}
+            }, 
+            {
+              "term" : {"user":"6"}
+            }, 
+            {
+              "term" : {"user":"5"}
+            }, 
+            {
+              "term" : {"user":"36"}
+            }, 
+            {
+              "term" : {"starts_at":"05072013"}
+            }, 
+            {
+              "term" : {"starts_at":"blank"}
+            }
+          ]
+        }
+      }
+    }
+    
+
+The correctly nested boolean expression is shown below:
+
+    
+    
+    {
+      "filter": {
+        "or" : [{
+           "and" : [
+              { "term" : { "metropolian_area" : 16 } },
+              { "term" : { "starts_at" : 0123213 } }
+           ]
+        }, {
+           "and" : [
+              { "term" : ... },
+              { "term" : ... }
+           ]
+        }]
+      }
+    }
+    
+
+`and`, `or`, and `not` queries are deprecated in [elasticsearch
+2.x](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-and-query.html). Elasticsearch documentation recommends the `bool`
+[query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-bool-query.html) instead. For instance, you could write your nested bool
+query as follow in filter context:
+
+    
+    
+    {
+      "query":{
+        "bool":{
+          "filter":{
+            "query":{
+              "bool":{
+                "should":[
+                  {
+                    "bool":{
+                      "must":[
+                        {
+                          "term":{
+                            "metropolitan_area":"16"
+                          }
+                        },
+                        {
+                          "term":{
+                            "starts_at":"05072013"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "bool":{
+                      "must":[
+                        {
+                          "term":{
+                            "metropolitan_id":"16"
+                          }
+                        },
+                        {
+                          "term":{
+                            "starts_at":"blank"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    
+

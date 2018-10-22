@@ -1,0 +1,72 @@
+21666879 Searching synonyms in elasticsearch
+
+I'm trying to create synonym search over languages indexed in ES.
+
+For example,
+
+Indexed document -> name: German
+
+Synonyms: German, Deutsch, XYZ
+
+What I want to make is, when I type either German or Deutsch or XYZ, that ES
+returns me German...
+
+Is that possible at all?
+
+Yes very much so. ElasticSearch handles synonyms very well. Here is an example
+of how I configured synonyms on my cluster -
+
+    
+    
+    curl -XPOST localhost:9200/**new-index** -d '{
+    "settings": {
+    "number_of_shards": 2,
+    "number_of_replicas": 0,
+    "analysis": {
+      "filter": {
+        "synonym": {
+          "type": "synonym",
+          "synonyms_path": "synonyms/synonyms.txt"
+        }
+      },
+      "analyzer": {
+        "synonym": {
+          "tokenizer": "lowercase",
+          "filter": [
+            "synonym"
+          ]
+        }
+      }
+     }
+    },
+    "mappings": {
+    "**new-type**": {
+      "_all": {
+        "enabled": false
+      },
+      "properties": {
+        "Title": {
+          "type": "multi_field",
+          "store": "yes",
+          "fields": {
+            "Title": {
+              "type": "string",
+              "analyzer": "synonym"
+             }
+            }
+          }
+        }
+      }
+     }
+    }'
+    
+
+The path for the synonym file looks inside the **config** folder for the
+synonym folder and locates the text file. An example of the contents of the
+synonyms.txt for your requirements would be -
+
+German, Deutsch, XYZ
+
+**REMEMBER** \- if you have a lower case filter at index time, the synonyms
+need to be in lower case. Restart nodes if not working.
+

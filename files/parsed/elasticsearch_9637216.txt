@@ -1,0 +1,102 @@
+9637216 Complex querying on Parent/Child documents with ElasticSearch
+
+Considering this record structure
+
+    
+    
+    "place": {
+      "id": "4f58e38866eaa71e74000027",
+      "name": "Some name",
+      "point" [14.53535, 56.32535],
+      "hostname": "Something",
+      "locality": "something",
+      "type": "Some type",
+      "average_price": 67
+    }
+    
+    "container": {
+      "title": "Something",
+      "category": "Something"
+    }
+    
+    "row": {
+      "name": "Something",
+      "description": "Something",
+      "price": 45,
+      "markings_array": ['some_tag', 'some_tag'],
+      "prioritized": true
+    }
+    
+
+I'm trying to achieve this:
+
+  * Sort by alphabetic order on place.name 
+  * Sort by distance on place.point 
+  * Sort/Boost places by array of id's 
+  * Boost places closest to given param point 
+  * Boost rows if they are priotized
+  * Randomize sort on place.name 
+  * Sort by place.average_price 
+  * Term query on place.hostname and place.locality
+  * String query on row.name 
+  * Facet on container.title 
+  * Facet on row.markings_array
+
+The results should in the end be used in this format, the 'central object'
+being the container: EDIT: The 'central object' could also be the place.
+
+    
+    
+    [{
+      "_score" : 183.96391,
+      "container": {
+        "title": "something",
+        "category": "something",
+        "place": {
+          "id": "4f58e38866eaa71e74000027"
+          "name": "Some name",
+          "point" [14.53535, 56.32535],
+          "hostname": "Something",
+          "locality": "something",
+          "type": "Some type" 
+        },
+        "rows": [
+          {
+            "_score": 183.96391,
+            "name": "Something",
+            "description": "Something"
+            "price": 45,
+            "markings_array" ['some_tag', 'some_tag']
+          },
+          {
+            "_score": 133.96391,
+            "name": "Something",
+            "description": "Something"
+            "price": 45,
+            "markings_array" ['some_tag', 'some_tag']
+          },
+          {
+            "_score": 123.96391,
+            "name": "Something",
+            "description": "Something"
+            "price": 45,
+            "markings_array" ['some_tag', 'some_tag']
+          }
+        ]
+      }
+    }]
+    
+
+The rows should be ordered by their score. How can this query be performed?
+
+What I do right now is to index all fields on every row and then perform the
+search against the index holding the rows.
+
+To get the desired output I would have to loop trough the results and group
+them by parent etc. The problem is that I also need scoring on place or
+container since I will present the container with place and rows in a list.
+
+Is there a better way to do this?
+
+Thanks
+

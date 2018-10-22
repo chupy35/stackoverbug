@@ -1,0 +1,61 @@
+28608416 Spring boot can't mapp to the links in HTML
+
+I am using Spring boot starter project with maving pluging, spring boot can't
+know the links in my HTML templates. this is my controller :
+
+    
+    
+    @Controller
+    @EnableAutoConfiguration
+    @ComponentScan
+    public class Demoproject2Application {
+    @RequestMapping("/")
+    public String home() {
+        return "/html/Authentification";
+    }
+    }
+    
+
+and this is the Authentification.HTML:
+
+    
+    
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Authentification</title>
+    
+    <link rel="stylesheet" type="text/css" href="css/style2.css" />
+    
+
+and this is the error :
+
+    
+    
+    2015-02-19 14:29:58.749  INFO 5136 --- [nio-8090-exec-1] o.a.c.c.C.[Tomcat].    [localhost].[/]       : Initializing Spring FrameworkServlet 'dispatcherServlet'
+    
+
+2015-02-19 14:29:58.749 INFO 5136 --- [nio-8090-exec-1]
+o.s.web.servlet.DispatcherServlet : FrameworkServlet 'dispatcherServlet':
+initialization started 2015-02-19 14:29:58.774 INFO 5136 --- [nio-8090-exec-1]
+o.s.web.servlet.DispatcherServlet : FrameworkServlet 'dispatcherServlet':
+initialization completed in 25 ms 2015-02-19 14:29:59.086 WARN 5136 ---
+[nio-8090-exec-2] o.s.web.servlet.PageNotFound : No mapping found for HTTP
+request with URI [/css/style2.css] in DispatcherServlet with name
+'dispatcherServlet' 2015-02-19 14:30:00.813 WARN 5136 ---
+[nio-8090-exec-4]o.s.web.servlet.PageNotFound
+
+here is a snapshot of the hierarchy of my project :
+
+[https://fbcdn-sphotos-f-a.akamaihd.net/hphotos-ak-
+xfp1/v/t1.0-9/11011221_811266045595770_3095529215585152558_n.jpg?oh=a51a1196651bd62c81a76679869c1bdd&oe=558FD62B&
+**gda** =1431221666_e2d5202a80db81801ed9903c48014130](https://fbcdn-sphotos-
+f-a.akamaihd.net/hphotos-ak-
+xfp1/v/t1.0-9/11011221_811266045595770_3095529215585152558_n.jpg?oh=a51a1196651bd62c81a76679869c1bdd&oe=558FD62B&__gda__=1431221666_e2d5202a80db81801ed9903c48014130)
+
+If you didn't changed any defaults it should be served when you put it into
+`src/main/resources/static/css/style2.css`. Please see [official
+documentation](http://docs.spring.io/spring-
+boot/docs/1.2.1.RELEASE/reference/htmlsingle/#boot-features-spring-mvc-static-
+content).
+

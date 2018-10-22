@@ -1,0 +1,49 @@
+19193352 Elasticsearch, how to fix "No active shards"?
+
+I have logstash + elasticsearch + kibana setup for indexing logs. For some
+reason es stopped indexing the the data and I had to kill the running es
+instance and restart it. Typically when I did restarts, es will come up
+without problem. But now es not searchable using kibana.
+
+What I see using es tool is that one index is not assigned anywhere.
+
+    
+    
+    logstash-2013.07.22 4 r UNASSIGNED
+    logstash-2013.10.05 0 r UNASSIGNED
+    logstash-2013.10.05 0 p UNASSIGNED
+    logstash-2013.10.05 1 p UNASSIGNED
+    logstash-2013.10.05 1 r UNASSIGNED
+    logstash-2013.10.05 2 r UNASSIGNED
+    logstash-2013.10.05 2 p UNASSIGNED
+    logstash-2013.10.05 3 r UNASSIGNED
+    logstash-2013.10.05 3 p UNASSIGNED
+    logstash-2013.10.05 4 p UNASSIGNED
+    logstash-2013.10.05 4 r UNASSIGNED
+    
+
+And of course when I search using kibana, the query fails to search on this
+index. I don't see any error in elasticsearch.log.
+
+I have only one node running ES, though my default configuration has 1 replica
+configured.
+
+I had similar issue with my LS+ES 3 node cluster, I used the following to fix
+the unassigned shards.
+
+    
+    
+    curl -XPOST 'localhost:9200/_cluster/reroute' -d '{
+      "commands": [
+        {
+          "allocate": {
+            "index": "INDEXNAME",
+            "shard": "SHARDNUMBER",
+            "node": "PICKANODE",
+            "allow_primary": 1
+          }
+        }
+      ]
+    }'
+    
+

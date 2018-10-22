@@ -1,0 +1,53 @@
+28872231 Render reactjs component in multiple div tags
+
+I want to create a React.JS component which can be rendered in multiple places
+using the _classname_ of `div` elements instead of an _id_.
+
+The regular way to render a component is this:
+
+    
+    
+    React.render(<Component/>, document.getElementById('id'))
+    
+
+while I wonder if it' possible to do this:
+
+    
+    
+    React.render(<Component/>, document.getElementsByClassName)?
+    
+
+`React.render` takes a single DOM element. If you want to render it more than
+once, simply iterate over the nodes.
+
+    
+    
+    function renderToElements(toRender, elements) {
+      for (var i = 0; i < elements.length; i++) {
+        React.render(toRender, elements[i]);
+      }
+    }
+    
+    renderToElements(..., document.getElementsByClassName("className"));
+    
+
+Just adding onto @Michelle Tilley's answer, I really wanted to do this
+technique while grabbing a dataset from each element to pass in as a prop. The
+key was to pass the **ComponentName** without quotes or brackets and then to
+createElement with it :
+
+    
+    
+    let elems = document.getElementsByClassName("class_name");
+    
+    function renderToElements(toRender, elements, dataset) {
+      for (var i = 0; i < elements.length; i++) {
+        let passId = elements[i].dataset[dataset];
+        let renderEl = React.createElement(toRender, {id: passId})
+        ReactDOM.render(renderEl, elements[i]);
+      }
+    }
+    
+    renderToElements(ComponentName, elems, 'id')
+    
+

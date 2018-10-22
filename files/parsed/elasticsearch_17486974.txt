@@ -1,0 +1,48 @@
+17486974 FOSElasticaBundle order query
+
+I am integrating FOSElasticaBundle in my Symfony 2.3 project and I need to
+sort the results by their price property.
+
+Here is my code:
+
+    
+    
+       $finder     = $this->container->get('fos_elastica.finder.website.product');
+       $fieldTerms = new \Elastica\Query\Terms();
+       $fieldTerms->setTerms('taxon_ids', $taxon_ids_array);
+       $boolQuery->addMust($fieldTerms);
+    
+       $resultSet = $finder->find($boolQuery);
+    
+
+How I can do this?
+
+Thanks
+
+Try create a `\Elastica\Query` object which also contains the sorting
+information, then send this to the finder:
+
+    
+    
+    $finder = $this->container->get('fos_elastica.finder.website.product');
+    
+    $fieldTerms = new \Elastica\Query\Terms();
+    $fieldTerms->setTerms('taxon_ids', $taxon_ids_array);
+    $boolQuery->addMust($fieldTerms);
+    
+    $finalQuery = new \Elastica\Query($boolQuery);
+    
+    $finalQuery->setSort(array('price' => array('order' => 'asc')));
+    
+    $resultSet = $finder->find($finalQuery);
+    
+
+Have a look [at the elasticsearch docs on the sort
+parameter](http://www.elasticsearch.org/guide/reference/api/search/sort/) to
+see how to use it properly.
+
+NOTE: `\Elastica\Query` is quite different to `\Elastica\Query\AbstractQuery`,
+the first encapsulates everything you could send to the `_search` API endpoint
+(facets, sorting, explain, etc...) The `AbstractQuery` represents a base type
+for each of the individual query types (range, fuzzy, terms, etc...).
+

@@ -1,0 +1,14 @@
+18368834 URI based Elasticsearch query with "starts with" filter
+
+For example, I would like to search for all the names that _starts with_ `Na`.
+How do I specify that in the URI based query?
+
+> localhost:9200/index/type/_search?XXX
+
+You can do it like this. Hope that helps you
+
+    
+    
+    http://localhost:9200/index/type/_search?q=names:na*
+    
+

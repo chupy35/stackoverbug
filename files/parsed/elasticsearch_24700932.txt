@@ -1,0 +1,106 @@
+24700932 Elasticsearch: how to allow multi-language searches?
+
+I am new to Elasticsearch. I posted a question called
+
+Elasticsearch: Use a separate index for each language of the same data record
+
+Here is the link: [Elasticsearch: Use a separate index for each language of
+the same data
+record](https://stackoverflow.com/questions/24685864/elasticsearch-use-a-
+separate-index-for-each-language-of-the-same-data-record)
+
+The posted answer mentions "allowing multi-language searches". I am confused
+about it. I read book "Elasticsearch server (2nd edition)" and did not see
+this topic. I just did a google search and was unable to see anything related
+online.
+
+Does anyone happen to have any links about "allowing multi-language searches"?
+Is this a configuration thing? How?
+
+Thanks so much for any input!
+
+Regards.
+
+You don’t need to have different indexes for each language. Say you had a
+'product' type that could have the title field in German or French or both,
+you would need to index the French title differently from the German title by
+using different analyzers. In your mapping specify what analyzers you want to
+use:
+
+    
+    
+    {
+        "product": {
+            "properties": {
+                "title": {
+                    "properties": {
+                        "de": {
+                          "type": "string",
+                          "analyzer": "de_analyzer"
+                        },
+                        "fr": {
+                          "type": "string",
+                          "analyzer": "fr_analyzer"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+Index your documents
+
+    
+    
+    curl -XPOST 'http://localhost:9200/yourindex/product/1' -d
+    '{
+        "title": {
+            "fr": "Bonjour"
+        }
+    }'
+    
+    curl -XPOST 'http://localhost:9200/yourindex/product/2' -d
+    '{
+        "title" : {
+            "de": "Hallo"
+        }
+    
+    }'
+    
+
+When you want to do a search on the French title you would reference it in the
+query
+
+    
+    
+    http://localhost:9200/yourindex/_search?q=title.fr:bonjour
+    
+
+When you want to do a search on the German title:
+
+    
+    
+    http://localhost:9200/yourindex/_search?q=title.de=hallo
+    
+
+If you want to search of both of the fields you can use a multi_field search:
+
+    
+    
+    {
+        "query":{
+            "multi_match" : {
+                "query": "bonjour hallo", 
+                "fields": [ "title.fr", "title.de" ] 
+            }
+        }
+    } 
+    
+
+This blog will give you a good idea of how to use the analyzers for earch
+language you want to index:
+
+<http://gibrown.wordpress.com/2013/05/01/three-principles-for-multilingal-
+indexing-in-elasticsearch/>
+

@@ -1,0 +1,3 @@
+34216735
+Count of user who viewed 3 days in a row
+<p>I have elasticsearch documents like <code>{"user":"a","timestamp":1449807786150}</code>. Would like to query users who have <code>timestamp</code> for 3 consecutive days.</p>&#xA;

@@ -1,0 +1,90 @@
+18576812 Which field matched query in multi_match search in Elasticsearch?
+
+I have query with multi_match in Elasticsearch:
+
+    
+    
+    {
+      "query": {
+        "multi_match": {
+          "query": "luk",
+          "fields": [
+            "xml_string.autocomplete",
+            "state"
+          ]
+        }
+      },
+      "size": 10,
+      "fields": [
+        "xml_string",
+        "state"
+      ]
+    }
+    
+
+It works great, result returns expected value:
+
+    
+    
+    {
+      "took": 2,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 1,
+        "max_score": 0.41179964,
+        "hits": [
+          {
+            "_index": "documents",
+            "_type": "document",
+            "_id": "11",
+            "_score": 0.41179964,
+            "fields": {
+              "xml_string": "Lukas bla bla bla",
+              "state": "new"
+            }
+          }
+        ]
+      }
+    }
+    
+
+I've searched a lot, but I am not able to find out which field matched the
+query(if it was xml_string OR state)
+
+As far as I know there is no feature for telling you which field has matched
+the query.
+
+But you can use the explain feature for debugging your query. You only have to
+add to your query the pamameter `&explain=true`. With this parameter you will
+see an explanation for each field of why it is in the result set and you will
+guess which field matched the query.
+
+I have found solution: I have used highlight feature and it's working great
+
+This is how my curl looks like:
+
+    
+    
+     curl -X GET 'http://xxxxx.com:9200/documents/document/_search?load=false&size=10&pretty' -d '{
+        "query": {
+            "multi_match": {
+                "query": "123",
+                "fields": ["some_field", "another_field"]
+            }
+        },
+        "highlight": {
+            "fields": {
+                "some_field": {},
+                "another_field": {}
+            }
+        },
+        "size": 10,
+        "fields": ["field","another_field"]
+    }'
+    
+

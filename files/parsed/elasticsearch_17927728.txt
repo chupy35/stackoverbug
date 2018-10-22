@@ -1,0 +1,36 @@
+17927728 Will using Ngram Tokenizer and Ngram Filters increase the index size
+in ElasticSearch?
+
+Hi I am new to Elasticsearch, does NGram Tokenizer and NGram Filter increase
+the index size in Elasticseach?
+
+Using
+
+    
+    
+    MIN_NGRAM AS 1
+    MAX_NGRAM AS 50
+    
+
+And how to check index size and tokens using localhost?
+
+Yes, using (edge) ngram tokenizers or filters will increase the index size -
+you're storing more tokens, after all.
+
+As a couple of side notes, `min_gram` set to 1 may allow you to perform
+autocomplete operations on the first keystroke, but unless your dataset is
+small you're unlikely to provide a narrow enough resultset to the user to be
+useful. `min_gram` set to 2 or 3 is a better balance for larger datasets and
+performance. `max_gram` set to 50 has a similar problem but at the other
+extreme; a user is unlikely to type in that many characters in order to
+autocomplete anything, so you're indexing ngrams unnecessarily in that case.
+Of course, these comments are specific to the autocomplete use-case; I'm sure
+there are many workable scenarios needing 1, 50 for `min_gram` and `max_gram`.
+
+The ES reference documentation has some details on the status API - best to
+try it and see the output:
+<http://www.elasticsearch.org/guide/reference/api/admin-indices-status/>
+
+To determine how ES is tokenizing your input:
+<http://www.elasticsearch.org/guide/reference/api/admin-indices-analyze/>
+

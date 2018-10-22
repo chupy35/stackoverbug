@@ -1,0 +1,42 @@
+13942484 ES: histogram facet with histogram facet with all_terms=true
+
+[Elasticsearch](http://www.elasticsearch.org)
+[Histogramfacet](http://www.elasticsearch.org/guide/reference/api/search/facets/histogram-
+facet.html) doesn't appear to support all_terms = true (i.e: return facetvalue
+/ bucket even though count=0)
+
+Is this correct?
+
+Yes, this is correct. However, if you are not using relevancy to sort your
+results you can move your query into the top-level `filter` element and put
+`match_all` into the top-level `query` element. For example, for following
+request will return two histograms - one only with elements that correspond to
+the query and another one for entire index:
+
+    
+    
+    {
+        "query": {
+            "match_all": {}
+        },
+        "filter": {
+            // filter goes here
+        },
+        "facets": {
+            "histo_all": {
+                "histogram": {
+                    "field": "my_field"
+                }
+            },
+            "histo": {
+                "histogram": {
+                    "field": "my_field"
+                },
+                "facet_filter": {
+                    // same filter from top-level filter goes here
+                }
+            }
+        }
+    }
+    
+

@@ -1,0 +1,50 @@
+13093926 Directive and scope in AngularJS
+
+Here is the code, ideally i should see
+
+> parent: true
+
+when I click the toggle
+
+However, it doesn't work
+
+Here is the [plunker](http://plnkr.co/edit/F38BkA)
+
+    
+    
+    <body ng-controller="MainCtrl">
+      <button type="button" ng-click='isParentShown= !isParentShown' >Toggle</button>
+      <div><span>Controller-isParentShown: {{isParentShown}}</span></div>
+      <parent isShown='isParentShown'></parent>
+    
+    </body>
+    
+    
+    var app = angular.module('plunker', []).directive('parent',function(){
+        return {
+            restrict: 'E',
+            replace: true,
+            scope: {
+                    isShown: '='
+            },
+            template: '<span>Parent: {{isShown}}</span>'
+        };
+    }).directive('child',function(){
+        return {
+            restrict: 'E',
+            replace: true,
+            template:'<span>Child: {{isChildShown}}</span>',
+            scope: {
+                    isChildShown: '@'
+            }
+        };
+    });
+    app.controller('MainCtrl', function($scope) {
+      $scope.isParentShown = false;
+    });
+    
+
+The problem is in the casing of the attributes, if you define a isShown
+binding, it's expecting a `is-shown` or `is:shown` attribute. Here's the fixed
+plunker: <http://plnkr.co/edit/UOigth>
+

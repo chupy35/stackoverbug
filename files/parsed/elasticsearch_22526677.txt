@@ -1,0 +1,39 @@
+22526677 Elasticsearch filter objects
+
+How can I apply the following query, filter to this dataset?
+
+Query: term = Python
+
+Filter: Salary | range (1, 200000)
+
+*note I don't want to apply the filter to "float_value". In my case Salary is a value of an object that has float_value as it's sibling.
+
+Is this even possible?
+
+    
+    
+    {
+    _index  : "platform",
+    _type   : "documents",
+    _id     : "532a1cff54f4c233b3bc3ed5"",
+    _version: 1,
+    _score  : 1,
+    _source : {
+        fields: [
+            {
+                name        : "salary",
+                float_value : 120000
+            },
+            {
+                name        : "bonus",
+                float_value : 1000
+            },
+            {
+                name        : "Programming Skills",
+                text_value  : "Java, Ruby, Python, node.js"
+            }
+        ]
+    }
+    }
+    
+

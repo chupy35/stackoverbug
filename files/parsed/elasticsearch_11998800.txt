@@ -1,0 +1,130 @@
+11998800 Why does my analyzer disappear when I restart Elastic Search?
+
+Full gist at <https://gist.github.com/3442562>
+
+I have an analyzer:
+
+    
+    
+    "analyzer" : {
+                "lowercase_keyword" : {
+                    "type" : "custom",
+                    "tokenizer" : "keyword",
+                    "filter" : ["lowercase", "trim"]
+                }
+            }
+    
+
+that is referenced in a mapping:
+
+    
+    
+    "location_countries" : {
+                    "properties" : {
+                        "country" : {
+                            "type" : "string",
+                            "analyzer" : "lowercase_keyword"
+                        }
+                    }
+                }
+    
+
+And when I use the 'country' field in a filter or a facet, the field is
+(correctly) treated as a keyword.
+
+    
+    
+    curl -XGET 'localhost:9200/clinical_trials/_search?pretty=true' -d '
+    {
+        "query" : {
+            "term" : { "brief_title" : "dermatitis" }
+        },
+        "filter" : {
+            "term" : { "country" : "united states" }
+        },
+        "facets" : {
+            "tag" : {
+                "terms" : { "field" : "country" }
+            }
+        }
+    }
+    '
+    
+
+facet results:
+
+    
+    
+    "facets" : {
+        "tag" : {
+          "_type" : "terms",
+          "missing" : 0,
+          "total" : 1,
+          "other" : 0,
+          "terms" : [ {
+            "term" : "united states",
+            "count" : 1
+          } ]
+        }
+    
+
+Everything works fine until the machine gets rebooted or the Elastic Search
+service gets restarted. After a restart, all my filters stop working as if the
+analyzer does not exist.
+
+The same query against the same data results in:
+
+    
+    
+    "facets" : {
+        "tag" : {
+          "_type" : "terms",
+          "missing" : 0,
+          "total" : 2,
+          "other" : 0,
+          "terms" : [ {
+            "term" : "united",
+            "count" : 1
+          }, {
+            "term" : "states",
+            "count" : 1
+          } ]
+        }
+    
+
+If I query the _settings/_mappings of my index, the analyzer and mappings are
+still defined correctly but the analyzer seems to have no effect.
+
+What am I doing wrong?
+
+Thanks in advance!
+
+The country field appears in multiple nested documents but I am only setting
+the mapping for one of the fields. After a restart, elasticsearch loads the
+fields in a different order applies the filter/facet to the wrong field.
+
+Fully qualifying the facet and filter field names fixes my problem.
+
+    
+    
+    curl -XGET 'localhost:9200/clinical_trials/_search?pretty=true' -d '
+    {
+        "query" : {
+            "term" : { "brief_title" : "dermatitis" }
+        },
+        "filter" : {
+            "term" : { "location_countries.country" : "united states" }
+        },
+        "facets" : {
+            "tag" : {
+                "terms" : { "field" : "location_countries.country" }
+            }
+        }
+    }
+    '
+    
+
+Thanks to Clint on the [elasticsearch mailing
+list](https://groups.google.com/forum/?fromgroups=#!forum/elasticsearch) for
+all the help.
+

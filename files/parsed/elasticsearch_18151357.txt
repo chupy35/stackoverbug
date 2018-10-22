@@ -1,0 +1,60 @@
+18151357 Give different Boost to queries under an OR condition filter
+
+Is there a way to give a different boost to queries in an OR condition
+filter??? I will want to see the results that match with the first query over
+the ones that match the second query.
+
+This is part of my query:
+
+    
+    
+     {
+                   "or": [
+                                {
+                                    "query": {
+                                        "query_string": {
+                                            "query": "(field_state:ALL OR field_state:'WA') AND type:incentive"
+                                        }
+                                    }
+                                },
+                                {
+                                    "query": {
+                                        "query_string": {
+                                            "query": "* AND NOT (type:adcampaign OR type:incentive OR type:page_simple OR type:page OR type:glossary_item OR type:product OR type:lighting_option)"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+    
+
+Based on the ES docs here
+(<http://www.elasticsearch.org/guide/reference/query-dsl/query-string-
+query/>), yes you can. `boost` is a listed option for the `query_string` query
+type.
+
+While untested, I imagine something like this will do the trick:
+
+    
+    
+    {
+        "or": [
+            {
+                "query": {
+                    "query_string": {
+                        "query": "(field_state:ALL OR field_state:'WA') AND type:incentive",
+                        "boost": 10.5
+                    }
+                }
+            },
+            {
+                "query": {
+                    "query_string": {
+                        "query": "* AND NOT (type:adcampaign OR type:incentive OR type:page_simple OR type:page OR type:glossary_item OR type:product OR type:lighting_option)"
+                    }
+                }
+            }
+        ]
+    }
+    
+

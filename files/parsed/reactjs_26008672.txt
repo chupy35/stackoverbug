@@ -1,0 +1,21 @@
+26008672 Using react.js with custom native DOM events
+
+How do you access native dom events with react?
+
+The [documentation](http://facebook.github.io/react/docs/events.html) says "If
+you find that you need the underlying browser event for some reason, simply
+use the **nativeEvent** attribute to get it.
+
+How do you use the nativeEvent attribute?
+
+I tried onDelete={this.handleDelete} but it doesn't seem to get triggered. I
+can bind the event with jQuery so I know it's firing.
+
+React doesn't support custom DOM events. You have two options:
+
+  * use a [regular event emitter](https://www.npmjs.org/package/events)
+  * add custom event handlers using jQuery
+
+Either of these should be wrapped into a mixin, and don't forget to remove the
+listeners in componentWillUnmount. The jQuery option is a last resort.
+

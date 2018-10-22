@@ -1,0 +1,87 @@
+19325338 Totalizing scores for multiple words filtering
+
+I'm working with a document finder which inputs an N amount of words and is
+supposed to search all those N words hitting the same column. Those N words
+are ordered and if the first and the second words matched different documents
+the documents matched by the first word would need to come with a higher
+scoring. So far I've got this:
+
+    
+    
+    {
+    "from": 0, 
+    "query": {
+        "custom_filters_score": {
+            "filters": [
+                {
+                    "boost": 10, 
+                    "filter": {
+                        "term": {
+                            "descripcion": "lost"
+                        }
+                    }
+                }, 
+                {
+                    "boost": 9, 
+                    "filter": {
+                        "term": {
+                            "format": "in"
+                        }
+                    }
+                }
+            ], 
+        "query":{...(mandatory conditions regardless of the search pattenrs)...}}
+        }
+    } 
+    }
+    
+
+This works decently in the sense that if it matches the first word it will
+boost higher than the second word. However, the problem is that I need that if
+it matches both the first and second word the total scoring is the sum of both
+filters and not just the highest. In the example above the document containing
+the description: "lost in space" should score higher than the one containing
+"lost".
+
+Do I need to sum the scores from both filters in a script? If so, how?
+
+Thanks!
+
+Can you use elasticsearch 0.90.4? If so, custom_filters_score is deprecated
+and replaced by [function score query][1]:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html>
+
+With a function score query, you can specify that the scores should be summed:
+
+    
+    
+    {
+      "from": 0, 
+      "query": {
+        "function_score": {
+            "functions" : [
+                {
+                    "boost": 10, 
+                    "filter": {
+                        "term": {
+                            "descripcion": "lost"
+                        }
+                    }
+                }, 
+                {
+                    "boost": 9, 
+                    "filter": {
+                        "term": {
+                            "format": "in"
+                        }
+                    }
+                }
+            ], 
+            "query":{...(mandatory conditions regardless of the search pattenrs)...},
+            "score_mode" : "sum"
+        }
+      } 
+    }
+    
+

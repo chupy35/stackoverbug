@@ -1,0 +1,85 @@
+26317844 How can a component do layout of its children?
+
+I've been playing with React for a couple of weeks, so I'm far from an expert.
+This is the problem: I'm building some components that layout their children.
+That is, a`Layout`may be used as in:
+
+    
+    
+    var SomeComponent = React.createClass({
+        render: function () {
+            return (
+                <Layout>
+                    <...child 1/>
+                    <...child 2/>
+                    ...
+                </Layout>
+            );
+        }
+    });
+    
+
+Well, Layout does not own the children, so it cannot modify their props. It
+cannot clone the children either, as they could contain refs. Could Layout
+wrap each child in a (properly positioned) div? Would a child with a ref
+result in the correct update of SomeComponent refs? Is there a better way of
+doing this?
+
+I thought a bit more about the general problem of parent-child communication
+and I'm more confused than before. The documentation states:
+
+> "For parent-child communication, simply pass props."
+
+In a related part of the documentation we find:
+
+> "In React, an owner is the component that sets the props of other
+components."
+
+So, what gives? It seems to me that **only the owner, not the parent, can set
+props**.
+
+This has been discussed here in several posts, but I find no satisfactory
+answer. Some answers suggest cloning the children in the parent, but we run
+into problems if the original owner set ref props in its "ownees". In the
+example above, SomeComponent owns the components passed to Layout as children.
+If I clone the children in Layout (say, to add a callback) the layout becomes
+the owner of the clones so SomeComponent refs will not get them.
+
+I am utterly confused.
+
+I'm not entirely sure of what you're asking, but there are things that a
+wrapping component like your `<Layout />` can do to children.
+
+You mention you'd like to wrap each child component in a div. Here's an
+example of that:
+
+    
+    
+    var Layout = React.createClass({
+        render: function() {
+            var children = [];
+            if (this.props.children) {
+                for (var i=0; i < this.props.children.length; i++) {
+                    var child = this.props.children[i];
+                    children.push(
+                        <div className="child-container">
+                            {child}
+                        </div>
+                    );
+                }
+            }
+    
+            return (
+                <div className="layout-container">
+                    {children}
+                </div>
+            );
+        }
+    });
+    
+
+Above you can see that you can access the children of `Layout` in
+`this.props.children` which is just an array of child components. So by using
+a simple for loop as above, or using `this.props.children.map` you can wrap
+each child however you like and render it.
+

@@ -1,0 +1,25 @@
+23493596 Internal data storage mechanism of elasticsearch
+
+I have been working with elasticsearch for the past 2 months. I have used both
+REST approach and API support in different languages to index, get and search
+data. I also read a lot about elasticsearch and found out it is not a good
+option to use it as a data store. Why is this? And I'm also curious about how
+elasticsearch internally stores the indexed data. Any good link or
+explanation??
+
+Elastic Search is built on top of Apache Lucene - here's a reference doc on
+the Lucene index file structure:
+
+<http://lucene.apache.org/core/4_7_2/core/org/apache/lucene/codecs/lucene46/package-
+summary.html#package_description>
+
+Regarding whether or not it's a good option as a data store I think that's
+more individual opinion and specific use cases than a fact that can be proved.
+It does not have the transaction support that something like MySQL does if
+that's what you are looking for. In that case it's somewhat on a par with
+other NoSQL solutions. This is a pretty decent writeup on the trade-offs and
+issues: <https://www.found.no/foundation/elasticsearch-as-nosql/>
+
+In the end it depends on what you are doing with your data and what level of
+robustness you require.
+

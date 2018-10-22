@@ -1,0 +1,4 @@
+31108542
+Join results in parent child query in elasticsearch
+<p>I was able to do "has_child" query and it worked well. But  i want to see the matching children also per parent. Is this possible suing aggregations , or is there a better way ?</p>&#xA;
+<p>This is possible with the experimental <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-inner-hits.html" rel="nofollow"><code>inner_hits</code></a> feature. For example:</p>&#xA;&#xA;<pre><code>{&#xA;    "query" : {&#xA;        "has_child" : {&#xA;            "type" : "comment",&#xA;            "query": { ... },&#xA;            "inner_hits" : {} &#xA;        }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>Will add an inner_hits property to each returned hit. You can pass extra options to inner_hits, for example to disable fetching of _source if you only need the id</p>&#xA;

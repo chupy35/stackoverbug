@@ -1,0 +1,153 @@
+25355726 Prevent elasticsearch from being killed by OOM killer
+
+I'm new to elasticsearch and I'm guessing the way I configured my server is
+sub-optimal since I'm running into a problem with OOM killer killing the
+Elasticsearch/Java process after a short while.This could probably be avoided
+by having the server configured correctly. Could you please point out what in
+the configuration needs to be changed for a smooth operation of ES?
+
+On both of these servers (which are clustered), I sometimes come back to the
+ES/java process having been killed.
+
+Here is the current setup:
+
+===========================================
+
+Server 1 (Frontend server) This server has 8GB of RAM and is also running
+gunicorn, Flask, and Django
+
+elasticsearch.yml:
+
+    
+    
+    node.master: true
+    node.data: true
+    bootstrap.mlockall: true
+    
+
+/etc/default/elasticsearch
+
+    
+    
+    ES_HEAP_SIZE=5g
+    MAX_OPEN_FILES=65535
+    MAX_LOCKED_MEMORY=unlimited
+    
+
+===========================================
+
+Server 2 (Dedicated Elasticsearch server) with 8GB RAM and no other
+applications running
+
+elasticsearch.yml:
+
+    
+    
+    node.master: false
+    node.data: true
+    bootstrap.mlockall: true
+    
+
+/etc/default/elasticsearch
+
+    
+    
+    ES_HEAP_SIZE=5g
+    MAX_OPEN_FILES=65535
+    MAX_LOCKED_MEMORY=unlimited
+    
+
+===========================================
+
+In the elasticsearch.yml file, I see a line that says "`You should also make
+sure that the Elasticsearch process is allowed to lock the memory, eg. by
+using ulimit -l unlimited`" But I haven't done anything to enable that. Do I
+need to take any action here?
+
+If I try typing that in, I get...
+
+    
+    
+    myuser@es1:~$ sudo ulimit -l unlimited
+    sudo: ulimit: command not found
+    
+
+So there's not a lot you can do config-wise to prevent the OOM killer from
+being invoked but I will walk you thru what you can do. To recap, the OOM
+killer is invoked when Linux believes it is low on memory and needs to free up
+memory. It's going to pick longer running, high memory processes in general
+which makes Elasticsearch a prime target.
+
+Things you can try:
+
+  1. Move any other production code to another system. At least on the front end system with 8GB of memory running ES with 5GB of heap, Django and Flask can stress your memory usage. It's generally a better idea to run ES data nodes on their own hardware or instance.
+
+  2. Cut the heap size. Elasticsearch recommends using no more than half of memory for heap, so I'd cut it down to 4GB or less. You should then be monitoring heap usage closely and continue to ratchet it down while you still have a decent margin.
+
+  3. Upgrade to a larger server with more memory. This would be my number one recommendation - you simply don't have enough memory available to do everything you are trying to do on one server.
+
+  4. Try tuning the OOM killer to be less strict - not that easy to do and I don't know what you will gain due to overall low server size but you can always experiment:
+
+<https://unix.stackexchange.com/questions/58872/how-to-set-oom-killer-
+adjustments-for-daemons-permanently>
+
+<http://backdrift.org/how-to-create-oom-killer-exceptions>
+
+<http://www.oracle.com/technetwork/articles/servers-storage-dev/oom-
+killer-1911807.html>
+
+Here is what I have done to lock the memory on my ES nodes, version 5.4.0 on
+RedHat/Centos 7 (it will work on other distributions if they use **systemd**
+).
+
+You must make the change in 4 different places:
+
+1) **/etc/sysconfig/elasticsearch**
+
+On sysconfig: `/etc/sysconfig/elasticsearch` you should have:
+
+    
+    
+    ES_JAVA_OPTS="-Xms4g -Xmx4g" 
+    MAX_LOCKED_MEMORY=unlimited
+    
+
+(replace 4g with HALF your available RAM as recommended
+[here](https://www.elastic.co/guide/en/elasticsearch/guide/current/heap-
+sizing.html))
+
+2) **/etc/security/limits.conf**
+
+On security limits config: `/etc/security/limits.conf` you should have
+
+    
+    
+    elasticsearch soft memlock unlimited
+    elasticsearch hard memlock unlimited
+    
+
+3) **/usr/lib/systemd/system/elasticsearch.service**
+
+On the service script: `/usr/lib/systemd/system/elasticsearch.service` you
+should uncomment:
+
+    
+    
+    LimitMEMLOCK=infinity
+    
+
+you should do systemctl daemon-reload after changing the service script
+
+4) **/etc/elasticsearch/elasticsearch.yml**
+
+On elasticsearch config finally: `/etc/elasticsearch/elasticsearch.yml` you
+should add:
+
+    
+    
+    bootstrap.memory_lock: true
+    
+
+Thats it, restart your node and the RAM will be locked, you should notice a
+major performance improvement.
+

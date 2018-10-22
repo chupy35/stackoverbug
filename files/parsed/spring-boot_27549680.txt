@@ -1,0 +1,16 @@
+27549680 EnableAutoConfiguration generates unnecessary CGLIB proxies of
+repositories
+
+Before Spring Boot 1.2 everything used to work fine, however with this version
+the @EnableAutoConfiguration tag causes the generation of CGLIB proxies of the
+JDBC repositories. Since these repository classes are marked final, it fails.
+I have no problem with making these classes non-final, however I'd like to
+understand why CGLIB proxies are needed in this case. However if I remove the
+EnableAutoConfiguration tag, everything works as expected, i.e., no CGLIB
+proxies are created.
+
+Spring Boot 1.2 added auto-configuration for Spring's persistence exception
+translation which requires the use of proxies. You can disable it by setting
+`spring.dao.exceptiontranslation.enabled: false` in your
+`application.properties` file.
+

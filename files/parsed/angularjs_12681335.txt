@@ -1,0 +1,93 @@
+12681335 angular.js chrome Access-Control-Allow-Origin
+
+I'm trying to use an Angular.js service to get a JSON from my REST service
+made with Jersey/Spring.
+
+When i'm using firefox, it works fine, but when i go to Chrome i got the
+message:
+
+    
+    
+    XMLHttpRequest cannot load http://localhost:8080/VirtualLawyerPj/services/timeoftheday/asjson/tue. Origin http://localhost:8090 is not allowed by Access-Control-Allow-Origin.
+    
+
+Here's my service code:
+
+    
+    
+    angular.module('myAppServices', ['ngResource']).
+    factory('Time', function($resource){
+        return $resource('http://localhost:port/VirtualLawyerPj/services/timeoftheday/asjson/tue',{port:":8080"}, {
+            query: {method:'GET', params:{}, isArray:false}
+        });
+    });
+    
+
+Someone had the same problem?  How did you got this working?
+
+Thanks.
+
+The CORS solution is described at
+[html5rocks](http://www.html5rocks.com/en/tutorials/cors/) tutorial. Worked
+for me.
+
+I am still learning Angular myself, but using the $location service to get the
+current url host and port makes things easier when moving code between
+environments. Incidentally, this has also helped me overcome the issue you
+describe.
+
+    
+    
+    angular.module('myAppServices', ['ngResource']).
+    factory('Time', ['$location', function($location) {
+      var url = 'http://:host::port/VirtualLawyerPj/services/timeoftheday/asjson/tue';
+      var params = {
+        host: $location.host(),
+        port: $location.port()
+      };
+      var actions = {
+        query: {method:'GET', isArray:false}
+      };
+      return $resource(url, params, actions);
+    }])
+    
+
+I have an Apache server running on port 80 and a REST webservice on port 8889,
+same server. I tried this solution but didn't work:
+
+    
+    
+        myApp.config(['$httpProvider', function($httpProvider) {
+            $httpProvider.defaults.useXDomain = true;
+            delete $httpProvider.defaults.headers.common['X-Requested-With'];
+        }]);
+
+The only way I figured out to get this to work was:
+
+  1. On services.js file:
+    
+        angular.module('mirthServices', ['ngResource']).
+        factory('Cs', function ($resource) {
+            return $resource('http://localhost/rest/cs/id/:csId');
+        });
+    
+
+  2. On the apache proxy.conf file:
+    
+        ProxyPass /rest http://localhost:8889/REST
+    ProxyPassReverse /rest http://localhost:8889/REST
+    
+
+I solved this problem by changing in apache in file httpd.conf :
+
+    
+    
+    ....
+    <Directory>
+        .....
+        Header set Access-Control-Allow-Origin "*"
+    </Directory>
+    
+
+I added the line Header set, hope this help someone
+

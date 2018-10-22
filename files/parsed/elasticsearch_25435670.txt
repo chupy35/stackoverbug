@@ -1,0 +1,67 @@
+25435670 Finding an exact phrase in multiple fields with Elasticsearch
+
+I'm wanting to find an exact phrase (for instance, "the quick brown fox")
+across mutliple fields in a document.
+
+Right now, I'm using something like this:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "multi_match": {
+              "fields": [
+                "subject",
+                "comments"
+              ],
+              "query": "the quick brown fox"
+            }
+          },
+          "filters": {
+            "and": [
+              {
+                "term": {
+                  "priority": "high"
+                }
+              }
+              ...more ands
+            ]
+          }
+        }
+      }
+    }
+    
+
+Question is, how can I do this correctly. Right now I'm getting the best match
+first, which tends to be the entire phrase, but I'm getting a load of _almost_
+matches too.
+
+If you are using an ElasticSearch cluster with version >= 1.1.0, you could set
+the mode of your `multi-match` query to `phrase` :
+
+    
+    
+    ...
+      "query": {
+        "multi_match": {
+          "fields": [
+            "subject",
+            "comments"
+          ],
+          "query": "the quick brown fox",
+          "type": "phrase"
+        }
+    ...
+    
+
+It will replace the match query generated for each field by a `match_phrase`
+one, which will return only the documents containing the full phrase (you can
+find details in the
+[documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-multi-match-query.html#multi-match-types))
+
+how are you analyzing the subject/comments fields? if you want exact match,
+you'll need to use the keyword tokenizer for both index/search.
+

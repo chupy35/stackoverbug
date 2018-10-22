@@ -1,0 +1,3 @@
+33230709
+Fresh import through jdbc importer after scheduled import from sql server to es
+<p>Is it possible that every time a scheduled run of jdbc importer takes place . The index in es is refreshed or flushed first and then re filled with entire dataset of sql? </p>&#xA;

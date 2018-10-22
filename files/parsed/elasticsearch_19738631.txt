@@ -1,0 +1,42 @@
+19738631 ElasticSearch: How to disable allocation on a specific shard?
+
+My index currently has 5 shards all with data. Suppose I want to temporarily
+prevent any more data in a specific shard. Is there a way to do that?
+
+I don't know, whether you can directly specify certain shards for your data to
+be stored to. But, while starting out, you can specify
+[_routing](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+routing-field.html#_required) values which will determine which shard will
+your data get stored into. Through this, you can indirectly govern
+elasticsearch to store your data in specific shard. For example, consider this
+mapping:
+
+    
+    
+    {
+    "comment" : {
+        "_routing" : {
+            "required" : true,
+            "path" : "blog.post_id"
+        }
+    }
+    
+
+}
+
+The above code will obtain the hash of the _routing path that is provided to
+it, and depending on the hash value, it will choose the shard that it will get
+stored into. So, ultimately, all the comments of the particular post will be
+stored in the same shard.
+
+The reason why people choose custom routing over the normal one i.e the reason
+why normally, we would want or data to be stored in specific shard is to
+increase the performance of the search query. You can specify the routing
+values which shard will perform your search.
+
+I am not sure why you want your data to be stored in certain shards only.
+
+[Here](http://www.elasticsearch.org/blog/customizing-your-document-routing/)
+is a nice blog that explains why you want your data to be stored in specific
+shards, and how custom routing will help you in achieving that.
+

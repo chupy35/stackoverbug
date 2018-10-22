@@ -1,0 +1,112 @@
+18353998 ElasticSearch Custom Scoring with Arrays
+
+Could anyone advice me on how to do custom scoring in ElasticSearch when
+searching for an array of keywords from an array of keywords?
+
+For example, let's say there is an array of keywords in each document, like
+so:
+
+    
+    
+    { // doc 1
+        keywords : [ 
+                red : {
+                        weight : 1
+                    }, 
+                green : {
+                        weight : 2.0
+                    },
+                blue : {
+                        weight: 3.0
+                    },
+                yellow : {
+                        weight: 4.3
+                    }
+            ]
+    },
+    { // doc 2
+        keywords : [ 
+                red : {
+                        weight : 1.9
+                    }, 
+                pink : {
+                        weight : 7.2
+                    },
+                white : {
+                        weight: 3.1
+                    },
+            ]
+    },
+    ...
+    
+
+And I want to get scores for each documents based on a search that matches
+keywords against this array:
+
+    
+    
+    {
+        keywords : [
+                red : {
+                        weight : 2.2
+                    }, 
+                blue : {
+                        weight : 3.3
+                    },
+            ]
+    }
+    
+
+But instead of just determining whether they match, I want to use a very
+specific scoring algorithm:
+
+![enter image description here](https://i.stack.imgur.com/KxQcX.png)
+
+Scoring a single field is easy enough, but I don't know how to manage it with
+arrays. Any thoughts?
+
+Ah an interesting question! (And one I think we can solve with some
+communication)
+
+Firstly, have you looked at custom script scoring? I'm pretty sure you can do
+this **slowly** with that. If you were to do this I would consider doing a
+[rescore
+phase](http://www.elasticsearch.org/guide/reference/api/search/rescore/) where
+scoring is only calculated after the doc is known to be a hit.
+
+**However** I think you can do this with elasticsearch machinery. As I can
+work out you are doing a dot-product between docs, (where the weights are
+actually half way between what you are specifying and 1).
+
+So, my first suggestion remove the x/2n term from your "custom scoring" (dot
+product) and put your weights half way between 1 and the custom weight (e.g.
+1.9 => 1.45).
+
+... I'm sorry I will have to come back and edit this question. I was thinking
+about using nested docs with a field defined boost level, but alas, the
+`_boost` mapping parameter is [only available for the root
+doc](http://www.elasticsearch.org/guide/reference/mapping/boost-field/)
+
+p.s. Just had a thought, you could have fields with defined boost levels and
+store teh terms there, then you can do this easily but you loose precision. A
+doc would then look like:
+
+    
+    
+    {
+      "boost_1": ["aquamarine"],
+      "boost_2": null, //don't need to send this, just showing for clarity
+      ...
+      "boost_5": ["burgundy", "fuschia"]
+      ...
+    }
+    
+
+You could then define a these boostings in your mapping. One thing to note is
+a fields boost value carries over to the `_all` field, so you would now have a
+bag of weighted terms in your `_all` field, then you could construct a `bool:
+should` query, with lots of `term` queries with different boost (for the
+weights of the second doc).
+
+Let me know what you think! A very, very interesting question.
+

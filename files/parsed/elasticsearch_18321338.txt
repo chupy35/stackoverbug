@@ -1,0 +1,76 @@
+18321338 Elasicsearch nodes disconnecting
+
+We have an issue where some nodes in a cluster suddenly leaves the cluster
+without any apparent reason.
+
+We run on Elasticsearch v0.20.6, JVM 7u25. We use unicast discovery.
+
+This is an embedded ES instance, with 7 nodes in a cluster. Nodes 47, 48, 49
+and 50 on one location (network), 24, 25 and 26 on another.
+
+The same thing happens after a while every time, the index files are deleted
+between the tests. One of the 24, 25, 26 nodes suddenly thinks its the master
+(which again leads to a split-brain scenario - that is ok and I understand why
+this happens, but the question is _why_ the disconnect is happening.
+
+First, NODE47 is elected master. All other nodes joins, and things runs smooth
+for a couple of hours or so.
+
+Then suddenly, here is first traces of that something is visibly going wrong,
+around 19:10:
+
+    
+    
+    Node47:
+    2013-08-14 19:09:49,243 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][transport_client_worker][T#3]{New I/O worker #3}) [local] disconnected from [[local][VbxjXeqGRIyNFzvK-1JCIw][inet[/**NODE24**:8800]]{local=false}], channel closed event
+    2013-08-14 19:09:54,109 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][transport_client_worker][T#3]{New I/O worker #3}) [local] disconnected from [[local][V7FXnZiLR-GVIyZ2DOwV2w][inet[/**NODE26**:8800]]{local=false}], channel closed event
+    2013-08-14 19:10:06,008 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][transport_client_worker][T#4]{New I/O worker #4}) [local] disconnected from [[local][da-T28GDRtWgadrkCvxS-w][inet[/**NODE25**:8800]]{local=false}], channel closed event
+    2013-08-14 19:10:34,253 TRACE [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][generic][T#19]) [local] [node  ] [[local][VbxjXeqGRIyNFzvK-1JCIw][inet[/**NODE24**:8800]]{local=false}] transport disconnected (with verified connect)
+    2013-08-14 19:10:34,259 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][generic][T#24]) [local] connected to node [[local][V7FXnZiLR-GVIyZ2DOwV2w][inet[/**NODE26**:8800]]{local=false}]
+    2013-08-14 19:10:34,259 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][generic][T#25]) [local] connected to node [[local][da-T28GDRtWgadrkCvxS-w][inet[/**NODE25**:8800]]{local=false}]
+    2013-08-14 19:10:34,273 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][generic][T#26]) [local] connected to node [[local][VbxjXeqGRIyNFzvK-1JCIw][inet[/**NODE24**:8800]]{local=false}]
+    2013-08-14 19:10:34,290 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][generic][T#27]) [local] disconnected from [[local][VbxjXeqGRIyNFzvK-1JCIw][inet[/**NODE24**:8800]]{local=false}]
+    
+    
+    Node24:
+    2013-08-14 19:10:35,167 DEBUG [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][transport_client_worker][T#4]{New I/O worker #4}) [local] [master] pinging a master [local][Y01TgbUzRg-JIIpQ7NqlZg][inet[/**NODE47**:8800]]{local=false} but we do not exists on it, act as if its master failure
+    2013-08-14 19:10:35,170 DEBUG [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][transport_client_worker][T#4]{New I/O worker #4}) [local] [master] stopping fault detection against master [[local][Y01TgbUzRg-JIIpQ7NqlZg][inet[/**NODE47**:8800]]{local=false}], reason [master failure, do not exists on master, act as master failure]
+    2013-08-14 19:10:35,171 INFO  [org.elasticsearch.discovery.zen] (elasticsearch[local][generic][T#1]) [local] master_left [[local][Y01TgbUzRg-JIIpQ7NqlZg][inet[/**NODE47**:8800]]{local=false}], reason [do not exists on master, act as master failure]
+    2013-08-14 19:10:35,174 DEBUG [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][clusterService#updateTask][T#1]) [local] [master] restarting fault detection against master [[local][JrRrD5Y8R8WHn1ZAkjYNBw][inet[/**NODE45**:8800]]{local=false}], reason [possible elected master since master left (reason = do not exists on master, act as master failure)]
+    2013-08-14 19:10:35,181 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][generic][T#1]) [local] disconnected from [[local][Y01TgbUzRg-JIIpQ7NqlZg][inet[/**NODE47**:8800]]{local=false}]
+    2013-08-14 19:10:36,233 DEBUG [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][transport_client_worker][T#4]{New I/O worker #4}) [local] [master] pinging a master [local][JrRrD5Y8R8WHn1ZAkjYNBw][inet[/**NODE45**:8800]]{local=false} that is no longer a master
+    2013-08-14 19:10:36,235 INFO  [org.elasticsearch.discovery.zen] (elasticsearch[local][generic][T#5]) [local] master_left [[local][JrRrD5Y8R8WHn1ZAkjYNBw][inet[/**NODE45**:8800]]{local=false}], reason [no longer master]
+    2013-08-14 19:10:36,235 DEBUG [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][transport_client_worker][T#4]{New I/O worker #4}) [local] [master] stopping fault detection against master [[local][JrRrD5Y8R8WHn1ZAkjYNBw][inet[/**NODE45**:8800]]{local=false}], reason [master failure, no longer master]
+    2013-08-14 19:10:36,241 DEBUG [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][clusterService#updateTask][T#1]) [local] [master] restarting fault detection against master [[local][V7FXnZiLR-GVIyZ2DOwV2w][inet[/**NODE26**:8800]]{local=false}], reason [possible elected master since master left (reason = no longer master)]
+    2013-08-14 19:10:36,245 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][generic][T#5]) [local] disconnected from [[local][JrRrD5Y8R8WHn1ZAkjYNBw][inet[/**NODE45**:8800]]{local=false}]
+    2013-08-14 19:10:37,359 DEBUG [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][transport_client_worker][T#3]{New I/O worker #3}) [local] [master] pinging a master [local][V7FXnZiLR-GVIyZ2DOwV2w][inet[/**NODE26**:8800]]{local=false} that is no longer a master
+    2013-08-14 19:10:37,361 INFO  [org.elasticsearch.discovery.zen] (elasticsearch[local][generic][T#10]) [local] master_left [[local][V7FXnZiLR-GVIyZ2DOwV2w][inet[/**NODE26**:8800]]{local=false}], reason [no longer master]
+    2013-08-14 19:10:37,363 DEBUG [org.elasticsearch.discovery.zen.fd] (elasticsearch[local][transport_client_worker][T#3]{New I/O worker #3}) [local] [master] stopping fault detection against master [[local][V7FXnZiLR-GVIyZ2DOwV2w][inet[/**NODE26**:8800]]{local=false}], reason [master failure, no longer master]
+    2013-08-14 19:10:37,393 DEBUG [org.elasticsearch.transport.netty] (elasticsearch[local][generic][T#10]) [local] disconnected from [[local][V7FXnZiLR-GVIyZ2DOwV2w][inet[/**NODE26**:8800]]{local=false}]
+    
+
+As far as I can read of the logs; this is whats happening:
+
+19:09:49,243 - a channel closed event is received from NODE24 to NODE47
+(Master) and it is disconnected 19:10:34,273 - a connection to NODE24 is done,
+then 19:10:34,290 - we get a "disconnected" from NODE24 19:10:35,167 - NODE24
+pings master (NODE47) but the master does not have NODE24 in its list of
+nodes, and threats this like a master failure.
+
+All of this happening within a second - alas, no timeouts in work here as I
+know of. Also, there are no large GC or any slowdown that is measurable in
+this period or before.
+
+Im at loss; why does this happen? If network issues; what should be tested on
+the network side?
+
+To answer this myself with the actual reason for the behavior;
+
+A tcp-connection between 2 nodes (while keeping the connection to the other
+nodes) are disconnected. It could be recreated by using a utility like
+tcpkill.
+
+The Elasticsearch Zen discovery sadly does not handle errors like this very
+good, and all sorts of strange outcomes are possible. The node that looses
+connection to the master will do an election, and may confuse other nodes.
+

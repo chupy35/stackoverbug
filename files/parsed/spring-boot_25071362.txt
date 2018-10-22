@@ -1,0 +1,45 @@
+25071362 How do I expose a TaskExecutor over JMX in Spring Boot?
+
+A similar question was asked and answered in the spring forums when using XML
+configuration:
+
+<http://forum.spring.io/forum/spring-projects/integration/723982-i-cant-
+figure-out-how-to-expose-task-executor-vai-jmx?p=724001#post724001>
+
+I'd like to avoid using XML. I'm using Spring Boot 1.1.4, and have included
+spring-boot-actuator. My Application class looks like this:
+
+    
+    
+    @Configuration
+    @EnableAutoConfiguration
+    @ComponentScan
+    @EnableConfigurationProperties
+    public class Application {
+        // ...
+    
+        // this method is never called
+        @Bean
+        protected MBeanExporter mbeanExporter() {
+            MBeanExporter exporter = new MBeanExporter();
+            Map<String,Object> beans = new HashMap<>();
+            beans.put("org.springframework.boot:type=executor,name=taskExecutor", taskExecutor());
+            exporter.setBeans(beans);
+            return exporter;
+        }
+    
+        @Bean
+        protected AsyncTaskExecutor taskExecutor() {
+            ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+            executor.setCorePoolSize(5);
+            executor.setMaxPoolSize(200);
+            return executor;
+        }
+    }
+    
+
+There's probably another bean called "mbeanExporter" overriding yours. I think
+the idiom is wrong anyway though a - what you probably need is an
+`MBeanInfoAssembler` (even if you have to plug it into an `MBeanExporter` with
+a different bean name).
+

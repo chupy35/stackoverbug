@@ -1,0 +1,222 @@
+24539551 Search a nested field for multiple values on the same field with
+elasticsearch
+
+I'm trying to query a nested properties with multiple values.
+
+Here is an example that will be clearer.
+
+**Create an index with a nested field**
+
+    
+    
+        curl -X DELETE "http://localhost:9200/testing_nested_query/"
+        curl -X POST "http://localhost:9200/testing_nested_query/" -d '{
+            "mappings": {
+                "class": {
+                  properties: {
+                    title: {"type": "string"},
+                    "students": {
+                      "type": "nested",
+                      "properties": {
+                        "name": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+            }
+    
+        }'
+    
+
+**Add some values**
+
+    
+    
+        curl -XPUT 'http://localhost:9200/testing_nested_query/class/1' -d '{
+          "title": "class1",
+          "students": [{"name": "john"},{"name": "jack"},{"name": "jim"}]
+        }'
+    
+        curl -XPUT 'http://localhost:9200/testing_nested_query/class/2' -d '{
+          "title": "class2",
+          "students": [{"name": "john"},{"name": "chris"},{"name": "alex"}]
+        }'
+    
+
+**Query for all classes where john is (2 hits as expected)**
+
+    
+    
+    curl -XGET 'http://localhost:9200/testing_nested_query/class/_search' -d '{
+      "query": {
+        "nested": {
+          "path":"students",
+          "query": {
+            "bool": {
+              "must": [
+                {"match": {"students.name": "john"}}
+              ]
+            }
+          }
+        }
+      }
+    }'
+    
+
+**Query for classes where both john and jack are attending ( 0 results instead
+of 1)**
+
+    
+    
+    curl -XGET 'http://localhost:9200/testing_nested_query/class/_search' -d '{
+      "query": {
+        "nested": {
+          "path":"students",
+          "query": {
+            "bool": {
+              "must": [
+                {"match": {"students.name": "john"}},
+                {"match": {"students.name": "jack"}}
+              ]
+            }
+          }
+        }
+      }
+    }'
+    
+
+I've tried with match and filter but I can never get the query to return the
+expected values.
+
+It just needs a bit change:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+            "must": [
+               {
+                   "nested": {
+                      "path":"students",
+                      "query": {
+                        "bool": {
+                          "must": [
+                            {"match": {"name": "john"}}
+                          ]
+                        }
+                      }
+                    }
+               },
+               {
+                   "nested": {
+                      "path":"students",
+                      "query": {
+                        "bool": {
+                          "must": [
+                            {"match": {"name": "jack"}}
+                          ]
+                        }
+                      }
+                    }
+               }
+            ]
+        }
+      }
+    }
+    
+
+**Why?**
+
+Basically, in a nested query, the query and the filter are collectively
+executed on a single nested document - in your case one name. So your query
+would pick up every nested document and try to find every document that has
+`name` equal to `john` and `jack` at the same time - which is impossible.
+
+My query tries to find an indexed document that has one nested document with
+`name` equal to `john` and another nested document with `name` equal to
+`jack`. So basically one nested query tries to match one nested document
+completely.
+
+To prove what I am suggesting, try this:
+
+**Create the same index with same mapping as you did**
+
+** Then index the following documents **
+
+    
+    
+    curl -XPUT 'http://localhost:9200/testing_nested_query/class/1' -d '{
+          "title": "class1",
+          "students": [{"name": "john", "age": 4},{"name": "jack", "age": 1},{"name": "jim", "age": 9}]
+        }'
+    
+    curl -XPUT 'http://localhost:9200/testing_nested_query/class/2' -d '{
+          "title": "class1",
+          "students": [{"name": "john", "age": 5},{"name": "jack", "age": 4},{"name": "jim", "age": 9}]
+        }'
+    
+
+**Now execute the following queries:**
+
+    
+    
+    {
+      "query": {
+           "nested": {
+              "path":"students",
+              "query": {
+                "bool": {
+                  "must": [
+                    {"match": {"name": "john"}},
+                    {"match": {"age": 4}}
+                  ]
+                }
+              }
+            }
+      }
+    }
+    
+
+According to your expectations, this should match 2 documents but it actually
+matches just only one. Because there is only one nested document that has both
+`name` equal to `john` and `age` equal to `4`.
+
+Hope that helps.
+
+You could also do following way. where you do not need to repeat bool again in
+a nested block , since there is a only one to match within that block , you
+can just do term match without bool
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [{
+            "nested": {
+              "path": "students",
+              "query": {
+                {
+                  "term": {
+                    "name": "john"
+                  }
+                }
+              }
+            }
+          }, {
+            "nested": {
+              "path": "students",
+              "query": {
+                {
+                  "term": {
+                    "name": "jack"
+                  }
+                }
+              }
+            }
+          }]
+        }
+      }
+    }
+

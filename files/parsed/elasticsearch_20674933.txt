@@ -1,0 +1,84 @@
+20674933 Elasticsearch multi_match comma issue
+
+I am using elastic search on a project to accomplish an autocomplete
+functionality.
+
+Here is the deal.
+
+If I search for, lets say, keyword = "`bird nest`",  I am getting some results
+that I don't want to get like :
+
+  * x bird nest at California
+  * y bird nest at Atalanta
+  * **z bird, nest is not available** (this is the one that I don't want)
+
+Is there any way of making elasticsearch not to match those which has comma
+between the words?
+
+Here is what my query looks like.
+
+    
+    
+    {
+        "from": 0,
+        "size": 20,
+        "sort": [
+            {
+                "rate": {
+                    "order": "desc"
+                }
+            }
+        ],
+        "query": {
+            "bool": {
+                "should": {
+                    "multi_match": {
+                        "query": keyword,
+                        "operator": "and",
+                        "type": "phrase_prefix",
+                        "fields": [ "name.en_US", "name.zh_TW","name.ja_JP","name.zh_CN" ]
+                    }
+                }
+            }
+        }
+    }
+    
+
+Its not the mapping that you should be looking into. Its the analyzer that
+plays the vital role in your case. If you are using the default standard
+analyzer, this is an expected result.
+
+Please check this blog in elasticsearch website to get the solution.
+
+<http://www.elasticsearch.org/blog/starts-with-phrase-matching/>
+
+You can use the analyze api to test how your data will be tokenized in the
+elasticsearch server.
+
+    
+    
+    curl -XGET 'localhost:9200/test/_analyze?text=this+is+a+test'
+    
+
+The above will run an analysis on the "this is a test" text, using the default
+index analyzer associated with the test index.
+
+An analyzer can also be provided to use a different analyzer:
+
+    
+    
+    curl -XGET 'localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
+    
+
+Please check the below link for any issues on analyze api.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+analyze.html>
+
+You can use the whitespace analyzer with word delimiter token filter to
+achieve this as far as I know. Try different parameters and test using the
+analyze api to get the expected result.
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+word-delimiter-tokenfilter.html>
+

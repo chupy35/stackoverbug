@@ -1,0 +1,37 @@
+22511652 How to fail ElasticSearch index operation if id already exists?
+
+I have multiple concurrent processes (two, to be exact) that will index to the
+same id. Let's say index operation `I0` is done first and is followed by index
+operation `I1`. There's a chance that `I1` will be indexed before `I0`.
+Whichever is indexed first, `I1` should take precedence during searches.
+
+According to
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html>, versioning can be used for this purpose. Just be sure to set
+`I0`'s version to be less than `I1`'s version.
+
+You can supply an optional
+[`version`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html#index-versioning) to the update that can be associated with its
+[`version_type`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+index_.html#_version_types) to guarantee that only one is used.
+
+Supplementing the example posted in their documentation, you can do this
+manually like:
+
+    
+    
+    curl -XPUT 'localhost:9200/twitter/tweet/1?version=1&version_type=external' -d '{
+        "message" : "elasticsearch now has versioning support, double cool!"
+    }'
+    
+
+For a `version_type` of `external`, you get:
+
+> only index the document if the given version is strictly higher than the
+version of the stored document or if there is no existing document. The given
+version will be used as the new version and will be stored with the new
+document.
+
+It's probably worth pointing out that the internal versioning starts at `1`.
+

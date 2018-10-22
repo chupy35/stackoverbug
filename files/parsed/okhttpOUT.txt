@@ -1,0 +1,1841 @@
+>>> GETTING ISSUES FROM GITHUB <<< HTTP/1.1 200 OK Server: GitHub.com Date:
+Sun, 21 Oct 2018 18:08:00 GMT Content-Type: application/json; charset=utf-8
+Content-Length: 1530 Status: 200 OK X-RateLimit-Limit: 5000 X-RateLimit-
+Remaining: 4751 X-RateLimit-Reset: 1540145642 Cache-Control: private, max-
+age=60, s-maxage=60 Vary: Accept, Authorization, Cookie, X-GitHub-OTP ETag:
+"8665c63bb33b6bcafd70172b9d649b1d" Last-Modified: Wed, 17 Oct 2018 01:19:42
+GMT X-OAuth-Scopes: admin:gpg_key, admin:org, admin:org_hook,
+admin:public_key, admin:repo_hook, delete_repo, gist, notifications, repo,
+user, write:discussion X-Accepted-OAuth-Scopes: X-GitHub-Media-Type:
+github.v3; format=json Access-Control-Expose-Headers: ETag, Link, Retry-After,
+X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset,
+X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval Access-Control-Allow-
+Origin: * Strict-Transport-Security: max-age=31536000; includeSubdomains;
+preload X-Frame-Options: deny X-Content-Type-Options: nosniff X-XSS-
+Protection: 1; mode=block Referrer-Policy: origin-when-cross-origin, strict-
+origin-when-cross-origin Content-Security-Policy: default-src 'none' X-GitHub-
+Request-Id: 8568:2938:1D92D22:469570A:5BCCC080 { "login": "mpcrocha", "id":
+22351590, "node_id": "MDQ6VXNlcjIyMzUxNTkw", "avatar_url":
+"https://avatars3.githubusercontent.com/u/22351590?v=4", "gravatar_id": "",
+"url": "https://api.github.com/users/mpcrocha", "html_url":
+"https://github.com/mpcrocha", "followers_url":
+"https://api.github.com/users/mpcrocha/followers", "following_url":
+"https://api.github.com/users/mpcrocha/following{/other_user}", "gists_url":
+"https://api.github.com/users/mpcrocha/gists{/gist_id}", "starred_url":
+"https://api.github.com/users/mpcrocha/starred{/owner}{/repo}",
+"subscriptions_url": "https://api.github.com/users/mpcrocha/subscriptions",
+"organizations_url": "https://api.github.com/users/mpcrocha/orgs",
+"repos_url": "https://api.github.com/users/mpcrocha/repos", "events_url":
+"https://api.github.com/users/mpcrocha/events{/privacy}",
+"received_events_url":
+"https://api.github.com/users/mpcrocha/received_events", "type": "User",
+"site_admin": false, "name": null, "company": null, "blog": "", "location":
+null, "email": null, "hireable": null, "bio": null, "public_repos": 3,
+"public_gists": 0, "followers": 0, "following": 0, "created_at":
+"2016-09-21T16:59:57Z", "updated_at": "2018-10-17T01:19:42Z", "private_gists":
+0, "total_private_repos": 0, "owned_private_repos": 0, "disk_usage": 18110,
+"collaborators": 0, "two_factor_authentication": false, "plan": { "name":
+"free", "space": 976562499, "collaborators": 0, "private_repos": 0 } }
+REMAINING: 4751 Remaining: 4751 Bug report number: 4283 State: closed Created
+date: 2018-09-22T00:35:11Z Closed date: 2018-09-30T08:14:46Z
+******************************************************* Bug report number:
+4249 State: closed Created date: 2018-09-03T09:21:01Z Closed date:
+2018-09-11T19:39:52Z *******************************************************
+Bug report number: 4238 State: closed Created date: 2018-08-26T22:26:37Z
+Closed date: 2018-09-14T05:50:49Z
+******************************************************* Bug report number:
+4232 State: closed Created date: 2018-08-25T14:40:35Z Closed date:
+2018-08-31T05:55:10Z *******************************************************
+Bug report number: 4225 State: closed Created date: 2018-08-22T10:52:02Z
+Closed date: 2018-09-03T05:56:45Z
+******************************************************* Bug report number:
+4135 State: closed Created date: 2018-07-10T14:21:12Z Closed date:
+2018-07-14T07:25:48Z *******************************************************
+Bug report number: 4095 State: closed Created date: 2018-06-27T05:38:40Z
+Closed date: 2018-07-05T06:42:55Z
+******************************************************* Bug report number:
+4094 State: closed Created date: 2018-06-26T12:24:09Z Closed date:
+2018-07-06T05:28:02Z *******************************************************
+Bug report number: 4085 State: closed Created date: 2018-06-21T12:13:29Z
+Closed date: 2018-09-23T07:12:55Z
+******************************************************* Bug report number:
+4043 State: closed Created date: 2018-06-01T09:59:53Z Closed date:
+2018-07-10T11:53:32Z *******************************************************
+Bug report number: 4025 State: closed Created date: 2018-05-25T01:57:50Z
+Closed date: 2018-07-05T00:43:20Z
+******************************************************* Bug report number:
+4012 State: closed Created date: 2018-05-18T15:17:23Z Closed date:
+2018-07-13T12:29:43Z *******************************************************
+Bug report number: 4008 State: closed Created date: 2018-05-17T02:23:42Z
+Closed date: 2018-09-29T14:50:44Z
+******************************************************* Bug report number:
+4006 State: closed Created date: 2018-05-16T17:06:25Z Closed date:
+2018-07-05T00:46:23Z *******************************************************
+Bug report number: 3973 State: closed Created date: 2018-04-19T08:09:37Z
+Closed date: 2018-07-06T05:29:20Z
+******************************************************* Bug report number:
+3970 State: closed Created date: 2018-04-15T17:40:53Z Closed date:
+2018-07-06T05:29:32Z *******************************************************
+Bug report number: 3945 State: closed Created date: 2018-03-28T15:04:48Z
+Closed date: 2018-07-06T02:58:30Z
+******************************************************* Bug report number:
+3940 State: closed Created date: 2018-03-27T09:11:51Z Closed date:
+2018-07-11T05:57:21Z *******************************************************
+Bug report number: 3915 State: closed Created date: 2018-03-06T17:52:03Z
+Closed date: 2018-07-07T12:22:08Z
+******************************************************* Bug report number:
+3898 State: closed Created date: 2018-02-27T20:30:09Z Closed date:
+2018-07-05T01:33:16Z *******************************************************
+Bug report number: 3892 State: closed Created date: 2018-02-26T10:36:24Z
+Closed date: 2018-07-05T01:45:37Z
+******************************************************* Bug report number:
+3872 State: closed Created date: 2018-02-20T17:36:27Z Closed date:
+2018-04-16T19:34:34Z *******************************************************
+Bug report number: 3827 State: closed Created date: 2018-02-05T20:14:45Z
+Closed date: 2018-02-18T18:45:53Z
+******************************************************* Bug report number:
+3793 State: closed Created date: 2018-01-22T08:04:48Z Closed date:
+2018-02-18T20:37:19Z *******************************************************
+Bug report number: 3786 State: closed Created date: 2018-01-18T13:14:21Z
+Closed date: 2018-02-11T18:37:32Z
+******************************************************* Bug report number:
+3778 State: closed Created date: 2018-01-15T08:51:29Z Closed date:
+2018-06-17T14:20:31Z *******************************************************
+Bug report number: 3767 State: closed Created date: 2018-01-07T23:40:20Z
+Closed date: 2018-02-25T01:53:32Z
+******************************************************* Bug report number:
+3761 State: closed Created date: 2018-01-05T21:29:43Z Closed date:
+2018-01-07T02:31:44Z *******************************************************
+Bug report number: 3722 State: closed Created date: 2017-12-14T03:03:15Z
+Closed date: 2017-12-25T05:17:40Z
+******************************************************* Bug report number:
+3719 State: closed Created date: 2017-12-12T05:47:45Z Closed date:
+2018-02-18T20:37:09Z *******************************************************
+[['4283\nHeaders.of() doesn\xe2\x80\x99t enforce ASCII-only\nNeeds to call
+checkNameAndValue to confirm that invalid characters can\xe2\x80\x99t sneak
+through.\nAnd maybe a proper supported mechanism to add non-ASCII headers
+because sometimes people need that.I think this issue can be closed now. ',
+'4249\nokhttp3.internal.http.HttpHeaders#parseChallenges does not handle
+authentication header with only scheme\n~If you e. g. have `Proxy-
+Authenticate: Basic` which is a valid value, the method will not work
+properly, because of `int index = header.indexOf(\' \'); if (index == -1)
+continue;`, which means the method only works properly if there is a space in
+the header value.~ (For `Basic` auth `realm` indeed is required)\r\n\r\nThis
+also breaks `okhttp3.Response#challenges` and
+`okhttp3.JavaNetAuthenticator#authenticate`.\n~Oh, it\'s even worse, even with
+a space in the header it does not work, as the code depends on a realm being
+specified, while https://developer.mozilla.org/en-
+US/docs/Web/HTTP/Headers/Proxy-Authenticate show that it is optional.~ (For
+`Basic` auth `realm` indeed is required)\r\n\r\nAnd
+https://tools.ietf.org/html/rfc7235#section-4.1 defines that `User agents are
+advised to take special care in parsing the field value, as it might contain
+more than one challenge, and each challenge can contain a comma-separated list
+of authentication parameters. Furthermore, the header field itself can occur
+multiple times.` and the mentioned method cares about multiple headers, but
+not about mutliple challenges in one header.It also does not work if the realm
+is not quoted. The used regex matches it, but the value is in group 4 if there
+are no quotes and it is always group 3 used, both should be
+considered.\r\n\r\nBesides that it should probably be group 2 and 3, not 3 and
+4.\r\nIn the regex there is `:?` used twice which is an optional colon, while
+I think this should be `?:` which would then be a non-capturing group which
+makes more sense here.\r\n\r\nYou chould also use named groups, so that the
+numbering cannot get confused by newly added parens. The current regex is\r\n`
++([^ "=]*)=(:?"([^"]*)"|([^ "=]*)) *(:?,|$)`\r\nor with the optional colons
+fixed\r\n` +([^ "=]*)=(?:"([^"]*)"|([^ "=]*)) *(?:,|$)`\r\nbut instead you
+could use\r\n` +(?[^ "=]*)=(?:"(?[^"]*)"|(?[^ "=]*)) *(?:,|$)`\r\nsnd then you
+can use `matcher.group("key")`, `matcher.group("value1")` and
+`matcher.group("value2")`.And also the list of authentication parameters is
+defined to be comma-separated, not white-space separated or comma-whitespace-
+separated, but your current regex only matches parameters that follow spaces,
+that is also not correct.Also spaces around the "=" in the authentication
+parameter are not considered correctly.\r\nHere you can find ABNF description
+of the format of the headers:
+https://tools.ietf.org/html/rfc7235#appendix-C\r\n\r\nHere a small selection
+of challenges that should all work, but only the first one is working as
+exected:\r\n```\r\n , , Basic realm=foo\r\nBasic realm=foo\r\nBasic
+realm="foo"\r\nBasic realm = "foo"\r\nDigest,Basic realm="foo"\r\nDigest,Basic
+,,realm="foo"\r\nDigest, Basic realm="foo"\r\nDigest, Basic
+,,realm="foo"\r\nDigest,,,, Basic ,,realm="foo"\r\nDigest,,,, Basic
+,,,realm="f\\\"o\\\o"\r\n```Yikes. Wanna send a pull request?I\'m currently
+trying to write a parser that handles the spec as work around, maybe. If I\'m
+successful I maybe also make a PR out of it.Please do! Ideally you
+don\xe2\x80\x99t need hundreds of lines of code to get something
+satisfactory.76 lines of code and 18 `private static final` fields, so
+actually not even one hundred. :-D\r\nAnd it works fully compliant to RFC 7235
+for any auth scheme.\r\nWell, for the PR I probably have to rewrite it a tiny
+bit to become 1.7-compatible as it is currently written in 1.8 and throws away
+anything non-`Basic`.\r\nBut as hundred**s** would imply at least 200, I think
+I\'ll stay below that. :-DGreat!', '4238\nroute parameter of authenticate can
+be null but is not marked as @Nullable\nHere is a test proving that `route`
+can be `null` (I\'m using 3.11.0):\r\n\r\n```java\r\nimport
+org.junit.Test;\r\n\r\nimport okhttp3.Authenticator;\r\nimport
+okhttp3.OkHttpClient;\r\nimport okhttp3.Request;\r\nimport
+okhttp3.Response;\r\nimport okhttp3.Route;\r\n\r\npublic class
+AuthenticatorTest {\r\n @Test\r\n public void routeCanBeNull() throws
+Exception {\r\n Authenticator authenticator = new Authenticator() {\r\n
+@Override\r\n public Request authenticate(Route route, Response response)
+{\r\n if (route == null) {\r\n throw new NullPointerException("route is
+null");\r\n }\r\n return null;\r\n }\r\n };\r\n\r\n OkHttpClient client = new
+OkHttpClient.Builder()\r\n .authenticator(authenticator)\r\n .build();\r\n\r\n
+Request request = new Request.Builder()\r\n
+.url("https://httpbin.org/status/401")\r\n .build();\r\n\r\n
+client.newCall(request).execute(); // route is not null\r\n
+client.newCall(request).execute(); // route is null\r\n
+}\r\n}\r\n```\r\n\r\nI\'m not sure if it is a correct behaviour. If it is
+actually correct I\'ll make a PR adding `@Nullable` to `route`.\nYep, please
+submit a PR. I\'ve also hit this using another auth library, in my case also
+because Interceptor.Chain.connection is null, so an interceptor calling a
+Authenticator will never have a route.Related to
+https://github.com/square/okhttp/issues/3809I think we _could_ get a route if
+our internal APIs were a little better organized. The reason the HTTP bin one
+doesn\xe2\x80\x99t have a route is because the response body is empty and
+we\xe2\x80\x99ve gotten rid of things by the time we\xe2\x80\x99re ready to
+authenticate.\r\n\r\nMy preference on this is to fix
+RetryAndFollowUpInterceptor, possibly with support from StreamAllocation, so
+that we have a route when we call into the Authenticator. That feels like a
+better fix than changing the type to be nullable.It still makes it awkward if
+you want to reuse an Authenticator from an Interceptor for premptive auth.
+Making route non @Nullable means it always need to be a network interceptor.
+So I still think it\'s worth making route @Nullable Good point!It\'s less of a
+good point, because you can\'t use it prior to sending the first request, but
+you can use it when implementing a app level interceptor. I hit that this week
+with a JIRA server returning a 400 when an anonymous query request fails, and
+I\'d like to reuse the authenticator. @yschimke Is this still open? Can I work
+on this?Sorry, the PR closed this out. Let me look for good PR candidates.Is
+there already an estimate when this will be included in a new release?\r\nWe
+get this very reliable every second request \xf0\x9f\x98\x89.@hardysim in
+Kotlin you can just replace `route: Route` with `route: Route?`.@technoir42
+hmm, it seems to actually not work \xf0\x9f\x98\x9e\r\n\r\nMy implementation
+of `Authenticator` now has set `route: Route?` but I still get the
+error.\r\n\r\n```kotlin\r\noverride fun authenticate(route: Route?, response:
+Response): Request? { [...] }\r\n```\r\n\r\n---\r\n\r\nI\'m not sure why
+because even if the interface does not mark the parameter as nullable, my
+implementation does and therefor this error should not exist?!\r\n\r\nLogcat
+continues to show the same error with my class at the top of the stack (which
+I just set to `Route?`).\r\n\r\n> java.lang.IllegalArgumentException:
+Parameter specified as non-null is null: method kotlin.e.b.i.b, parameter
+route\r\nat [my-class].authenticate(Unknown Source:2)@hardysim you sure
+you\'ve updated all `Authenticator` implementations?\r\nCompare the decompiled
+bytecode with `Route` and `Route?`. In the latter case it should
+contain:\r\n```java\r\n@Nullable\r\npublic Request authenticate(@Nullable
+Route route, @NotNull Response response) {\r\n
+Intrinsics.checkParameterIsNotNull(response, "response");\r\n```Yep, my fault.
+It\'s in a library my project uses and I messed up the release / import of the
+new version.\r\n\r\nTL;DR:\r\nit works by setting `Route?`',
+'4232\nNullPointerException if default ProxySelector is null\nHere the
+test:\r\n\r\n```java\r\nprivate final MockWebServer server = new
+MockWebServer();\r\n@Before public void setUp() throws Exception {
+server.start(); }\r\n@After public void tearDown() throws Exception {
+server.shutdown(); }\r\n@Test public void nullDefaultProxySelector() throws
+Exception {\r\n server.enqueue(new MockResponse().setBody("abc"));\r\n\r\n
+ProxySelector.setDefault(null);\r\n\r\n OkHttpClient client =
+defaultClient().newBuilder()\r\n .build();\r\n\r\n Request request = new
+Request.Builder().url(server.url("/")).build();\r\n Response response =
+client.newCall(request).execute();\r\n assertEquals("abc",
+response.body().string());\r\n}\r\n```\r\n\r\nAnd the
+result:\r\n\r\n```java\r\nAug 25, 2018 4:36:39 PM
+okhttp3.mockwebserver.MockWebServer$2 execute\r\nINFORMATION:
+MockWebServer[57774] starting to accept connections\r\nAug 25, 2018 4:36:39 PM
+okhttp3.mockwebserver.MockWebServer$2 acceptConnections\r\nINFORMATION:
+MockWebServer[57774] done accepting connections: socket closed\r\nAug 25, 2018
+4:36:39 PM okhttp3.SocksProxy$1 execute\r\nINFORMATION: SocksProxy 57775 done
+accepting connections: socket closed\r\n\r\njava.lang.NullPointerException:
+proxySelector == null\r\n\r\n\tat okhttp3.Address.(Address.java:79)\r\n\tat
+okhttp3.internal.http.RetryAndFollowUpInterceptor.createAddress(RetryAndFollowUpInterceptor.java:212)\r\n\tat
+okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:112)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n\tat
+okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:200)\r\n\tat
+okhttp3.RealCall.execute(RealCall.java:77)\r\n\tat
+okhttp3.SocksProxyTest.nullDefaultProxySelector(SocksProxyTest.java:101)\r\n\tat
+sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\r\n\tat
+sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\r\n\tat
+sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\r\n\tat
+java.lang.reflect.Method.invoke(Method.java:498)\r\n\tat
+org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)\r\n\tat
+org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\r\n\tat
+org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)\r\n\tat
+org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\r\n\tat
+org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)\r\n\tat
+org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)\r\n\tat
+org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)\r\n\tat
+org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)\r\n\tat
+org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)\r\n\tat
+org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)\r\n\tat
+org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)\r\n\tat
+org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)\r\n\tat
+org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)\r\n\tat
+org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)\r\n\tat
+org.junit.runners.ParentRunner.run(ParentRunner.java:363)\r\n\tat
+org.junit.runner.JUnitCore.run(JUnitCore.java:137)\r\n\tat
+com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:68)\r\n\tat
+com.intellij.rt.execution.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:47)\r\n\tat
+com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:242)\r\n\tat
+com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:70)\r\n```\r\n\r\nTo
+quote
+https://docs.oracle.com/javase/8/docs/api/java/net/ProxySelector.html#setDefault-
+java.net.ProxySelector-: `ps - The HTTP proxy selector, or null to unset the
+proxy selector.`, so `null` is an acceptable value that OkHttp should be able
+to cope with.\nYep, you\xe2\x80\x99re right. We need a NullProxySelector or
+something.\r\n\r\nWant to send a PR?There you have it :-)',
+'4225\nMockWebServer recordedRequest.getRequestUrl() is null on ipv6 host\n1)
+On my linux build machine localhost is resolved to ipv6 address
+(`0:0:0:0:0:0:0:1`)\r\n2)
+`okhttp3.mockwebserver.RecordedRequest#RecordedRequest` does not handle ipv6
+properly because it uses `HttpUrl.parse(String.format("%s://%s:%s%s", scheme,
+hostname, port, path));` - brackets are missing for ipv6. Easy fix is
+`HttpUrl.Builder` usage.\r\n3) Unfortunately I cannot create a reliable test
+class, but I use `server.start(Inet4Address.getLocalHost(), 0);` as a
+workaround.\nThat was pretty sloppy! Can fix.', "4135\nInfinite retry on
+FileNotFoundException in okhttp 3.6.0\nI am getting infinte retries in okhttp
+on FileNotFoundException.\r\n\r\nTrace:\r\n1. In CallServerInterceptor's
+intercept(Chain chain), `request.body().writeTo(bufferedRequestBody);` is
+throwing FileNotFoundException.\r\n2. Proceeding with interceptors in the
+chain, the above FileNotFoundException gets caught in
+RetryAndFollowUpInterceptor.\r\n3. In RetryAndFollowUpInterceptor's
+intercept(Chain chain), `recover(e, requestSendStarted, request)` gives true.
+So the condition `if (!recover(e, requestSendStarted, request))` fails and the
+while loop continues forever.\r\n\r\nThis is causing infinite number of
+retries in case of FileNotFoundException.\nAppears fixed in 3.11. Please
+provide a failing test case if you think it's still an issue with latest
+releases.", '4095\nHTTP Logging interceptor breaks EventListener\nAs reported
+here https://github.com/square/okhttp/issues/4094\nThe ordering of event with
+HttpLoggingInterceptor\r\n\r\n```\r\nstreamFinished: released
+false\r\ndeallocate: released false\r\ndeallocate: released true\r\nrelease
+releasing true\r\n```\r\n\r\nWithout\r\n\r\n```\r\ndeallocate: released
+true\r\nrelease releasing false\r\nstreamFinished: released
+true\r\ndeallocate: released false\r\n```', '4094\nEvent "callEnd" not called
+if an Interceptor is added\nGiven the "Events" isn\'t finalized on version
+3.10.0, I hesitated to report that issue as a bug.\r\n\r\nIssue : Event
+"callEnd" isn\'t called if an Interceptor (Network or not) is
+added.\r\n\r\nSteps to reproduce\r\n- Instantiate an HttpClient with an
+EventListenerFactory (logging all events)\r\n- Perform a dummy but successful
+GET request\r\n- Check that all events are triggered, especially
+"callEnd"\r\n\r\n- Instantiate an HttpClient with an EventListenerFactory
+(logging all events) & an interceptor such as HttpLoggingInterceptor\r\n-
+Perform a dummy but successful GET request\r\n- Check that all events except
+"callEnd" are triggered (not verified for callFailed)\r\n\nIt\'s not any
+interceptor, seems like something that HttpLoggingInterceptor is doingSo you
+think the HttpLoggingInterceptor doesn\'t release an element that prevents the
+call to end (so the event callEnd to be triggered) ?\r\n\r\nThat\'s worth a
+check...I haven\'t dug in, just confirmed the bug with a test we can commit
+with a fix.No problem ;) I went a bit further on my side.\r\n\r\nIf I disable
+the response logging, "callEnd" event is well triggered. It looks to be linked
+with the request.body() called within the intercept. I hope it helps youI
+think I got it.\r\n\r\nHttpLoggingInterceptor : line 241 :
+source.request(Long.MAX_VALUE) is the guilty point.\r\nI don\'t get exactly
+the purpose of this operation...@dechanaud I think it tries to read until the
+end of the stream, so the clone is a full copy.Indeed. Without this call,
+"chunked" response aren\'t logged as we didn\'t get the end of the streamI
+just verified and it works fine with 3.11.0. Thanks guys ;)', "4085\nAnalytics
+events are not emited when a response payload has no payload\nI have
+identified an issue in the code of the event listener, I described the faulty
+behavior in
+this\r\nhttps://github.com/square/okhttp/issues/270#issuecomment-371464079,
+since it is not related to the API introduced via #270, I'm creating a new
+issue as suggested by this comment
+https://github.com/square/okhttp/issues/270#issuecomment-397993363\r\n\r\n\r\nHere's
+a verbatim of the mentioned comment :\r\n\r\n> I was playing around this class
+to expose some metrics for prometheus, and I noticed that `callEnd` event was
+not sent for `DELETE` calls. In subsequent tests I found out this problem is
+occurring only when the response has no body e.g. for 204 statuses. I looked
+at the code and found out some commented tests, like this one \r\n> \r\n>
+https://github.com/square/okhttp/blob/d0418379a7c7a0c92781e4f5f75260d28a0b0145/okhttp-
+tests/src/test/java/okhttp3/EventListenerTest.java#L881-L899\r\n> \r\n> I'm
+sure this is gonna be fixed in the next release(s) of okhttp. As a workaround,
+I think my only option at this is to place the metrics reporting in the
+`connectionReleased` event at this time. I don't think there's anything else,
+isn't it ?\r\n> \r\n> _In my case I know there won't be multiple
+connections_\r\n\r\n\nCan fix.This may have been fixed in
+https://github.com/square/okhttp/commit/30e72340e0c5a74feb347a79621b93d640ded576.",
+'4043\nMust-revalidate does not revalidate\nI have an i ssue where OkHttp does
+not revalidate requests. (3.10.0)\r\nIf the cache-control says "must-
+revalidate", the request should be revalidated.\r\n\r\nIn that case, the
+`CacheStrategy` should return a not null network
+request:\r\n\r\n```kotlin\r\n@Test\r\nfun shouldRevalidate() {\r\n val
+nowMillis = 1527845183942 // =Fri Jun 01 2018 09:26:23\r\n val request =
+Request.Builder()\r\n .method("GET", null)\r\n
+.url("https://my.url.com/v1/item/d002fbef-7061-4d92-9958-7b128cf85855")\r\n
+.build()\r\n\r\n val handshake = Handshake.get(\r\n TlsVersion.TLS_1_2,\r\n
+CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, emptyList(),
+emptyList()\r\n )\r\n val cacheCandidate = Response.Builder()\r\n
+.code(200)\r\n .addHeader("date", "Fri, 01 Jun 2018 07:45:40 GMT")\r\n
+.addHeader("cache-control", "private, must-revalidate")\r\n .addHeader("last-
+modified", "Thu, 31 May 2018 08:04:53 GMT")\r\n
+.sentRequestAtMillis(1527839142145) //=Fri Jun 01 2018 07:45:42\r\n
+.receivedResponseAtMillis(1527839142295) //=Fri Jun 01 2018 07:45:42 \r\n
+.request(request)\r\n .protocol(Protocol.HTTP_1_1)\r\n
+.handshake(handshake)\r\n .message("")\r\n .build()\r\n\r\n val cacheStrategy
+= CacheStrategy.Factory(nowMillis, request, cacheCandidate)\r\n .get()\r\n
+assertThat(cacheStrategy.networkRequest).isNotNull()\r\n}\r\n```\nOne small
+note: `OkHttpClient.Builder().build()` without replacing an existing client
+isn\'t doing anything.Could you build the test case with the `OkHttpClient`
+and `MockWebServer`?? Here\'s an example:
+https://github.com/square/okhttp/blob/master/okhttp-
+tests/src/test/java/okhttp3/CacheTest.java#L1204Not sure this is the
+equivalent:\r\n\r\n```kotlin\r\nclass Test {\r\n\r\n @JvmField\r\n @Rule\r\n
+val server = MockWebServer()\r\n\r\n private val cache = Cache(File("."),
+Long.MAX_VALUE)\r\n private val client = OkHttpClient.Builder()\r\n
+.cache(cache)\r\n .build()\r\n\r\n @Test\r\n fun test() {\r\n
+server.enqueue(\r\n MockResponse()\r\n .setBody("A")\r\n .addHeader("date",
+formatDate(400, TimeUnit.MILLISECONDS))\r\n .addHeader("cache-control",
+"private, must-revalidate")\r\n .addHeader("last-modified", formatDate(-1,
+TimeUnit.DAYS))\r\n )\r\n server.enqueue(MockResponse().setBody("B"))\r\n\r\n
+assertEquals("A", body(server.url("/")))\r\n Thread.sleep(1000)\r\n
+assertEquals("B", body(server.url("/")))\r\n }\r\n\r\n private fun body(url:
+HttpUrl): String? {\r\n val request = Request.Builder()\r\n .url(url)\r\n
+.build()\r\n return client.newCall(request)\r\n .execute()\r\n .body()\r\n
+?.string()\r\n }\r\n\r\n private fun formatDate(millisDiff: Long, timeUnit:
+TimeUnit): String {\r\n val time = System.currentTimeMillis() +
+timeUnit.toMillis(millisDiff)\r\n val date = Date(time)\r\n return
+HttpDate.format(date)\r\n }\r\n}\r\n```\r\n\r\nI think the problem here lies
+in the fact that the server time is slightly more in the future than the
+client time. \r\n\r\nNotice the 1000ms sleep time - we are after the `date`
+sent from the server.Btw it also fails without the sleep. I think if `must-
+revalidate` is present the revalidation must be made in every case.HttpDate is
+to second precision so millisecond offsets seem problematic especially with
+real times where millis may be > 600 and change results.\r\n\r\nBut I suspect
+you are right, care to implement a PR?For an implementation: Would a shortcut
+that returns a `null` cacheResponse in `getCandidate` if the `must-revalidate`
+is present be sufficient?My understanding is that this flag means when cached
+and not stale, normal caching rules can be used. When cached but stale,
+clients and the cache can\'t override the stale checks and use the cache
+results. is that your understanding?@PaulWoitaschek Unfortunately I think
+there\xe2\x80\x99s ambiguity in what `must-revalidate` header means. My
+reading of [the spec](https://tools.ietf.org/html/rfc7234) suggests that
+`must-revalidate` is short for _must-revalidate if the response is stale_ and
+not _must revalidate unconditionally_. By experiment Firefox and Safari agree
+with this interpretation, but Chrome does not.\r\n\r\n```\r\n5.2.2.1. must-
+revalidate\r\n\r\n The "must-revalidate" response directive indicates that
+once it has\r\n become stale, a cache MUST NOT use the response to satisfy
+subsequent\r\n requests without successful validation on the origin
+server.\r\n\r\n The must-revalidate directive is necessary to support
+reliable\r\n operation for certain protocol features. In all circumstances
+a\r\n cache MUST obey the must-revalidate directive; in particular, if a\r\n
+cache cannot reach the origin server for any reason, it MUST generate\r\n a
+504 (Gateway Timeout) response.\r\n\r\n The must-revalidate directive ought to
+be used by servers if and only\r\n if failure to validate a request on the
+representation could result\r\n in incorrect operation, such as a silently
+unexecuted financial\r\n transaction.\r\n```\r\n\r\nThis gist has a sample
+server that you can use to test out your own
+browsers.\r\nhttps://gist.github.com/swankjesse/c04a0181da527ddb70b4dee49b804d13\r\n\r\nI
+think if your server is configured to use `must-revalidate` when stale
+responses are unacceptable, that server is misconfigured and at least 2 major
+browsers will not do what you want. Instead you want a different header: `max-
+age=0`. This one does what I think you intend.Okay thank you for the helpful
+response. \r\n\r\nSo you are saying no action is required? \r\nWhy is this
+marked for the 3.11 milestone?Yup. I wanted to investigate this for 3.11 cause
+I\'d expected us to need a code change.', "4025\nWhen the request is cancelled
+frequently, it will cause SocketTimeoutException\nversion 3.10.0\r\n\r\ndemo:
+https://github.com/Caij/OkHttpDownDemo\nHopefully this is fixed by
+https://github.com/square/okhttp/pull/4052Thanks . When is it released?I'm not
+sure at the moment, can you test with a snapshot build?
+https://oss.jfrog.org/artifactory/libs-
+snapshot/com/squareup/okhttp3/okhttp/3.11.0-SNAPSHOT/ I test with a snapshot
+build, The problem has been solved.", '4012\nWebsocket closes connection with
+EOF exception on "Switching Protocols" code 101\nOKHttp3 version 3.10. Android
+application\r\nAfter a successful connection and a short period of inactivity,
+the OKHttp3 websocket throws a EOFException in response to a code 101,
+"Switching Protocols" response. This then disconnects the socket and our
+application is forced to re-connect again.\r\nIs there anyway to control this
+so the socket does not close ? \r\nIs this expected behavior?\r\nOur iOS and
+server side tests against the same server did not show this behaivor and
+remained connected until the applications disconnected them
+explicitely.\r\n\r\nRealWebsocket class:\r\n\r\npublic void
+connect(OkHttpClient client) { ...\r\n\r\n try {\r\n
+RealWebSocket.this.listener.onOpen(RealWebSocket.this, response);\r\n String
+name = "OkHttp WebSocket " + request.url().redact();\r\n
+RealWebSocket.this.initReaderAndWriter(name, streams);\r\n
+streamAllocation.connection().socket().setSoTimeout(0);\r\n
+RealWebSocket.this.loopReader();\r\n } catch (Exception var6) {\r\n
+RealWebSocket.this.failWebSocket(var6, (Response)null);\r\n }\r\n(Response
+return code 101)\r\n\nCould you provide an executable test case? Nothing
+actionable here.Issue Resolved:\r\nApologies, I should have specified that I
+am also using the wonderful STOMP client on top of the OKHttp3Client
+websockets:\r\nhttps://github.com/NaikSoftware/StompProtocolAndroid by
+Nickolay Savchenko (Nickolay Savchenko\r\nNaikSoftware). This library does an
+exceptional job of implementing the STOMP protocol integrated with OKHttp3
+websockets. \r\nThis is where I fell short by using the wrong StompClient.over
+method to provide my url, which will create a default websocket instance that
+has a default socket read timeout (30 seconds ?). The solution for me was to
+use the alternative StompClient.over method, allowing for a reference to an
+application instance of the OKHttp3Client. This allows the application set
+it\'s desired timeouts beyond any defaults.\r\n\r\nThank you to all of you who
+did try to assist me.', '4008\nThe header of response has Chinese , and crash
+by IllegalArgumentException\nI\'m download file , but the header of response
+has Chinese, and crash by IllegalArgumentException;\r\nThe detail like
+this:\r\n05-16 16:42:15.406 E/AndroidRuntime( 861): FATAL EXCEPTION: OkHttp
+Dispatcher\r\n\r\n05-16 16:42:15.406 E/AndroidRuntime( 861): Process:
+com.linkin.launchery, PID: 861\r\n\r\n05-16 16:42:15.406 E/AndroidRuntime(
+861): java.lang.IllegalArgumentException: Unexpected char 0x6c99 at 22 in
+header value: attachment;
+filename="\xe6\xb2\x99\xe5\x8f\x91\xe7\xae\xa1\xe5\xae\xb6_v4.8.5_xunma01.apk"\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.Headers$Builder.checkNameAndValue(Headers.java:295)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.Headers$Builder.add(Headers.java:245)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.internal.http.Http2xStream.readHttp2HeadersList(Http2xStream.java:264)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.internal.http.Http2xStream.readResponseHeaders(Http2xStream.java:150)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:737)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.internal.http.HttpEngine.access$200(HttpEngine.java:87)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.internal.http.HttpEngine$NetworkInterceptorChain.proceed(HttpEngine.java:722)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:576)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.Call.getResponse(Call.java:287)\r\n\r\n05-16 16:42:15.406
+E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.Call$ApplicationInterceptorChain.proceed(Call.java:243)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.Call.getResponseWithInterceptorChain(Call.java:205)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.Call.access$100(Call.java:35)\r\n\r\n05-16 16:42:15.406
+E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.Call$AsyncCall.execute(Call.java:171)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+com.squareup.okhttp.internal.NamedRunnable.run(NamedRunnable.java:33)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1112)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:587)\r\n\r\n05-16
+16:42:15.406 E/AndroidRuntime( 861): \tat
+java.lang.Thread.run(Thread.java:818)\r\n\r\nHow can I handle ?\r\n\nThis is a
+bug in OkHttp. We should never crash on unexpected data from the server.+1
+same here....The same problem occurs if the request header contains Chinese or
+German characters like \'\xc3\xa4\'This has been probably fixed by
+3ec5227d2693262db5467abcc36641a405808166.\r\n\r\n`Http2xStream.readHttp2HeadersList()`
+was changed to call `Headers.Builder.addLenient()` and not
+`Headers.Builder.add()`, as seen in the stack trace.', '4006\nMockWebServer
+throttleBody delay does not work as expected\nI\'m having trouble figuring out
+how to use the `throttleBody` function of the MockWebServer, specifically the
+delay feature. I\'m not sure if im using the function correctly, but everytime
+i try an run this test, the assertion fails:\r\n```\r\n @Test fun
+validateMockServer() {\r\n val client = OkHttpClient.Builder().build()\r\n val
+server = MockWebServer()\r\n server.start()\r\n val baseUrl =
+server.url("")\r\n\r\n val delayMS = 200L\r\n val byteSpeed =
+1_000_000_000L\r\n\r\n val originalString = "a".repeat(400_000)\r\n\r\n
+server.enqueue(MockResponse()\r\n .setHeadersDelay(delayMS,
+TimeUnit.MILLISECONDS)\r\n .throttleBody(byteSpeed, delayMS,
+TimeUnit.MILLISECONDS)\r\n .setBody(originalString))\r\n\r\n val start =
+System.currentTimeMillis()\r\n val call =
+client.newCall(Request.Builder().get().url(baseUrl).build())\r\n val body =
+call.execute().body()!!\r\n val string = body.string()\r\n val time =
+System.currentTimeMillis() - start\r\n server.shutdown()\r\n assert(time >
+delayMS)\r\n }\r\n```\r\nam i doing something wrong?\r\nThe delayMS should
+never be larger than the time it took to execute the request\nGood catch - The
+fact that your request executes faster than setHeadersDelay, looks like a bug
+in writeHttpResponse, it calls getBodyDelay twice.\r\n\r\nThe fact that
+writing the body isn\'t delayed is because there is no final wait after
+sending the final batch of body bytes. So it sends the 400k bytes immediately,
+and doesn\'t have a loop that would cause it to delay 200ms.\r\n\r\n /**\r\n *
+Throttles the request reader and response writer to sleep for the given period
+after each\r\n * series of {@code bytesPerPeriod} bytes are transferred. Use
+this to simulate network behavior.\r\n */\r\n public MockResponse
+throttleBody(long bytesPerPeriod, long period, TimeUnit unit) {Fixed!',
+'3973\nUnexpected TLS version: NONE\nThese days so many crashes happened in
+our app. About 200+ Android devices has happened. And it\'s always happend on
+Andorid 8.1.0. The OkHttp\'s version I used is 3.10.0.\r\n\r\nThis is the
+crash\'s stack information\r\n```\r\n0 java.lang.IllegalArgumentException:
+Unexpected TLS version:
+NONE\r\n1\xc2\xa0okhttp3.TlsVersion.forJavaName(TlsVersion.java:46)\r\n2\xc2\xa0okhttp3.Handshake.get(Handshake.java:55)\r\n3\xc2\xa0okhttp3.internal.connection.RealConnection.connectTls(RealConnection.java:242)\r\n4\xc2\xa0okhttp3.internal.connection.RealConnection.establishProtocol(RealConnection.java:198)\r\n5\xc2\xa0okhttp3.internal.connection.RealConnection.buildConnection(RealConnection.java:174)\r\n6\xc2\xa0okhttp3.internal.connection.RealConnection.connect(RealConnection.java:114)\r\n7\xc2\xa0okhttp3.internal.connection.StreamAllocation.findConnection(StreamAllocation.java:193)\r\n8\xc2\xa0okhttp3.internal.connection.StreamAllocation.findHealthyConnection(StreamAllocation.java:129)\r\n9\xc2\xa0okhttp3.internal.connection.StreamAllocation.newStream(StreamAllocation.java:98)\r\n10\xc2\xa0okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.java:42)\r\n11\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n12\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n13\xc2\xa0okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.java:109)\r\n14\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n15\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n16\xc2\xa0okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.java:93)\r\n17\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n18\xc2\xa0okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:124)\r\n19\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n20\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n21\xc2\xa0com.weidian.lib.imagehunter.glidehunter.okhttp3.OkHttpUrlLoader$Factory$1.intercept(OkHttpUrlLoader.java:63)\r\n22\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n23\xc2\xa0okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n24\xc2\xa0okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:170)\r\n25\xc2\xa0okhttp3.RealCall.access$100(RealCall.java:33)\r\n26\xc2\xa0okhttp3.RealCall$AsyncCall.execute(RealCall.java:120)\r\n27\xc2\xa0okhttp3.internal.NamedRunnable.run(NamedRunnable.java:32)\r\n28\xc2\xa0java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1162)\r\n29\xc2\xa0java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:636)\r\n30\xc2\xa0java.lang.Thread.run(Thread.java:764)\r\n```\r\n\r\nI
+found that OkHttp will not callback when java.lang.IllegalArgumentException
+happend.\r\nThis exception is thrown by **TlsVersion.forJavaName**
+method\r\n\r\n```\r\npublic static TlsVersion forJavaName(String javaName)
+{\r\n switch (javaName) {\r\n case "TLSv1.3":\r\n return TLS_1_3;\r\n case
+"TLSv1.2":\r\n return TLS_1_2;\r\n case "TLSv1.1":\r\n return TLS_1_1;\r\n
+case "TLSv1":\r\n return TLS_1_0;\r\n case "SSLv3":\r\n return SSL_3_0;\r\n
+}\r\n throw new IllegalArgumentException("Unexpected TLS version: " +
+javaName);\r\n}\r\n```\r\n\r\nWhen invoke call\'s enqueue method to get result
+async, if this exception happened, it will not callback onFailure method. And
+also I can\'t catch it.\r\n\r\n```\r\nclient.newCall(request).enqueue(new
+Callback() {\r\n @Override\r\n public void onFailure(Call call, IOException e)
+{\r\n\r\n }\r\n\r\n @Override\r\n public void onResponse(Call call, Response
+response) throws IOException {\r\n\r\n }\r\n});\r\n```\r\n\r\n```\r\nfinal
+class AsyncCall extends NamedRunnable {\r\n private final Callback
+responseCallback;\r\n\r\n @Override protected void execute() {\r\n boolean
+signalledCallback = false;\r\n try {\r\n Response response =
+getResponseWithInterceptorChain();\r\n if
+(retryAndFollowUpInterceptor.isCanceled()) {\r\n signalledCallback = true;\r\n
+responseCallback.onFailure(RealCall.this, new IOException("Canceled"));\r\n }
+else {\r\n signalledCallback = true;\r\n
+responseCallback.onResponse(RealCall.this, response);\r\n }\r\n } catch
+(IOException e) {\r\n //only IOException will catch and callback onFailure
+method\r\n if (signalledCallback) {\r\n // Do not signal the callback
+twice!\r\n Platform.get().log(INFO, "Callback failure for " +
+toLoggableString(), e);\r\n } else {\r\n
+responseCallback.onFailure(RealCall.this, e);\r\n }\r\n } finally {\r\n
+client.dispatcher().finished(this);\r\n }\r\n }\r\n}\r\n```\r\n\r\nIs there
+any solution? Thank you.\nAny update?I don\'t think this is happening with
+3.10.0, this was fixed quite a while ago. Can you double check and re-open if
+it is in fact with 3.10.0. The line numbers don\'t
+match.\r\n\r\nhttps://github.com/square/okhttp/pull/3721@yschimke Yes, it
+really happened with 3.10.0. Unexpected TLS version is not IOException, if
+execute async, can\'t catch it and crash will happenedCan you provide a new
+stacktrace then, I think the current one you provided is from before 3.10.0,
+based on line numbers\r\n\r\ne.g. line 198
+\r\n\r\nhttps://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/internal/connection/RealConnection.java#L198@yschimke
+, It only happened when call enqueue method because I can\'t catch Exception
+except IOException\r\n\r\n```\r\njava.lang.IllegalArgumentException:
+Unexpected TLS version: NONE\r\nat
+okhttp3.TlsVersion.forJavaName(TlsVersion.java:53)\r\nat
+okhttp3.Handshake.get(Handshake.java:56)\r\nat
+okhttp3.internal.connection.RealConnection.connectTls(RealConnection.java:319)\r\nat
+okhttp3.internal.connection.RealConnection.establishProtocol(RealConnection.java:277)\r\nat
+okhttp3.internal.connection.RealConnection.connect(RealConnection.java:162)\r\nat
+okhttp3.internal.connection.StreamAllocation.findConnection(StreamAllocation.java:257)\r\nat
+okhttp3.internal.connection.StreamAllocation.findHealthyConnection(StreamAllocation.java:135)\r\nat
+okhttp3.internal.connection.StreamAllocation.newStream(StreamAllocation.java:114)\r\nat
+okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.java:42)\r\nat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\nat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\nat
+okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.java:93)\r\nat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\nat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\nat
+okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.java:93)\r\nat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\nat
+okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:126)\r\nat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\nat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\nat
+okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:200)\r\nat
+okhttp3.RealCall$AsyncCall.execute(RealCall.java:147)\r\nat
+okhttp3.internal.NamedRunnable.run(NamedRunnable.java:32)\r\nat
+java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\r\nat
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\r\nat
+java.lang.Thread.run(Thread.java:745)\r\n```Your original stack trace looks
+like it is from 3.4.0
+\r\n\r\n3.4.0\r\nhttps://github.com/square/okhttp/blob/parent-3.4.0/okhttp/src/main/java/okhttp3/internal/connection/RealConnection.java#L242\r\n\r\nThis
+new stacktrace is happening after the fix
+(https://github.com/square/okhttp/pull/3721/files), but also seems to be a
+build from okhttp master slightly after
+3.10.0.\r\n\r\n3.10.0:\r\nhttps://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/internal/connection/RealConnection.java#L319\r\n\r\n9a6f88dc34cb68d341ec1a7e4c79546fa1c18c96:\r\nhttps://github.com/square/okhttp/blob/9a6f88dc34cb68d341ec1a7e4c79546fa1c18c96/okhttp/src/main/java/okhttp3/internal/connection/RealConnection.java#L319
+\r\n\r\nSo it looks like two subsequent calls to
+sslSocketSession.getProtocol() are returning something normal, and then "NONE"
+for the second call.@yschimke yes , it\'s built after 3.10.0 on master
+branch@lizhangqu can you build against the PR branch from yesterday, see if it
+fixes things?\r\n\r\nAnd thanks for persevering on this, seems like it can
+still happen, or rather multiple calls to getProtocol can return different
+results.I had the same problem. The probability of this problem crashing is
+not very high, but it does exist in some devices.\r\n\r\n> String
+tlsVersionString = session.getProtocol();\r\n> if (tlsVersionString == null)
+throw new IllegalStateException("tlsVersion == null");\r\n> TlsVersion
+tlsVersion = TlsVersion.forJavaName(tlsVersionString);\r\n\r\ntlsVersionString
+in other devices get "NONE".\r\n@yschimke maybe it will fix one scene which
+can trigger the crash, if the stack not call **public static Handshake
+get(SSLSession session)**, it will crash too. Maybe this will work
+fine.\r\n\r\n```\r\n public static TlsVersion forJavaName(String javaName)
+{\r\n switch (javaName) {\r\n case "TLSv1.3":\r\n return TLS_1_3;\r\n case
+"TLSv1.2":\r\n return TLS_1_2;\r\n case "TLSv1.1":\r\n return TLS_1_1;\r\n
+case "TLSv1":\r\n return TLS_1_0;\r\n case "SSLv3":\r\n return SSL_3_0;\r\n
+}\r\n throw new IOException("Unexpected TLS version: " + javaName);\r\n
+}\r\n\r\n```\r\n\r\nAll tlsVersion will call TlsVersion.forJavaName and we can
+check it in this method. Throwing IOException instead of
+IllegalArgumentException\r\n\r\nThis is the crash which com from my monitor
+data. All happened on Android
+8.1.0\r\n![](https://si.geilicdn.com/hz_img_356900000163edb800310a028841_1213_853_unadjust.png)@yschimke
+\r\n\r\nThe source code:\r\n> public static TlsVersion forJavaName(String
+javaName) {\r\n switch (javaName) {\r\n case "TLSv1.3":\r\n return
+TLS_1_3;\r\n case "TLSv1.2":\r\n return TLS_1_2;\r\n case "TLSv1.1":\r\n
+return TLS_1_1;\r\n case "TLSv1":\r\n return TLS_1_0;\r\n case "SSLv3":\r\n
+return SSL_3_0;\r\n }\r\n throw new IllegalArgumentException("Unexpected TLS
+version: " + javaName);\r\n }\r\n\r\nThe modified\xef\xbc\x9a\r\n\r\n> public
+static TlsVersion forJavaName(String javaName) {\r\n switch (javaName) {\r\n
+case "TLSv1.3":\r\n return TLS_1_3;\r\n case "TLSv1.2":\r\n return
+TLS_1_2;\r\n case "TLSv1.1":\r\n return TLS_1_1;\r\n case "TLSv1":\r\n return
+TLS_1_0;\r\n case "SSLv3":\r\n default:\r\n return SSL_3_0;\r\n }\r\n
+}\r\n\r\n\r\n\r\n\r\nIf the system access to the TLS version is NONE, I can
+assume that the user must use the Android system, but because of the system
+for less than the corresponding TLS version, can try to return to the oldest
+SSL_3_0, so mobile phone can compatible with the model, some security
+handshake rules can\'t use, but can ensure the request is success and does not
+collapse.NONE isn\'t unknown or old. It\'s that there is no SSL session
+anymore, or it failed initially. So changing TlsVersion lookup doesn\'t seem
+right to me.\r\n\r\nThe next usage of that session will fail anyway, we just
+want it to always be an IOException, e.g. reading from the closed socket
+instead of failing because of enum values.3Q@gdky005 did you solve this on
+v3.10? I\'m same as youIt should be happening at a much reduced rate in 3.10
+compared to 3.4, for the same Android version (8.10). My understanding of this
+bug is conscrypt (SSL) in 8.1.0 can lose a connection at different points. And
+OkHttp needs to handle the responses from SSLSession when it can disconnect
+asynchronously. \r\n\r\nAre you seeing this at the same rate with < 3.10 and
+3.10? If so, something else is going on that needs explanation. @yschimke also
+with 3.4.1 and 3.9.1, but now the stack trace is missing so I can\'t provide
+it. @lizhangqu is the frequency that you see this per device (Android 8.1.0)
+the same with 3.10 and also with all earlier OkHttp versions? I didn\'t follow
+you previous answer.@yschimke it\'s also happened in v3.9.1@a1018875550
+understood, but 3.10.0 includes a fix that should substantially reduce the
+frequency of this error. But likely not eliminate it completely as its still a
+timing issue with an async cause (sslsocket closing).yeah, but he said it\'s
+also happened in v3.10.0 for this issues first commit. And I\'m not update
+this for my users. \r\nso I\'m not sure v3.10.0 it\'s ok.@a1018875550 the
+original stack trace wasn\'t from 3.10.0, but a later one was. I suspect the
+main change here is Android 8.1.0, rather than OkHttp 3.4.0 vs 3.9.1. As I
+said, I believe it should happen *less* frequently with 3.10.0.I fix this
+problem by modifing async call to sync call and try catch it. The versions I
+used are 3.4.1, 3.9.1 and 3.10.0. All these versions have happened this
+problem. But it seems that 3.2.0 is ok. I am sorry that I have not focus on
+the crash number with different okhttp version. @yschimke We have two android
+apps, the first one uses 3.4.2, there are about 400+ crashes. And the other
+one uses 3.10.0, there are about 300+ crashes. I\'m not sure whether 3.10.0
+reduce crashes or not@yschimke but all happened on Android 8.1.0@lizhangqu how
+do you fix this? Thanks@a1018875550 \r\n\r\nbefore
+fix\r\n\r\n```\r\nOkHttpClient client = new OkHttpClient();\r\nRequestBody
+body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"),
+json);\r\nRequest request = new Request.Builder()\r\n .url(url)\r\n
+.post(body)\r\n .build();\r\nclient.newCall(request).enqueue(new Callback()
+{\r\n @Override\r\n public void onFailure(Call call, IOException e) {\r\n
+//java.lang.IllegalArgumentException: Unexpected TLS version: NONE \r\n //will
+not callback on this function and then crash\r\n }\r\n\r\n @Override\r\n
+public void onResponse(Call call, Response response) throws IOException
+{\r\n\r\n }\r\n});\r\n```\r\n\r\nafter fix\r\n```\r\nfinal OkHttpClient client
+= new OkHttpClient();\r\nfinal RequestBody body =
+RequestBody.create(MediaType.parse("application/json; charset=utf-8"),
+json);\r\nfinal Request request = new Request.Builder()\r\n .url(url)\r\n
+.post(body)\r\n .build();\r\nclient.dispatcher().executorService().execute(new
+Runnable() {\r\n @Override\r\n public void run() {\r\n try {\r\n
+client.newCall(request).execute();\r\n } catch (IllegalArgumentException e)
+{\r\n //Unexpected TLS version: NONE will be catch\r\n //and will not
+crash\r\n //but in essence, I have not solved this problem. Just only ignore
+it\r\n } catch (IOException e) {\r\n e.printStackTrace();\r\n }\r\n }\r\n});
+\r\n```@lizhangqu I think it not a good way to slove this. you should
+try/catch every request. And I\'m using rxjava for request.This should be
+fixed in 3.11 https://github.com/square/okhttp/pull/4055@yschimke nice, when
+is update 3.11?Not sure, but I suspect soon, it\'s overdue, and there are
+enough meaningful bug fixes and some experimental features already in
+master.', '3970\nbody delay & headers delay do not work\nBody delay works for
+http2 responses only. When used with plain http responses, `setBodyDelay` acts
+as one expect `setHeadersDelay` to act (and `setHeadersDelay` appears to do
+nothing).\r\n\r\nThe following code hangs and times
+out:\r\n\r\n````java\r\n@Test(timeout = 5000)\r\npublic void
+bodyDelayDoesNotWork() throws Exception {\r\n MockWebServer server = new
+MockWebServer();\r\n\r\n server.enqueue(new MockResponse()\r\n
+.setBodyDelay(1, TimeUnit.DAYS)\r\n .setResponseCode(200)\r\n
+.setBody("Nop"));\r\n\r\n HttpURLConnection conn = (HttpURLConnection)
+server.url("/").url().openConnection();\r\n conn.setDoInput(false);\r\n
+conn.setDoOutput(false);\r\n conn.setRequestMethod("HEAD");\r\n
+conn.connect();\r\n Assert.assertEquals(200,
+conn.getResponseCode());\r\n}\r\n````\r\n\r\nBut if you replace
+`.setBodyDelay(1, TimeUnit.DAYS)` with `.throttleBody(1, 1,
+TimeUnit.MINUTES)`, the test passes.\nFixed here
+https://github.com/square/okhttp/pull/4011', "3945\nOkhttp clears the Thread
+interrupt status\nWe have a problem in our project due to Okhttp consuming the
+interrupted flag of the thread. #3107 describes the problem perfectly. The
+reply suggests that the thrown `InterruptedIOException` should be enough
+handle the case. It isn't because it is rethrown in two cases: when a timeout
+is reached and when the thread was actually interrupted. We have no way to
+actually find out whether my thread got interrupted while it was doing work in
+Okhttp or it is just a network problem. The only solution is to parse the
+error message, which is obviously very wonky. This applies to both
+`waitUntilNotified` and `throwIfReached` in `Timeout`.\r\n\r\n**There should
+be a way to tell thread interruption apart from network problems**. I suggest
+changing `InterruptedIOException` to `InterruptedException` when the thread is
+interrupted, as this will actually make the code conform to the **interruption
+handling conventions which are currently violated as `InterruptedIOException`
+is not an `InterruptedException`**, it is an `IOException`. In the case if
+this is considered a breaking change, I suggest creating a subclass of the
+`InterruptedIOException` and throwing that instead on thread interruption.\nWe
+should probably just mark the thread as interrupted before throwing the
+`InterruptedIOException`.@swankjesse, that's another solution, yeah.",
+"3940\nWhy are cancel events in HTTP2 causing the connection to be
+closed?\nhttps://github.com/square/okhttp/blob/878bde8fd6939b508adeb21e2911e390cfe27326/okhttp/src/main/java/okhttp3/internal/connection/StreamAllocation.java#L436\r\n\r\nOnly
+`REFUSED_STREAM` errors allow the reuse of a connection. I believe it should
+be acceptable for a cancelled stream to be able to reuse the connection. Am I
+misunderstanding what `ErrorCode.CANCEL` means?\nLooks like a bug!Do you need
+help fixing this? I'm not really sure the extent of the issue, but I'm willing
+to helpPull Requests are always welcome, we are happy to review as long as you
+sign the Contributor Agreement when you submit it. n.b. If it's high enough
+priority and the PR doesn't look like it's coming, then someone else may fix
+instead. These issues are not actively assigned to anyone.\r\n\r\nAnd
+Thanks!There is a test that uses `ErrorCode.CANCEL` to kill the connection.
+The test is `recoverFromConnectionNoNewStreamsOnFollowUp` in
+`HttpOverHttp2Test`. This makes me wonder if it's intended behaviour?Completed
+PR - this appears closed already", '3915\nFrequent cancelling the HTTP/2
+requests will cause client never sends WINDOW_UPDATE frame\nDescription: When
+downloading a lot of medium-sized files from Nginx HTTP/2 server, if requests
+are frequently canceled (RST_STREAM), eventually the connection will timeout
+and not be able to send/receive any data from the server.\r\n\r\nOn the server
+side configure the Nginx server to support HTTP/2 with a self-signed
+certificate. And host about 100 files with size about 500k each. \r\nOn the
+client side, I built an Android test, using a single thread to download the
+file from file no.1 to file no.100 consequently. During each download, the
+request is canceled and then proceed to download next file. Eventually, the
+request will timeout. Depending on the setup the timeout may happen on
+different download. But once the testing environment is set, it always failed
+on the same file.\r\n\r\nServer info: nginx/1.13.10 \r\nClient info: Android
+6.0 with OKHttp 3.10.0 \r\n\r\nThis issue is reproducible on multiple servers.
+For example, Go HTTP/2 server and AWS CloudFront.\r\n\r\nA filtered (sid:75)
+server log shows that the header frame has been sent on 14:39:32 and then
+timed out after 60 seconds. Note, it is not always the header frame though.
+Sometimes it is the data frame not being sent out.\r\n```\r\n2018/03/05
+14:39:32 [debug] 92282#0: *4 http2 frame type:1 f:5 l:14 sid:75\r\n2018/03/05
+14:39:32 [debug] 92282#0: *4 http2 HEADERS frame sid:75 depends on 0 excl:0
+weight:16\r\n2018/03/05 14:39:32 [debug] 92282#0: *4 http2 frame out:
+00007FD4B082ABA0 sid:75 bl:1 len:122\r\n2018/03/05 14:39:32 [debug] 92282#0:
+*4 http2 frame sent: 00007FD4B082ABA0 sid:75 bl:1 len:122\r\n2018/03/05
+14:40:32 [debug] 92282#0: *4 http2 send RST_STREAM frame sid:75,
+status:1\r\n```\r\nIn the meantime, the client log shows the header is not
+received until 14:40:32\r\n```\r\n03-05 14:39:32.229 5979-5995/? V/VB_Network:
+Sending request https://10.0.0.186/files/37 on Connection{10.0.0.186:443,
+proxy=DIRECT hostAddress=/10.0.0.186:443
+cipherSuite=TLS_RSA_WITH_AES_128_CBC_SHA protocol=h2}\r\n User-Agent: \r\n
+Host: 10.0.0.186\r\n Connection: Keep-Alive\r\n Accept-Encoding: gzip\r\n03-05
+14:40:32.397 5979-5995/? V/VB_Network: Received response for
+https://10.0.0.186/files/37 (h2) in 60167.4ms\r\n server: nginx/1.13.10\r\n
+date: Mon, 05 Mar 2018 22:39:32 GMT\r\n content-type: application/octet-
+stream\r\n content-length: 562176\r\n last-modified: Sun, 04 Mar 2018 00:23:13
+GMT\r\n etag: "5a9b3c71-89400"\r\n accept-ranges: bytes\r\n03-05 14:40:32.400
+5979-5995/? E/VB_Test: stream was reset: PROTOCOL_ERROR
+https://10.0.0.186/files/37\r\n```\r\n\r\nAt first, I thought it is a server
+issue, so I filed a [bug](https://trac.nginx.org/nginx/ticket/1499) to the
+Nginx team. They replied that this is because the client never sends the
+WINDOW_UPDATE frame except after the initial connection.\r\n\r\n[Server Full
+Log](https://gist.github.com/jifang/5a8a0e6dc4bf19273e815c56b7b9385f)\r\n[Client
+Full
+Log](https://gist.github.com/jifang/7e3109bd31f888349e1a98ebd84d2e38)\r\n\r\nThe
+test project is under git@github.com:jifang/nginx_bug_repo1.git\nThanks
+@jifang for including the github project to reproduce it. Not sure who is
+going to look at this first. n.b. Have you looked at the Http2 frame logging?
+\r\n\r\nExcuse the kotlin\r\n\r\n```\r\nval activeLogger =
+getLogger(okhttp3.internal.http2.Http2::class.java.name)\r\nactiveLogger.level
+= Level.FINE\r\n```\r\n\r\nShould give output like \r\n\r\n```\r\n>>
+CONNECTION 505249202a20485454502f322e300d0a0d0a534d0d0a0d0a\r\n>> 0x00000000 6
+SETTINGS\r\n>> 0x00000000 4 WINDOW_UPDATE\r\n<< 0x00000000 18 SETTINGS\r\n>>
+0x00000000 0 SETTINGS ACK\r\n>> 0x00000003 65 HEADERS
+END_STREAM|END_HEADERS\r\n<< 0x00000000 0 SETTINGS ACK\r\n<< 0x00000003 209
+HEADERS END_HEADERS\r\n<< 0x00000003 14181 DATA\r\n<< 0x00000003 2829
+DATA\r\n<< 0x00000003 16375 DATA\r\n<< 0x00000003 8505 DATA\r\n<< 0x00000003
+5667 DATA\r\n<< 0x00000003 16384 DATA\r\n<< 0x00000003 16366 DATA\r\n<<
+0x00000003 11343 DATA\r\n<< 0x00000003 5667 DATA\r\n<< 0x00000003 5083 DATA
+END_STREAM\r\n>> 0x00000000 8 GOAWAY\r\n```Thanks @yschimke for the tips.
+\r\nHere is the [client
+log](https://gist.github.com/jifang/9df9991e5f8e7f1d979c73a453f7ad67) filtered
+by Http2\r\nThe test project is also updated.I have a theory.\r\n\r\nIn our
+HTTP/2 code we don\'t ack bytes until they\'re delivered to the application.
+It\'s insufficient to get them to the Http2Stream; they actually need to be
+read from the stream.\r\n\r\nI\'m guessing that when a steam is cancelled we
+need to do something with the leftover data.Nice. That theory should be
+reasonably easy to repro with a test if so.Tagging for 3.11 as this seems hi-
+priI have been debugging an issue with ExoPlayer and OkHttp Http/2 connections
+that I now think may be the same underlying issue as this one. I have a test
+project
+[attached](https://github.com/google/ExoPlayer/issues/4078#issuecomment-379898195)
+to the issue that I can get 100% reproduction of the SocketTimeoutException if
+you run the project on a Genymotion android emulator with the network
+throttled to GPRS or Edge.\r\n\r\nWould love to have an idea of when I could
+grab a snapshot to test a potential fix to this. I tried the latest
+3.11.0-SNAPSHOT from today (April 11th).Is there any update on this issue?
+Thanks!Also looking for an update, we\'re still seeing this in production,
+causing any connection to a domain to fail until the socket gets removed from
+the connection poolCan you try the latest SNAPSHOT? Be sure to fully read the
+response body, that\'s our signal to notify the peer we are ready for more
+bytes.\r\n\r\nIf you\'re still seeing an issue, can you please provide some
+steps to reproduce? Or ideally a test case if that\'s possible.@ojw28 do you
+think it\'s feasible to have the loaders in exoplayer clean up cancelled
+requests by finishing reading the bytes? \r\n\r\nAs an aside @dave-r12, I
+personally don\'t know if it\'s reasonable to ask the application layer to do
+something like that when you don\'t need to do this with Http/1.1 connections
+and it doesn\'t break all subsequent connections to that domain. I will say
+that this is a huge issue for our video playback on android right now and I\'m
+open to fixing it in the short term by doing a workaround but this is just my
+initial reaction. \r\n\r\nIf you\'re looking to reproduce, I have a test
+project
+[attached](https://github.com/google/ExoPlayer/issues/4078#issuecomment-379898195)
+to the issue that I can get 100% reproduction of the SocketTimeoutException if
+you run the project on a Genymotion android emulator with the network
+throttled to GPRS or Edge.\r\nbump, can I work with someone from square to
+figure out how to fix this outside of the application layer? this is a huge
+issue for us right nowI don\'t think it\'s reasonable to require the
+application layer to fully read the response body. What if it\'s a 2GB video
+or something?@natez0r did you try the latest snapshot? If that fixes the
+problem I can cut a release.@swankjesse just tried now with
+(https://oss.sonatype.org/content/repositories/snapshots/com/squareup/okhttp3/okhttp/3.11.0-SNAPSHOT/okhttp-3.11.0-20180522.074215-92.pom)
+and unfortunately, I was still reproducing the issue in my test appAre you
+fully reading the response body for the canceled request? I agree it\'s a bit
+of a burden for the application layer but that code should be straightforward
+to write. Or if you\'re canceling from a separate thread it should happen
+naturally. Maybe we can do this differently?\r\n\r\n@natez0r here is a test
+case showing the original theory:
+https://github.com/square/okhttp/blob/master/okhttp-
+tests/src/test/java/okhttp3/internal/http2/HttpOverHttp2Test.java#L303\r\n\r\nCould
+you try to muck with that and get it to fail with what you are seeing?We\'re
+not reading the full response body in the test app (i\'m just using exoplayer
+and the OKHttp extension for it).\r\n\r\nI modified the test in question to
+stop discarding the bytes on cancel and it fails with the exact error we\'re
+seeing in our application:\r\n\r\n` // Cancel the call and discard what we\'ve
+buffered for the response body. This should free up\r\n // the connection
+flow-control window so new requests can proceed.\r\n call1.cancel();\r\n//
+assertFalse("Call should not have completed successfully.",\r\n//
+Util.discard(response1.body().source(), 1, TimeUnit.SECONDS));\r\n`\r\n\r\nand
+the test seems a SocketTimeoutException, just like in our app
+code:\r\n\r\n`Tests run: 82, Failures: 0, Errors: 2, Skipped: 5, Time elapsed:
+37.908 sec <<< FAILURE! - in
+okhttp3.internal.http2.HttpOverHttp2Test\r\nconnectionWindowUpdateAfterCanceling[h2_prior_knowledge](okhttp3.internal.http2.HttpOverHttp2Test)
+Time elapsed: 10.063 sec <<< ERROR!\r\njava.net.SocketTimeoutException:
+timeout\r\n\tat
+okhttp3.internal.http2.Http2Stream$StreamTimeout.newTimeoutException(Http2Stream.java:602)\r\n\tat
+okhttp3.internal.http2.Http2Stream$StreamTimeout.exitAndThrowIfTimedOut(Http2Stream.java:610)\r\n\tat
+okhttp3.internal.http2.Http2Stream.takeResponseHeaders(Http2Stream.java:146)\r\n\tat
+okhttp3.internal.http2.Http2Codec.readResponseHeaders(Http2Codec.java:127)\r\n\tat
+okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.java:88)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.java:45)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n\tat
+okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.java:93)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n\tat
+okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.java:93)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:126)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n\tat
+okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:200)\r\n\tat
+okhttp3.RealCall.execute(RealCall.java:77)\r\n\tat
+okhttp3.internal.http2.HttpOverHttp2Test.connectionWindowUpdateAfterCanceling(HttpOverHttp2Test.java:333)\r\n\r\nconnectionWindowUpdateAfterCanceling[h2](okhttp3.internal.http2.HttpOverHttp2Test)
+Time elapsed: 10.206 sec <<< ERROR!\r\njava.net.SocketTimeoutException:
+timeout\r\n\tat
+okhttp3.internal.http2.Http2Stream$StreamTimeout.newTimeoutException(Http2Stream.java:602)\r\n\tat
+okhttp3.internal.http2.Http2Stream$StreamTimeout.exitAndThrowIfTimedOut(Http2Stream.java:610)\r\n\tat
+okhttp3.internal.http2.Http2Stream.takeResponseHeaders(Http2Stream.java:146)\r\n\tat
+okhttp3.internal.http2.Http2Codec.readResponseHeaders(Http2Codec.java:127)\r\n\tat
+okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.java:88)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.java:45)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n\tat
+okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.java:93)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n\tat
+okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.java:93)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:126)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n\tat
+okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:200)\r\n\tat
+okhttp3.RealCall.execute(RealCall.java:77)\r\n\tat
+okhttp3.internal.http2.HttpOverHttp2Test.connectionWindowUpdateAfterCanceling(HttpOverHttp2Test.java:333)`\r\n\r\nSo,
+I guess my biggest questions here are:\r\n\r\n1. Since @ojw28 and myself
+don\'t believe it\'s fair to make the application read the rest of the bytes
+of video content but OKHTTP requires that, where do we go from here? This
+issue manifests itself as completely breaking any subsequent video playback
+(on the same domain) within the Twitter app until the socket gets removed from
+the connectionpool.\r\n2. Separately, why do we have a `cancel()` call if
+calling it doesn\'t gracefully cleanup the request?@natez0r right -- that
+makes sense because the current fix relies on the app to read the
+bytes.\r\n\r\nI just consulted the docs on `Call.cancel()`:\r\n> Cancels the
+request, if possible. Requests that are already complete cannot be
+canceled.\r\n\r\nThere is no mention of cleaning up resources so I\'m unsure
+if that\'d be a behavior change.\r\n\r\nA potential middle ground: require the
+app layer to close the `Response` or `ResponseBody`? I changed the test to do
+this and it failed so I think there is a little work to do here. I believe we
+do this for HTTP/1 (exhaust the response body when closed.)I think asking the
+app to close the response body seems like a reasonable middleground from my
+perspective. Exoplayer already does this in the `closeConnectionQuietly`
+helper
+(https://github.com/google/ExoPlayer/blob/release-v2/extensions/okhttp/src/main/java/com/google/android/exoplayer2/ext/okhttp/OkHttpDataSource.java#L389)\r\n\r\nAs
+an aside, I attempted to drain the buffer in my exoplayer test and it didn\'t
+work for me because there was contention between the old datasource attempting
+to drain the bytes and a new request attempting to use the same socket to
+fetch another video. It\'s much easier to reproduce if you have a slow
+connection@dave-r12 if we exhaust the responsebody when closing an HTTP/2
+stream, does that mean that all other connections to that domain will have to
+wait for the exhausting of the response to complete before they could be
+multiplexed over the same socket? Do we only have to read whatever\'s actually
+been received, or does that mean we need to read the entire response the
+server was planning to serve up?\r\n\r\nForgive my ignorance here, is there
+any other way? With Http/1 it\'s really no big deal to exhaust the data (since
+there was no time requirement), but since other connections are waiting on
+using this same socket, I feel like pulling down the bytes we don\'t plan to
+actually read and blocking other connections on it seems unideal.> Do we only
+have to read whatever\'s actually been received, or does that mean we need to
+read the entire response the server was planning to serve up?\r\n\r\n+1 to
+this question. The entire response may be very large (e.g. multiple gigabytes
+for a progressive video stream), so it\'s an important question to address.
+Clearly cancelling such a request early shouldn\'t require the entire response
+to still be received.> does that mean that all other connections to that
+domain will have to wait for the exhausting of the response to complete before
+they could be multiplexed over the same socket?\r\n\r\nConnections or
+requests? Assuming you mean requests and the connection flow-control window is
+full, then yes the server should not send us any more data frames until we
+free up space.\r\n\r\n> Do we only have to read whatever\'s actually been
+received, or does that mean we need to read the entire response the server was
+planning to serve up?\r\n\r\nShould only be what we have buffered so far, not
+the entire response. There should be no blocking on IO.So I think where we are
+with this is:\r\n\r\n* The application should call `response.body().close()`
+(we already do this in ExoPlayer).\r\n* OkHttp should do whatever is necessary
+when that happens (e.g. read and discard any buffered-but-not-yet-consumed
+data). @dave-r12 - Does the commit referenced above do this, or is there more
+work to be done?\r\n\r\nThanks!Yes, I believe the commit above does that
+(pending code review.)Awesome, thanks for the fix @dave-r12! much appreciated.
+If you\'d like, I can run my test project on it once it is in a
+snapshot.@natez0r run your test project on latest snapshot?I tried it, but i
+am still seeing a socket timeout. I\'m trying to investigate a bit further,
+but wanted to let you know I\'m working on it.Shoot, ok. Let us know if we can
+help out at all. Ideally we can get an executable test case for this and then
+fix.Hey @natez0r let me know if you\'d like a second set of hands on this!
+We\'re eager to get this resolved.I am able to verify that calling
+`response.body().close();` had fixed this issue with the latest snapshot.
+Thanks!I got a chance to debug this a bit more today. It looks like my issue
+can occur when we\'ve \'opened\' the connection but have yet to begin reading
+the response but decide to cancel it. ', '3898\nMockWebServer tests got stuck
+after updating from 3.9.1 to 3.10.0\nAfter updating from `3.9.1` to `3.10.0`
+`mockwebserver` tests got stuck.\r\n\r\nThis is how I configure the
+`HttpClient` (I\'m setting up `HTTPS` and _Certificate Pinning_ )
+\xf0\x9f\x91\x80\r\n```java\r\nprivate OkHttpClient configureHttpClient()
+{\r\n CertificatePinnerFactory factory = new CertificatePinnerFactory();\r\n
+OkHttpClient.Builder builder = client.newBuilder()\r\n .addInterceptor(new
+GzipRequestInterceptor())\r\n .retryOnConnectionFailure(true)\r\n
+.certificatePinner(factory.provideCertificatePinnerFor(environment))\r\n
+.connectionSpecs(Arrays.asList(ConnectionSpec.MODERN_TLS,
+ConnectionSpec.COMPATIBLE_TLS));\r\n if
+(isSocketFactoryUnset(sslSocketFactory, x509TrustManager)) {\r\n
+builder.sslSocketFactory(sslSocketFactory, x509TrustManager);\r\n }\r\n\r\n
+return builder.build();\r\n }\r\n```\r\n\r\n`3.9.1`
+\xf0\x9f\x91\x87\r\n```\r\nFeb 27, 2018 9:15:56 PM
+okhttp3.mockwebserver.MockWebServer$2 execute\r\nINFO: MockWebServer[59072]
+starting to accept connections\r\nFeb 27, 2018 9:15:57 PM
+okhttp3.mockwebserver.MockWebServer$3 processOneRequest\r\nINFO:
+MockWebServer[59072] received request: POST
+/events/v2?access_token=anyAccessToken HTTP/1.1 and responded: HTTP/1.1 204
+OK\r\n```\r\n\r\n`3.10.0` \xf0\x9f\x91\x87\r\n```\r\nFeb 27, 2018 9:12:04 PM
+okhttp3.mockwebserver.MockWebServer$2 execute\r\nINFO: MockWebServer[59055]
+starting to accept connections\r\nFeb 27, 2018 9:12:06 PM
+okhttp3.mockwebserver.MockWebServer$3 processConnection\r\nWARNING:
+MockWebServer[59055] connection from /127.0.0.1 didn\'t make a
+request\r\n```\r\n\r\nFollowing you can find a failing test
+\xf0\x9f\x91\x80\r\n```java\r\npackage
+com.mapbox.android.telemetry;\r\n\r\n\r\nimport
+android.content.Context;\r\n\r\nimport org.junit.Test;\r\n\r\nimport
+java.net.HttpURLConnection;\r\nimport java.util.Arrays;\r\nimport
+java.util.List;\r\n\r\nimport okhttp3.Callback;\r\nimport
+okhttp3.HttpUrl;\r\nimport okhttp3.mockwebserver.MockResponse;\r\nimport
+okhttp3.mockwebserver.MockWebServer;\r\nimport
+okhttp3.mockwebserver.RecordedRequest;\r\nimport
+okhttp3.internal.tls.SslClient;\r\n\r\nimport static
+org.junit.Assert.assertEquals;\r\nimport static
+org.mockito.Mockito.RETURNS_DEEP_STUBS;\r\nimport static
+org.mockito.Mockito.mock;\r\n\r\npublic class Foo {\r\n\r\n @Test\r\n public
+void foo() throws Exception {\r\n MockWebServer server = new
+MockWebServer();\r\n server.useHttps(SslClient.localhost().socketFactory,
+false);\r\n server.start();\r\n Context mockedContext = mock(Context.class,
+RETURNS_DEEP_STUBS);\r\n MapboxTelemetry.applicationContext =
+mockedContext;\r\n TelemetryClient telemetryClient =
+obtainATelemetryClient("anyAccessToken", "anyUserAgent", server);\r\n List
+mockedEvent = obtainAnEvent();\r\n MockResponse mockResponse = new
+MockResponse();\r\n
+mockResponse.setResponseCode(HttpURLConnection.HTTP_NO_CONTENT);\r\n
+mockResponse.setBody("");\r\n server.enqueue(mockResponse);\r\n Callback
+mockedCallback = mock(Callback.class);\r\n\r\n
+telemetryClient.sendEvents(mockedEvent, mockedCallback);\r\n\r\n
+RecordedRequest request = server.takeRequest();\r\n
+assertEquals("/events/v2?access_token=anyAccessToken", request.getPath());\r\n
+}\r\n\r\n TelemetryClient obtainATelemetryClient(String accessToken, String
+userAgent, MockWebServer server) {\r\n TelemetryClientSettings
+mockedTelemetryClientSettings =
+provideDefaultTelemetryClientSettings(server);\r\n Logger mockedLogger =
+mock(Logger.class);\r\n return new TelemetryClient(accessToken, userAgent,
+mockedTelemetryClientSettings, mockedLogger);\r\n }\r\n\r\n private
+TelemetryClientSettings provideDefaultTelemetryClientSettings(MockWebServer
+server) {\r\n HttpUrl localUrl = obtainBaseEndpointUrl(server);\r\n SslClient
+sslClient = SslClient.localhost();\r\n\r\n return new
+TelemetryClientSettings.Builder()\r\n .baseUrl(localUrl)\r\n
+.sslSocketFactory(sslClient.socketFactory)\r\n
+.x509TrustManager(sslClient.trustManager)\r\n .build();\r\n }\r\n\r\n private
+List obtainAnEvent() {\r\n Event theEvent = new
+AppUserTurnstile("anySdkIdentifier", "anySdkVersion", false);\r\n\r\n return
+obtainEvents(theEvent);\r\n }\r\n\r\n private List obtainEvents(Event...
+theEvents) {\r\n return Arrays.asList(theEvents);\r\n }\r\n\r\n private
+HttpUrl obtainBaseEndpointUrl(MockWebServer server) {\r\n return
+server.url("/");\r\n }\r\n}\r\n```\r\n\r\n\xe2\x98\x9d\xef\xb8\x8f is using
+https://github.com/mapbox/mapbox-events-android code.\r\n\r\nYou can check
+that we only bumped OkHttp version to `3.10.0` \xf0\x9f\x91\x89
+https://github.com/mapbox/mapbox-events-
+android/commit/c92a4acdf684cedc003c769f44a62c345ce596f9 and after that tests
+got stuck.\r\n\r\nTried many things without luck \xf0\x9f\x98\x93\r\nAny
+hints? What did it change that could affect tests in that sense?
+\r\n\r\n\nHmm. This is a little mystery. Can you attach a debugger and check
+out where OkHttp gets stuck?Everything is working fine until
+https://github.com/square/okhttp/blob/9a6f88dc34cb68d341ec1a7e4c79546fa1c18c96/mockwebserver/src/main/java/okhttp3/mockwebserver/MockWebServer.java#L475
+which calls [`readRequest(socket, source, sink,
+sequenceNumber)`](https://github.com/square/okhttp/blob/master/mockwebserver/src/main/java/okhttp3/mockwebserver/MockWebServer.java#L511)
+which also calls
+[`source.readUtf8LineStrict()`](https://github.com/square/okhttp/blob/master/mockwebserver/src/main/java/okhttp3/mockwebserver/MockWebServer.java#L588)
+which ends up calling `RealBufferedSource#readUtf8LineStrict` which finally
+throws a `java.io.EOFException` (`\\\n not found: limit=0
+content=\xe2\x80\xa6`) because apparently the size of the `Buffer` is
+`0`.\r\nThen the exception is bubble up to `readRequest` which returns `null`
+https://github.com/square/okhttp/blob/9a6f88dc34cb68d341ec1a7e4c79546fa1c18c96/mockwebserver/src/main/java/okhttp3/mockwebserver/MockWebServer.java#L590
+and then `processOneRequest` returns `false`
+https://github.com/square/okhttp/blob/9a6f88dc34cb68d341ec1a7e4c79546fa1c18c96/mockwebserver/src/main/java/okhttp3/mockwebserver/MockWebServer.java#L512
+which breaks the `processOneRequest` loop and logs the `WARNING:
+MockWebServer[59055] connection from /127.0.0.1 didn\'t make a request`
+message because `sequenceNumber` is `0`.\r\nAfter that the test is still
+running (apparently waiting for new requests).\r\n\r\nIt seems that there\'s
+an issue when getting the buffer from the socket and in `3.10.0` we\'re not
+able to read that kind of requests anymore. I know that `3.10.0` brings Okio
+`1.14.0`. Could it be related? My guess is that the root of the issue is
+around
+https://github.com/square/okhttp/blob/0b74bba08805c28f6aede626cf06f213ef6480f2/mockwebserver/src/main/java/okhttp3/mockwebserver/MockWebServer.java#L472\r\n\r\nLet
+me know if you need any further information.> After that the test is still
+running (apparently waiting for new requests).\r\n\r\nWanted to add that apart
+from the issue when trying to obtain the buffer from the socket,
+\xe2\x98\x9d\xef\xb8\x8f seems like another problem because if at that point
+we\'ve already received an error, why the test doesn\'t continue its execution
+and it gets stuck instead? It seems that in that scenario there are still
+resources opened. Does that make sense?Any chance you could isolate this into
+a standalone test case? All of OkHttp\xe2\x80\x99s tests use
+OkHttp+MockWebServer and they\xe2\x80\x99re all working fine.Mystery solved!
+Well partially...\r\n\r\nAfter a thoroughly debug session, @Sefford told me
+that when he bumped OkHttp version to `3.10.0`, he started getting
+`SSLPeerUnverifiedException: Hostname localhost not verified` messages in
+their tests and he fixed it adding \r\n```java\r\n.hostnameVerifier(new
+HostnameVerifier() {\r\n @Override\r\n public boolean verify(String hostname,
+SSLSession session) {\r\n return true;\r\n }\r\n})\r\n```\r\nto the config of
+the `OkHttpClient` used in their tests. I wasn\'t getting those messages
+because I\'m mocking the `Callback` so they weren\'t logged.\r\n\r\nThanks
+@Sefford for pointing me in that direction \xf0\x9f\x99\x8f\r\n\r\nIt seems
+that after https://github.com/square/okhttp/pull/3764 changes if you\'re using
+MockWebServer with HTTPS you need to add \xe2\x98\x9d\xef\xb8\x8f to your
+tests in order to have them \xe2\x9c\x85\r\nIt\'d be great if we could add
+that to the documentation somehow (if that\'s the best solution to follow in
+these cases).\r\n\r\nAfter adding that config to my tests everything is
+working again \xf0\x9f\x92\x83\r\n\r\nBut now I\'m wondering why even when
+passing in an empty `Callback` implementation (without adding the hostname
+verifier stub) tests still get stuck. Shouldn\'t the exception bubble up and
+stop the execution of the test if the hostname is not verified?\r\nIt seems
+that although the `Callback` is fired it\'s not sending the notification to
+the lock properly and it remains opened forever. Does that make
+sense?\r\n\r\nLet me know if it\'s worth it to open a new issue reporting
+\xe2\x98\x9d\xef\xb8\x8f or if you prefer to keep the discussion here.There is
+still something worth digging into here regarding why the behaviour changed
+and why its hanging now. I\'ll try to take a look this week, but glad you have
+a workaround to unblock yourself.@yschimke \r\n> I\'ll try to take a look this
+week\r\n\r\nAwesome! Let me know if you have any questions or if you need
+further information/clarification.Any updates on this?\r\nWe use similar setup
+but without pinning and get `SSLPeerUnverifiedException: Hostname localhost
+not verified` too. So we had to use workaround by
+Guardiola31337.\r\n\r\nAlthough I\'m not sure if using `SslClient.localhost()`
+is supported as `SslClient` is inside `internal` package.SslClient is not
+public API and we might break you in a future release. \r\nSslClient public
+API: https://github.com/square/okhttp/issues/3934No action to take on this,
+other than to be afraid of how mocks + onFailure interact poorly.',
+'3892\nWhen Content-Encoding: gzip is used, and the content-length header is
+removed, and the underlying socket connection is not broken, the client is
+blocked when the body data is read\nWhen Content-Encoding: gzip is used, and
+the content-length header is removed, and the underlying socket connection is
+not broken, the client is blocked when the body data is read, until the
+connection is disconnected or the request timed out. The same scenario, using
+httpclient request is not blocked, through my debugging blocking problems
+found in okio class okio. GzipSource in the read method, my feel this time
+should be returned -1, since the gzip data has been finished, now is no longer
+able to call the read method\xef\xbc\x8cBecause there is no data to read in
+the current stream.\nNormally, the standard httpresponse has a header content-
+length/chunked, but for some unknown reason, the content-length head may be
+removed by the gateway, so it is still necessary to adapt.Even if it is not
+supported, the average user can accept interrupts or exceptions at this time,
+but cannot accept that the program is blocked.![1519642060152](https://user-
+images.githubusercontent.com/15973584/36666421-900efc44-1b25-11e8-92ee-6ccc9989b652.jpg)\r\nSame
+bug?\r\nhttps://github.com/square/okhttp/issues/3759Thank you for your reply.I
+looked at it #3759 \xef\xbc\x8cThe question he\'s discussing is very similar
+to what I\'m saying, but it\'s actually different, and I pointed out that the
+problem is okhttp client is blocked due to no content-length problem, I here
+is a test server code :
+\r\n[MockHttpserver.java.zip](https://github.com/square/okhttp/files/1761165/MockHttpserver.java.zip)\r\n\r\nclient
+code:\r\n![wx20180227-115923 2x](https://user-
+images.githubusercontent.com/15973584/36709939-b1548b22-1bb5-11e8-9d89-a575547d531d.png)\r\n\r\nWhen
+the response.body().string() is called, it is blocked. the timeout exception
+occurs when the timeout occurs in 30 seconds. The root cause is that the
+socket on the server side is not closed immediately (the long connection is
+simulated).\r\n![wx20180227-120216](https://user-
+images.githubusercontent.com/15973584/36710033-5829fbd0-1bb6-11e8-8b7f-167c1a67153b.png)\r\nThere
+is no data to read in the buffer at this point, so when you try to read when
+it is blocked, in fact gzip is fully transmitted when the data is complete,
+and the entire request process should end normally.My reading of what is
+described is that it\'s almost the same bug as #3759. In 3759, we receive a
+full content length header with multiple streams and fail because we don\'t
+expect multiple streams. Here we receive a single stream without
+termination(?) and if we assumed a single gzip stream and self terminated we
+would work in this case.\r\n\r\nSeems awkward to fix 3759 without keeping this
+failing. And it does sound like there is a problem with the server behaviour
+on this issue that is the root cause and should be the highest priority
+fix.\r\n\r\nWhat clients (browser and API) does this server work correctly
+with? Yes\xef\xbc\x81 Here we receive a single stream without
+termination\xe3\x80\x82\r\nIt seems that there is a problem with server
+behavior. In this scene in fact the problem is not on the server, but in the
+middle gateway node.\r\nThe HTTP response that the server sends out is the
+"content-length" header, which is removed by the gateway of some router in the
+middle. This is not something we can solve, but it should be compatible.I
+think it would be bad if we changed OkHttp to not exhaust the stream. That
+breaks connection reuse and caching.\r\n\r\nThe right fix here is to not do
+wacky things on the server.', "3872\nWhen Authenticator.authenticate() throws
+an exception the StreamAllocator isn't released\nFirst of all sorry for not
+providing a failing test here, but I struggled to do that for this
+case.\r\n\r\nI was just implementing an Authenticator when I found that when
+`Authenticator.authenticate()` throws an exception (it has a catched
+`IOException` in its signature, so that seems to be an expected case) the
+`RetryAndFollowUpInterceptor` will never release its `StreamAllocation` - as
+opposed to when returning `null` in `authenticate()`.\r\n\r\nHere are the
+according lines in the
+`RetryAndFollowUpInterceptor`:\r\n\r\n```java\r\nRequest followUp =
+followUpRequest(response, streamAllocation.route());\r\n\r\nif (followUp ==
+null) {\r\n if (!forWebSocket) {\r\n streamAllocation.release();\r\n }\r\n
+return response;\r\n}\r\n```\r\n\r\nShouldn't there be a try catch around the
+call to `followUpRequest()` to handle that case and and then re-throw the
+exception?\nI am new to open source community. Can I work it ?@CMahesh Before
+any PR lands there is a contributor agreement to submit,
+http://square.github.io/okhttp/#contributing\r\n\r\nAs it's not in scope for
+3.10, it seems like a great starter task@yschimke Thank you.. \xf0\x9f\x91\x8d
+I have submitted the contributor agreement. I will clone the repo and push the
+changes.okhttp3.internal.http.RetryAndFollowUpInterceptor\r\n\r\n Request
+followUp = null;\r\n try{\r\n \t followUp=followUpRequest(response,
+streamAllocation.route());\r\n }\r\n catch(IOException e){\r\n \t
+streamAllocation.release();\r\n \t throw e;\r\n }\r\n \r\nI have made the
+changes after downloading the repo.\r\n@yschimke What is the procedure to
+commit the changes ??There are a number of tutorials you can
+read\r\n\r\nhttps://help.github.com/articles/creating-a-pull-
+request/\r\n\r\nThe goal is to get your changes showing up here
+https://github.com/square/okhttp/pullshttps://github.com/square/okhttp/pull/3885\r\n\r\nchanges
+commited and pull request created.", "3827\ntoo many follow-up requests
+problem\nhello,\r\nrecording to this
+[issue](https://github.com/square/retrofit/issues/2630) it looks like OkHttp
+has a problem with status code `408`.\r\njust want to put it here to be
+fixed.\nCan you provide a sample of the response headers you are sending with
+the 408? Or a reproduction test case?\r\n\r\nThere is changed handling of 408
+in 3.10, which has not yet been released. I don't think it fixes it however.
+https://github.com/square/okhttp/pull/3753 But even if that doesn't help you
+can see examples in that PR of how to make a reproduction test
+case.\r\n\r\nAlso relevant is a fix in August for 408 handling
+https://github.com/square/okhttp/pull/3500@yschimke \r\nsomething like
+this\r\n\r\n> General:\r\nRequest URL:http://exampledomain:port/api\r\nRequest
+Method:GET\r\nStatus Code:408 \r\nRemote
+Address:exampledomain:port\r\nReferrer Policy:no-referrer-when-
+downgrade\r\n----------\r\n> Response-Headers:\r\nAccess-Control-Allow-
+Credentials:true\r\nAccess-Control-Allow-Origin:http://example-server-
+ip:port\r\nAccess-Control-Expose-Headers:Set-Cookie\r\nContent-
+Language:en\r\nContent-Length:X\r\nContent-
+Type:text/html;charset=utf-8\r\nDate:Tue, 06 Feb 2018 23:12:09
+GMT\r\nServer:Apache TomEE\r\nVary:Origin\r\n\r\nI'm not quite sure because we
+changed the status code but just status code and other things are remained so
+it should like the above (I copied the exact response from chrome, hope it's
+become useful)Fixed in 3.10.", '3793\nFatal Exception:
+ArrayIndexOutOfBoundsException in Hpack.java\n- Okhttp version: 3.9.1\r\n-
+Retrofit version: 2.3.0\r\n\r\nReceived crash report from SM-G950F on Android
+7.0.\r\nStacktrace\r\n```\r\nFatal Exception:
+java.lang.ArrayIndexOutOfBoundsException: length=8; index=8\r\n at
+okhttp3.internal.http2.Hpack$Reader.getName(Hpack.java:265)\r\n at
+okhttp3.internal.http2.Hpack$Reader.readLiteralHeaderWithIncrementalIndexingIndexedName(Hpack.java:250)\r\n
+at okhttp3.internal.http2.Hpack$Reader.readHeaders(Hpack.java:195)\r\n at
+okhttp3.internal.http2.Http2Reader.readHeaderBlock(Http2Reader.java:196)\r\n
+at okhttp3.internal.http2.Http2Reader.readHeaders(Http2Reader.java:182)\r\n at
+okhttp3.internal.http2.Http2Reader.nextFrame(Http2Reader.java:129)\r\n at
+okhttp3.internal.http2.Http2Connection$ReaderRunnable.execute(Http2Connection.java:566)\r\n
+at okhttp3.internal.NamedRunnable.run(NamedRunnable.java:32)\r\n at
+java.lang.Thread.run(Thread.java:762)\r\n```\r\n\nNot sure if this is a purely
+client bug, but even assuming an invalid server response, this should fail a
+single connection (IOException), closing all streams and not kill the client
+instance or the app.This is fixed.', '3786\nHigh CPU usage when uploading file
+with OkHTTP\nHi,\r\nI am using okhttp to upload a file to a server (actually
+presigned URL of AWS S3).\r\nMy server (the one which uses okhttp and does the
+upload) is also hosted on AWS and is deployed within a docker.\r\nI noticed
+that it takes about 8 seconds to upload a 30MB file, where if I just use a
+cURL command that does the same thing (also inside the docker) it takes 1.5
+seconds.\r\nAfter some digging I noticed that when okhttp is working the CPU
+is reaching 100%, where with cURL it is not really affected. I also tested
+using a much stronger ec2 instance (40vCPU), and still took 8 seconds and 100%
+CPU of the docker.\r\nWhen I run my JAR outside of the docker it actually
+worked in appropriate time (2~ seconds), but I still noticed a significant CPU
+spike during the upload.\r\nEventually I changed to a different http library
+([apache HttpClient](https://hc.apache.org/httpcomponents-
+client-4.5.x/httpclient/apidocs/index.html)) and it is working just like the
+cURL command (1.5 seonds and not CPU spikes)\r\n\r\n### Code snippet of okhttp
+usage of uploading:\r\n```java\r\nRequestBody body =
+RequestBody.create(MediaType.parse("multipart/form-data"), new
+File(filePath));\r\nRequest req = new Request.Builder()\r\n
+.url(signedUrl)\r\n .put(body) \r\n
+.build();\r\nclient.newCall(req).execute();\r\n```\r\n\r\n### Code snippet of
+different http lib which is working well:\r\n```java\r\nFile file = new
+File(filePath);\r\nMultipartEntityBuilder builder =
+MultipartEntityBuilder.create();\r\nbuilder.addBinaryBody("file", file,
+ContentType.MULTIPART_FORM_DATA, file.getName())\r\n
+.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);\r\nHttpPut put = new
+HttpPut(signedUrl);\r\nput.setEntity(builder.build());\r\nHttpClient client =
+HttpClientBuilder.create().build();\r\nclient.execute(put);\r\n```\r\n\r\nIf
+you need more details I will gladly add whatever is needed\nWow, yeah that
+isn\'t good. Can you sample a stacktrace of the service while it\'s being
+slow? I wonder if OkHttp is negotiating HTTP/2 which could explain
+dramatically different performance vs. other clients.\r\n\r\nTracing
+information is available either with a profiler, or just with calling jstack
+while OkHttp is spinning.I am not familiar with jstack but will try to take a
+look at it next week. \r\nForgot to mention that some of my digging I listened
+to the okhttp events and most of those 8 seconds are being while it is writing
+the http body. Also I can say that it is trying HTTP/1.1 and one of my tests
+was with this portocol only.Interesting! Yeah if you could take a stack dump
+it\'ll show whether there\'s a case in OkHttp that\'s slow or if it\'s
+something in the socket
+code.[dump.txt](https://github.com/square/okhttp/files/1677008/dump.txt)\r\nDump
+is attached. The dump was taken between requestBodyStart event (which was
+fired after 0.078 seconds) and requestBodyEnd event (which was fired after
+8.056 seconds)\r\n\r\nLooks like the CPU is busy doing AES for HTTPS. Might be
+something that performs better when Conscrypt support lands
+(soon!).\r\n\r\n```\r\n"http-nio-8090-exec-3" #31 daemon prio=5 os_prio=0
+tid=0x00007f0c9c02b000 nid=0x23a runnable [0x00007f0cac112000]\r\n
+java.lang.Thread.State: RUNNABLE\r\n at
+com.sun.crypto.provider.GHASH.update(GHASH.java:167)\r\n at
+com.sun.crypto.provider.GaloisCounterMode.doLastBlock(GaloisCounterMode.java:362)\r\n
+at
+com.sun.crypto.provider.GaloisCounterMode.encryptFinal(GaloisCounterMode.java:419)\r\n
+at com.sun.crypto.provider.CipherCore.finalNoPadding(CipherCore.java:1025)\r\n
+at com.sun.crypto.provider.CipherCore.doFinal(CipherCore.java:984)\r\n at
+com.sun.crypto.provider.AESCipher.engineDoFinal(AESCipher.java:479)\r\n at
+javax.crypto.Cipher.doFinal(Cipher.java:2333)\r\n at
+sun.security.ssl.CipherBox.encrypt(CipherBox.java:315)\r\n at
+sun.security.ssl.OutputRecord.encrypt(OutputRecord.java:264)\r\n at
+sun.security.ssl.SSLSocketImpl.writeRecordInternal(SSLSocketImpl.java:840)\r\n
+at sun.security.ssl.SSLSocketImpl.writeRecord(SSLSocketImpl.java:828)\r\n at
+sun.security.ssl.AppOutputStream.write(AppOutputStream.java:123)\r\n - locked
+<0x0000000086a3c2b8> (a sun.security.ssl.AppOutputStream)\r\n at
+okio.Okio$1.write(Okio.java:79)\r\n at
+okio.AsyncTimeout$1.write(AsyncTimeout.java:180)\r\n at
+okio.RealBufferedSink.emitCompleteSegments(RealBufferedSink.java:171)\r\n at
+okio.RealBufferedSink.write(RealBufferedSink.java:41)\r\n at
+okhttp3.internal.http1.Http1Codec$FixedLengthSink.write(Http1Codec.java:292)\r\n
+at okio.ForwardingSink.write(ForwardingSink.java:35)\r\n at
+okhttp3.internal.http.CallServerInterceptor$CountingSink.write(CallServerInterceptor.java:134)\r\n
+at okio.RealBufferedSink.emitCompleteSegments(RealBufferedSink.java:171)\r\n
+at okio.RealBufferedSink.write(RealBufferedSink.java:91)\r\n at
+okhttp3.RequestBody$2.writeTo(RequestBody.java:98)\r\n at
+okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.java:72)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n
+at
+okhttp3.logging.HttpLoggingInterceptor.intercept(HttpLoggingInterceptor.java:212)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.java:45)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n
+at
+okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.java:93)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n
+at
+okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.java:93)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:125)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n
+at okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:200)\r\n at
+okhttp3.RealCall.execute(RealCall.java:77)\r\n```No action for us to take on
+this, unfortunately.@swankjesse any recommendation about how to get better
+performance? I use okhttp3 to upload many 20mb videos on Android and it fries
+the user phones..@mufumbo please don\'t add new questions on old issues. If
+you\'d like to report an Android performance bug, create a new issue. This
+issue is about JVM performance.', '3778\nDiskLruCache line 683
+okhttp3.internal.cache.DiskLruCache.trimToSize\nDiskLruCache line
+683\r\nokhttp3.internal.cache.DiskLruCache.trimToSize\r\n\r\nFatal Exception:
+java.util.NoSuchElementException\r\n at
+java.util.LinkedHashMap$LinkedHashIterator.nextEntry(LinkedHashMap.java:349)\r\n
+at java.util.LinkedHashMap$ValueIterator.next(LinkedHashMap.java:370)\r\n at
+okhttp3.internal.cache.DiskLruCache.trimToSize(SourceFile:683)\r\n at
+okhttp3.internal.cache.DiskLruCache$1.run(SourceFile:176)\r\n at
+java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1113)\r\n
+at
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:588)\r\n
+at java.lang.Thread.run(Thread.java:818)\r\n\r\n\nIs this a once off or
+happening regularly? Can you provide more information e.g. it looks like this
+is with an older version of okhttp based on line
+numbers.http://crashes.to/s/4723371f419\r\n\r\nSomething in the cache is
+getting corrupted, so that the cache is empty but doesn\xe2\x80\x99t know it.
+An executable test case would help to reproduce.', '3767\nSilent "error" when
+a 302 redirect url is malformed\nI\'m seeing a case in handling redirects
+where it _appears_ that okhttp isn\'t following a redirect. After digging
+through okhttp with the failing url, okhttp is functioning "correctly" - the
+redirect url is invalid. Therefore, okhttp doesn\'t follow the redirect, and
+returns a response with response code 302.\r\n\r\nA test illustrating
+this:\r\n```\r\nRequest request = new
+Request.Builder().url(originalUrl).build();\r\nResponse response =
+okhttp.newCall(request).execute();\r\n\r\nlog(response.code());\r\nlog(response.isSuccessful());\r\n```\r\nresults
+in:\r\n```\r\n302\r\nfalse\r\n```\r\n\r\nExample for
+`originalUrl`:\r\n```\r\n, , and  have been used as substitutes for real urls,
+hosts, and paths\r\n\r\n<\-- 302 Found \r\nDate: Sun, 07 Jan 2018 17:04:43
+GMT\r\nServer: Apache/2.4.10 (Debian) PHP/5.6.24-0+deb8u1 OpenSSL/1.0.1t\r\nX-
+Powered-By: PHP/5.6.24-0+deb8u1\r\nExpires: Thu, 19 Nov 1981 08:52:00
+GMT\r\nCache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-
+check=0\r\nLocation: http://./\r\nAccess-Control-Allow-Origin:
+*\r\nConnection: close\r\nContent-Type: text/html; charset=UTF-8\r\n<\-- END
+HTTP\r\n```\r\n\r\nAnd yes, `followRedirects` and `followSslRedirects` are
+enabled\r\n\r\nWhat\'s going on here is that the 302 redirect location is an
+illegally formatted URL - in my case, something like `http://./` (note the
+leading `.` to the hostname). OkHttp\'s `RetryAndFollowUpInterceptor` reads
+this Location, and tries to parse it with `HttpUrl`. That, correctly, fails.
+At this point, the retry interceptor just returns and allows the 302 to
+propagate
+up:\r\nhttps://github.com/square/okhttp/blob/cd84d79c3574de81f23802f832f2ead6ad38a735/okhttp/src/main/java/okhttp3/internal/http/RetryAndFollowUpInterceptor.java#L307-L312\r\n\r\nNow,
+any sane client should be able to detect that the end response is not
+successful and handle it gracefully. But through reading through app logs,
+there\'s no indication as to what the actual failure was. The failed url
+parsing on the redirect location is simply swallowed here deep in OkHttp,
+without any mechanism to inform the client that the error
+occurred.\r\n\r\nShould a failed HttpUrl parse be bubbled up as an
+exception?\r\n\nWe\'ve been talking about throwing-variants of parse and
+resolve for quite\nsome time.\n\nOn Sun, Jan 7, 2018 at 6:40 PM jpearl
+wrote:\n\n> I\'m seeing a case in handling redirects where it *appears* that
+okhttp\n> isn\'t following a redirect. After digging through okhttp with the
+failing\n> url, okhttp is functioning "correctly" - the redirect url is
+invalid.\n> Therefore, okhttp doesn\'t follow the redirect, and returns a
+response with\n> response code 302.\n>\n> A test illustrating this:\n>\n>
+Request request = new Request.Builder().url(originalUrl).build();\n> Response
+response = okhttp.newCall(request).execute();\n>\n> log(response.code());\n>
+log(response.isSuccessful());\n>\n> results in:\n>\n> 302\n> false\n>\n>
+Example for originalUrl:\n>\n> , , and  have been used as substitutes for real
+urls, hosts, and paths\n>\n> <\-- 302 Found \n> Date: Sun, 07 Jan 2018
+17:04:43 GMT\n> Server: Apache/2.4.10 (Debian) PHP/5.6.24-0+deb8u1
+OpenSSL/1.0.1t\n> X-Powered-By: PHP/5.6.24-0+deb8u1\n> Expires: Thu, 19 Nov
+1981 08:52:00 GMT\n> Cache-Control: no-store, no-cache, must-revalidate, post-
+check=0, pre-check=0\n> Location: http://./\n> Access-Control-Allow-Origin:
+*\n> Connection: close\n> Content-Type: text/html; charset=UTF-8\n> <\-- END
+HTTP\n>\n> And yes, followRedirects and followSslRedirects are enabled\n>\n>
+What\'s going on here is that the 302 redirect location is an illegally\n>
+formatted URL - in my case, something like http://./\n> (note the leading . to
+the hostname). OkHttp\'s RetryAndFollowUpInterceptor\n> reads this Location,
+and tries to parse it with HttpUrl. That, correctly,\n> fails. At this point,
+the retry interceptor just returns and allows the 302\n> to propagate
+up:\n>\n>
+https://github.com/square/okhttp/blob/cd84d79c3574de81f23802f832f2ead6ad38a735/okhttp/src/main/java/okhttp3/internal/http/RetryAndFollowUpInterceptor.java#L307-L312\n>\n>
+Now, any sane client should be able to detect that the end response is not\n>
+successful and handle it gracefully. But through reading through app logs,\n>
+there\'s no indication as to what the actual failure was. The failed url\n>
+parsing on the redirect location is simply swallowed here deep in OkHttp,\n>
+without any mechanism to inform the client that the error occurred.\n>\n>
+Should a failed HttpUrl parse be bubbled up as an exception?\n>\n>
+\xe2\x80\x94\n> You are receiving this because you are subscribed to this
+thread.\n> Reply to this email directly, view it on GitHub\n> , or mute the
+thread\n> \n> .\n>\nI think this is asking a slightly different question
+\xe2\x80\x93 given a redirect that we can\xe2\x80\x99t follow should the call
+throw?What\'s the alternative? I definitely think delivering a 302 that can\'t
+be\nfollowed it weird.\n\nWhat do browsers do?\n\nOn Sun, Jan 7, 2018 at 10:21
+PM Jesse Wilson \nwrote:\n\n> I think this is asking a slightly different
+question \xe2\x80\x93 given a redirect\n> that we can\xe2\x80\x99t follow
+should the call throw?\n>\n> \xe2\x80\x94\n> You are receiving this because
+you commented.\n>\n>\n> Reply to this email directly, view it on GitHub\n> ,
+or mute\n> the thread\n> \n> .\n>\n@swankjesse is right in that I think the
+first question is what is the expected behavior? I could see a reasonable
+argument going something along the lines of "well, we already provide an API
+for `Response.isSuccessful()`, so the precedent already exists for a failure
+condition that isn\'t bubbled up through an exception". Obviously the flip
+side of that argument is why are there different classifications of errors -
+those that throw and those that don\'t, and are those classifications clearly
+defined as to what type of error falls in each bucket? \r\n\r\nThen of course
+I see a few arguments for the throws, including my original confusion that
+spurred this, which is that I thought OkHttp was broken and that it wasn\'t
+following the redirect, because it gave me no indication at all that it tried,
+nor that it was the redirect that was the root cause of the overall call
+failure.\r\n\r\nOf course to @JakeWharton\'s point, a throws on `parse` and
+`resolve` would seem to be one sane option to raising the exception,
+especially if that\'s already been a desire.\r\n\r\nMy one request though on
+any new exception is to avoid putting URLs into the exception message. URLs,
+especially for content, can be considered customer sensitive data that we
+won\'t log. For example, that\'s why we use
+[parse](https://github.com/square/okhttp/blob/cd84d79c3574de81f23802f832f2ead6ad38a735/okhttp/src/main/java/okhttp3/HttpUrl.java#L899)
+and not
+[Request.Builder.url(String)](https://github.com/square/okhttp/blob/cd84d79c3574de81f23802f832f2ead6ad38a735/okhttp/src/main/java/okhttp3/Request.java#L142-L144)To
+clarify, I don\'t mean changing the behavior of the existing methods,
+but\nrather to have some other version like parseOrThrow or safeParse
+or\nsomething...\n\nOn Sun, Jan 7, 2018 at 10:49 PM jpearl  wrote:\n\n>
+@swankjesse  is right in that I think the\n> first question is what is the
+expected behavior? I could see a reasonable\n> argument going something along
+the lines of "well, we already provide an\n> API for Response.isSuccessful(),
+so the precedent already exists for a\n> failure condition that isn\'t bubbled
+up through an exception". Obviously\n> the flip side of that argument is why
+are there different classifications\n> of errors - those that throw and those
+that don\'t, and are those\n> classifications clearly defined as to what type
+of error falls in each\n> bucket?\n>\n> Then of course I see a few arguments
+for the throws, including my original\n> confusion that spurred this, which is
+that I thought OkHttp was broken and\n> that it wasn\'t following the
+redirect, because it gave me no indication at\n> all that it tried, nor that
+it was the redirect that was the root cause of\n> the overall call
+failure.\n>\n> Of course to @JakeWharton \'s point, a\n> throws on parse and
+resolve would seem to be one sane option to raising\n> the exception,
+especially if that\'s already been a desire.\n>\n> My one request though on
+any new exception is to avoid putting URLs into\n> the exception message.
+URLs, especially for content, can be considered\n> customer sensitive data
+that we won\'t log. For example, that\'s why we use\n> parse\n> \n> and not
+Request.Builder.url(String)\n> \n>\n> \xe2\x80\x94\n> You are receiving this
+because you were mentioned.\n>\n>\n> Reply to this email directly, view it on
+GitHub\n> , or mute\n> the thread\n> \n> .\n>\n![screen shot 2018-01-07 at 10
+59 13 pm](https://user-
+images.githubusercontent.com/133019/34658624-8ee6603a-f3fe-11e7-9122-0cc0b8924eb8.png)\r\nThat\xe2\x80\x99s
+an attempt to redirect to a `file:` URL. I didn\xe2\x80\x99t get anything
+satisfying attempting to get Chrome and Firefox to redirect to broken URLs;
+they appear to just hang.\r\n\r\nI don\xe2\x80\x99t think OkHttp should throw
+when it has a response, even if that response is a malformed redirect.
+Throwing prevents the application layer from inspecting the HTTP response
+body, and that might have some clues around what went wrong.\r\n Will changing
+this to not throw break consumers? Should we introduce new methods for safely
+parsing, and then consider changing this implementation in a larger
+revision?Existing HttpUrl methods would not be charged in behavior\n\nOn Mon,
+Jan 8, 2018, 8:45 AM Russell Myers  wrote:\n\n> Will changing this to not
+throw break consumers? Should we introduce new\n> methods for safely parsing,
+and then consider changing this implementation\n> in a larger revision?\n>\n>
+\xe2\x80\x94\n> You are receiving this because you were mentioned.\n>\n>\n>
+Reply to this email directly, view it on GitHub\n> , or mute\n> the thread\n>
+\n> .\n>\nI think returning the 302 is our best option here.', '3761\nOkhttp
+crashes app with SSLException: Unable to create application data\nWe were
+testing our app by changing the date on the device when this crash happened.
+I\'m not sure if the crash is related to the date change or not. \r\n\r\nHere
+is the crash log:\r\n```\r\njava.lang.RuntimeException:
+javax.net.ssl.SSLException: Unable to create application data\r\n\tat
+com.android.org.conscrypt.ConscryptFileDescriptorSocket.newSsl(ConscryptFileDescriptorSocket.java:161)\r\n\tat
+com.android.org.conscrypt.ConscryptFileDescriptorSocket.(ConscryptFileDescriptorSocket.java:152)\r\n\tat
+com.android.org.conscrypt.OpenSSLSocketFactoryImpl.createSocket(OpenSSLSocketFactoryImpl.java:149)\r\n\tat
+okhttp3.internal.connection.RealConnection.connectTls(RealConnection.java:230)\r\n\tat
+okhttp3.internal.connection.RealConnection.establishProtocol(RealConnection.java:198)\r\n\tat
+okhttp3.internal.connection.RealConnection.buildConnection(RealConnection.java:174)\r\n\tat
+okhttp3.internal.connection.RealConnection.connect(RealConnection.java:114)\r\n\tat
+okhttp3.internal.connection.StreamAllocation.findConnection(StreamAllocation.java:193)\r\n\tat
+okhttp3.internal.connection.StreamAllocation.findHealthyConnection(StreamAllocation.java:129)\r\n\tat
+okhttp3.internal.connection.StreamAllocation.newStream(StreamAllocation.java:98)\r\n\tat
+okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.java:42)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n\tat
+okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.java:109)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n\tat
+okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.java:93)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n\tat
+okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:124)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n\tat
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n\tat
+okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:170)\r\n\tat
+okhttp3.RealCall.access$100(RealCall.java:33)\r\n\tat
+okhttp3.RealCall$AsyncCall.execute(RealCall.java:120)\r\n\tat
+okhttp3.internal.NamedRunnable.run(NamedRunnable.java:32)\r\n\tat
+java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1162)\r\n\tat
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:636)\r\n\tat
+java.lang.Thread.run(Thread.java:764)\r\nCaused by:
+javax.net.ssl.SSLException: Unable to create application data\r\n\tat
+com.android.org.conscrypt.NativeCrypto.SSL_new(Native Method)\r\n\tat
+com.android.org.conscrypt.SslWrapper.newInstance(SslWrapper.java:58)\r\n\tat
+com.android.org.conscrypt.ConscryptFileDescriptorSocket.newSsl(ConscryptFileDescriptorSocket.java:159)\r\n\t...
+27 more\r\n```\r\n\nThe problem appears to be in Conscrypt not OkHttp and it
+sounds like the storage is full.@JakeWharton "storage" is full e.g. Unable to
+create a pipe? I assume possible also too many open file descriptors, the
+native logs should
+help.\r\n\r\nhttps://github.com/google/conscrypt/blob/63e2139daf500bbfb62ddb1df186732201ce2525/common/src/jni/main/cpp/conscrypt/native_crypto.cc#L6376\r\n\r\nhttps://github.com/google/conscrypt/blob/a2a2a855bd96721e7ee18da8c77f134d3efb58eb/common/src/jni/main/include/conscrypt/app_data.h#L140-L147\r\n\r\nThis
+looks like Conscrypt is breaking the createSocket API by throwing a
+RuntimeException instead of an IOException, so it\'s worth reporting and **we
+should consider catching non IOExceptions here and rethrowing to avoid
+crashing.** \r\n\r\nHowever at the point you have exhausted native resources
+like this, arguably it\'s better for you app to crash and restart than
+continue failing forever more?\r\n\r\n Regarding the date aspect, much of the
+crypto world relies on accurate time, so changing the date/time substantially
+will cause valid certificates to be considered invalid because of the expiry
+or issue dates. So maybe this is causing some tight retry loop. But that is
+pure speculation. No action for OkHttp to take here. @swankjesse is crashing
+on a observable SSL failure desired?There\xe2\x80\x99s a bunch of problems
+that can be caused by resource exhaustion: can\xe2\x80\x99t open files,
+can\xe2\x80\x99t allocate memory, can\xe2\x80\x99t create threads.\r\n\r\nWe
+should be prudent to not exhaust resources ourselves: don\xe2\x80\x99t leak
+memory, files, or threads. Make APIs where it\xe2\x80\x99s clear who is
+responsible for releasing which resources.\r\n\r\nBut we shouldn\xe2\x80\x99t
+attempt to recover from resource exhaustion problems. The process has become
+unstable and it\xe2\x80\x99s soon going to exit.\r\n\r\nI think this is a
+resource exhaustion bug and that the cause is external to OkHttp and our TLS
+library.', '3722\nWebSocket java.net.SocketException: Connection
+reset\n[Status Code 1001](https://tools.ietf.org/html/rfc6455#section-7.4) in
+okhttp was a SocketException \r\n\r\nResponse from server `1001, Stream end
+encountered`\r\n\r\n ```java\r\n java.net.SocketException: Connection
+reset\r\n at java.net.SocketInputStream.read(SocketInputStream.java:192)\r\n
+at java.net.SocketInputStream.read(SocketInputStream.java:120)\r\n at
+okio.Okio$2.read(Okio.java:139)\r\n at
+okio.AsyncTimeout$2.read(AsyncTimeout.java:237)\r\n at
+okio.RealBufferedSource.request(RealBufferedSource.java:67)\r\n at
+okio.RealBufferedSource.require(RealBufferedSource.java:60)\r\n at
+okio.RealBufferedSource.readByte(RealBufferedSource.java:73)\r\n at
+okhttp3.internal.ws.WebSocketReader.readHeader(WebSocketReader.java:113)\r\n
+at
+okhttp3.internal.ws.WebSocketReader.processNextFrame(WebSocketReader.java:97)\r\n
+at okhttp3.internal.ws.RealWebSocket.loopReader(RealWebSocket.java:262)\r\n at
+okhttp3.internal.ws.RealWebSocket$2.onResponse(RealWebSocket.java:201)\r\n at
+okhttp3.RealCall$AsyncCall.execute(RealCall.java:141)\r\n at
+okhttp3.internal.NamedRunnable.run(NamedRunnable.java:32)\r\n at
+java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1133)\r\n
+at
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:607)\r\n
+at java.lang.Thread.run(Thread.java:776)\r\n```\r\n\r\nokhttp version
+`3.8.0`\nI can\'t reproduce this for the client. Can you provide more
+information or preferably a test showing the
+problem.\r\n\r\nhttps://github.com/square/okhttp/pull/3725\r\n\r\nI get a
+similar exception logged (not actually a problem) via the MockWebServer but
+I\'m inclined to ignore that. Barring a reproduction, I\'ll need to close the
+issue.*problem detail*\r\n - Establish a connection with the server\r\n -
+After a few minutes, there are no more `ping frame ` send caused by network
+\r\n - Send normal data then `SocketException ` appeared\r\nIn fact, response
+from server was `1001, Stream end encountered `\r\n\r\n`SocketException` did
+not invoked by\r\n```java\r\nWebSocketListener.onFailure(WebSocket webSocket,
+Throwable t, Response response)\r\n```\r\nSo,I could not catch this
+Exception.(This is what I need for help,I can not know the current websocket
+status). \r\nIIUC It should not be an exception. Have you
+implemented?\r\n\r\n```\r\n@Override public void onClosing(WebSocket
+webSocket, int code, String reason) {\r\n // do
+something\r\n}\r\n```Yep,\r\n```java\r\n@Override public void
+onClosing(WebSocket webSocket, int code, String reason) {\r\n Log.i(TAG,
+"onClosing:");\r\n super.onClosing(webSocket, code,
+reason);\r\n}\r\n\r\n@Override public void onClosed(WebSocket webSocket, int
+code, String reason) {\r\n Log.i(TAG, "onClosed:"); \r\n
+super.onClosed(webSocket, code, reason);\r\n}\r\n\r\n```\r\n\r\nUnfortunately
+, method `onClosing` `onClosed` also did not invoked. Another way can solve my
+problem', '3719\nCrash: Unexpected TLS version: NONE\nHi there!\r\n\r\nFirst
+at all thank you very much for your library!\r\n\r\nI\'ve integrated okhttp3
+since couple months ago; there were no problem until yesterday with an user
+(Huawei, model MHA-L29, on Android 7.0):\r\n\r\n```\r\nFatal Exception:
+java.lang.IllegalArgumentException: Unexpected TLS version: NONE\r\n at
+okhttp3.TlsVersion.forJavaName(TlsVersion.java:53)\r\n at
+okhttp3.Handshake.get(Handshake.java:56)\r\n at
+okhttp3.internal.connection.RealConnection.connectTls(RealConnection.java:300)\r\n
+at
+okhttp3.internal.connection.RealConnection.establishProtocol(RealConnection.java:268)\r\n
+at
+okhttp3.internal.connection.RealConnection.connect(RealConnection.java:160)\r\n
+at
+okhttp3.internal.connection.StreamAllocation.findConnection(StreamAllocation.java:256)\r\n
+at
+okhttp3.internal.connection.StreamAllocation.findHealthyConnection(StreamAllocation.java:134)\r\n
+at
+okhttp3.internal.connection.StreamAllocation.newStream(StreamAllocation.java:113)\r\n
+at
+okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.java:42)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n
+at
+okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.java:93)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n
+at
+okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.java:93)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:125)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:147)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:121)\r\n
+at okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:200)\r\n at
+okhttp3.RealCall$AsyncCall.execute(RealCall.java:147)\r\n at
+okhttp3.internal.NamedRunnable.run(NamedRunnable.java:32)\r\n at
+java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1133)\r\n
+at
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:607)\r\n
+at java.lang.Thread.run(Thread.java:776)\r\n```\r\nHave you got some ideas
+about this crash?\r\n\r\nThank you very much guys!\nDoes your app change the
+SSL provider in any way? to GMS services e.g. include
+ProviderInstaller.installIfNeeded. It could also just be the setup of that
+phone.\r\n\r\nIs it a one-off or consistently reproducible?\r\n\r\nI\'ve seen
+a similar issue in rare timing cases either before or after a network issue, a
+non-standard SSL provider can return NONE as the string. OkHttp might have to
+handle this more
+gracefully.\r\n\r\nhttps://github.com/google/conscrypt/blob/c88f9f55a523f128f0e4dace76a34724bfa1e88c/common/src/main/java/org/conscrypt/SSLNullSession.java#L149-L151Hi!\r\n\r\nAbout
+your questions:\r\n\r\n- "Does your app change the SSL provider in any way? to
+GMS services e.g. include ProviderInstaller.installIfNeeded" : no change\r\n-
+"Is it a one-off or consistently reproducible?" : just only 1 crash until
+now\r\n\r\nIs there a manner to catch this exception in my App to avoid a
+crash?I could confirm this issue on multiple devices. You could look in
+details at Crashlytics http://crashes.to/s/188322d298a\r\n\r\nHere is part of
+my application from stacktrace
+https://gist.github.com/anonymous/eb4c8d96de290e84c3e5be093060023f\r\n\r\nI
+use GMS ProviderInstaller and custom
+SSLSocketFactory.+1:\r\n\r\n![image](https://user-
+images.githubusercontent.com/10081640/34315440-a19f2062-e766-11e7-824d-7ca4a623d7bb.png)\r\nn.b.
+my PR fix will turn these into IOExceptions and handle them cleanly e.g. retry
+other connection routes. But it won\'t fix an underlying fatal problem e.g.
+connecting to specific servers with a custom SSLSocketFactory.@yschimke: this
+crash stills there :( I\'ve added ProviderInstaller.installIfNeeded into my
+App + a custom SSLSocketFactory. It\'s really rare, but today 1 user had this
+crash (Android 7.0 on Galaxy S7 Edge).@anthony3444 the fix is in the next
+release (3.10), until then when they happen you will get a crash from OkHttp.
+We\'re observing the same crash. 100% of crashes happen to users on Google
+phones running Android 8.1.0, though we can\'t reproduce on the same device we
+have.@yschimke do we have an ETA of this release? I don\'t, I think we had
+planned for a 3.10 earlier than this. cc @swankjesse @JakeWharton Hey guys,
+same crash - it\'s quite rare for us too, was just wondering if the issue
+could be kept open until 3.10 is released.\r\n\r\nAre there any extra
+informations that I could provide that may be needed/helpful?I think this is
+fixed in 3.10.@swankjesse is 3.10 expected to be released any time soon?
+thanks!@anna-b if you look at the
+[milestone](https://github.com/square/okhttp/milestone/22) they seem to be
+aiming for end Feb. So a bit more than a week.same error using 3.10 with
+Retrofit 2\r\n\r\n`Fatal Exception: java.lang.IllegalArgumentException:
+Unexpected TLS version: \r\n at
+okhttp3.TlsVersion.forJavaName(TlsVersion.java:53)\r\n at
+okhttp3.TlsVersion.forJavaNames(TlsVersion.java:59)\r\n at
+okhttp3.ConnectionSpec.tlsVersions(ConnectionSpec.java:113)\r\n at
+okhttp3.ConnectionSpec.toString(ConnectionSpec.java:221)\r\n at
+java.lang.String.valueOf(String.java:2683)\r\n at
+java.lang.StringBuilder.append(StringBuilder.java:129)\r\n at
+java.util.AbstractCollection.toString(AbstractCollection.java:458)\r\n at
+java.util.Collections$UnmodifiableCollection.toString(Collections.java:1108)\r\n
+at java.lang.String.valueOf(String.java:2683)\r\n at
+java.lang.StringBuilder.append(StringBuilder.java:129)\r\n at
+okhttp3.internal.connection.ConnectionSpecSelector.configureSecureSocket(ConnectionSpecSelector.java:70)\r\n
+at
+okhttp3.internal.connection.RealConnection.connectTls(RealConnection.java:274)\r\n
+at
+okhttp3.internal.connection.RealConnection.establishProtocol(RealConnection.java:251)\r\n
+at
+okhttp3.internal.connection.RealConnection.connect(RealConnection.java:151)\r\n
+at
+okhttp3.internal.connection.StreamAllocation.findConnection(StreamAllocation.java:192)\r\n
+at
+okhttp3.internal.connection.StreamAllocation.findHealthyConnection(StreamAllocation.java:121)\r\n
+at
+okhttp3.internal.connection.StreamAllocation.newStream(StreamAllocation.java:100)\r\n
+at
+okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.java:42)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n
+at
+okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.java:93)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n
+at
+okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.java:93)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n
+at
+okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.java:120)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n
+at com.justdo.logic.network.RestClient$1.intercept(RestClient.java:60)\r\n at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:92)\r\n
+at
+okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.java:67)\r\n
+at okhttp3.RealCall.getResponseWithInterceptorChain(RealCall.java:185)\r\n at
+okhttp3.RealCall$AsyncCall.execute(RealCall.java:135)\r\n at
+okhttp3.internal.NamedRunnable.run(NamedRunnable.java:32)\r\n at
+java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1133)\r\n
+at
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:607)\r\n
+at java.lang.Thread.run(Thread.java:762)`Mostly fixed in 3.10, but there was a
+race condition. Hopefully fixed correctly in 3.11Also, that stack trace
+appears to be 3.8.Is this fixed in 3.11?Yes, if you see it with 3.11 or it
+manifests in other similar ways, please open an issue.@dave-r12 ve\r\nHow do
+you judge that the issue opened by @vasiledoe happened when using okhttp 3.8
+or do I misunderstanding something?@yschimke \r\n\r\nThanks for your reply.
+\r\nCould you specify which commit in 3.11 fix that issue?\r\n\r\nI just
+upgrade to 3.10 to fix another crash
+(https://github.com/square/okhttp/issues/3438)\r\nCould you explain more about
+under which rare condition does this crash still happen in 3.10
+?@gongzelong0718 please give 3.11 a try. The commits in the release are on our
+git history.@gongzelong0718 the stack trace includes class names and line
+numbers. We can correlate that information with git tags to understand
+possible versions. For example:
+`okhttp3.ConnectionSpec.tlsVersions(ConnectionSpec.java:113) at `\r\n\r\nIn
+version 3.8 it contains this line of
+code:\r\nhttps://github.com/square/okhttp/blob/parent-3.8.0/okhttp/src/main/java/okhttp3/ConnectionSpec.java#L113\r\n\r\nAnd
+in
+3.10:\r\nhttps://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/ConnectionSpec.java#L113\r\n\r\nNote
+that 3.10 has no executable code!']] >>> GETTING SO POSTS FROM BIGQUERY <<<
+Post id: 20080345 Parent id: None TAGS: okhttp Creation Date: 2013-11-19
+19:28:11 ******************************************************* Post id:
+24071774 Parent id: None TAGS: okhttp Creation Date: 2014-06-05 23:20:08
+******************************************************* Post id: 25043793
+Parent id: None TAGS: okhttp Creation Date: 2014-07-30 18:01:57
+******************************************************* Post id: 25493288
+Parent id: None TAGS: okhttp Creation Date: 2014-08-25 19:48:13
+******************************************************* Post id: 25688099
+Parent id: None TAGS: okhttp Creation Date: 2014-09-05 14:22:44
+******************************************************* Post id: 26318055
+Parent id: None TAGS: okhttp Creation Date: 2014-10-11 18:51:15
+******************************************************* Post id: 26522412
+Parent id: None TAGS: okhttp Creation Date: 2014-10-23 06:29:42
+******************************************************* Post id: 27751634
+Parent id: None TAGS: okhttp Creation Date: 2015-01-03 04:11:49
+******************************************************* Post id: 28931191
+Parent id: None TAGS: okhttp Creation Date: 2015-03-08 19:57:30
+******************************************************* Post id: 28950846
+Parent id: None TAGS: okhttp Creation Date: 2015-03-09 20:07:20
+******************************************************* Post id: 29222231
+Parent id: None TAGS: okhttp Creation Date: 2015-03-23 23:19:09
+******************************************************* Post id: 29684026
+Parent id: None TAGS: okhttp Creation Date: 2015-04-16 19:16:08
+******************************************************* Post id: 30118534
+Parent id: None TAGS: okhttp Creation Date: 2015-05-08 07:46:10
+******************************************************* Post id: 30244520
+Parent id: None TAGS: okhttp Creation Date: 2015-05-14 18:19:03
+******************************************************* Post id: 31770119
+Parent id: None TAGS: okhttp Creation Date: 2015-08-02 08:46:17
+******************************************************* Post id: 32213382
+Parent id: None TAGS: okhttp Creation Date: 2015-08-25 20:24:06
+******************************************************* Post id: 32267251
+Parent id: None TAGS: okhttp Creation Date: 2015-08-28 09:04:19
+******************************************************* Post id: 32618030
+Parent id: None TAGS: okhttp Creation Date: 2015-09-16 20:25:11
+******************************************************* Post id: 33181326
+Parent id: None TAGS: okhttp Creation Date: 2015-10-17 00:16:58
+******************************************************* Post id: 33368246
+Parent id: None TAGS: okhttp Creation Date: 2015-10-27 12:39:30
+******************************************************* Post id: 33921894
+Parent id: None TAGS: okhttp Creation Date: 2015-11-25 16:39:48
+******************************************************* Post id: 34498023
+Parent id: None TAGS: okhttp Creation Date: 2015-12-28 17:34:47
+******************************************************* Post id: 34872680
+Parent id: None TAGS: okhttp Creation Date: 2016-01-19 09:13:04
+******************************************************* Post id: 36691155
+Parent id: None TAGS: okhttp Creation Date: 2016-04-18 10:18:17
+******************************************************* Post id: 38776553
+Parent id: None TAGS: okhttp Creation Date: 2016-08-04 20:07:54
+******************************************************* Post id: 38987917
+Parent id: None TAGS: okhttp Creation Date: 2016-08-17 04:02:19
+******************************************************* Post id: 39873222
+Parent id: None TAGS: okhttp Creation Date: 2016-10-05 11:52:12
+******************************************************* Post id: 39992116
+Parent id: None TAGS: okhttp Creation Date: 2016-10-12 06:46:19
+******************************************************* Post id: 40933697
+Parent id: None TAGS: okhttp Creation Date: 2016-12-02 13:46:42
+******************************************************* Post id: 42134697
+Parent id: None TAGS: okhttp Creation Date: 2017-02-09 10:51:12
+******************************************************* Post id: 44911706
+Parent id: None TAGS: okhttp Creation Date: 2017-07-04 17:48:21
+******************************************************* Post id: 47136151
+Parent id: None TAGS: okhttp Creation Date: 2017-11-06 11:40:00
+******************************************************* Post id: 47343925
+Parent id: None TAGS: okhttp Creation Date: 2017-11-17 05:36:33
+******************************************************* Post id: 47373602
+Parent id: None TAGS: okhttp Creation Date: 2017-11-19 04:08:32
+******************************************************* Post id: 49088208
+Parent id: None TAGS: okhttp Creation Date: 2018-03-03 19:17:48
+******************************************************* Post id: 49827065
+Parent id: None TAGS: okhttp Creation Date: 2018-04-14 01:40:11
+******************************************************* Post id: 50133101
+Parent id: None TAGS: okhttp Creation Date: 2018-05-02 11:03:39
+******************************************************* Post id: 51979918
+Parent id: None TAGS: okhttp Creation Date: 2018-08-23 06:52:28
+******************************************************* >>> PREPROCESSING
+ISSUES <<< >>> PREPROCESSING SO POSTS <<< >>> TFIDF POSTS <<< >>> TFIDF ISSUES
+<<< >>> COSINE SIMILARITY <<<
+

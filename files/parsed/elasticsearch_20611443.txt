@@ -1,0 +1,221 @@
+20611443 Understanding Elastic Search
+
+Sorry to say this but ES' documentation (
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index.html>
+) is confusing me.
+
+Thanks to the glossary I understand the terms for database, table and row but
+I have read substantial sections of the documentation and I cannot find
+answers to:
+
+  * Why do I need do to add `number_of_shards` and `number_of_replicas` to index creation? I did look here <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-modules.html> but ironically it leaves those two settings out `:/`
+  * How can I have 3 shards with 2 replicas? If the glossary is anything to go by shouldn't that be impossible considering that a shard is "is a single Lucene instance"?
+  * If I add more nodes later how can I change these values to span the new nodes?
+  * How does sharding work in ES?
+  * How does replica sets work in ES?
+  * How can I manage sharding? I understand it is auto join ( <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-configuration.html#cluster-name> ) but how do I define the difference between replicas and shards?
+  * How can I manage replica sets? I.e. how do I add replicas, promote primaries etc?
+
+For reference I read these links first:
+
+  * <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/glossary.html>
+  * <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index.html>
+
+If that information exists in the documentation then I would be very grateful
+if you can point me towards it.
+
+**Edit:**
+
+I am also unsure how auto-discovery works on a distributed network. Short if
+pinging every public network around how does it connect to the right one that
+could possibly be on the other side of the world?
+
+In short, an index is broken into shards. Shards can be replicated, meaning
+multiple copies of the same shard can exist in the same cluster. So if an
+index has 3 shards and 2 replica's, that means you have nine shards in total
+of which six are replicas of the three master shards.
+
+ES, will try to balance shards and their replica's across the cluster so that
+if a node goes down it can fail over from the master shards on that node to
+replicas. This can confuse some people: a master in elastic search refers to
+shards, not the actual node. So a single node can have a mix of replica's and
+master shards.
+
+If you come from the lucene world, a lucene index is not the same thing as an
+elastic search index. An elastic search index is a logical group of indexed
+documents with types, mappings and documents. More or less the same as a
+database schema. A lucene index on the other hand is a group of several files
+that contains indexed data. When Elastic search creates indexes, what it does
+is create several lucene indexes (one for each field and shard) and when it
+replicates, it is basically copying the files of these lucene indices around.
+
+You can't change the number of shards for an index but you can change the
+number of replicas. Typically what you do when you need to have more shards is
+create a new index and reindex the data.
+
+In terms of shard management beyond deciding on the number of shards, there's
+not much to manage by default and ES is pretty good coordinating things by
+itself, There are a ton of options you can fiddle with once you gain a bit
+better understanding of how it works. Defaults are pretty OK for most. In
+terms of cluster management, you can do a lot via the API in terms of shutting
+down nodes in a controlled way, using index aliases, changing number of
+replica's, etc.
+
+As for autodiscovery, ES uses local network multicast by default. You can
+switch to unicast and you probably want to change the default clustername to
+prevent accidents (had some fun in coffeeshops with unintended clusters
+forming). You probably don't want to cluster globally. I don't see that ending
+well.
+
+Please see below for answers to your points.
+
+>   * Why do I need do to add number_of_shards and number_of_replicas to index
+creation? I did look here
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules.html> but ironically it leaves those two settings out :/
+
+>
+
+You don't "have" to, but you probably should in especially will want to in
+production. The default is five shards and one replication.
+
+The number of replications defined is just the number of times your entire
+index is replicated throughout all of the nodes in your elasticsearch cluster.
+Think of it as being multiple read copies of a RDBMS database (but in this
+case, we read and write all copies).
+
+A shard is the number of times I split up, or shard, an index. So, I can have
+an index with a single shard, or I can have an index with multiple shards.
+This is similar in concept to sharding a RDBMS database by primary key, but
+not identical.
+
+So, the total number of shards you will have in an index is the product of
+number_of_shards and number_of_replicas.
+
+When you do a search, elasticsearch will distribute your search to all
+possible nodes containing the shards in your index and aggregagate the result
+for you. You can think of this as a map/ reduce where the map is sending the
+search out to each shard and the reduce is collecting the results.
+
+Also, you can change the replication number_of_replicas at any time, but you
+can never change the number_of_shards. This must be set at index creation.
+
+>   * How can I have 3 shards with 2 replicas? If the glossary is anything to
+go by shouldn't that be impossible considering that a shard is "is a single
+Lucene instance"?
+
+>
+
+I think the above mostly answers this, but it's important to remember that
+elasticsearch is primarily a distributed computing solution to search. We are
+splitting the work up to multiple shards and possibly machines.
+
+>   * If I add more nodes later how can I change these values to span the new
+nodes?
+
+>
+
+Once the cluster is aware of another node in the cluster, no other action is
+needed by you. The settings propagate throughout the cluster on their own. In
+your above example of three shards and two replicas, if you had two nodes
+initially and added a third, each node will have on average two shards per
+node, this shard movement happens without your intervention (again, provided
+the cluster is aware of the new node)
+
+>   * How does sharding work in ES?
+
+>
+
+See above
+
+>   * How does replica sets work in ES?
+
+>
+
+See above
+
+>   * How can I manage sharding? I understand it is auto join (
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-
+configuration.html#cluster-name> ) but how do I define the difference between
+replicas and shards?
+
+>
+
+You don't have to "manage" it actively. As stated earlier, sharding and
+everything else you define at index creation, is propagated to new nodes
+within the cluster.
+
+You define replicas and shards like this:
+
+    
+    
+    {
+        "settings": {
+            "index": {
+                "number_of_shards": 20,
+                "number_of_replicas": 1
+            }
+        },
+        "mappings": {
+            "some_type": {
+                "properties": {
+                    "some_field": {
+                        "type": "long"
+                    }
+                }
+            }
+        }
+    }
+    
+
+>   * How can I manage replica sets? I.e. how do I add replicas, promote
+primaries etc?
+
+>
+
+You do that through the update indices API, documentation for this specific
+case is found on there site here:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+update-settings.html>
+
+I just noticed your edit, please see below:
+
+>   * I am also unsure how auto-discovery works on a distributed network.
+
+>
+
+In the YML config file you set the unicast like this:
+
+    
+    
+    discovery.zen.ping.multicast.enabled: false
+    #discovery.zen.minimum_master_nodes: 3
+    discovery.zen.ping.unicast.hosts: ["ip.add.r.ess", "ip.add.r.ess"]
+    
+
+The middle setting is an important setting, but I commented it out here. That
+number should always be number of (master nodes / 2) +1. This is to avoid
+split brain situations. Generally I set all nodes to master eligible.
+
+These settings are for unicast, which is what I think you are going for with
+your question and not multicast.
+
+It's a quite incident that about 80% of your questions are answered in the
+**Video Presentation given by _Shay Banon_** (The creater of ElastiSearch).
+Though this presentation has much more than you can find anywhere else. Hope
+this helps.
+
+    
+    
+      http://www.infoq.com/presentations/ElasticSearch  
+    
+
+This video is a bit low-resolution, so if you want code shown in presentation
+follow this
+
+    
+    
+      https://github.com/kimchy/talks/tree/master/2011/wsnparis 
+    
+

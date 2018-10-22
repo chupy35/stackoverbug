@@ -1,0 +1,4 @@
+30583606
+ElasticsearchIllegalArgumentException No feature for name
+<p>I have an Elasticsearch node setup. When I query the index via curl command I get the expected output.</p>&#xA;&#xA;<pre><code>curl -XPOST 'http://localhost:9200/one/employee/_search?pretty=true' -d '{&#xA;"query": {&#xA;"term": {&#xA;"emp_id":"4318W01149"&#xA;}&#xA;}&#xA;}'&#xA;</code></pre>&#xA;&#xA;<p>but when I run similar query via browser I get the error</p>&#xA;&#xA;<p><code>http://localhost:9200/one/employee/?q=emp_id:4318W01149</code></p>&#xA;&#xA;<pre><code>{"error":"ElasticsearchIllegalArgumentException[No feature for name [employee]]","status":400}&#xA;</code></pre>&#xA;&#xA;<p>I'm on ES version 1.5.2</p>&#xA;&#xA;<p>Thanks</p>&#xA;
+<p>you forgot <code>_search</code> in <code>http://localhost:9200/one/employee/?q=emp_id:4318W01149</code></p>&#xA;&#xA;<p>should be </p>&#xA;&#xA;<p><code>http://localhost:9200/one/employee/_search?q=emp_id:4318W01149</code></p>&#xA;

@@ -1,0 +1,27 @@
+13479363 nested documents to store large number of attributes?
+
+I am making a spreadsheet application. Each spreadsheet may contain upto few
+tens of columns and few thousands of rows.
+
+But between all the spreadsheet, the application will have thousands of
+distinct columns. And I want to index all columns by integer or date or
+facetable strings.
+
+The obvious way is to map each column to its lucene attribute. But this seems
+like a ram black hole. But nested documents seem like a good idea. In a single
+field, I can encode documents like:
+
+    
+    
+    attribute: date-of-birth
+    date_value: 1980-5-5
+    
+
+So I can search "who has date-of-birth before 1980" and get relevant rows in
+sub second too.
+
+Are nested documents the best choice after all for such spreadsheet rows? Is
+there a better way?
+
+I am more experienced in solr. Is this a reason to switch?
+

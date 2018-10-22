@@ -1,0 +1,248 @@
+24658944 Elasticsearch NumberFormatException when sorting by numeric and date
+fields
+
+I am attempting to sort on two fields, one is a date field the other is an
+integer field. I have verified that the fields are mapped correctly and that
+the values for all of the indexed documents have the correct data types,
+however every time i try to sort by the numeric field I ES returns an
+exception [java.lang.NumberFormatException: Invalid shift value in prefixCoded
+bytes (is encoded value really an INT?)].
+
+The wierd thing is that it returns results and they seem to be sorted
+correctly so I'm not entirely sure what effect this is having but I know I
+should not have any errors in the response.
+
+Here is a the mapping:
+
+    
+    
+    {
+       "blcdt.products": {
+          "mappings": {
+             "review_143758": {
+                "properties": {
+                   "date_reviewed": {
+                      "type": "date",
+                      "format": "YYYY-MM-dd"
+                   },
+                   "description": {
+                      "type": "string"
+                   },
+                   "manufacturer": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                   },
+                   "model_number": {
+                      "type": "string",
+                      "boost": 2,
+                      "index": "not_analyzed",
+                      "norms": {
+                         "enabled": true
+                      }
+                   },
+                   "msrp": {
+                      "type": "float"
+                   },
+                   "product": {
+                      "type": "string"
+                   },
+                   "product_name": {
+                      "type": "string",
+                      "boost": 2,
+                      "fields": {
+                         "full": {
+                            "type": "string",
+                            "boost": 4,
+                            "index": "not_analyzed",
+                            "norms": {
+                               "enabled": true
+                            }
+                         }
+                      }
+                   },
+                   "product_type": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                   },
+                   "review_category": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                   },
+                   "review_title": {
+                      "type": "string"
+                   },
+                   "review_type": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                   },
+                   "review_type_priority": {
+                      "type": "integer"
+                   },
+                   "score": {
+                      "type": "float"
+                   },
+    
+                }
+             }
+          }
+       }
+    }
+    
+
+Here is a query that throws the exception:
+
+    
+    
+    POST /blcdt.products/review_143758/_search?pretty=true
+    {
+       "query": {
+          "filtered": {
+             "filter": [
+                {
+                   "term": {
+                      "review_category": "Game Reviews"
+                   }
+                }
+             ]
+          }
+       },
+       "from": 0,
+       "size": 8,
+       "sort": [
+          {
+             "review_type_priority": {
+                "order": "desc"
+             }
+          },
+          {
+             "date_reviewed": {
+                "order": "desc"
+             }
+          }
+       ],
+       "fields": [
+          "review_title",
+          "review_type",
+          "score"
+       ]
+    }
+    
+
+and here is the abbreviated response from ES:
+
+    
+    
+    {
+       "took": 2,
+       "timed_out": false,
+       "_shards": {
+          "total": 5,
+          "successful": 1,
+          "failed": 4,
+          "failures": [
+             {
+                "index": "blcdt.products",
+                "shard": 2,
+                "status": 500,
+                "reason": "QueryPhaseExecutionException[[blcdt.products][2]: query[filtered(ConstantScore(cache(review_category:Game Reviews)))->cache(_type:review_143758)],from[0],size[8],sort[<custom:\"review_type_priority\": org.elasticsearch.index.fielddata.fieldcomparator.LongValuesComparatorSource@44ecbc5>!,<custom:\"date_reviewed\": org.elasticsearch.index.fielddata.fieldcomparator.LongValuesComparatorSource@5123f4b8>!]: Query Failed [Failed to execute main query]]; nested: ElasticsearchException[java.lang.NumberFormatException: Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; nested: UncheckedExecutionException[java.lang.NumberFormatException: Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; nested: NumberFormatException[Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; "
+             },
+             {
+                "index": "blcdt.products",
+                "shard": 3,
+                "status": 500,
+                "reason": "QueryPhaseExecutionException[[blcdt.products][3]: query[filtered(ConstantScore(cache(review_category:Game Reviews)))->cache(_type:review_143758)],from[0],size[8],sort[<custom:\"review_type_priority\": org.elasticsearch.index.fielddata.fieldcomparator.LongValuesComparatorSource@281d24cc>!,<custom:\"date_reviewed\": org.elasticsearch.index.fielddata.fieldcomparator.LongValuesComparatorSource@115ae1a7>!]: Query Failed [Failed to execute main query]]; nested: ElasticsearchException[java.lang.NumberFormatException: Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; nested: UncheckedExecutionException[java.lang.NumberFormatException: Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; nested: NumberFormatException[Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; "
+             },
+             {
+                "index": "blcdt.products",
+                "shard": 4,
+                "status": 500,
+                "reason": "QueryPhaseExecutionException[[blcdt.products][4]: query[filtered(ConstantScore(cache(review_category:Game Reviews)))->cache(_type:review_143758)],from[0],size[8],sort[<custom:\"review_type_priority\": org.elasticsearch.index.fielddata.fieldcomparator.LongValuesComparatorSource@41238b2a>!,<custom:\"date_reviewed\": org.elasticsearch.index.fielddata.fieldcomparator.LongValuesComparatorSource@48593cf>!]: Query Failed [Failed to execute main query]]; nested: ElasticsearchException[java.lang.NumberFormatException: Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; nested: UncheckedExecutionException[java.lang.NumberFormatException: Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; nested: NumberFormatException[Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; "
+             },
+             {
+                "index": "blcdt.products",
+                "shard": 0,
+                "status": 500,
+                "reason": "QueryPhaseExecutionException[[blcdt.products][0]: query[filtered(ConstantScore(cache(review_category:Game Reviews)))->cache(_type:review_143758)],from[0],size[8],sort[<custom:\"review_type_priority\": org.elasticsearch.index.fielddata.fieldcomparator.LongValuesComparatorSource@1cbd767c>!,<custom:\"date_reviewed\": org.elasticsearch.index.fielddata.fieldcomparator.LongValuesComparatorSource@5aadd5a1>!]: Query Failed [Failed to execute main query]]; nested: ElasticsearchException[java.lang.NumberFormatException: Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; nested: UncheckedExecutionException[java.lang.NumberFormatException: Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; nested: NumberFormatException[Invalid shift value in prefixCoded bytes (is encoded value really an INT?)]; "
+             }
+          ]
+       },
+       "hits": {
+          "total": 41,
+          "max_score": null,
+          "hits": [
+             {
+                "_index": "blcdt.products",
+                "_type": "review_143758",
+                "_id": "599606",
+                "_score": null,
+                "fields": {
+                   "score": [
+                      8
+                   ],
+                   "review_type": [
+                      "review"
+                   ],
+                   "review_title": [
+                      "Entwined review"
+                   ]
+                },
+                "sort": [
+                   100,
+                   1403648392
+                ]
+             },
+             ...
+             {
+                "_index": "blcdt.products",
+                "_type": "review_143758",
+                "_id": "452429",
+                "_score": null,
+                "fields": {
+                   "score": [
+                      9
+                   ],
+                   "review_type": [
+                      "review"
+                   ],
+                   "review_title": [
+                      "Dark Souls II review"
+                   ]
+                },
+                "sort": [
+                   100,
+                   1394840094
+                ]
+             }
+          ]
+       }
+    }
+    
+
+I figured out how to fix the problem but I don't know why it fixes it. By
+changing the datatype of 'review_type_priority' from integer to long it no
+longer throws the exception and now I get all the reviews I am supposed to
+get. Anyone care to shed light on why this field has to be a long?
+
+I ran into a similar problem where I was getting failures on some shards and
+not on others. It turned out that I'd deleted documents, deleted mappings,
+added new mappings with updated data type for one field, added documents
+again, and my aggregation was failing to analyse the field I'd changed the
+mapping for.
+
+What fixed the problem was optimising the index where the failures were
+occurring:
+
+    
+    
+    POST logstash-2014.08/_optimize?max_num_segments=1&wait_for_merge=false
+    
+
+(in Sense)
+
+According to some Lucene documentation I found, a type index can be preserved
+even after all documents in an index are deleted, and optimising the index
+flushes the type index. You can see some ES documentation on optimising
+indexes
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+optimize.html).
+

@@ -1,0 +1,92 @@
+10715812 ElasticSearch facet results without document
+
+I'm trying to get the histogram for some events I have indexed, but I only
+want in the response the 'facet results' and not the search + facet results.
+
+This is an example of the query I'm running:
+
+    
+    
+    curl -XGET 'http://localhost:9200/main/events/_search?pretty=true' -d '
+    {
+       "facets" : {
+        "histo1" : {
+           "query" : {
+                "query_string" : {"query":"*:*"}
+            },
+             "date_histogram" : {
+                "field" : "time",
+                "interval" : "minute"
+            }
+        }
+      }
+    }
+    '
+    
+
+So in the result I want to have just the
+
+    
+    
+    "facets" : {
+    "histo1" : {
+      "_type" : "date_histogram",
+      "entries" : [ {
+        "time" : 1337700000,
+        "count" : 76
+      } ]
+    }
+    
+
+part, without all the documents that matched the query.
+
+Is this possible?
+
+Thanks a lot.
+
+You can use
+[count](http://www.elasticsearch.org/guide/reference/api/search/search-type/)
+search_type:
+
+    
+    
+    curl -XGET 'http://localhost:9200/main/events/_search?search_type=count&pretty=true' -d '
+    {
+      "facets" : {
+        "histo1" : {
+           "query" : {
+                "query_string" : {"query":"*:*"}
+            },
+             "date_histogram" : {
+                "field" : "time",
+                "interval" : "minute"
+            }
+        }
+      }
+    }
+    ' 
+    
+
+Alternatively, you can set `"size":0` to your query, but it will be less
+efficient:
+
+    
+    
+    curl -XGET 'http://localhost:9200/main/events/_search?pretty=true' -d '
+    {
+      "facets" : {
+        "histo1" : {
+           "query" : {
+                "query_string" : {"query":"*:*"}
+            },
+             "date_histogram" : {
+                "field" : "time",
+                "interval" : "minute"
+            }
+        }
+      },
+      "size":0
+    }
+    '
+    
+

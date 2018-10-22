@@ -1,0 +1,86 @@
+24746457 React CCSTransitionGroup animation not applying enter/leave classes
+
+I'm trying to write a simple page slider. Here, when I click a page, it
+creates a new Page with random content, and re-renders the App component. On
+App render(), instead of the TransitionGroup holding both state.pages until
+animation completes, it just switches out the pages, never attaching the
+enter-leave classes and not performing the css animation. I'm sure I'm messing
+something up in the LifeCycle, but can't think of it.
+
+Thanks for looking!
+
+    
+    
+    var Page = React.createClass({
+      handleClick: function(){
+        var pgs = ['page-one','page-two','page-three','page-four']
+        currentIdx = Math.floor(Math.random() * pgs.length);
+        var pg = pgs[ currentIdx ];
+        var newPg = <Page html={pg} title={'Title for ' + pg} />;
+        React.renderComponent(<App newPage={newPg} />, document.body)
+      },
+      render: function(){
+        return (<div className="content" style={{paddingTop: 44}} onClick={this.handleClick}>{this.props.html}</div>);
+      }
+    })
+    
+    var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
+    
+    var App = React.createClass({
+      getInitialState: function() {
+        return {pages: [<Page html="initial page" title="initial title" />]};
+      },
+      componentWillMount: function(){
+        this.setState({pages: [this.props.newPage]})
+      },
+      componentWillReceiveProps: function(nextProps) {
+          this.setState({pages: [nextProps.newPage]});
+        },
+      render: function() {
+        var title = this.state.pages.length ? this.state.pages[ this.state.pages.length - 1 ].props.title : 'none';
+        return (
+          <div id="body">
+            <TitleBar title={title} />
+            <ReactCSSTransitionGroup transitionName="pg" id="transdiv" component={React.DOM.div}>
+              {this.state.pages}
+            </ReactCSSTransitionGroup>
+          </div>
+        );
+      }
+    });
+    
+
+The problem was that I was setting the Page keys in Page.render() (not shown
+above), and not in App.render() I'm not sure why you can't set keys in the
+child/owned component as long as they're unique, but this fixed my problem.
+
+    
+    
+    var App = React.createClass({
+    
+        // other methods are same
+    
+        render: function(){
+            var title = 'Title';
+            var pgs = this.state.pages.map(function(pg){
+    
+                // SET KEY HERE
+                pg.props.key = pg.props.title;
+                return pg;
+            }
+            return (
+                <div id="body">
+                    <TitleBar title={title} />
+                    <ReactCSSTransitionGroup transitionName="pg" id="transdiv" component={React.DOM.div}>
+                        {pgs}
+                    </ReactCSSTransitionGroup>
+                </div>
+            );
+        }
+    }
+    
+
+Also, if anyone can tell me the correct way to set props on unmounted
+components, please tell me. Setting them directly works, but it doesn't feel
+right.
+

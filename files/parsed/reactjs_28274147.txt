@@ -1,0 +1,29 @@
+28274147 Does a "static" rendering of a React page always duplicate content in
+JS objects?
+
+Looking at this isomorphic react page: <http://jlongster.com/Presenting-The-
+Most-Over-Engineered-Blog-Ever>
+
+I see that there is a Javascript variable at the bottom of the static content
+that represents the static content.
+
+So the content is replicated when downloading.
+
+Is this mandatory for the way react works? Any more efficient methods?
+
+You need to have the data included so that you can mount the application on
+the client. The initial client side render must produce the same virtual dom
+as the server gave.
+
+You could fetch it async, and wait until it downloads to mount the app, but
+there will be a significant delay between when the user reaches the page, and
+when JavaScript is actually applied. It'll also double the load on the
+database for initial requests.
+
+Overall, server rendering will improve the time it takes for the user to see
+content, improve SEO, enable page caching with a CDN, and other benefits that
+outweigh the costs by far.
+
+It's less important for sites behind a login, and you can often save
+significant development time by omitting it.
+

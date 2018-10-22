@@ -1,0 +1,61 @@
+10874360 ElasticSearch returning all documents
+
+Here is the query I am sending to ElasticSearch:
+
+    
+    
+    http://localhost:9200/user-index/user/_search/?queryb%5Bname%5D=Richard
+    
+
+The returned JSON is this:
+
+    
+    
+    {
+      "hits": [
+        {
+          "_index": "user-index",
+          "_type": "user",
+          "_id": "WgrvE-DzQJminNreBIsRNA",
+          "_score": 1.0,
+          "_source": {
+            "name": "Richard",
+            "db_id": "7"
+          }
+        },
+        {
+          "_index": "user-index",
+          "_type": "user",
+          "_id": "GwMOuYbUR8y48RrG4HgXdg",
+          "_score": 1.0,
+          "_source": {
+            "name": "John",
+            "db_id": "8"
+          }
+        },
+        {
+          "_index": "user-index",
+          "_type": "user",
+          "_id": "C-bgK3pNTNiX9Cz0x8EftA",
+          "_score": 1.0,
+          "_source": {
+            "name": "Harold",
+            "db_id": "2"
+          }
+        }
+      ]
+    }
+    
+
+Only one of those actually matches. Why is it sending them all back?
+
+Elasticsearch returns all records with the type user in the index user-index
+because it cannot find the search query. The search query should be specified
+as a query string in [the parameter
+"q"](http://www.elasticsearch.org/guide/reference/api/search/uri-request.html)
+or as [a request
+body](http://www.elasticsearch.org/guide/reference/api/search/request-
+body.html).
+
+Try `http://localhost:9200/user-index/user/_search?q=name%3ARichard`
+

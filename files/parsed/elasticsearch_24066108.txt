@@ -1,0 +1,54 @@
+24066108 Short queries return not enough results
+
+Hey I have a field in elasticsearch that is analyzed with the
+alphanumeric_analyzer. Then I index data into that field that looks like this:
+
+Test-00001
+
+Test-00002
+
+to
+
+Test-01000
+
+If I execute the following query, I get 250 results consistently. But they
+aren't necessarily Test-00001 to Test -00250.
+
+    
+    
+    `{
+      "query": {
+        "match": {
+          "filename_Analyzed": {
+            "type": "phrase_prefix",
+            "query": "0"
+          }
+        }
+      }
+    }`
+    
+
+I was expecting to get 1000 results, but I only get 250. Are my expectations
+correct, or is the search incorrect?
+
+EDIT 1:
+
+Gist for the mapping:
+<https://gist.github.com/goalie7960/8ffd1536269a901f18bc>
+
+EDIT 2:
+
+If I double the number of shards, the number of results also doubles. So 5
+shards = 250 results, 10 shards = 500 results, etc.
+
+EDIT 3:
+
+Here's a gist for the analyzer I am using. But I can also reproduce with the
+standard analyzer.
+
+<https://gist.github.com/goalie7960/b0bbbddf1cee29b4b5ed>
+
+Turns out the prefix query or phrase prefix was exceeding the max expansion
+limit in elastic search. A non simple solution was to switch to ngram analysis
+and it has fixed the problem. Yay.
+

@@ -1,0 +1,4 @@
+34180334
+AND between tokens in elasticsearch
+<p>When I'm trying to search for a documents with such query (field indexed with Standard analyzer):</p>&#xA;&#xA;<pre><code> "query": {&#xA;        "match": {&#xA;           "Book": "OG/44"&#xA;        }&#xA;    }&#xA;</code></pre>&#xA;&#xA;<p>I've got terms 'OG' and '44' and the result set will contain results where could be either of these terms. What analyzer/tokenizer I should use to get results when only both of terms are present?</p>&#xA;
+<p>You can set <strong>operator</strong> in match query (by default it is <em>or</em>)</p>&#xA;&#xA;<pre><code>"query": {&#xA;    "match": {&#xA;       "Book": {&#xA;           "query": "OG/44",&#xA;           "operator" : "and"&#xA;       }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>You have two tokens because <em>standard</em> analyzer tokenized them by slash, so if you need not this behaviour you can escape it</p>&#xA;

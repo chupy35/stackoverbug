@@ -1,0 +1,47 @@
+9105046 Elasticsearch filtered search for sub-object fields
+
+How do I do a filtered search in ElasticSearch on a sub-object field? For
+example, my document has an `id`, and a `data` field which is a JSON array of
+how the data was stored in my database:
+
+`{_id: 000, merchant: "merchant_1", email: "hello@email.com"}`
+
+My search query:
+
+    
+    
+    "query": {
+        "filtered": {
+            "filter": { "term": { "data.merchant": "merchant_1"} },
+            "query": {
+                "query_string": {"query": "hello"} }
+            }
+        }
+    }
+    
+
+doesn't return anything, yet doing a query with just the query_string `hello`
+returns the correct rows. Changing `"data.merchant"` => `"merchant"` doesn't
+change anything either.
+
+Am I doing something wrong here?
+
+**Update:** I ended up just using a boolean query, which worked.
+
+    
+    
+    "query": {
+        "filtered": {
+            "filter": { "term": { "data.merchant": "merchant_1"} },
+            "query": {
+                "query_string": {
+                    "default_field": "_all",
+                    "query": "hello"
+                }
+            }
+        }
+    }
+    
+
+This should work for your case.
+

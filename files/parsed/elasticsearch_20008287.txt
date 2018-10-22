@@ -1,0 +1,34 @@
+20008287 Is it possible to get response with highlighted "_source" instead of
+"highlight" collection?
+
+It would be nice in some cases (I have fixed amount of fields to display on
+search result and to create logic that would replace one field from
+"highlight" collection and the second one leave original is somehow
+uncomfortable). Is it possible?
+
+    
+    
+    "hits": [
+         {
+            "_index": "myindex",
+            "_type": "Company",
+            "_id": "da8b8f36-3454-4120-9194-e5355819bff4",
+            "_score": 1.214946,
+            "_source": {
+               "id": "1",
+               "name": "The <em>Company</em>"
+         }
+    
+
+Thanks in advance?
+
+It is not possible, since highlighting is a feature available with the search
+api but doesn't replace your search results.
+
+You need to get the snippets from the highlighted results, and fall back to
+the `_source` if there are no snippets available for the fields you are
+interested in. The recently introduced `no_match_size` parameter might be
+useful to you though, as it allows to include in the highlighted results the
+first part of a field if there was nothing to highlight, so that the fallback
+is effectively done by elasticsearch itself internally.
+

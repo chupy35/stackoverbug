@@ -1,0 +1,24 @@
+22774754 Elasticsearch replica auto undertake shard
+
+Below I have 2 nodes in two servers. 2 indexes each. The indexes are
+distributed in 2 shards and 1 replica set.
+
+"Thor" node had a downtime so I "Iron_man" took over. That's fine.
+
+As you can see events_v1 is an index created before the downtime and venue_v1
+was created after the downtime. Shouldn't "Thor" after being back alive take
+over one shard automatically in the same way as it handles the newly created
+venue index?
+
+If yes how should I configure the settings?
+
+![enter image description here](https://i.stack.imgur.com/xh1Ki.png)
+
+You need not to configure anything for above scenario.Because Elasticsearch's
+default behavior is same as you requested.if you create replica for a shard in
+same node is not allocated to query.If you add new node means your replica
+shard will be allocated in newly created node.
+
+for more information [watch this
+video](https://www.youtube.com/watch?v=lpZ6ZajygDY)
+

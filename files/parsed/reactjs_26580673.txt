@@ -1,0 +1,42 @@
+26580673 How can I compare this.props.children with nextprops.children
+
+In componentWillReceiveProps I need to compare this.props.children with the
+children in nextprops. I can iterate over either structure with
+React.Children.forEach but I haven't found any sanctioned mechanism to index
+either "opaque" structure.
+
+ComponentWillReceiveProps isn't called after the first render:
+<http://facebook.github.io/react/tips/componentWillReceiveProps-not-triggered-
+after-mounting.html> You need to do what the other comment says, use
+shouldComponentUpdate.
+
+The documentation provides utilities for dealing with the this.props.children
+opaque data structure:
+
+<http://facebook.github.io/react/docs/top-level-api.html#react.children>
+
+You can index this.props.children either with `React.Children.map` or
+`React.Children.forEach`:
+
+>
+
+>     object React.Children.map(object children, function fn [, object
+context])
+
+>  
+>
+
+> Invoke fn on every immediate child contained within children with this set
+to context. If children is a nested object or array it will be traversed: fn
+will never be passed the container objects. If children is null or undefined
+returns null or undefined rather than an empty object.
+
+>  
+>  
+>     React.Children.forEach(object children, function fn [, object context])
+
+>  
+>
+
+> Like React.Children.map() but does not return an object.
+

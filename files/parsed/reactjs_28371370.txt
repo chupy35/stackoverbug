@@ -1,0 +1,191 @@
+28371370 How do I render sibling elements without wrapping them in a parent
+tag?
+
+In most cases, having a parent tag isn't an issue.
+
+    
+    
+    React.createClass({
+        render: function() {
+            return (
+                <tbody>
+                    <tr><td>Item 1</td></tr>
+                    <tr><td>Item 2</td></tr>
+                </tbody>
+            );
+        }
+    });
+    
+
+But there are some cases where it makes sense to have sibling elements in one
+render function without a parent, and especially in the case of a table, you
+don't want to wrap a table row in a `div`.
+
+    
+    
+    React.createClass({
+        render: function() {
+            return (
+                <tr><td>Item 1</td></tr>
+                <tr><td>Item 2</td></tr>
+            );
+        }
+    });
+    
+
+The second example gives the following error: `Adjacent XJS elements must be
+wrapped in an enclosing tag while parsing file`.
+
+How can I render two sibling elements without wrapping them in a `<div>` or
+something similar?
+
+This is a limitation currently, but will likely be fixed at some point in the
+future ([there's some open issues on the github
+repo](https://github.com/facebook/react/issues/2127)).
+
+For now, you can use a function which returns an array (this is basically a
+stateless component):
+
+    
+    
+    function things(arg, onWhatever){
+        return [
+            <tr><td>Item 1</td></tr>,
+            <tr><td>Item 2</td></tr>
+        ];
+    }
+    
+
+And use that in your component.
+
+    
+    
+    return (
+        <table><tbody>
+          {things(arg1, this.handleWhatever)}
+          {things(arg2, this.handleWhatever)}
+        </tbody></table>
+    );
+    
+
+## Update
+
+In React 16 you will be able to return an array from render.
+
+You can wrap it to the brackets like this:
+
+    
+    
+    React.createClass({
+        render: function() {
+            return (
+              [
+                <tr><td>Item 1</td></tr>
+                <tr><td>Item 2</td></tr>
+              ]
+            );
+        }
+    });
+    
+
+This example is work well for me:
+
+    
+    
+    let values = [];
+    
+    if (props.Values){
+      values = [
+        <tr key={1}>
+          <td>props.Values[0].SomeValue</td>
+        </tr>
+      ,
+        <tr key={2}>
+            <td>props.Values[1].SomeValue</td>
+            </tr>
+        ];
+    }
+    
+    return (
+        <table className="no-border-table table">
+          <tbody>
+            <tr>
+                <th>Some text</th>
+            </tr>
+            {values}
+          </tbody>
+        </table>
+    )
+    
+
+Woohoo! The React team finally added this feature. As of React v16.0, you can
+do:
+
+    
+    
+    render() {
+      // No need to wrap list items in an extra element!
+      return [
+        // Don't forget the keys :)
+          <tr key="a"><td>Item 1</td></tr>,
+          <tr key="b"><td>Item 2</td></tr>
+      ];
+    }
+    
+
+See the [full blog post explaining "New render return types: fragments and
+strings"
+here](https://facebook.github.io/react/blog/2017/09/26/react-v16.0.html#new-
+render-return-types-fragments-and-strings).
+
+Something like this syntax worked for me
+
+    
+    
+    this.props.map((data,index)=>{return( [ <tr>....</tr>,<tr>....</tr>];)});
+    
+
+For those, who uses TypeScript, the correct syntax is:
+
+    
+    
+    return [
+      (
+        <div>Foo</div>
+      ),
+      (
+        <div>Bar</div>
+      )
+    ];
+    
+
+I know this has been an old post, but maybe my answer could be a help for
+newbies like me.
+
+In React 16.2, improved support for **Fragments** was added.
+
+You can now return it like this:
+
+    
+    
+    return (
+      <>
+        <tr><td>Item 1</td></tr>
+        <tr><td>Item 2</td></tr>
+      </>
+    );
+    
+
+You can wrap it with `<></>` or `<Fragment></Fragment>`.
+
+If you would like to pass some attributes, only **key** is supported at the
+time of writing, and you'll have to use `<Fragment />` since the short syntax
+`<></>` doesn't accept attributes.
+
+_Note: If you are going to use the short syntax,[make sure that you are using
+**Babel 7**](https://reactjs.org/blog/2017/11/28/react-v16.2.0-fragment-
+support.html#babel)._
+
+[Source Reference](https://reactjs.org/blog/2017/11/28/react-v16.2.0-fragment-
+support.html)
+

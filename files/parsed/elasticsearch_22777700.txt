@@ -1,0 +1,86 @@
+22777700 Elasticsearch match list against field
+
+I have a list, array or whichever language you are familiar. E.g. names :
+`["John","Bas","Peter"]` and I want to query the `name` field if it matches
+one of those names.
+
+One way is with OR Filter. e.g.
+
+    
+    
+    {
+        "filtered" : {
+            "query" : {
+                "match_all": {}
+            },
+            "filter" : {
+                "or" : [
+                    {
+                        "term" : { "name" : "John" }
+                    },
+                    {
+                        "term" : { "name" : "Bas" }
+                    },
+                    {
+                        "term" : { "name" : "Peter" }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+Any fancier way? Better if it's a query than a filter.
+
+    
+    
+    {
+      "query": {
+        "filtered" : {
+          "filter" : {
+            "terms": {
+              "name": ["John","Bas","Peter"]
+            }
+          }
+        }
+      }
+    }
+    
+
+Which Elasticsearch rewrites as if you hat used this one
+
+    
+    
+    {
+      "query": {
+        "filtered" : {
+          "filter" : {
+            "bool": {
+              "should": [
+                {
+                  "term": {
+                    "name": "John"
+                  }
+                },
+                {
+                  "term": {
+                    "name": "Bas"
+                  }
+                },
+                {
+                  "term": {
+                    "name": "Peter"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+
+When using a boolean filter, most of the time, it is better to use the `bool`
+filter than `and` or `or`. The reason is explained on the Elasticsearch blog:
+<http://www.elasticsearch.org/blog/all-about-elasticsearch-filter-bitsets/>
+

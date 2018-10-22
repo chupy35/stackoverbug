@@ -1,0 +1,43 @@
+20987667 Write heavy elasticsearch
+
+I am writing a real time analytics tool using kafka,storm and elasticsearch
+and want a elasticsearch that is write optimized for about 50K/sec inserts.
+For the purpose of POC I tried inserting bulk documents into the elasticsearch
+attaining 10K inserts per seconds.
+
+I am running ES on a large box of amazon ec2. I have tweaked the properties as
+below:
+
+    
+    
+    indices.memory.index_buffer_size: 30%
+    indices.memory.min_shard_index_buffer_size: 30mb
+    indices.memory.min_index_buffer_size: 96mb
+    
+    threadpool.bulk.type: fixed
+    threadpool.bulk.size: 100
+    threadpool.bulk.queue_size: 2000
+    
+    
+    bootstrap.mlockall: true
+    
+
+But I want write performance in order of 50Ks and not 10Ks to ensure the
+normal flow of my storm topology. Can anyone suggest how to configure a heavy
+write optimized ES cluster.
+
+The [scripts](http://blog.smeef.co.uk/?wpdmact=process&did=My5ob3RsaW5r)
+located here may help you improve indexing performance. There are many options
+and configurations to try, I write about some
+[here](http://blog.smeef.co.uk/elasticsearch-swap-index-type-application-job/)
+however this isn't a comprehensive list. Reducing replicas and increasing
+shards increases indexing performance but however reduces availability and
+searching performance during indexing.
+
+Perhaps sending HTTP bulk requests to several nodes rather than just the
+master node could help you get the figures you desire.
+
+Hope this helps somewhat. 10k/ps inserts is good better than what most people
+have achieved however whether they get to use a large Amazon instance I don't
+know.
+

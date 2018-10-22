@@ -1,0 +1,42 @@
+24522582 Elasticsearch boost a field when using query_string
+
+Is it possible to boost a field in a query of this form?
+
+    
+    
+       "query": {
+          "filtered": {
+             "query": {
+                "query_string": {
+                   "query": "the user's search query",
+                   "fields": ["name", "description"],
+                   "default_operator": "OR"
+                }
+             },
+             "filter": {...}
+          }
+       }
+    
+
+Yes, just add the boost syntax on the field (name^5), eg:
+
+    
+    
+    "query": {
+       "filtered": {
+          "query": {
+             "query_string": {
+                "query": "the user's search query",
+                "fields": ["name^5", "description"],
+                "default_operator": "OR"
+             }
+          },
+          "filter": {...}
+       }
+    }
+    
+
+Seems pretty clear in the docs:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html>
+

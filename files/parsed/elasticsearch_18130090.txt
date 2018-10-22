@@ -1,0 +1,53 @@
+18130090 How can I sort by a value of a "nested" Hash in Elasticsearch
+
+My current documents have a similar structure to:
+
+    
+    
+    {
+      'name': 'Sum Guy',
+      'age': 31,
+      'scores': {'blue': 5, 'yellow': 9, 'red': 2}
+    }
+    
+
+I can't seem to find a proper mapping or way to sort by.  
+The result I'd love to have is "Show me all people over 30 and sort them by
+their 'blue' score"
+
+[Nested
+documents](http://www.elasticsearch.org/guide/reference/mapping/nested-type/)
+always seem to be arrays rather than just a plain hash.
+
+Any ideas?
+
+If that is your document structure you don't need a nested document. You can
+just sort by `scores.blue`.
+
+The point of a nested document **is** in case you have an array of objects. If
+your structure was something like this:
+
+    
+    
+    {
+     'name' : 'Sum Guy',
+     'age' : 31,
+     'scores' : [{
+       'name' : 'blue',
+       'count' : 5
+      }, {
+       'name' : 'yellow',
+       'count' : 9
+      }
+     }
+     ]
+     }
+    
+
+Then you would have needed "scores" to be a nested type. When you have an
+array like that the values of names and counts would be flattened on the top
+level. Then searching something as "people over 30 where blue is bigger than
+5" would not bring back the right results, unless you define it as nested, and
+then each object in the array is actually a separate document so the context
+is reserved.
+

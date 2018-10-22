@@ -1,0 +1,38 @@
+25453872 Why does this ElasticSearch scan and scroll keep returning the same
+scroll id?
+
+So first I run the following:
+
+    
+    
+    curl -s -XGET http://localhost:9200/my_index/_search?scroll=1m&search_type=scan&size=10
+    
+
+This returns a scroll id which I then use in the first scroll request:
+
+    
+    
+    curl -s -XGET http://localhost:9200/_search/scroll?scroll=1m&scroll_id=<scroll_id from above>
+    
+
+[The
+documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-scroll.html) would lead me to believe that when I run the 2nd curl
+request, I should get a new scroll id.
+
+However, it looks like I keep getting the same scroll id back.
+
+It looks like the data coming back is different for each request so I'm
+assuming that everything is working.
+
+What is going on?
+
+What you have above is correct.
+
+The scroll_id may or may not be the same across subsequent scroll request. But
+the result set (hits) is definitively different in subsequent scroll calls .
+
+The scroll_id may change over the course of multiple calls and so it is
+required to always pass the most recent scroll_id as the scroll_id for the
+subsequent request.
+

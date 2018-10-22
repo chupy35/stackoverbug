@@ -1,0 +1,112 @@
+22001856 Elasticsearch displaying incorrect distance
+
+I have the following elasticsearch query:
+
+    
+    
+    {
+    "from": 0,
+    "size": 10,
+    "fields": ["returnresults"],
+    "script_fields": {
+        "distance": {
+            "params": {
+                "lat": -41.166670,
+                "lon": 146.350000
+            },
+            "script": "doc[\u0027location\u0027].distanceInKm(lat,lon)"
+        }
+    },
+    "track_scores": true,
+    "sort": [{
+        "_geo_distance": {
+            "searchindex.location": [146.350000,
+            -41.166670],
+            "order": "asc",
+            "unit": "km"
+        },
+        "_score": {
+            "order": "desc"
+        }
+    }],
+    "query": {
+        "query_string": {
+            "query": "7383492",
+            "fields": ["total"]
+        }
+    },
+    "filter": {
+        "and": [{
+            "query": {
+                "range": {
+                    "expiry": {
+                        "gt": 1393285386
+                    }
+                }
+            }
+        },
+    ]
+    }
+    }
+    
+
+When I run the query, it is finding some matching results, however the
+distance it is reporting is wrong.
+
+For a geocode overseas at coord: 37.445796966553,-122.16209411621
+
+It returns the result as been 31145km away. Which is not possible.
+
+Am I doing something wrong in my query, or is this an issue inside
+elasticsearch itself. I don't seem to have an issue with short distances, but
+that could be the % it is off is only minor because of it being a short
+distance.
+
+I am currently using Elasticsearch 0.90.2
+
+Any help would be appreciated.
+
+I was curious about whether the issue answered in : [ Wrong distance returned
+by ElasticSearch distanceInKm
+](https://stackoverflow.com/questions/9997382/wrong-distance-returned-by-
+elasticsearch-distanceinkm) accounted for this issue.
+
+My quick and dirty test of the two algorithms came up with plane distance =
+19352 mi (31144 km) and arc distance =  7915.7 mi (12739 km), so it does seem
+to account for the stated discrepancy pretty nicely. I found it interesting
+anyway, so if it's of interest to anyone else:
+
+    
+    
+    public static void main(String []args){
+        double targetLongitude = 146.350000;
+        double sourceLongitude = -122.16209411621;
+        double targetLatitude = -41.166670;
+        double sourceLatitude = 37.445796966553;
+        double DISTANCE_PER_DEGREE = 69.16944444;
+        double EARTH_RADIUS = 3958.76;
+    
+        //Plane distance
+        double px = targetLongitude - sourceLongitude;
+        double py = targetLatitude - sourceLatitude;
+        double distanceMiles = Math.sqrt(px * px + py * py) * DISTANCE_PER_DEGREE;
+    
+        System.out.println(distanceMiles);
+    
+    
+        //Arc distance
+        double longitudeDifference = targetLongitude - sourceLongitude;
+        double a = Math.toRadians(90D - sourceLatitude);
+        double c = Math.toRadians(90D - targetLatitude);
+        double factor = (Math.cos(a) * Math.cos(c)) + (Math.sin(a) * Math.sin(c) * Math.cos(Math.toRadians(longitudeDifference)));
+    
+        if (factor < -1D) {
+            System.out.println( Math.PI * EARTH_RADIUS);
+        } else if (factor >= 1D) {
+            System.out.println(  0);
+        } else {
+            System.out.println(  Math.acos(factor) * EARTH_RADIUS);
+        }
+    }
+    
+

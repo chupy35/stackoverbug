@@ -1,0 +1,19 @@
+25356814 Why Spring Boot Actuator adds JMX MBean named 'Tomcat-1'?
+
+Without Spring Boot Actuator, I have MBean named 'Tomcat'.
+
+But with Spring Boot Actuator,
+
+I have another MBean named 'Tomcat-1' which looks like MBean named 'Tomcat'.
+
+Did I mis-configure something? or a bug of the Actuator? or an intended
+feature of it?
+
+'Tomcat-1' is for the Tomcat instance for management.
+
+I set 'management.port' property to service it on another port.
+
+I didn't watch my log messages carefully.
+
+There was the answer.
+

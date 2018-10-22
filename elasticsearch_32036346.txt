@@ -1,0 +1,3 @@
+32036346
+Update Index - update a search analyzer
+<p>I want to update my search analyzer without closing the index.&#xA;Since it is a <strong>search</strong> analyzer I do not see a reason why should the index be closed (the data will not be re-indexed anyway).&#xA;Is there any way to do it?</p>&#xA;

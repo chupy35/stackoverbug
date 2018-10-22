@@ -1,0 +1,36 @@
+25418094 Elasticsearch Shard stuck in INITIALIZING state
+
+I stopped one of my elastic search node & as a normal behavior elastic search
+started relocating my shard on that node to another node.
+
+But even after 15 hours it is still stuck in INITIALIZING state. Also that
+shard is fluctuating between two nodes,for some time it stays on one node then
+automatically shift to another node & keep on doing that after every few
+hours.
+
+Main issue is it is still in INITIALIZING state after so many hours.
+
+I am using version 1.2.1.
+
+This shard which is stuck, it is a replica.
+
+I am getting this error in logs:
+
+    
+    
+    [ERROR][index.engine.internal    ] [mynode] [myindex][3] failed to acquire searcher, source delete_by_query
+    java.lang.NullPointerException
+    [WARN ][index.engine.internal    ] [mynode] [myindex][3] failed engine [deleteByQuery/shard failed on replica]
+    [WARN ][cluster.action.shard     ] [mynode] [myindex][3] sending failed shard for [myindex][3], node[Sp3URfNVQlq2i4i3EjCakw], [R], s[INITIALIZING], indexUUID [kTikCHshQMKEQ_jAuWWWnw], reason [engine failure, message [deleteByQuery/shard failed on replica][EngineException[[myindex][3] failed to acquire searcher, source delete_by_query]; nested: NullPointerException; ]]
+    
+
+Only fix i got is:
+
+I stopped deleteByQuery from my code.
+
+Then i dropped all replicas & recreated them. Once all got stabilized.
+
+I restarted deleteByQuery in my code.
+
+That's how it worked for me & all back to normal.
+

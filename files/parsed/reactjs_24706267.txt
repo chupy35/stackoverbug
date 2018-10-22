@@ -1,0 +1,167 @@
+24706267 Cannot read property 'map' of undefined
+
+I'm following the reactjs tutorial, and I keep running into an issue when
+passing the value from the state of one component into another component. The
+error 'Cannot read property 'map' of undefined' is thrown when the map
+function in the CommentList component is executed. What would cause the prop
+to become undefined when passing from the CommentBox into the CommentList?
+
+    
+    
+      var CommentList = React.createClass({
+        render: function() {
+          var commentNodes = this.props.data.map(function (comment){
+            return (
+              <div>
+                <h1>{comment.author} </h1>
+              </div>
+            );
+          });
+          return (
+            <div className="commentList">
+              {commentNodes}
+            </div>
+          );
+        }
+      });
+    
+      var CommentBox = React.createClass({
+        getInitialState: function(){
+          return {data: []};
+        },
+        getComments: function(){
+          $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            success: function(data){
+              this.setState({data: data});
+            }.bind(this),
+            error: function(xhr, status, err){
+              console.error(url, status, err.toString());
+            }.bind(this)
+          });
+        },
+        componentWillMount: function(){
+          this.getComments()
+        },
+        render: function(){
+          return (
+            <div className="commentBox">
+              {/*this.state.data.comments*/}
+              {<CommentList data={this.state.data.comments}/>}
+            </div>
+          );
+        }
+      });
+    
+      React.renderComponent(
+        <CommentBox url="comments.json" />,
+        document.getElementById('content')
+      );
+    
+
+First of all, set more safe initial data:
+
+    
+    
+    getInitialState : function() {
+        return {data: {comments:[]}};
+    },
+    
+
+And ensure your ajax data.
+
+It should work if you follow above two instructions like
+[Demo.](http://jsbin.com/hozamejo/1/edit)
+
+Updated: you can just wrap the .map block with conditional statement.
+
+    
+    
+    if (this.props.data) {
+      var commentNodes = this.props.data.map(function (comment){
+          return (
+            <div>
+              <h1>{comment.author}</h1>
+            </div>
+          );
+      });
+    }
+    
+
+I think you forgot to change
+
+    
+    
+    data={this.props.data}
+    
+
+to
+
+    
+    
+    data={this.state.data}
+    
+
+in the render function of CommentBox. I did the same mistake when I was
+following the tutorial. Thus the whole render function should look like
+
+    
+    
+    render: function() {
+      return (
+        <div className="commentBox">
+          <h1>Comments</h1>
+          <CommentList data={this.state.data} />
+          <CommentForm />
+        </div>
+      );
+    }
+    
+
+instead of
+
+    
+    
+    render: function() {
+      return (
+        <div className="commentBox">
+          <h1>Comments</h1>
+          <CommentList data={this.props.data} />
+          <CommentForm />
+        </div>
+      );
+    
+
+You need to put the data before render
+
+Should be like this:
+
+    
+    
+    var data = [
+      {author: "Pete Hunt", text: "This is one comment"},
+      {author: "Jordan Walke", text: "This is *another* comment"}
+    ];
+    
+    React.render(
+      <CommentBox data={data}/>,
+      document.getElementById('content')
+    );
+    
+
+Instead of this:
+
+    
+    
+    React.render(
+      <CommentBox data={data}/>,
+      document.getElementById('content')
+    );
+    
+    var data = [
+      {author: "Pete Hunt", text: "This is one comment"},
+      {author: "Jordan Walke", text: "This is *another* comment"}
+    ];
+    
+

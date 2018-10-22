@@ -1,0 +1,15 @@
+14962163 Tiebreaking in Elastic Search
+
+If I'm making queries to ElasticSearch using a custom score filter, how does
+it handle the case when documents have the same score?
+
+Are they returned in the order they were inserted, or can I specify how the
+case should be handled?
+
+Ideally I'd like them to be returned in a random order if possible.
+
+Right now you are sorting by `_score`. So, you can add a second sort key that
+will contain a script with random number generator. See [Random order &
+pagination Elasticsearch](https://stackoverflow.com/questions/9796470/random-
+order-pagination-elasticsearch) for a couple of different examples.
+

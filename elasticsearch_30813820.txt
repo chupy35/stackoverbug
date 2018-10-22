@@ -1,0 +1,3 @@
+30813820
+Elasticsearch - how to get last id?
+<p>I need the last id of a type called 'Mail', and the id is Bigint, but for some reason i get the 5 first rows...&#xA;What to do?</p>&#xA;&#xA;<p>This is my query:</p>&#xA;&#xA;<pre><code>{&#xA;  "fields": [&#xA;    "SentMail_Upload_Session_BigIntID"&#xA;  ],&#xA;  "query": {&#xA;    "match_all": {}&#xA;  },&#xA;  "sort": {&#xA;    "SentMail_Upload_Session_BigIntID": "desc"&#xA;  },&#xA;  "size": 1&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>Thanks!</p>&#xA;

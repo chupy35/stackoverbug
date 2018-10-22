@@ -1,0 +1,106 @@
+14844082 elasticsearch percolator stemmer
+
+I'm attempting to use the percolation function in elasticsearch. It works
+great but out of the box there is no stemming to handle singular/plurals etc.
+The documentation is rather thin on this topic so I was wondering if anyone
+has gotten this working and what settings are required. At the moment I'm not
+indexing my documents since I'm not searching them, just passing them through
+the percolator to trigger notifications.
+
+You can use the [percolate
+API](http://www.elasticsearch.org/guide/reference/api/percolate.html) to test
+documents against percolators without indexing them. However, the `percolate`
+API requires and `index` and a `type` for your doc. This is so that it knows
+how each field in your document is defined (or mapped).
+
+Analyzers belong to an index, and the fields in a mapping/type definition can
+use either globally defined analyzers, or custom analyzers defined for your
+index.
+
+For instance, we could define a mapping for index `test`, type `test` using a
+globally defined analyzer as follows:
+
+    
+    
+    curl -XPUT 'http://127.0.0.1:9200/test/?pretty=1'  -d '
+    {
+       "mappings" : {
+          "test" : {
+             "properties" : {
+                "title" : {
+                   "type" : "string",
+                   "analyzer" : "english"
+                }
+             }
+          }
+       }
+    }
+    '
+    
+
+Or alternatively, you could setup a custom analyzer that belongs just to the
+`test` index:
+
+    
+    
+    curl -XPUT 'http://127.0.0.1:9200/test/?pretty=1'  -d '
+    {
+       "mappings" : {
+          "test" : {
+             "properties" : {
+                "title" : {
+                   "type" : "string",
+                   "analyzer" : "my_english"
+                }
+             }
+          }
+       },
+       "settings" : {
+          "analysis" : {
+             "analyzer" : {
+                "my_english" : {
+                   "stopwords" : [],
+                   "type" : "english"
+                }
+             }
+          }
+       }
+    }
+    '
+    
+
+Now we can create our percolator, specifying which index it belongs to:
+
+    
+    
+    curl -XPUT 'http://127.0.0.1:9200/_percolator/test/english?pretty=1'  -d '
+    {
+       "query" : {
+          "match" : {
+             "title" : "singular"
+          }
+       }
+    }
+    '
+    
+
+And test it out with the `percolate` API, again specifying the index and the
+type:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/test/_percolate?pretty=1'  -d '
+    {
+       "doc" : {
+          "title" : "singulars"
+       }
+    }
+    '
+    # {
+    #    "ok" : true,
+    #    "matches" : [
+    #       "english"
+    #    ]
+    # }
+    
+

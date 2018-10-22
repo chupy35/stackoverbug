@@ -1,0 +1,40 @@
+21486394 Relocating shards in elasticsearch
+
+step 1) creating a node named "NODE1"
+
+Step 2) creating new index in NODE1 named "application" and in index type as
+"testing"
+
+step 3)index that created is with 5 shards. no replicas
+
+Step 4)now i insert 5 doc in to index. it will splitted among 5 shards
+
+Step 5)now i initiate new node called "NODE2" in NODE1's Cluster.
+
+Step 6) as per my understanding it shared shards between nodes. So my 2 shards
+moved to new node
+
+Question 1)now i request document at NODE1 that is present in relocated
+shards(shards that moved from NODE1 to NODE2)
+
+Question 2) Will my search return my requested document or not
+
+Question 3) how does two nodes communicate each other
+
+Question 4) Can i read and write in NODE2 ? if yes can i search same data
+written by NODE2 from NODE1..
+
+Thanks in Advance..!
+
+All the answers are yes :)
+
+The nodes communicate with each other through the transport port, by default
+9300 port (or the first one free in the (9300-9400] range. They use a custom
+binary protocol to communicate, based on serialization of objects (not
+standard java serialization in most of the cases though).
+
+Any node in a cluster is cluster-aware and knows where the shards are and so
+on, as they all share the so called cluster state. You can send requests (read
+and write) to any node and it will be rerouted to the interesting nodes and
+properly executed depending on the type of request.
+

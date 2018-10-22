@@ -1,0 +1,100 @@
+25105147 Elasticsearch highlight: how to get entire text of the field in Java
+client
+
+I am new to Elasticsearch. I am hoping to get highlighted field in Java
+client. If I run the following query in Windows prompt:
+
+    
+    
+    {
+        "query": {
+            "filtered" : {
+                "query" : {
+                    "term" : {
+                        "title" : "western"
+                    }
+                },
+                "filter" : {
+                    "term" : { "year" : 1961 }
+                }
+            }
+        },
+        "highlight" : {
+            fields" : {
+                "title" : {}
+                }
+            }
+    }
+    
+
+I get nice highlighted text as follows:
+
+    
+    
+    {
+          "_index" : "book",
+          "_type" : "history",
+          "_id" : "1",
+          "_score" : 0.095891505,
+          "_source":{ "title": "All Quiet on the Western great Front", "year": 1961}
+          "highlight" : {
+            "title" : [ "All Quiet on the <em>Western</em> great Front dead" ]
+          }
+    }
+    
+
+The highlight
+
+    
+    
+      "highlight" : {
+        "title" : [ "All Quiet on the <em>Western</em> great Front dead" ]
+      }
+    
+
+can be easily converted into a Java Map object, and the "title" property
+contains the entire text of the matched field, which is really what I want.
+
+However, in Java client, I get highlighted fragments, which puts different
+segments of highlighted text of the same field into an array of text.
+
+Thanks and regards.
+
+Here is what I found and I am not sure whether it is the right or best
+solution. In Java client, use setHighlighterFragmentSize method:
+
+    
+    
+    SearchResponse sr = client.prepareSearch("book")
+                    .setTypes("history")
+                    .addHighlightedField("title")
+                    .setQuery(query)
+                    .setHighlighterFragmentSize(2000) //set it larger than the size of the field so that the only one fragment is returned and it contains the entire text of the field.
+    
+
+I really want to hear what experts out there say and choose their reply as the
+answer.
+
+Regards.
+
+In the Java API the default number of fragments that are returned is 5. So if
+you only want one fragment to be returned you need to set that.
+
+    
+    
+    client.prepareSearch("book")
+     .setTypes("history")
+     .addHighlightedField("title")
+     .setQuery(query)
+     .setHighlighterFragmentSize(2000)
+     .setHighlighterNumOfFragments(1);
+    
+
+You may also set the number of fragments to 0 which will display the entire
+field with highlighting tags. This will also ignore fragment_size.
+
+    
+    
+    .setHighlighterNumOfFragments(0)
+    
+

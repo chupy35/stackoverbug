@@ -1,0 +1,87 @@
+15072806 ElasticSearch get offsets of highlighted snippets
+
+Is it possible to get character positions of each highlighted fragment? I need
+to match the highlighted text back to the source document and having character
+positions would make it possible.
+
+For example:
+
+    
+    
+    curl "localhost:9200/twitter/tweet/_search?pretty=true" -d '{
+        "query": {
+            "query_string": {
+                "query": "foo"
+            }
+        },
+        "highlight": {
+            "fields": {
+                "message": {"number_of_fragments": 20}
+            }
+        }    
+    }'
+    
+
+returns this highglight:
+
+    
+    
+    "highlight" : {
+        "message" : [ "some <em>foo</em> text" ]
+     }
+    
+
+If the field message in the matched document were:
+
+    
+    
+    "Here is some foo text"
+    
+
+is there a way to know that the snippet begins at char 8 and ends at char 21
+of the matched field?
+
+Knowing the start/end offset of the matched **token** would be good for me as
+well - perhaps there is a way to access that information using script_fields?
+(This [question](https://stackoverflow.com/questions/13178550/elasticsearch-
+return-the-tokens-of-a-field) shows how to obtain the tokens, but not the
+offsets).
+
+The field "message" has:
+
+    
+    
+    "term_vector" : "with_positions_offsets",
+    "index_options" : "positions" 
+    
+
+The client-side approach is actually standard practice.
+
+We have discussed adding the offsets, but are afraid it would lead to more
+confusion. The offsets provided are specific to Java's UTF-16 String encoding,
+which, while they could technically be used to calculate the fragments from
+$LANG, it's way more straightforward to parse the response text for the
+delimiters you specified.
+
+We have ended up extending the original text like this:
+
+> some[1] text[2] we[3] index[4]
+
+Then we define a custom analyzer with:
+
+    
+    
+    "char_filter": {
+            "remove_tags": {
+              "type": "pattern_replace",
+              "pattern": "\\[[0-9]+\\]",
+              "replacement": ""
+    
+
+Now in the highlighted snippets we get the location tags and we know where in
+the text they appear. Ugly, but works!
+
+I gave a fuller answer
+[here](https://stackoverflow.com/questions/30820827/elasticsearch-location-of-
+fragments-in-a-document)
+

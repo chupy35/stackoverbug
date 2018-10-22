@@ -1,0 +1,38 @@
+15849127 what does index.store.fs do
+
+I was under the impression that to use the mmapfs store, all I needed to do
+was set index.store.type to mmapfs, but I was reading this article and saw
+that the author did this
+
+    
+    
+    index: 
+       store: 
+         type: mmapfs 
+         fs: 
+           mmapfs: 
+             enabled: true
+    
+
+so he basically did what I did then set index.store.fs.mmapfs.enabled to true
+
+My question is what does this the whole index.store.fs section do and where
+can I find some documentation on it?
+
+The only config you need is:
+
+    
+    
+    index.store.type: mmapfs
+    
+
+I don't know where the rest of that config was taken from - maybe it is from
+an older version.
+
+The best place to see config settings to be sure of what is actually supported
+is in the code itself:
+<https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/index/store/IndexStoreModule.java#L57>
+
+While on the subject of mmapfs, it is worth reading this blog entry:
+<http://blog.thetaphi.de/2012/07/use-lucenes-mmapdirectory-on-64bit.html>
+

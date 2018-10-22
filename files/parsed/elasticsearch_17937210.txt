@@ -1,0 +1,124 @@
+17937210 ElasticSearch: Searching fields in nested arrays
+
+I'm fairly new to ES and am using it for a new project of mine. Starting off,
+I have a simple mapping for a customer, which has a first and last name, and a
+list of payment information objects. If I were doing this in SQL, it would be
+something like a customer table, and a payment info table with a 1:many
+relationship.
+
+Here's a simple example of what I'm trying to do:
+<https://gist.github.com/anonymous/6109593>
+
+I'm hoping to find any customer based on any match in the nested array of
+paymentInfos, i.e. finding any users who've had a paymentInfo with billingZip
+10101. This query returns no results, and I'm not sure why. Can anyone point
+me in the right direction as to why this query doesn't work, and if there are
+any changes I can make to either my query or mapping to have it return the
+user properly?
+
+Thanks!
+
+Nested fields should be searched using [nested
+query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-
+dsl-nested-query.html):
+
+    
+    
+    echo "Deleting old ElasticSearch index..."
+    curl -XDELETE 'localhost:9200/arrtest'
+    echo
+    echo "Creating new ElasticSearch index..."
+    curl -XPUT 'localhost:9200/arrtest/?pretty=1' -d '{
+       "mappings" : {
+          "cust2" : {
+             "properties" : {
+                "firstName" : {
+                   "type" : "string",
+                   "analyzer" : "string_lowercase"
+                },
+                "lastName" : {
+                   "type" : "string",
+                   "analyzer" : "string_lowercase"
+                },
+                "paymentInfos": {
+                    "properties": {
+                        "billingZip": {
+                            "type": "string",
+                            "analyzer": "string_lowercase"
+                        },
+                        "paypalEmail": {
+                            "type": "string",
+                            "analyzer": "string_lowercase"
+                        }
+                    },
+                    "type": "nested"
+                }
+             }
+          }
+       },
+    
+       "settings" : {
+          "analysis" : {
+             "analyzer" : {
+                "uax_url_email" : {
+                   "filter" : [ "standard", "lowercase" ],
+                   "tokenizer" : "uax_url_email"
+                },
+    
+                "string_lowercase": {
+                    "tokenizer" : "keyword",
+                    "filter" : "lowercase"
+                }
+             }
+          }
+       }
+    }
+    '
+    echo
+    echo "Index recreation finished"
+    
+    echo "Inserting one record..."
+    curl -XPUT 'localhost:9200/arrtest/cust2/1' -d '{
+        "firstName": "john",
+        "lastName": "smith",
+    
+        "paymentInfos": [{
+            "billingZip": "10101",
+            "paypalEmail": "foo@bar.com"
+        }, {
+            "billingZip": "20202",
+            "paypalEmail": "foo2@bar2.com"
+        }]
+    }
+    '
+    echo
+    echo "Refreshing index to make new records searchable"
+    curl -XPOST 'localhost:9200/arrtest/_refresh' 
+    echo
+    echo "Searching for record..."
+    curl -XGET 'localhost:9200/arrtest/cust2/_search?pretty=1' -d '{
+        "sort": [],
+        "query": {
+            "bool": {
+                "should": [],
+                "must_not": [],
+                "must": [{
+                    "nested": {
+                        "query": {
+                            "query_string": {
+                                "fields": ["paymentInfos.billingZip"],
+                                "query": "10101"
+                            }
+                        },
+                        "path": "paymentInfos"
+                    }
+                }]
+            }
+        },
+        "facets": {},
+        "from": 0,
+        "size": 25
+    }'
+    echo
+    
+

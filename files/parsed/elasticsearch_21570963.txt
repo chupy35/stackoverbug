@@ -1,0 +1,90 @@
+21570963 Boosting in Elasticsearch
+
+I am new to elasticsearch. In elasticsearch we can use the term boost in
+almost all queries. I understand it's used for modify score of documents. But
+i can't find actual use of it. My doubt is if i use boost values in some
+queries, will it affect final score of search or the boost rank of docs in
+index itself.
+
+And what is main difference between boost at index and boost at querying..
+
+Thanks in Advance..!
+
+Boost at query time won't modify your index. It only applies boost factor on
+fields when searching.
+
+I prefer boost at query time as it's more flexible. If you need to change your
+boost rules and you had set it at index time, you will probably need to
+reindex.
+
+Query time boost allows you to give more weight to one query than to another.
+For instance, let's say you are querying the `title` and `body` fields for
+"Quick Brown Fox", you could write it as:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "match": {
+                "title": "Quick Brown Fox"
+              }
+            },
+            {
+              "match": {
+                "body": "Quick Brown Fox"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+But you decide that you want the `title` field to be more important than the
+`body` field, which means you need to `boost` the query on the `title` field
+by (eg) 2:
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "match": {
+                "title": {
+                  "query": "Quick Brown Fox",
+                  "boost": 2
+                }
+              }
+            },
+            {
+              "match": {
+                "body": "Quick Brown Fox"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+(Note how the structure of the `match` clause changed to accommodate the
+`boost` parameter).
+
+The `boost` value of `2` doesn't double the `_score` exactly - the scores go
+through a normalization process. So you should think of `boost` as _make this
+query clause relatively more important than the other query clauses_.
+
+> My doubt is if i use boost values in some queries. will it affect final
+score of search
+
+Yes it does, but you shouldn't rely on the actual value of `_score` anyway.
+Its only purpose is to allow Elasticsearch to decide which documents are most
+relevant **to this query**. If the query changes, the scores change.
+
+Re index time boosting: don't use it. It's inflexible and error prone.
+

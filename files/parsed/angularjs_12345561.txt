@@ -1,0 +1,81 @@
+12345561 Dynamically inject resource into controller - angularjs
+
+This works:
+
+    
+    
+    function DetailsCtrl($scope, Plan){
+        $scope.entities = Plan.query();
+    }
+    
+
+This does not:
+
+    
+    
+    function DetailsCtrl($scope){
+        var injector = angular.injector(['myApp.services']);
+        var name = 'Plan';
+        var Entity = injector.get(name);
+    
+        $scope.entities = Entity.query();
+    }
+    
+
+In the second case, no error is thrown and console.log($scope.entities) dumps
+the loaded entities. BUT the variables are not rendered in the template. I'm
+guessing the template is being loaded before the $scope is being populated
+with the vars. If so, how do I ensure that $scope is loaded with the vars in
+time?
+
+Yes this is the case. Angular templates are loaded regardless if the scope is
+expected to fetch data from resources or http calls. From my understanding,
+Angular either listens on the $scope variable or has some magic methods
+trigger a reload of the template rendering.
+
+In this situation, perhaps angular is recognizing that a shared resource
+service (the Plan model) is being passed in and it expects that it will be
+used to fetch some data. While in the 2nd example, Angular has no clue that
+you're going to be using another service within, so it doesn't prepare any
+callbacks or checking operations for the $scope variable.
+
+If for whatever reason you set a value to a $scope variable and Angular
+doesn't notice the change then you can update your template right away then
+you can call this:
+
+    
+    
+    $scope.$digest(); //or $scope.$apply();
+    
+
+The only issue is that it throws and error if you call it when it's already
+performing a digest operation (just use try/catch branches around the
+statement).
+
+If that doesn't work then you will need to double check to see that the
+template itself has the proper syntax for expressions.
+
+I created a service to dynamically load the resources:
+
+service:
+
+    
+    
+    var m = angular.module('myApp.services', ['ngResource']).
+        factory('Entity',function($resource){
+            return {
+                Plan: $resource('/api/plans/:id',{id: '@id'})
+            }
+        }).
+      value('version', '0.1');
+    
+
+controller:
+
+    
+    
+    function DetailsCtrl($scope, Entity){
+        $scope.entities = Entity['Plan'].query();
+    }
+    
+

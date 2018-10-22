@@ -1,0 +1,25 @@
+23957718 What is the effect of adding a word separator in Elastic Search
+multi-match query?
+
+I have the following query in Elastic search:
+
+What is the difference in specifying a + character between the 2 search terms
+?
+
+Thus: "query": "animation+function" OR "query": "animation function"
+
+    
+    
+    "query": {
+            "multi_match": {
+              "query": "animation+function",
+              "type": "best_fields",
+              "fields": [
+                "title",
+                "body"
+              ]
+            }
+    
+
+thx Marc
+

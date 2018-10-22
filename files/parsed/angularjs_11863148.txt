@@ -1,0 +1,58 @@
+11863148 Angularjs Post-Receive Hook or Similar?
+
+Is there a way to call a function every time after a response is returned from
+a server without explicitly calling it after in the callback?
+
+The main purpose is that I do have a generic error handler service that I call
+in every request's callback and I want to specify it somewhere and it shall be
+called automatically.
+
+If you mean for requests using `$http` or a `$resource` you can add generic
+error handling to responses by adding code to the
+`$httpProvider.responseInterceptors`. See more in [this
+post](https://stackoverflow.com/a/11787061/1207991).
+
+Although it is about starting/stopping spinners using [this
+fiddle](http://jsfiddle.net/zdam/dBR2r/) you can add your code in the 'stop
+spinner' section with `// do something on error`. Thanks to zdam from [the
+groups](https://groups.google.com/d/msg/angular/OroP1DBE6AA/R11P6dLFFowJ)!
+
+I gave Gloopy a +1 on solution, however, that [other
+post](https://stackoverflow.com/a/11787061/1207991) he references does DOM
+manipulation in the function defined in the config and the interceptor.
+Instead, I moved the logic for starting spinner into the top of the
+intercepter and I use a variable in the `$rootScope` to control the hide/show
+of the spinner. It seems to work pretty well and I believe is much more
+testable.
+
+    
+    
+    <img ng-show="polling" src="images/ajax-loader.gif">
+    
+    
+    
+    angular.module('myApp.services', ['ngResource']).
+    .config(function ($httpProvider) {
+        $httpProvider.responseInterceptors.push('myHttpInterceptor');
+        var spinnerFunction = function (data, headersGetter) {
+            return data;
+        };
+        $httpProvider.defaults.transformRequest.push(spinnerFunction);
+    })
+    //register the interceptor as a service, intercepts ALL angular ajax http calls
+    .factory('myHttpInterceptor', function ($q, $window, $rootScope) {
+        return function (promise) {
+            $rootScope.polling = true;
+            return promise.then(function (response) {
+                $rootScope.polling = false;
+                return response;
+            }, function (response) {
+                $rootScope.polling = false;
+                $rootScope.network_error = true;
+                return $q.reject(response);
+            });
+        };
+    })
+    // other code left out
+    
+

@@ -1,0 +1,43 @@
+20901362 Elasticsearch with two nodes and the default 5 shards?
+
+I have set up a cluster with two nodes but I have some confusions about shard
+and replica.
+
+What I intend is a setup where there is a master(node A) handling write and a
+slave(node B) that helps with read and search operation. Ideally if the master
+is not functional I can recover the data from the slave.
+
+I read that the default is 5 shards and 1 replica. Does it mean that my
+primary data would then be automatically split between node A and node B.
+Would that means if one node is down I would lost half the data?
+
+Given the description of my need above, am I doing it right?  The only config
+I have changed at this point is the following
+
+    
+    
+    cluster:
+      name: maincluster
+    node:
+      name: masternode
+      master: true
+    
+
+I am really new to elasticsearch and please kindly point out if I am missing
+anything.
+
+5 shards and 1 replica means that your data will be split into 5 shards per
+index.  Each shard will have one replica (5 more backup shards) for a total of
+10 shards spread across your set of nodes.
+
+The replica shard will be placed onto a different node than the primary shard
+(so that if one node fails you have redundancy).
+
+With 2 nodes and replication set to 1 or more, losing a node will still give
+you access to all of your data, since the primary shard and replication shard
+will not ever be on same node.
+
+I would install the [elasticsearch head
+plugin](https://github.com/mobz/elasticsearch-head) it provides a very
+graphical view of nodes and shards (primary and replica).
+

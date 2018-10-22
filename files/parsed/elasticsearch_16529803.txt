@@ -1,0 +1,74 @@
+16529803 OR query with elasticsearch
+
+I have an index with "name" and "description" filed. I am running a Boolean
+query against my index. Sometimes the term is present in both name and
+description fields, in this case the documents in which both the name and
+description contains the search term are scored higher compared to the ones
+having either the name or the description having the search term.
+
+What I want is to score them equal. So the the documents with either name or
+description having the term has the same score as the document having the
+search term present in both name and description.
+
+Is it possible?
+
+Here is the example:
+
+    
+    
+    {
+        "name":     "xyz",
+        "description":  "abc xyz"
+    },
+    {
+        "name":     "abc",
+        "description":  "xyz pqr"
+    },
+    {
+        "name":     "xyz",
+        "description":  "abc pqr"
+    }
+    
+
+If the user search for term "xyz" I want all three documents above to have the
+same score. As all documents contains the term "xyz" either in name or in
+description or in both fields.
+
+I think you can either :
+
+  * transform you query to a filter. Filters do not affect score (and are faster than queries)
+  * or wrap your query in a "Constant score query" - see : <http://www.elasticsearch.org/guide/reference/query-dsl/constant-score-query/>
+
+You can use a [Filtered
+Query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-filtered-query.html) for this. Filters are not scored. See the query below
+for searching the term `"xyz"`:
+
+    
+    
+    POST <index name>/<type>/_search
+    {
+        "filtered": {
+            "query": {
+                "match_all": {}
+            },
+            "filter": {
+                "bool": {
+                    "should": [
+                        {
+                            "term": {
+                                "name": "xyz"
+                            }
+                        },
+                        {
+                            "term": {
+                                "description": "xyz"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    
+

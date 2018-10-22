@@ -1,0 +1,104 @@
+25268627 How to define document ordering based on filter parameter
+
+Hi Elasticsearch experts.
+
+I have a problem which might be realted to the fact I am indexing DB
+relational data.
+
+My scenario is the following:
+
+I have two entities:
+
+documents and meetings.
+
+Documents and meetings are independent entities. Although it is possible to
+assign documents to meetings in a given order.
+
+We are using a join table for this in the DB.
+
+    
+    
+        meetings(id,name,date)
+        document(id,title,author)
+        meeting_document(doc_id,meeting_id,order)
+    
+
+In elasticsearch I am indexing the documents_id as NESTED property of the
+meeting
+
+meeting example:
+
+    
+    
+        {
+         id: 25
+         name:"test",
+         documents: [22,12,24,55]
+        }
+    
+
+I will fetch the meeting, after this I would like to send a request to the
+documents filtering on document.id and asking elasticsearch to return the list
+in the same order I passed in the list of ids to the filter.
+
+What is the best way to implement this ?
+
+Thanks
+
+Nice Question,  I've spent some time figuring a solution for you and come up
+with a solution, It might be tricky one but works.
+
+Lets have a look to my query,
+
+I've used [script
+score](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html#_script_score), for sorting by user defined
+list.
+
+    
+    
+    POST index/type/_search
+    {
+       "query": {
+          "function_score": {
+             "functions": [
+                {
+                   "script_score": {
+                      "script": "ar.size()-ar.indexOf(doc['docid'].value)",
+                      "params": {
+                         "ar": [
+                            "1",
+                            "2",
+                            "4",
+                            "3"
+                         ]
+                      }
+                   }
+                }
+             ]
+          }
+       },
+       "filter": {
+          "terms": {
+             "docid": [
+                "1",
+                "2",
+                "4",
+                "3"
+             ]
+          }
+       }
+    }
+    
+
+The thing you have to take care is,
+
+send, same value for filter and in params. Like in the above query.
+
+This returns me hits with doc ids, 1, 2, 4, 3 .
+
+You have to change field name inside script and in filter, and you can use
+`termQuery` inside query object.
+
+I've tested the code, Hope this helps!! Thanks
+

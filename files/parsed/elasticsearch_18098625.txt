@@ -1,0 +1,71 @@
+18098625 elasticsearch, document disappear in search after update of size less
+than 17
+
+**SOLVED** Upgraded elasticsearch to 0.90.3
+
+Good day, I have a problem with elasticsearch.
+
+  1. I have a page with list of items (ordered by itemName)
+
+  2. Goes to edit item and update item's Name
+    
+        ejs.Document(index, type, item_id).source($scope.master).doUpdate(); 
+    (elastic.js - It's doesn't matter I guess, it's works )
+    
+
+It's updated successfully - I have update document with version 2, and updated
+fields.
+
+  3. Go back to list of items, my query
+    
+        {
+     "from": 0,
+     "size": 10,
+     "sort": [
+     "itemName"
+     ],
+     "version": true
+    }
+    
+
+And updated item - disappeared in list
+
+My list:
+
+    
+    
+    1. Old name a
+    2. Old name b
+    3. Old name c
+    N. ...
+    
+
+I change "Old name b" to "Old name b 2"
+
+And I get if "size": 10 :
+
+    
+    
+    1. Old name a
+    2. Old name c
+    3. next item ...
+    N. ...
+    
+
+But if I set "size": 20 or more - appeared.
+
+    
+    
+    1. Old name a
+    2. Old name b 2
+    3. Old name c
+    4. nex item ...
+    N. ...
+    
+
+**So why updated items disappeared in list if size < 20 ?**
+
+Elasticsearch version: 0.90.0
+
+**SOLVED** Upgraded elasticsearch to 0.90.3
+

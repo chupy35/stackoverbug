@@ -1,0 +1,113 @@
+16341134 Creating Dynamic Facets in Elasticsearch
+
+I want to dynamically create facetts for a nested type that has dynamic
+attributes.
+
+Suppose these articles are in my Index and that I'm searching for name and
+brand:
+
+    
+    
+    {
+        name: iPhone 16GB
+        brand: Apple
+        type: Smartphone
+        attributes: {
+            Color: White
+    
+        }
+    }
+    {
+        name: iPad
+        brand: Apple
+        type: Tablet
+        attributes: {
+            Color: Black
+        }
+    }
+    {
+        name: Cruzer USB 16GB
+        brand: SanDisk
+        type: USB-Stick
+        attributes: {
+            Color: Black
+            Capacity: 16GB
+            USB-Standard: USB 2.0
+        }
+    }
+    {
+        name: Cruzer USB 16GB
+        brand: SanDisk
+        type: USB-Stick
+        attributes: {
+            Color: Red
+            Capacity: 16GB
+            USB-Standard: USB 3.0
+        }
+    }
+    
+
+Now, if I'm searching for 'Apple' I want to have a search result that has the
+following facets:
+
+    
+    
+    Brand:
+        Apple 2
+    Type:
+        Smartphone 1
+        Tablet 1
+    Color:
+        Black 1
+        White 1
+    
+
+A search for '16GB' should include those facets:
+
+    
+    
+    Brand:
+        Apple 1
+        SanDisk 2
+    Type:
+        Smartphone 1
+        USB-Stick 2
+    Color:
+        Black 1
+        White 1
+        Red 1
+    Capacity:
+        16GB 2
+    USB-Standard: 
+        USB 3.0 1
+        USB 2.0 2
+    
+
+Likewise, every article can have arbitrary attributes.
+
+The facetted search for brand and type is easy, but how could i do it for the
+attrubutes? Is this even possible with elasticsearch?
+
+I hope you can unterstand what i mean...
+
+Try with below
+
+    
+    
+    POST _search
+    {
+       "query": {
+          "query_string": {
+             "query": "Apple"
+          }
+       },
+       "facets": {
+          "tags": {
+             "terms": {
+                "fields": ["name","brand","type","attributes.Color"]
+             }
+          }
+       }
+    }
+    
+

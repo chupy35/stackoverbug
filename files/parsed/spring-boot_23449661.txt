@@ -1,0 +1,20 @@
+23449661 Multiple DataSource beans with Spring Boot Actuator's
+EndpointAutoConfiguration possible?
+
+I have a spring-boot application that uses several `DataSource` beans and
+would still like to use the `EndpointAutoConfiguration` from spring-boot-
+actuator that is loaded as part of using the `@EnableAutoConfiguration`
+annotation. This doesn't seem possible as there is a `DataSource` bean
+injected into `EndpointAutoConfiguration` to setup the `HealthEndpoint` bean.
+Due to the multiple instances of `DataSource` that exist in my application, a
+`NoUniqueBeanDefinitionException` is thrown upon application startup unless I
+exclude `EndpointAutoConfiguration` but then I must setup all the other
+endpoints manually (/env, /metrics, etc).
+
+Is there a better way to do this?
+
+You could mark one of your `DataSources` as `@Primary` or you could provide
+your own `HealthIndicator` (it's not the endpoint that wants your `DataSource`
+but that bean, which is designed to be overridden by just adding one of your
+own).
+

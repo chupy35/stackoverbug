@@ -1,0 +1,133 @@
+18926572 ElasticSearch - Search analyzed and not_analyzed multi_field in one
+query
+
+I have an indexed field 'properties.language' with the value 'en sv'. This
+field has a multi_field mapping that consists of two fields, one analyzed
+(name 'language'), and one that is not_analyzed (name '_exact').
+
+How do I issue a single search query without having to query both
+'properties.language' and 'properties.language._exact'?
+
+**Edit:**
+
+Here is my configuration:
+
+Indexed data:
+
+    
+    
+    {
+        "_index": "51ded0be98035",
+        "_type": "user",
+        "_id": "WUzwcwhTRbKur7J5ZY_hgA",
+        "_version": 1,
+        "_score": 1,
+        "_source": {
+            "properties": {
+                "language":"en sv"
+            }
+        }
+    }
+    
+
+Mapping for type 'user':
+
+    
+    
+    {
+        "user": {
+            "properties": {
+                "properties": {
+                    "properties": {
+                        "language": {
+                            "type": "multi_field",
+                            "fields": {
+                                "language": {
+                                    "type": "string",
+                                    "analyzer": "standard",
+                                    "index": "analyzed"
+                                },
+                                "_exact": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+Search query:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                },
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "or": [{
+                                "term": {
+                                    "properties.language": "en sv"
+                                }
+                            }, {
+                                "term": {
+                                    "properties.language._exact": "en sv"
+                                }
+                            }]
+                        }]
+                    }
+                }
+            }
+        }
+    }
+    
+
+Consider indexing the `language` field using Elasticsearch builtin multi-
+valued fields (ie. arrays) instead:
+<http://www.elasticsearch.org/guide/reference/mapping/array-type/>. As you
+currently do, set `index` to `not_analyzed`.
+
+When indexing your data, instead of a single value `'en sv'`, pass instead
+`['en', 'sv']`, and ES will take care of the rest.
+
+For querying, this gives you the ability to do the following to find items
+with both `en` and `sv`:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all": {}
+                },
+                "filter": {
+                    "bool": {
+                        "must": [{
+                            "term": {
+                                "properties.language": "en"
+                            }
+                        }, {
+                            "term": {
+                                "properties.language": "sv"
+                            }
+                        }]
+                    }
+                }
+            }
+        }
+    }
+    
+
+Or even better, find greater brevity/flexibility using the `terms`
+query/filter instead of `term`:
+<http://www.elasticsearch.org/guide/reference/query-dsl/terms-query/>
+

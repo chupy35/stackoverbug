@@ -1,0 +1,68 @@
+14094162 elasticsearch double quotes not working
+
+I'm trying to search for a specific phrase with elasticsearch i.e. "foo bar".
+My query is similar to the one below:
+
+    
+    
+    curl -X GET "http://localhost:9200/objects/object/_search" -d '{
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "query_string": {
+                "query": "\"foo bar\"",
+                "default_field": "_all"
+              }
+            }
+          ]
+        }
+      }
+    }'
+    
+
+I've got two objects in my index, looking similar to this:
+
+    
+    
+    {
+      sub_sections: [
+        {
+          name: "foo"
+        },
+        {
+          name: "bar"
+        }
+      ]
+    }
+    
+
+and
+
+    
+    
+    {
+      sub_sections: [
+        {
+          name: "foo bar"
+        }
+      ]
+    }
+    
+
+I'm expecting only the last object, matching the phrase, to be returned when I
+use double quotes in the query. However, both objects are always returned.
+I've tried options like `auto_generate_phrase_queries` ++ with no luck so far.
+
+Is this the expected behaviour? How could I return only the documents with
+exact phrase matches?
+
+By default, both examples are indexed exactly the same way. When multiple
+instances of the same field are indexed they are indexed sequentially with no
+gap between the last term of one field and the first term of the following
+field. That's why phrase searches span field instances. You can increase the
+gap between fields by setting `position_offset_gap` in the
+[mapping](http://www.elasticsearch.org/guide/reference/mapping/core-
+types.html) to a non-zero value. See <https://gist.github.com/4420794> for a
+quick demo.
+

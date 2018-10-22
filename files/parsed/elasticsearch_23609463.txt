@@ -1,0 +1,10 @@
+23609463 elastic search: special cases for empty value
+
+I have filtered query who has filter by type:
+
+But when I not set type directly, it return me all values, even which have
+some type setted.
+
+How could I build the query, which will me return only values with `type=[]`
+if I do not specify type in the query?
+

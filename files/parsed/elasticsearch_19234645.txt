@@ -1,0 +1,121 @@
+19234645 Elasticsearch not using "default_search" analyzer unless explicitly
+stated in query
+
+From reading the Elasticsearch documents, I would expect that naming an
+analyzer 'default_search' would cause that analyzer to get used for all
+searches unless another analyzer is specified. However, if I define my index
+like so:
+
+    
+    
+    curl -XPUT 'http://localhost:9200/test/' -d '{
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "my_ngram_analyzer": {
+                        "tokenizer": "my_ngram_tokenizer",
+                        "filter": [
+                            "lowercase"
+                        ],
+                        "type" : "custom"
+                    },
+                    "default_search": {
+                        "tokenizer" : "keyword",
+                        "filter" : [
+                            "lowercase"
+                        ]
+                    }
+                },
+                "tokenizer": {
+                    "my_ngram_tokenizer": {
+                        "type": "nGram",
+                        "min_gram": "3",
+                        "max_gram": "100",
+                        "token_chars": []
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "TestDocument": {
+                "dynamic_templates": [
+                    {
+                        "metadata_template": {
+                            "match_mapping_type": "string",
+                            "path_match": "*",
+                            "mapping": {
+                                "type": "multi_field",
+                                "fields": {
+                                    "ngram": {
+                                        "type": "{dynamic_type}",
+                                        "index": "analyzed",
+                                        "analyzer": "my_ngram_analyzer"
+                                    },
+                                    "{name}": {
+                                        "type": "{dynamic_type}",
+                                        "index": "analyzed",
+                                        "analyzer": "standard"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }'
+    
+
+And then add a 'TestDocument':
+
+    
+    
+    curl -XPUT 'http://localhost:9200/test/TestDocument/1' -d '{
+        "name" : "TestDocument.pdf" }'
+    
+
+My queries are still running through the default analyzer. I can tell because
+this query gives me a hit:
+
+    
+    
+    curl -XGET 'localhost:9200/test/TestDocument/_search?pretty=true' -d '{
+        "query": {
+             "match": {
+                        "name.ngram": {
+                            "query": "abc.pdf"
+                        }
+                    }
+        }
+    }'
+    
+
+But does not if I specify the correct analyzer (using the 'keyword' tokenizer)
+
+    
+    
+    curl -XGET 'localhost:9200/test/TestDocument/_search?pretty=true' -d '{
+        "query": {
+             "match": {
+                        "name.ngram": {
+                            "query": "abc.pdf",
+                            "analyzer" : "default_search"
+                        }
+                    }
+        }
+    }'
+    
+
+What am I missing to use "default_search" for searches unless stated otherwise
+in my query? Am I just misinterpreting expected behavior here?
+
+In your dynamic template, you are setting the search and index analyzer by
+using "analyzer." It will only use the default as a last resort.
+
+    
+    
+    "index_analyzer":"analyzer_name" //sets the index analyzer
+    "analyzer":"analyzer_name" // sets both search and index
+    "search_analyzer":"...." // sets the search analyzer.
+    
+

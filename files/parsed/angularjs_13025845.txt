@@ -1,0 +1,14 @@
+13025845 get FormController whit variable name attribute
+
+when i use variable name at the form and name attribute is not specified,  the
+form controller is not published on the current scope under this name. how i
+can get FormController?
+
+    
+    
+    <form name="{{'myForm'}}" ng-controller="Ctrl">
+      <input name="input" required>
+      <tt>myForm.$valid = {{myForm.$valid}}</tt>
+    </form>
+    
+

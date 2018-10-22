@@ -1,0 +1,77 @@
+14118091 How to update a document using the Elasticsearch Update API?
+
+I have indexed a document in Elasticsearch as follows:
+
+    
+    
+    {
+     _parent: chow-demo
+     _index: prototype_2013.01.02
+     _type: chow-clfg
+     _id: Nx4JcvyxTPujkyy0Jq5BNw
+     _score: 11.600378
+     _source: {
+      chow-clfg: {
+      @type: chow-clfg
+      clfg: Cg5iV00z4woYAAAARQ0
+      @timestamp: 2013-01-02T06:26:00.000Z
+      count: 1
+      }
+     }
+    }
+    
+
+I tried to update the count field by the following command:
+
+    
+    
+    curl -XPOST 'localhost:9200/prototype_2013.01.02/chow-clfg/Nx4JcvyxTPujkyy0Jq5BNw/_update' -d '{"script":"ctx._source.chow-clfg.count+=num","params":{"num":1}}'
+    
+
+However I received the following error instead:
+
+    
+    
+    {"error":"RemoteTransportException[[Vesta][inet[/10.15.78.249:9300]][update]]; nested: DocumentMissingException[[prototype_2013.01.02][0] [chow-clfg][Nx4JcvyxTPujkyy0Jq5BNw]: document missing]; ","status":404}
+    
+
+What exactly have I done that is missing? I was following the documents at
+<http://www.elasticsearch.org/guide/reference/api/update.html> and yet it
+doesn't work.
+
+Also, I included the parent field:
+
+    
+    
+    curl -XPOST 'localhost:9200/prototype_2013.01.02/chow-clfg/Nx4JcvyxTPujkyy0Jq5BNw/_update' -d '{"parent":"chow-demo","script":"ctx._source.chow-clfg.count+=num","params":{"num":1}}'
+    
+
+And it still didn't work. Anyone can help me with this error?
+
+Basically it was incorrect syntax that caused the problem of not being able to
+update.
+
+Error:
+
+    
+    
+    curl -XPOST 'localhost:9200/prototype_2013.01.02/chow-clfg/Nx4JcvyxTPujkyy0Jq5BNw/_update'  \
+        -d '{"script":"ctx._source.chow-clfg.count+=num","params":{"num":1}}'
+    
+
+Correct syntax:
+
+    
+    
+    curl -XPOST 'localhost:9200/prototype_2013.01.02/chow-clfg/Nx4JcvyxTPujkyy0Jq5BNw/_update?parent=chow-demo'
+        -d '{"script":"ctx._source[\"chow-demo\"].count+=num","params":{"num":1}}'
+    
+
+The parent mapping should be included, together with the type name in its
+proper syntax:
+
+    
+    
+    ctx._source[\"chow-demo\"].count+=num
+    
+

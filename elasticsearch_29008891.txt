@@ -1,0 +1,5 @@
+29008891
+How to request a single document by _id via alias?
+<p>Is it possible to request a single document by its id by querying an alias, provided that all keys across all indices in the alias are unique (it is an external guarantee)?</p>&#xA;
+<p>Yes, querying an alias spanning over multiple indices work the same way as querying one indice.</p>&#xA;&#xA;<p>Just do this query over the alias:</p>&#xA;&#xA;<pre><code>POST my_alias_name/_search&#xA;{&#xA;    "filter":{&#xA;        "term":{"_id": "AUwNrOZsm6BwwrmnodbW"}&#xA;    }&#xA;}&#xA;</code></pre>&#xA;&#xA;<p>EDIT: GET operations are not real searches and can't be done on aliases spanning over multiple indexes. So the following query is in fact no permitted:</p>&#xA;&#xA;<pre><code>GET my_alias_name/my_type/AUwNrOZsm6BwwrmnodbW&#xA;</code></pre>&#xA;
+<p>From Elasticsearch 5.1 the query looks like:</p>&#xA;&#xA;<pre><code>GET /my_alias_name/_search/&#xA;{&#xA;    "query": { &#xA;        "bool": {&#xA;         "filter": {&#xA;                "term": {&#xA;                   "_id": "AUwNrOZsm6BwwrmnodbW"&#xA;                }&#xA;            }&#xA;        }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;

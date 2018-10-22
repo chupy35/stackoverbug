@@ -1,0 +1,58 @@
+24685864 Elasticsearch: Use a separate index for each language of the same
+data record
+
+I have a data record which has a field called title. A record may have
+different languages for the title at the same time. Such a record has other
+fields whose values do not vary with languages and so I do not list them in
+the following two examples:
+
+    
+    
+    Record #1:
+    Title (English): Hello
+    
+    Record #2:
+    Title (English): World
+    Title (Spanish): mundo
+    
+
+Currently there are four possible languages for the title: English, Spanish,
+French, and Chinese. There will be more languages supported when the system
+grows.
+
+I am new to Elasticsearch. I think about having an separate index for each
+language. So for record #2, I will create two Elasticsearch documents (one for
+each language) and send a document to the index corresponding to its language.
+
+Is this a good/acceptable design within indexing, update, delete, and search
+in mind? Any problems?
+
+For this design, I believe it has at least benefits:
+
+  * I can easily decide how many shards are needed for each language independently
+  * I can decide the number and locations of shards for index (language)
+  * I can easily add an index for a new language when the system grows destroying or re-indexing existing data.
+  * The system can maximally take advantage of distributed computing power
+
+Thanks for any input!
+
+Best.
+
+Your solution would likely work fine, but you can run into issues with
+duplicate documents if you start allowing multi-language searches.
+
+It might be more optimal to have multiple possible values per field, eg:
+
+  * title.engligsh
+  * title.spanish
+
+You can have completely different analysis rules for each language without
+duplicating the document.
+
+This approach will further allow you to add a new title.whatever fields to
+documents with their own analysis rules. Be warned though, last I checked, if
+you use a completely new custom analyzer you need to open/close the index for
+it to take effect, which will result in a few seconds of down time.
+
+I'll try to find some time to expand this answer with an end to end example.
+

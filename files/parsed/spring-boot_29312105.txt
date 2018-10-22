@@ -1,0 +1,14 @@
+29312105 Spring rest controller in management port?
+
+When using **spring-boot** , how to you expose a controller at management
+port, the port defined by _management.port_?
+
+Okay, I ended up implementing
+
+    
+    
+    org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint
+    
+
+This exposes the Controller into management port rather than application port.
+

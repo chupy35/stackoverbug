@@ -1,0 +1,60 @@
+21998270 elastic search: filter the documents and then return only the source
+without any additional content
+
+Hi im new to elastic search, currently im using
+
+    
+    
+    curl -XGET 'http://blah/blah/_search?pretty=True' -d '{
+    "query": {
+        "filtered": {
+            "filter": {
+                "range": {
+                    "time": {
+                        "from": "2014/02/11 00:00:00", "to":"2014/02/12 00:00:00"
+                    }
+                }
+            }
+        }
+    }
+    }'
+    
+
+but it will return me sth like this:
+
+    
+    
+    {
+      "took" : 1,
+       "timed_out" : false,
+       "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      },
+      "hits" : {
+        "total" : 2,
+        "max_score" : 1.0,
+        "hits" : [ {
+          "_index" : "blah",
+          "_type" : "blah",
+          "_id" : "blah",
+          "_score" : 1.0, "_source" : {
+            "blah" : [...<the contents that really useful to me>..]
+    
+
+the additional headers is redundant to me and will cause troubles, the only
+thing i need is the contents under the "_source". From the official ES blog i
+discover that
+
+    
+    
+    curl -XGET 'http://localhost:9200/twitter/tweet/1/_source'
+    
+
+will return a "clean" _source, but in practice, i will not know the _id for my
+documents, and I will not be able to use the filter in that form (if any one
+know how to please tell me). so is there anyway that I can filter my documents
+and return a "clean" result that only contains the contents of the "_source"?
+Thanks!
+

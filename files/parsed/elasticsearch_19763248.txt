@@ -1,0 +1,55 @@
+19763248 Special Character "- " in the Elastic Search acting
+
+"-" is acting like a or operator for e.g. I am searching "t-link", then it
+showing the result containing "t-link" as well as "t", why it is giving two
+terms, but i interested in the "t-link", why it is happening so? How can i
+recover from it?
+
+Elasticsearch is using by default the [standard
+analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+standard-analyzer.html) for strings.
+
+Basically, your string is tokenized in two tokens, lowercased:
+
+  * t 
+  * link
+
+If you need to know what does elasticsearch with your fields, use the
+[_analyze
+API](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+analyze.html).
+
+    
+    
+    $ curl -XGET 'localhost:9200/_analyze?analyzer=standard' -d 't-link'
+    $ curl -XGET 'localhost:9200/_analyze?analyzer=simple' -d 't-link'
+    
+
+If you don't want that, make sure you [put the right
+mapping](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-
+put-mapping.html) for that field and use either a [simple
+analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+simple-analyzer.html) or a [keyword
+analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+keyword-analyzer.html) or no analyzer at all depending on your requirements.
+See also [String core
+type](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#string).
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/twitter/tweet/_mapping' -d '
+    {
+        "tweet" : {
+            "properties" : {
+                "message" : {"type" : "string", "analyzer" : "simple"},
+                "other" : {"type" : "string", "index" : "not_analyzed"}
+            }
+        }
+    }
+    '
+    
+
+Using this form `message` field will be analyzed with `simple` analyzer and
+`other` field won't be analyzed at all.
+

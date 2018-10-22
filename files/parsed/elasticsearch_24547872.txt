@@ -1,0 +1,58 @@
+24547872 difference between string syntax query and dsl query
+
+What is the difference between [query-string-
+syntax](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html#query-string-syntax) and a [query-dsl-
+queries](http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/query-dsl-queries.html#bool) like boolean query.
+
+Here is two example
+
+    
+    
+     field1:value1 AND field2:value2
+    
+
+and
+
+    
+    
+    QueryBuilder qb = QueryBuilders
+                        .boolQuery()
+                        .must(termQuery("field1", "value1"))
+                        .must(termQuery("field2", "value2"));
+    
+
+What is the advantage ,disadvantage of both. Which one preferable?
+
+a query-string is the syntax used when you want to query elasticsearch with
+the rest api for example when you type :
+
+    
+    
+    curl -XGET "http://my_ip_adress:9200/my_index/my_type/_search" -d'
+    {
+      "query": {
+        "match_all": {}
+      }
+    }
+    
+
+but query-dsl is used when you're querying elasticsearch with java, so you
+will have to use a query builder (like in your post) then something like this
+:
+
+    
+    
+    client
+                .prepareSearch(index)
+                .setTypes("my_type")
+                .setQuery(qb).execute().actionGet();
+    
+
+About advantages, the query dsl are more preferable to use in your program
+because they are faster. But if you are writing in another language then java,
+then you have no choice other then using the restapi.
+
+I hope my answer is clear and precise.
+

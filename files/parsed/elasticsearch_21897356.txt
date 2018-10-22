@@ -1,0 +1,95 @@
+21897356 Elasticsearch DSL query from an SQL statement
+
+I'm new to Elasticsearch. I don't think I fully understand the concept of
+query and filters. In my case I just want to use filters as I don't want to
+use advance feature like scoring.
+
+How would I convert the following SQL statement into elasticsearch query?
+
+    
+    
+    select * from tablename where (name="d" and time>1231312) or (name="ds" and time>21)
+    
+
+Here is the query DSL which is equivalent to your sql query. The
+`query_string/query` filter is not cached by default that's why I have use
+`_cache:true` performance wise it will works good.
+
+    
+    
+    curl -XPOST http://localhost:9200/index_name/_search '{
+       "filter": {
+          "or": {
+             "filters": [
+                {
+                   "fquery": {
+                      "query": {
+                         "bool": {
+                            "must": [
+                               {
+                                  "term": {
+                                     "name": "d"
+                                  }
+                               },
+                               {
+                                  "range": {
+                                     "time": {
+                                        "gte":1231312
+                                     }
+                                  }
+                               }
+                            ]
+                         }
+                      },
+                      "_cache": true
+                   }
+                },
+                {
+                   "fquery": {
+                      "query": {
+                         "bool": {
+                            "must": [
+                               {
+                                  "term": {
+                                     "name": "ds"
+                                  }
+                               },
+                                {
+                                  "range": {
+                                     "time": {
+                                        "gte":21
+                                     }
+                                  }
+                               }
+                            ]
+                         }
+                      },
+                      "_cache": true
+                   }
+                }
+             ]
+          }
+       }
+    }'
+    
+    
+    
+    {
+        "filter" : {
+            "or":[
+                { "and" : [
+                        {"range": {"time": {"gt": 1231312}}},
+                    {"term" : {"name":"d"}}
+                ]},
+    
+                { "and" : [
+                        {"range": {"time": {"gt": 21}}},
+                    {"term" : {"name":"ds"}}
+                ]}
+    
+            ]
+    
+        }
+    }
+    
+

@@ -1,0 +1,157 @@
+31129776 How can I set the message-converters and resource-mapping in spring
+boot?
+
+I want to replace my spring web application to the version of using spring
+boot and also have web-app directory that is different from the normal.
+(src/main/webapp -> src/main/othernames)
+
+Before :It has the servlet context configuration of the default servlet.
+
+    
+    
+       <annotation-driven>
+            <message-converters>
+                <beans:bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+                    <beans:property name="objectMapper">
+                        <beans:bean class="com.knappsack.swagger4springweb.util.ScalaObjectMapper"/>
+                    </beans:property>
+                </beans:bean>
+            </message-converters>
+        </annotation-driven>
+        <default-servlet-handler/>
+    
+        <!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+        <resources mapping="/resources/**" location="/resources/" />
+    
+        <!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+        <beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+            <beans:property name="prefix" value="/WEB-INF/views/" />
+            <beans:property name="suffix" value=".jsp" />
+        </beans:bean>
+    
+
+I had to do add some other things in addition to following default explanation
+in spring boot web application sample like the followings.
+
+First I added tomcat embeded servlet container.
+
+    
+    
+    public class MyEmbeddedServletContainerCustomizer implements
+    EmbeddedServletContainerCustomizer {
+    
+        private static final Logger LOG =
+                LoggerFactory.getLogger(MyEmbeddedServletContainerCustomizer.class);
+    
+        @Value("${servlet.container.maxThreads}")
+        private int MAX_THREADS;
+    
+         @Override
+          public void customize(ConfigurableEmbeddedServletContainer factory) {
+            if(factory instanceof TomcatEmbeddedServletContainerFactory) {
+              customizeTomcat((TomcatEmbeddedServletContainerFactory) factory);
+            }
+          }
+    
+          public void customizeTomcat(TomcatEmbeddedServletContainerFactory factory) {
+            factory.addConnectorCustomizers(new TomcatConnectorCustomizer() {
+              @Override
+              public void customize(Connector connector) {
+                Object defaultMaxThreads = connector.getAttribute("maxThreads");
+                connector.setAttribute("maxThreads", MAX_THREADS);
+                LOG.info("Changed Tomcat connector maxThreads from " +
+                    defaultMaxThreads + " to " + MAX_THREADS);
+              }
+            });
+          }
+    
+    }
+    
+
+@Override public void addResourceHandlers(ResourceHandlerRegistry registry) {
+
+    
+    
+        if (!registry.hasMappingForPattern("/resources/swagger-ui/**")) {
+            registry.addResourceHandler("src/main/webapp/resources/swagger-ui/**").addResourceLocations(
+                    "classpath:/META-INF/resources/webjars/");
+        }
+    }
+    
+
+Second, I added the class for additional configuration.
+
+    
+    
+    @Configuration
+    @EnableWebMvc
+    public class WebMvcConfig extends WebMvcConfigurerAdapter{
+    
+        @Override
+        public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
+            configurer.enable();
+        }
+    
+        @Override
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    
+        }
+    
+        @Bean
+        public InternalResourceViewResolver viewResolver() {
+            InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+            resolver.setPrefix("WEB-INF/views/");
+            resolver.setSuffix(".jsp");
+            return resolver;
+        }
+    
+    }
+    
+
+I replaced the configuration in XML file to the spring boot one. But I can't
+do it perfectly. How can I configure for resource-mapping and others?
+
+    
+    
+    <!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+    <resources mapping="/resources/**" location="/resources/" />
+    
+
+I solved like the followings.
+
+    
+    
+    @Configuration
+    @EnableWebMvc
+    public class WebMvcConfig extends WebMvcConfigurerAdapter{
+    
+        @Override
+        public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
+            configurer.enable();
+        }
+    
+    
+    
+        @Override
+        public void configureMessageConverters(
+                List<HttpMessageConverter<?>> converters) {
+            converters.add(new MappingJackson2HttpMessageConverter());
+        }
+    
+    
+        @Override
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+            registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
+        }
+    
+        @Bean
+        public InternalResourceViewResolver viewResolver() {
+            InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+            resolver.setPrefix("/WEB-INF/views/");
+            resolver.setSuffix(".jsp");
+            return resolver;
+        }
+    
+    }
+    
+

@@ -1,0 +1,11 @@
+24795500 Elasticsearch sort by date only of datetime
+
+I have a field 'datetime' with value like '2014-07-17T01:20:20', on my query I
+want to sort it by just date like (2014-07-17). Is it possible to sort this
+way in elasticsearch?
+
+I want to have something like this in database query: order by DATE(datetime)
+DESC, name ASC
+
+Thanks!
+

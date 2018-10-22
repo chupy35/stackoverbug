@@ -1,0 +1,121 @@
+13760771 Elastic search has_child query
+
+We have a parent-child (one to many) relation in elastic search, and we want
+to check for all parent objects where it's child object attribute(child_attr)
+has any value in it.
+
+we are generating json-queries as below:
+
+1) For Has value condition.
+
+    
+    
+    {
+                    "has_child" : {
+                      "query" : {
+                        "filtered" : {
+                          "query" : {
+                            "match_all" : { }
+                          },
+                          "filter" : {
+                            "and" : {
+                              "filters" : [ {
+                                "exists" : {
+                                  "field" : "child_attr"
+                                }
+                              }, {
+                                "not" : {
+                                  "filter" : {
+                                    "term" : {
+                                      "child_attr" : ""
+                                    }
+                                  }
+                                }
+                              } ]
+                            }
+                          }
+                        }
+                      },
+                      "type" : "child"
+                    }
+                  }
+    
+
+2) For Has No Value Condition
+
+    
+    
+    {
+                    "has_child" : {
+                      "query" : {
+                        "filtered" : {
+                          "query" : {
+                            "match_all" : { }
+                          },
+                          "filter" : {
+                            "or" : {
+                              "filters" : [ {
+                                "missing" : {
+                                  "field" : "child_attr"
+                                }
+                              }, {
+                                "term" : {
+                                  "child_attr" : ""
+                                }
+                              } ]
+                            }
+                          }
+                        }
+                      },
+                      "type" : "child"
+                    }
+                  } 
+    
+
+These queries are returning only those parent objects where either all child
+objects have some value or all child objects have no value the searched
+attribute.
+
+It doesn't return anything where this condition is met partially which covers
+majority of data.
+
+I have also toyed with keyword analyzer to index this child_attribute but no
+joy.
+
+Look forward to your expert suggestions please.
+
+You are getting unexpected results because the query
+
+    
+    
+    "missing" : {
+        "field" : "child_attr"
+    }
+    
+
+matches both records that were indexed with empty string in the `child_attr`
+and records in which `child_attr` was missing.
+
+The query
+
+    
+    
+    "exists" : {
+        "field" : "child_attr"
+    }
+    
+
+is exact oposite of the first query, it matches all records that were indexed
+with a non-empty `child_attr` field.
+
+The query
+
+    
+    
+    "term" : {
+        "child_attr" : ""
+    }
+    
+
+doesn't match anything.
+

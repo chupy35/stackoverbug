@@ -1,0 +1,175 @@
+28452358 What is the meaning of {...this.props} in Reactjs
+
+What is the meaning of
+
+    
+    
+    {...this.props}
+    
+
+I am trying to use it like that
+
+    
+    
+     <div {...this.props}> Content Here </div>
+    
+
+It's called [spread attributes](http://facebook.github.io/react/docs/jsx-
+spread.html) and its aim is to make the passing of props easier.
+
+Let us imagine that you have a component that accepts N number of properties.
+Passing these down can be tedious and unwieldy if the number grows.
+
+    
+    
+    <Component x={} y={} z={} />
+    
+
+Thus instead you do this, wrap them up in an object and use the spread
+notation
+
+    
+    
+    var props = { x: 1, y: 1, z:1 };
+    <Component {...props} />
+    
+
+which will unpack it into the props on your component, i.e., you "never" use
+`{... props}` inside your `render()` function, only when you pass the props
+down to another component. Use your unpacked props as normal `this.props.x`.
+
+When we use our defined components, we can add attributes called props. These
+attributes are available in our component as this.props and can be used in our
+render method to render dynamic data:
+
+    
+    
+    var MyComponent = React.createClass({
+        render: function(){
+            return (
+                <h1>Hello, {this.props.name}!</h1>
+            );
+        }
+    });
+    
+    React.render(<MyComponent name="Handsome" />, document.getElementById('myDiv'));
+    
+
+also you can checkout here [reactjs](https://www.eduonix.com/courses/Web-
+Development/Getting-Started-With-React-JS-Tutorial-Online)
+
+It is ES-6 feature. It means you extract all the properties of props in
+`div.{... }`
+
+operator is used to extract properties of an object.
+
+# It's ES6 `Spread_operator` & `Destructuring_assignment`
+
+<https://developer.mozilla.org/en-
+US/docs/Web/JavaScript/Reference/Operators/Spread_operator>
+
+<https://developer.mozilla.org/en-
+US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment>
+
+`<div {...this.props}> Content Here </div>`
+
+it's equal to
+
+## class component
+
+> REPL: <https://jscomplete.com/repl/>
+
+    
+    
+    const person = {
+        name: "xgqfrms",
+        age: 23,
+        country: "China"
+    };
+    
+    class TestDemo extends React.Component {
+        render() {
+            const {name, age, country} = {...this.props};
+            // const {name, age, country} = this.props;
+            return (
+              <div>
+                  <h3> Person Information: </h3>
+                  <ul>
+                    <li>name={name}</li>
+                    <li>age={age}</li>
+                    <li>country={country}</li>
+                  </ul>
+              </div>
+            );
+        }
+    }
+    
+    ReactDOM.render(
+        <TestDemo {...person}/>
+        , mountNode
+    );
+
+[![enter image description
+here](https://i.stack.imgur.com/MXG57.png)](https://i.stack.imgur.com/MXG57.png)
+
+## function component
+
+> REPL: <https://jscomplete.com/repl/>
+
+    
+    
+    const props = {
+        name: "xgqfrms",
+        age: 23,
+        country: "China"
+    };
+    
+    const Test = (props) => {
+      return(
+        <div
+            name={props.name}
+            age={props.age}
+            country={props.country}>
+            Content Here
+            <ul>
+              <li>name={props.name}</li>
+              <li>age={props.age}</li>
+              <li>country={props.country}</li>
+            </ul>
+        </div>
+      );
+    };
+    
+    ReactDOM.render(
+        <div>
+            <Test {...props}/>
+            <hr/>
+            <Test 
+                name={props.name}
+                age={props.age}
+                country={props.country}
+            />
+        </div>
+        , mountNode
+    );
+
+[![enter image description
+here](https://i.stack.imgur.com/3F1Ll.png)](https://i.stack.imgur.com/3F1Ll.png)
+
+## for more details, seeing the following links:
+
+<https://babeljs.io/docs/plugins/transform-object-rest-spread/>
+
+<https://github.com/gildata/RAIO/issues/136#issuecomment-327361743>
+
+<https://facebook.github.io/react/docs/components-and-props.html>
+
+It will compile to this:
+
+    
+    
+    React.createElement('div', this.props, 'Content Here');
+    
+
+As you can see above, it passes all it's props to the `div`.
+

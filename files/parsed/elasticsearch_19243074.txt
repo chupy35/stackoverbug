@@ -1,0 +1,56 @@
+19243074 Dump all documents of Elasticsearch
+
+Is there any way to create a dump file that contains all the data of an index
+among with its settings and mappings?
+
+A Similar way as mongoDB does with
+[mongodump](http://docs.mongodb.org/manual/reference/program/mongodump/)  
+or as in Solr [its data folder is
+copied](https://stackoverflow.com/questions/3591258/how-to-backup-a-solr-
+database-to-a-file) to a backup location.
+
+Cheers!
+
+The data itself is one or more lucene indices, since you can have multiple
+shards. What you also need to backup is the cluster state, which contains all
+sorts of information regarding the cluster, the available indices, their
+mappings, the shards they are composed of etc.
+
+It's all within the `data` directory though, you can just copy it. Its
+structure is pretty intuitive. Right before copying it's better to disable
+automatic flush (in order to backup a consistent view of the index and
+avoiding writes on it while copying files), issue a manual flush, disable
+allocation as well. Remember to copy the directory from all nodes.
+
+Also, next major version of elasticsearch is going to provide a new
+snapshot/restore api that will allow you to perform incremental snapshots and
+restore them too via api. Here is the related github issue:
+<https://github.com/elasticsearch/elasticsearch/issues/3826>.
+
+Here's a new tool we've been working on for exactly this purpose
+<https://github.com/taskrabbit/elasticsearch-dump>. You can export indices
+into/out of JSON files, or from one cluster to another.
+
+Elasticsearch supports this now out of the box:
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+snapshots.html>
+
+ElasticSearch itself provides a way to create data backup and restoration. The
+simple command to do it is:
+
+    
+    
+    CURL -XPUT 'localhost:9200/_snapshot/<backup_folder name>/<backupname>' -d '{
+        "indices": "<index_name>",
+        "ignore_unavailable": true,
+        "include_global_state": false
+    }'
+    
+
+Now, how to create, this folder, how to include this folder path in
+ElasticSearch configuration, so that it will be available for ElasticSearch,
+restoration method, is well explained [here](http://jee-
+appy.blogspot.com/2016/11/elasticsearch-backup-and-restore.html). To see its
+practical demo surf [here](https://www.youtube.com/watch?v=Otl-IcmbiDE).
+

@@ -1,0 +1,23 @@
+17832058 I am looking for storing particular field in particular shard in
+elasticsearch
+
+By routing we can allocate particular file/doc/json in particular shard which
+make it easy to extract data. But I am thinking as would it be possible to
+store particular field of json file in particular shard. for eg: i had three
+field : username , message and time. I had created 3 shard for indexing. Now i
+want that username is stored in one shard , message in another shard and time
+in another shard.
+
+Thanks
+
+No this is not possible. The whole document (the JSON doc) will be stored on
+one shard. If you want to do what you describe, then you should split the data
+up into separate docs and then you can route them differently.
+
+As for the reasoning, imagine there was a username query which matched
+document5. If document5 was spread over many shards, these would all have to
+be queried to get the other parts of document5 back to compile the results.
+Imagine further a complex AND query across different fields, there would be a
+lot of traffic (and waiting) to find out if both fields match to compute if
+the document was a hit or not.
+

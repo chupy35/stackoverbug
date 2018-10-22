@@ -1,0 +1,19 @@
+24875703 Elasticsearch change similarities model of an index
+
+Can you change the similarities model of an index or do you need to rebuild
+the index?
+
+This documents the similarities plugin,
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-similarity.html>
+
+But the documentation does not mention if you are able to change the model on
+the fly.
+
+Thanks
+
+Chris
+
+At the moment elasticsearch does not allow changing the similarity on the fly
+. <https://github.com/elasticsearch/elasticsearch/issues/4403>
+

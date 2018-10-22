@@ -1,0 +1,74 @@
+16290636 How to update a field type in elasticsearch
+
+The ElasticSearch documents just aren't clear on how to do this.
+
+I indexed some tweets, and one of the fields, created_at, indexed as a string
+instead of a date. I can't find how to reindex with this change via a curl
+call. If reindexing is a complicated process, then I would much rather just
+delete what's there and start over. But, I can't find how to specify the field
+types either!
+
+Any help is greatly appreciated.
+
+You need to define a mapping using [Put Mapping
+AP](http://www.elasticsearch.org/guide/reference/api/admin-indices-put-
+mapping/)I.
+
+    
+    
+    $ curl -XPUT 'http://localhost:9200/twitter/tweet/_mapping' -d '
+    {
+        "tweet" : {
+            "properties" : {
+                "message" : {"type" : "string", "store" : "yes"}
+            }
+        }
+    }
+    '
+    
+
+A date can be defined as follow:
+
+    
+    
+    {
+        "tweet" : {
+            "properties" : {
+                "user" : {"type" : "string", "index" : "not_analyzed"},
+                "message" : {"type" : "string", "null_value" : "na"},
+                "postDate" : {"type" : "date"},
+                "priority" : {"type" : "integer"},
+                "rank" : {"type" : "float"}
+            }
+        }
+    }
+    
+
+You also need to specify format not just type if you are inserting a mysql
+timestamp then you should just add a format to it like this.
+
+    
+    
+    "properties": {
+        "updated_at": {
+             "type": "date",
+             "format": "yyyy-MM-dd HH:mm:ss"
+         }
+     }
+    
+
+If we consider your example then it should be like
+
+    
+    
+    "tweet" : {
+        "properties" : {
+            "user" : {"type" : "string", "index" : "not_analyzed"},
+            "message" : {"type" : "string", "null_value" : "na"},
+            "postDate" : {"type" : "date" , "format": "yyyy-MM-dd HH:mm:ss" },
+            "priority" : {"type" : "integer"},
+            "rank" : {"type" : "float"}
+        }
+    } 
+    
+

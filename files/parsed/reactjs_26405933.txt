@@ -1,0 +1,101 @@
+26405933 Inject component into another component
+
+What is the preferred way to inject a component into another component? I have
+an Object Oriented application structure where a View only knows about its
+parent View. Because all my components are 'dynamic' components I do not know
+the component structure beforehand.
+
+I tried it in two different ways with the following shared code:
+
+    
+    
+    /** @jsx React.DOM */
+    var component = React.createClass({
+        render: function () {
+            return (
+                <div>
+                    .. many elements here ..
+                    {this.props.children}
+                </div>
+            );
+        }
+    });
+    var subcomponent = React.createClass({
+        render: function () {
+            return (
+                <div>test</div>
+            );
+        }
+    });
+    
+    var parentView = React.renderComponent(
+        <component>.. subelements</component>,
+        document.getElementById('reactContainer')
+    );
+    
+
+**1\. Multiple components rendered**
+
+    
+    
+    var subView = React.renderComponent(
+        <subcomponent />,
+        parentView.getDOMNode()
+    );
+    
+
+The problem with this is that the super components inner html is replaced by
+the injected component. Also other errors are popping up. Seems like this is
+not the React-way of doing this.
+
+**2\. Inject subcomponent via setProp with single renderComponent**
+
+Another approach is to set the children prop.
+
+    
+    
+    parentView.setProps({
+        children: <subcomponent />
+    });
+    
+
+This works almost as expected, but also has some drawbacks. It is resetting
+the children to only the injected component. I could work around this by:
+
+    
+    
+    parentView.setProps({
+        children: [parentView.props.children, <subcomponent />]
+    });
+    
+
+But now the childView is managing the children of its parent. But I could
+extract this to a method on the parentView.
+
+Another drawback is that when the view-depth is deeper than 2, the reference
+to the React component is gone because only the rootView is rendered via
+`React.renderComponent` and thus I can only do setProps on the rootview.
+
+I think I need a `React.renderComponent` for every view, but I don't know a
+way of how to inject it in the parent.
+
+In most cases, the preferred way to pass a component down to another component
+is using the special _children_ prop (like you show in your example):
+
+    
+    
+    var component = React.createClass({
+        render: function () {
+            return (
+                <div>
+                    .. many elements here ..
+                    {this.props.children}
+                </div>
+            );
+        }
+    });
+    
+
+you can read more [here](https://facebook.github.io/react/docs/composition-vs-
+inheritance.html)
+

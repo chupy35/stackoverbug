@@ -1,0 +1,23 @@
+22025287 How can I make sure that running elasticsearch from the command line
+only starts it once?
+
+When I run `elasticsearch` from the command line, I get a process like this:
+
+    
+    
+    asdf  71356  0.0  1.9  3828644  160064  s004  S  11:34PM  1:16.39  /usr/bin/java -Xms256m -Xmx1g -Xss256k -Djava.awt.headless=true -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError -Delasticsearch -Des.path.home=/usr/local/Cellar/elasticsearch/0.90.3 -cp :/usr/local/Cellar/elasticsearch/0.90.3/libexec/elasticsearch-0.90.3.jar:/usr/local/Cellar/elasticsearch/0.90.3/libexec/*:/usr/local/Cellar/elasticsearch/0.90.3/libexec/sigar/* org.elasticsearch.bootstrap.ElasticSearch
+    
+
+If I run `elasticsearch` again, or multiple times, I get multiple instances of
+this line, and thus the program. How can I ensure that I only start one
+instance, no matter how many times I type `elasticsearch`?
+
+You can set the maximum number of local nodes able to run on that machine to
+1. In the elasticsearch.yml configuration file, you can set this line to limit
+it.
+
+    
+    
+    node.max_local_storage_nodes: 1
+    
+

@@ -1,0 +1,1260 @@
+12592472 How to highlight a current menu item?
+
+Does AngularJS help in any way with setting an `active` class on the link for
+the current page?
+
+I imagine there is some magical way this is done, but I can't seem to find.
+
+My menu looks like:
+
+    
+    
+     <ul>
+       <li><a class="active" href="/tasks">Tasks</a>
+       <li><a href="/actions">Tasks</a>
+     </ul>
+    
+
+and I have controllers for each of them in my routes: `TasksController` and
+`ActionsController`.
+
+But I can't figure out a way to bind the "active" class on the `a` links to
+the controllers.
+
+Any hints?
+
+on view
+
+    
+    
+    <a ng-class="getClass('/tasks')" href="/tasks">Tasks</a>
+    
+
+on controller
+
+    
+    
+    $scope.getClass = function (path) {
+      return ($location.path().substr(0, path.length) === path) ? 'active' : '';
+    }
+    
+
+With this the tasks link will have the active class in any url that starts
+with '/tasks'(e.g. '/tasks/1/reports')
+
+There is a `ng-class` directive, which binds variable and css class. It also
+accepts the object (className vs bool value pairs).
+
+Here is the example, <http://plnkr.co/edit/SWZAqj>
+
+I suggest using a directive on a link.
+
+But its not perfect yet. Watch out for the hashbangs ;)
+
+Here is the javascript for directive:
+
+    
+    
+    angular.module('link', []).
+      directive('activeLink', ['$location', function (location) {
+        return {
+          restrict: 'A',
+          link: function(scope, element, attrs, controller) {
+            var clazz = attrs.activeLink;
+            var path = attrs.href;
+            path = path.substring(1); //hack because path does not return including hashbang
+            scope.location = location;
+            scope.$watch('location.path()', function (newPath) {
+              if (path === newPath) {
+                element.addClass(clazz);
+              } else {
+                element.removeClass(clazz);
+              }
+            });
+          }
+        };
+      }]);
+    
+
+and here is how it would be used in html:
+
+    
+    
+    <div ng-app="link">
+      <a href="#/one" active-link="active">One</a>
+      <a href="#/two" active-link="active">One</a>
+      <a href="#" active-link="active">home</a>
+    </div>
+    
+
+afterwards styling with css:
+
+    
+    
+    .active { color: red; }
+    
+
+The [answer](https://stackoverflow.com/a/12592693/74865) from @Renan-tomal-
+fernandes is good, but needed a couple of improvements to work correctly. As
+it was, it'd always detect the link to the home page ( / ) as triggered, even
+if you were in another section.
+
+So I improved it a little bit, here's the code. I work with
+[Bootstrap](http://twitter.github.com/bootstrap/) so the active part is in the
+`<li>` element instead of the the `<a>`.
+
+**Controller**
+
+    
+    
+    $scope.getClass = function(path) {
+        var cur_path = $location.path().substr(0, path.length);
+        if (cur_path == path) {
+            if($location.path().substr(0).length > 1 && path.length == 1 )
+                return "";
+            else
+                return "active";
+        } else {
+            return "";
+        }
+    }
+    
+
+**Template**
+
+    
+    
+    <div class="nav-collapse collapse">
+      <ul class="nav">
+        <li ng-class="getClass('/')"><a href="#/">Home</a></li>
+        <li ng-class="getClass('/contents/')"><a href="#/contests/">Contents</a></li>
+        <li ng-class="getClass('/data/')"><a href="#/data/">Your data</a></li>
+      </ul>
+    </div>
+    
+
+I had similar problem with **menu located outside** the controller scope. Not
+sure if this is best solution or a recommended one but this is what worked for
+me. I've added the following to my app configuration:
+
+    
+    
+    var app = angular.module('myApp');
+    
+    app.run(function($rootScope, $location){
+      $rootScope.menuActive = function(url, exactMatch){
+        if (exactMatch){
+          return $location.path() == url;
+        }
+        else {
+          return $location.path().indexOf(url) == 0;
+        }
+      }
+    });
+    
+
+Then in the view I have:
+
+    
+    
+    <li><a href="/" ng-class="{true: 'active'}[menuActive('/', true)]">Home</a></li>
+    <li><a href="/register" ng-class="{true: 'active'}[menuActive('/register')]">
+    <li>...</li>
+    
+
+Here is the solution that I came up with after reading some of the excellent
+suggestions above. In my particular situation, I was trying to use [Bootstrap
+tabs component](http://twitter.github.io/bootstrap/components.html#navs) as my
+menu, but didn't want to use the Angular-UI version of this because I want the
+tabs to act as a menu, where each tab is bookmark-able, rather than the tabs
+acting as navigation for a single page. (See <http://angular-
+ui.github.io/bootstrap/#/tabs> if you're interested in what the Angular-UI
+version of bootstrap tabs looks like).
+
+I really liked kfis's answer about creating your own directive to handle this,
+however it seemed cumbersome to have a directive that needed to be placed on
+every single link. So I've created my own Angular directive which is placed
+instead once on the `ul`. Just in case any one else is trying to do the same
+thing, I thought I'd post it here, though as I said, many of the above
+solutions work as well. This is a slightly more complex solution as far as the
+javascript goes, but it creates a reusable component with minimal markup.
+
+Here is the javascript for the directive and the route provider for `ng:view`:
+
+    
+    
+    var app = angular.module('plunker', ['ui.bootstrap']).
+      config(['$routeProvider', function($routeProvider) {
+        $routeProvider.
+            when('/One', {templateUrl: 'one.html'}).
+            when('/Two', {templateUrl: 'two.html'}).
+            when('/Three', {templateUrl: 'three.html'}).
+            otherwise({redirectTo: '/One'});
+      }]).
+      directive('navTabs', ['$location', function(location) {
+        return {
+            restrict: 'A',
+            link: function(scope, element) {
+                var $ul = $(element);
+                $ul.addClass("nav nav-tabs");
+    
+                var $tabs = $ul.children();
+                var tabMap = {};
+                $tabs.each(function() {
+                  var $li = $(this);
+                  //Substring 1 to remove the # at the beginning (because location.path() below does not return the #)
+                  tabMap[$li.find('a').attr('href').substring(1)] = $li;
+                });
+    
+                scope.location = location;
+                scope.$watch('location.path()', function(newPath) {
+                    $tabs.removeClass("active");
+                    tabMap[newPath].addClass("active");
+                });
+            }
+    
+        };
+    
+     }]);
+    
+
+Then in your html you simply:
+
+    
+    
+    <ul nav-tabs>
+      <li><a href="#/One">One</a></li>
+      <li><a href="#/Two">Two</a></li>
+      <li><a href="#/Three">Three</a></li>
+    </ul>
+    <ng:view><!-- Content will appear here --></ng:view>
+    
+
+Here's the plunker for it:
+<http://plnkr.co/edit/xwGtGqrT7kWoCKnGDHYN?p=preview>.
+
+Using a directive (since we are doing DOM manipulation here) the following is
+probably the closest to doing things the "angular way":
+
+    
+    
+    $scope.timeFilters = [
+      {'value':3600,'label':'1 hour'},
+      {'value':10800,'label':'3 hours'},
+      {'value':21600,'label':'6 hours'},
+      {'value':43200,'label':'12 hours'},
+      {'value':86400,'label':'24 hours'},
+      {'value':604800,'label':'1 week'}
+    ]
+    
+    angular.module('whatever', []).directive('filter',function(){
+    return{
+        restrict: 'A',
+        template: '<li ng-repeat="time in timeFilters" class="filterItem"><a ng-click="changeTimeFilter(time)">{{time.label}}</a></li>',
+        link: function linkFn(scope, lElement, attrs){
+    
+            var menuContext = attrs.filter;
+    
+            scope.changeTimeFilter = function(newTime){
+              scope.selectedtimefilter = newTime;
+    
+            }
+    
+            lElement.bind('click', function(cevent){
+                var currentSelection = angular.element(cevent.srcElement).parent();
+                var previousSelection = scope[menuContext];
+    
+                if(previousSelection !== currentSelection){
+                    if(previousSelection){
+                        angular.element(previousSelection).removeClass('active')
+                    }
+                    scope[menuContext] = currentSelection;
+    
+                    scope.$apply(function(){
+                        currentSelection.addClass('active');
+                    })
+                }
+            })
+        }
+    }
+    })
+    
+
+Then your HTML would look like:
+
+    
+    
+    <ul class="dropdown-menu" filter="times"></ul>
+    
+
+Most important for me was not to change at all the bootstrap default code.
+Here it is my menu controller that search for menu options and then add the
+behavior we want.
+
+    
+    
+    file: header.js
+    function HeaderCtrl ($scope, $http, $location) {
+      $scope.menuLinkList = [];
+      defineFunctions($scope);
+      addOnClickEventsToMenuOptions($scope, $location);
+    }
+    
+    function defineFunctions ($scope) {
+      $scope.menuOptionOnClickFunction = function () {
+        for ( var index in $scope.menuLinkList) {
+          var link = $scope.menuLinkList[index];
+          if (this.hash === link.hash) {
+            link.parentElement.className = 'active';
+          } else {
+            link.parentElement.className = '';
+          }
+        }
+      };
+    }
+    
+    function addOnClickEventsToMenuOptions ($scope, $location) {
+      var liList = angular.element.find('li');
+      for ( var index in liList) {
+        var liElement = liList[index];
+        var link = liElement.firstChild;
+        link.onclick = $scope.menuOptionOnClickFunction;
+        $scope.menuLinkList.push(link);
+        var path = link.hash.replace("#", "");
+        if ($location.path() === path) {
+          link.parentElement.className = 'active';
+        }
+      }
+    }
+    
+         <script src="resources/js/app/header.js"></script>
+     <div class="navbar navbar-fixed-top" ng:controller="HeaderCtrl">
+        <div class="navbar-inner">
+          <div class="container-fluid">
+            <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+              <span class="icon-bar"></span> <span class="icon-bar"></span> 
+    <span     class="icon-bar"></span>
+            </button>
+            <a class="brand" href="#"> <img src="resources/img/fom-logo.png"
+              style="width: 80px; height: auto;">
+            </a>
+            <div class="nav-collapse collapse">
+              <ul class="nav">
+                <li><a href="#/platforms">PLATFORMS</a></li>
+                <li><a href="#/functionaltests">FUNCTIONAL TESTS</a></li>
+              </ul> 
+            </div>
+          </div>
+        </div>
+      </div>
+    
+
+Here is an extension on kfis directive that I did to allow for different
+levels of path matching. Essentially I found the need for matching URL paths
+upto a certain depth, as exact matching doesn't allow for nesting and default
+state redirections. Hope this helps.
+
+    
+    
+        .directive('selectedLink', ['$location', function(location) {
+        return {
+            restrict: 'A',
+            scope:{
+                selectedLink : '='
+                },
+            link: function(scope, element, attrs, controller) {
+                var level = scope.selectedLink;
+                var path = attrs.href;
+                path = path.substring(1); //hack because path does not return including hashbang
+                scope.location = location;
+                scope.$watch('location.path()', function(newPath) {
+                    var i=0;
+                    p = path.split('/');
+                    n = newPath.split('/');
+                    for( i ; i < p.length; i++) { 
+                        if( p[i] == 'undefined' || n[i] == 'undefined' || (p[i] != n[i]) ) break;
+                        }
+    
+                    if ( (i-1) >= level) {
+                        element.addClass("selected");
+                        } 
+                    else {
+                        element.removeClass("selected");
+                        }
+                    });
+                }
+    
+            };
+        }]);
+    
+
+And here is how I use the link
+
+    
+    
+    <nav>
+        <a href="#/info/project/list"  selected-link="2">Project</a>
+        <a href="#/info/company/list" selected-link="2">Company</a>
+        <a href="#/info/person/list"  selected-link="2">Person</a>
+    </nav>
+    
+
+This directive will match the depth level specified in the attribute value for
+the directive. Just means it can be used elsewhere many times over.
+
+In my case I resolved this problem by creating a simple controller responsible
+for the navigation
+
+    
+    
+    angular.module('DemoApp')
+      .controller('NavigationCtrl', ['$scope', '$location', function ($scope, $location) {
+        $scope.isCurrentPath = function (path) {
+          return $location.path() == path;
+        };
+      }]);
+    
+
+And by just adding ng-class to the element like so:
+
+    
+    
+    <ul class="nav" ng-controller="NavigationCtrl">
+      <li ng-class="{ active: isCurrentPath('/') }"><a href="#/">Home</a></li>
+      <li ng-class="{ active: isCurrentPath('/about') }"><a href="#/about">About</a></li>
+      <li ng-class="{ active: isCurrentPath('/contact') }"><a href="#/contact">Contact</a></li>
+    </ul>
+    
+
+Here's a simple approach that works well with Angular.
+
+    
+    
+    <ul>
+        <li ng-class="{ active: isActive('/View1') }"><a href="#/View1">View 1</a></li>
+        <li ng-class="{ active: isActive('/View2') }"><a href="#/View2">View 2</a></li>
+        <li ng-class="{ active: isActive('/View3') }"><a href="#/View3">View 3</a></li>
+    </ul>
+    
+
+Within your AngularJS controller:
+
+    
+    
+    $scope.isActive = function (viewLocation) {
+         var active = (viewLocation === $location.path());
+         return active;
+    };
+    
+
+This thread has a number of other similar answers.
+
+[How to set bootstrap navbar active class with Angular
+JS?](https://stackoverflow.com/questions/16199418/how-do-i-implement-the-
+bootstrap-navbar-active-class-with-angular-js/18071388#18071388)
+
+had same problem. Here is my
+[solution](https://gist.github.com/Naxmeify/7606111):
+
+    
+    
+    .directive('whenActive',
+      [
+        '$location',
+        ($location)->
+          scope: true,
+          link: (scope, element, attr)->
+            scope.$on '$routeChangeSuccess', 
+              () ->
+                loc = "#"+$location.path()
+                href = element.attr('href')
+                state = href.indexOf(loc)
+                substate = -1
+    
+                if href.length > 3
+                  substate = loc.indexOf(href)
+                if loc.length is 2
+                  state = -1
+    
+                #console.log "Is Loc: "+loc+" in Href: "+href+" = "+state+" and Substate = "+substate
+    
+                if state isnt -1 or substate isnt -1
+                  element.addClass 'selected'
+                  element.parent().addClass 'current-menu-item'
+                else if href is '#' and loc is '#/'
+                  element.addClass 'selected'
+                  element.parent().addClass 'current-menu-item'
+                else
+                  element.removeClass 'selected'
+                  element.parent().removeClass 'current-menu-item'
+      ])
+    
+
+I did it like this:
+
+    
+    
+    var myApp = angular.module('myApp', ['ngRoute']);
+    
+    myApp.directive('trackActive', function($location) {
+        function link(scope, element, attrs){
+            scope.$watch(function() {
+                return $location.path();
+            }, function(){
+                var links = element.find('a');
+                links.removeClass('active');
+                angular.forEach(links, function(value){
+                    var a = angular.element(value);
+                    if (a.attr('href') == '#' + $location.path() ){
+                        a.addClass('active');
+                    }
+                });
+            });
+        }
+        return {link: link};
+    });
+    
+
+This enables you to have links in a section that has track-active directive:
+
+    
+    
+    <nav track-active>
+         <a href="#/">Page 1</a>
+         <a href="#/page2">Page 2</a>
+         <a href="#/page3">Page 3</a>
+    </nav>
+    
+
+This approach seems much cleaner than others, to me.
+
+Also, if you are using jQuery, you can make it a lot neater because jQlite
+only has basic selector support. A much cleaner version with jquery included
+before angular include would look like this:
+
+    
+    
+    myApp.directive('trackActive', function($location) {
+        function link(scope, element, attrs){
+            scope.$watch(function() {
+                return $location.path();
+            }, function(){
+                element.find('a').removeClass('active').find('[href="#'+$location.path()+'"]').addClass('active');
+            });
+        }
+        return {link: link};
+    });
+    
+
+[Here is a jsFiddle](http://jsfiddle.net/48Zwh/)
+
+Just to add my two cents in the debate I have made a pure angular module (no
+jQuery), and it will also work with hash urls containing data. (e.g.
+`#/this/is/path?this=is&some=data`)
+
+You just add the module as a dependency and `auto-active` to one of the
+ancestors of the menu. Like this:
+
+    
+    
+    <ul auto-active>
+        <li><a href="#/">main</a></li>
+        <li><a href="#/first">first</a></li>
+        <li><a href="#/second">second</a></li>
+        <li><a href="#/third">third</a></li>
+    </ul>
+    
+
+And the module look like this:
+
+    
+    
+    (function () {
+        angular.module('autoActive', [])
+            .directive('autoActive', ['$location', function ($location) {
+            return {
+                restrict: 'A',
+                scope: false,
+                link: function (scope, element) {
+                    function setActive() {
+                        var path = $location.path();
+                        if (path) {
+                            angular.forEach(element.find('li'), function (li) {
+                                var anchor = li.querySelector('a');
+                                if (anchor.href.match('#' + path + '(?=\\?|$)')) {
+                                    angular.element(li).addClass('active');
+                                } else {
+                                    angular.element(li).removeClass('active');
+                                }
+                            });
+                        }
+                    }
+    
+                    setActive();
+    
+                    scope.$on('$locationChangeSuccess', setActive);
+                }
+            }
+        }]);
+    }());
+    
+
+(You can of course just use the directive part)
+
+It's also worth noticing that this doesn't work for empty hashes (e.g.
+`example.com/#` or just `example.com`) it needs to have at least
+`example.com/#/` or just `example.com#/`. But this happens automatically with
+ngResource and the like.
+
+And here is the fiddle: <http://jsfiddle.net/gy2an/8/>
+
+For [AngularUI](https://github.com/angular-ui/ui-router/) Router users:
+
+    
+    
+    <a ui-sref-active="active" ui-sref="app">
+    
+
+And that will place an `active` class on the object that is selected.
+
+Here is yet another directive to highlight active links.
+
+## Key features:
+
+  * Works fine with href that contains dynamic angular expressions
+  * Compatible with hash-bang navigation 
+  * Compatible with Bootstrap where active class should be applied to parent li not the link itself
+  * Allows make link active if any nested path is active
+  * Allows make link disabled if it is not active
+
+## Code:
+
+    
+    
+    .directive('activeLink', ['$location', 
+    function($location) {
+        return {
+            restrict: 'A',
+            link: function(scope, elem, attrs) {
+                var path = attrs.activeLink ? 'activeLink' : 'href';
+                var target = angular.isDefined(attrs.activeLinkParent) ? elem.parent() : elem;
+                var disabled = angular.isDefined(attrs.activeLinkDisabled) ? true : false;
+                var nested = angular.isDefined(attrs.activeLinkNested) ? true : false;
+    
+                function inPath(needle, haystack) {
+                    var current = (haystack == needle);
+                    if (nested) {
+                        current |= (haystack.indexOf(needle + '/') == 0);
+                    }
+    
+                    return current;
+                }
+    
+                function toggleClass(linkPath, locationPath) {
+                    // remove hash prefix and trailing slashes
+                    linkPath = linkPath ? linkPath.replace(/^#!/, '').replace(/\/+$/, '') : '';
+                    locationPath = locationPath.replace(/\/+$/, '');
+    
+                    if (linkPath && inPath(linkPath, locationPath)) {
+                        target.addClass('active');
+                        if (disabled) {
+                            target.removeClass('disabled');
+                        }
+                    } else {
+                        target.removeClass('active');
+                        if (disabled) {
+                            target.addClass('disabled');
+                        }
+                    }
+                }
+    
+                // watch if attribute value changes / evaluated
+                attrs.$observe(path, function(linkPath) {
+                    toggleClass(linkPath, $location.path());
+                });
+    
+                // watch if location changes
+                scope.$watch(
+                    function() {
+                        return $location.path(); 
+                    }, 
+                    function(newPath) {
+                        toggleClass(attrs[path], newPath);
+                    }
+                );
+            }
+        };
+    }
+    ]);
+    
+
+## Usage:
+
+Simple example with angular expression, lets say _$scope.var = 2_ , then link
+will be active if location is _/url/2_ :
+
+    
+    
+    <a href="#!/url/{{var}}" active-link>
+    
+
+Bootstrap example, parent li will get active class:
+
+    
+    
+    <li>
+        <a href="#!/url" active-link active-link-parent>
+    </li>
+    
+
+Example with nested urls, link will be active if any nested url is active
+(i.e. _/url/1_ , _/url/2_ , _url/1/2/..._ )
+
+    
+    
+    <a href="#!/url" active-link active-link-nested>
+    
+
+Complex example, link points to one url ( _/url1_ ) but will be active if
+another is selected ( _/url2_ ):
+
+    
+    
+    <a href="#!/url1" active-link="#!/url2" active-link-nested>
+    
+
+Example with disabled link, if it is not active it will have _'disabled'_
+class:
+
+    
+    
+    <a href="#!/url" active-link active-link-disabled>
+    
+
+All _active-link-*_ attributes can be used in any combination, so very complex
+conditions could be implemented.
+
+If you want the links for the directive in a wrapper rather than selecting
+each individual link (makes it easier to look at the scope in Batarang), this
+works pretty well too:
+
+    
+    
+      angular.module("app").directive("navigation", [
+        "$location", function($location) {
+          return {
+            restrict: 'A',
+            scope: {},
+            link: function(scope, element) {
+              var classSelected, navLinks;
+    
+              scope.location = $location;
+    
+              classSelected = 'selected';
+    
+              navLinks = element.find('a');
+    
+              scope.$watch('location.path()', function(newPath) {
+                var el;
+                el = navLinks.filter('[href="' + newPath + '"]');
+    
+                navLinks.not(el).closest('li').removeClass(classSelected);
+                return el.closest('li').addClass(classSelected);
+              });
+            }
+          };
+        }
+      ]);
+    
+
+Markup would just be:
+
+    
+    
+        <nav role="navigation" data-navigation>
+            <ul>
+                <li><a href="/messages">Messages</a></li>
+                <li><a href="/help">Help</a></li>
+                <li><a href="/details">Details</a></li>
+            </ul>
+        </nav>
+    
+
+I should also mention that I am using 'full-fat' jQuery in this example, but
+you can easily alter what I have done with the filtering and so on.
+
+You can implement this very simply, here is an example:
+
+    
+    
+    <div ng-controller="MenuCtrl">
+      <ul class="menu">
+        <li ng-class="menuClass('home')"><a href="#home">Page1</a></li>
+        <li ng-class="menuClass('about')"><a href="#about">Page2</a></li>
+      </ul>
+    
+    </div>
+    
+
+And your Controller should be this:
+
+    
+    
+    app.controller("MenuCtrl", function($scope, $location) {
+      $scope.menuClass = function(page) {
+        var current = $location.path().substring(1);
+        return page === current ? "active" : "";
+      };
+    });
+    
+
+Here's my two cents, this works just fine.
+
+_NOTE: This does not match childpages (which is what I needed)._
+
+**View:**
+
+    
+    
+    <a ng-class="{active: isCurrentLocation('/my-path')}"  href="/my-path" >
+      Some link
+    </a>
+    
+
+**Controller:**
+
+    
+    
+    // make sure you inject $location as a dependency
+    
+    $scope.isCurrentLocation = function(path){
+        return path === $location.path()
+    }
+    
+
+My solution to this problem, use `route.current` in the angular template.
+
+As you have the `/tasks` route to highlight in your menu, you can add your own
+property `menuItem` to the routes declared by your module:
+
+    
+    
+    $routeProvider.
+      when('/tasks', {
+        menuItem: 'TASKS',
+        templateUrl: 'my-templates/tasks.html',
+        controller: 'TasksController'
+      );
+    
+
+Then in your template `tasks.html`you can use following `ng-class` directive:
+
+    
+    
+    <a href="app.html#/tasks" 
+        ng-class="{active : route.current.menuItem === 'TASKS'}">Tasks</a>
+    
+
+In my opinion, this is much cleaner than all proposed solutions.
+
+I just wrote a directive for this.
+
+Usage:
+
+    
+    
+    <ul class="nav navbar-nav">
+      <li active><a href="#/link1">Link 1</a></li>
+      <li active><a href="#/link2">Link 2</a></li>
+    </ul>
+    
+
+Implementation:
+
+    
+    
+    angular.module('appName')
+      .directive('active', function ($location, $timeout) {
+        return {
+          restrict: 'A',
+          link: function (scope, element, attrs) {
+            // Whenever the user navigates to a different page...
+            scope.$on('$routeChangeSuccess', function () {
+              // Defer for other directives to load first; this is important
+              // so that in case other directives are used that this directive
+              // depends on, such as ng-href, the href is evaluated before
+              // it's checked here.
+              $timeout(function () {
+                // Find link inside li element
+                var $link = element.children('a').first();
+    
+                // Get current location
+                var currentPath = $location.path();
+    
+                // Get location the link is pointing to
+                var linkPath = $link.attr('href').split('#').pop();
+    
+                // If they are the same, it means the user is currently
+                // on the same page the link would point to, so it should
+                // be marked as such
+                if (currentPath === linkPath) {
+                  $(element).addClass('active');
+                } else {
+                  // If they're not the same, a li element that is currently
+                  // marked as active needs to be "un-marked"
+                  element.removeClass('active');
+                }
+              });
+            });
+          }
+        };
+      });
+    
+
+Tests:
+
+    
+    
+    'use strict';
+    
+    describe('Directive: active', function () {
+    
+      // load the directive's module
+      beforeEach(module('appName'));
+    
+      var element,
+          scope,
+          location,
+          compile,
+          rootScope,
+          timeout;
+    
+      beforeEach(inject(function ($rootScope, $location, $compile, $timeout) {
+        scope = $rootScope.$new();
+        location = $location;
+        compile = $compile;
+        rootScope = $rootScope;
+        timeout = $timeout;
+      }));
+    
+      describe('with an active link', function () {
+        beforeEach(function () {
+          // Trigger location change
+          location.path('/foo');
+        });
+    
+        describe('href', function () {
+          beforeEach(function () {
+            // Create and compile element with directive; note that the link
+            // is the same as the current location after the location change.
+            element = angular.element('<li active><a href="#/foo">Foo</a></li>');
+            element = compile(element)(scope);
+    
+            // Broadcast location change; the directive waits for this signal
+            rootScope.$broadcast('$routeChangeSuccess');
+    
+            // Flush timeout so we don't have to write asynchronous tests.
+            // The directive defers any action using a timeout so that other
+            // directives it might depend on, such as ng-href, are evaluated
+            // beforehand.
+            timeout.flush();
+          });
+    
+          it('adds the class "active" to the li', function () {
+            expect(element.hasClass('active')).toBeTruthy();
+          });
+        });
+    
+        describe('ng-href', function () {
+          beforeEach(function () {
+            // Create and compile element with directive; note that the link
+            // is the same as the current location after the location change;
+            // however this time with an ng-href instead of an href.
+            element = angular.element('<li active><a ng-href="#/foo">Foo</a></li>');
+            element = compile(element)(scope);
+    
+            // Broadcast location change; the directive waits for this signal
+            rootScope.$broadcast('$routeChangeSuccess');
+    
+            // Flush timeout so we don't have to write asynchronous tests.
+            // The directive defers any action using a timeout so that other
+            // directives it might depend on, such as ng-href, are evaluated
+            // beforehand.
+            timeout.flush();
+          });
+    
+          it('also works with ng-href', function () {
+            expect(element.hasClass('active')).toBeTruthy();
+          });
+        });
+      });
+    
+      describe('with an inactive link', function () {
+        beforeEach(function () {
+          // Trigger location change
+          location.path('/bar');
+    
+          // Create and compile element with directive; note that the link
+          // is the NOT same as the current location after the location change.
+          element = angular.element('<li active><a href="#/foo">Foo</a></li>');
+          element = compile(element)(scope);
+    
+          // Broadcast location change; the directive waits for this signal
+          rootScope.$broadcast('$routeChangeSuccess');
+    
+          // Flush timeout so we don't have to write asynchronous tests.
+          // The directive defers any action using a timeout so that other
+          // directives it might depend on, such as ng-href, are evaluated
+          // beforehand.
+          timeout.flush();
+        });
+    
+        it('does not add the class "active" to the li', function () {
+          expect(element.hasClass('active')).not.toBeTruthy();
+        });
+      });
+    
+      describe('with a formerly active link', function () {
+        beforeEach(function () {
+          // Trigger location change
+          location.path('/bar');
+    
+          // Create and compile element with directive; note that the link
+          // is the same as the current location after the location change.
+          // Also not that the li element already has the class "active".
+          // This is to make sure that a link that is active right now will
+          // not be active anymore when the user navigates somewhere else.
+          element = angular.element('<li class="active" active><a href="#/foo">Foo</a></li>');
+          element = compile(element)(scope);
+    
+          // Broadcast location change; the directive waits for this signal
+          rootScope.$broadcast('$routeChangeSuccess');
+    
+          // Flush timeout so we don't have to write asynchronous tests.
+          // The directive defers any action using a timeout so that other
+          // directives it might depend on, such as ng-href, are evaluated
+          // beforehand.
+          timeout.flush();
+        });
+    
+        it('removes the "active" class from the li', function () {
+          expect(element.hasClass('active')).not.toBeTruthy();
+        });
+      });
+    });
+    
+
+The route:
+
+    
+    
+    $routeProvider.when('/Account/', { templateUrl: '/Home/Account', controller: 'HomeController' });
+    
+
+The menu html:
+
+    
+    
+    <li id="liInicio" ng-class="{'active':url=='account'}">
+    
+
+The controller:
+
+    
+    
+    angular.module('Home').controller('HomeController', function ($scope, $http, $location) {
+        $scope.url = $location.url().replace(/\//g, "").toLowerCase();
+    ...
+    
+
+The problem I found here is that the menu item is active only when the full
+page is loaded. When the partial view is loaded the menu doesn't change.
+Somebody knows why it happens?
+
+According to @kfis 's answer, it's comments, and my recommend, the final
+directive as below:
+
+    
+    
+    .directive('activeLink', ['$location', function (location) {
+        return {
+          restrict: 'A',
+          link: function(scope, element, attrs, controller) {
+            var clazz = attrs.activeLink;        
+            var path = attrs.href||attrs.ngHref;
+            path = path.substring(1); //hack because path does not return including hashbang
+            scope.location = location;
+            scope.$watch('window.location.href', function () {
+              var newPath = (window.location.pathname + window.location.search).substr(1);
+              if (path === newPath) {
+                element.addClass(clazz);
+              } else {
+                element.removeClass(clazz);
+              }
+            });
+          }
+        };
+      }]);
+    
+
+> and here is how it would be used in html:
+
+>  
+>  
+>     <div ng-app="link">
+
+>       <a href="#/one" active-link="active">One</a>
+
+>       <a href="#/two" active-link="active">One</a>
+
+>       <a href="#" active-link="active">home</a>
+
+>     </div>
+
+>  
+>
+
+> afterwards styling with css:
+
+>  
+>  
+>     .active { color: red; }
+
+>  
+
+For those using ui-router, my answer is somewhat similar to Ender2050's, but I
+prefer doing this via state name testing:
+
+    
+    
+    $scope.isActive = function (stateName) {
+      var active = (stateName === $state.current.name);
+      return active;
+    };
+    
+
+corresponding HTML:
+
+    
+    
+    <ul class="nav nav-sidebar">
+        <li ng-class="{ active: isActive('app.home') }"><a ui-sref="app.home">Dashboard</a></li>
+        <li ng-class="{ active: isActive('app.tiles') }"><a ui-sref="app.tiles">Tiles</a></li>
+    </ul>
+    
+
+Here is a much better way to do it
+
+    
+    
+    <ul>
+        <li ng-class="{ active: isActive('/tasks')}"><a href="/">Tasks</a></li>
+    </ul>
+    
+    function tasksController($scope, $location) 
+    { 
+        $scope.isActive = function (viewLocation) { 
+            return viewLocation === $location.path();
+        };
+    }
+    
+
+use angular-ui-router's ui-sref-active directive <https://github.com/angular-
+ui/ui-router/wiki/Quick-Reference#statename>
+
+    
+    
+    <ul>
+      <li ui-sref-active="active" class="item">
+        <a href ui-sref="app.user({user: 'bilbobaggins'})">@bilbobaggins</a>
+      </li>
+      <!-- ... -->
+    </ul>
+
+None of the above _directive_ suggestions were useful to me. If you have a
+bootstrap navbar like this
+
+    
+    
+    <ul class="nav navbar-nav">
+        <li><a ng-href="#/">Home</a></li>
+        <li><a ng-href="#/about">About</a></li>
+      ...
+    </ul>
+    
+
+(that could be a `$ yo angular` startup) then you want to add `.active` to the
+_parent_ `<li>` element class list, not the element itself; i.e `<li
+class="active">..</li>`. So I wrote this :
+
+    
+    
+    .directive('setParentActive', ['$location', function($location) {
+      return {
+        restrict: 'A',
+        link: function(scope, element, attrs, controller) {
+          var classActive = attrs.setParentActive || 'active',
+              path = attrs.ngHref.replace('#', '');
+          scope.location = $location;
+          scope.$watch('location.path()', function(newPath) {
+            if (path == newPath) {
+              element.parent().addClass(classActive);
+            } else {
+              element.parent().removeClass(classActive);
+            }
+          })
+        }
+      }
+    }])
+    
+
+usage `set-parent-active`; `.active` is default so not needed to be set
+
+    
+    
+    <li><a ng-href="#/about" set-parent-active>About</a></li>
+    
+
+and the parent `<li>` element will be `.active` when the link is active. To
+use an alternative `.active` class like `.highlight`, simply
+
+    
+    
+    <li><a ng-href="#/about" set-parent-active="highlight">About</a></li>
+    
+    
+    
+    $scope.getClass = function (path) {
+    return String(($location.absUrl().split('?')[0]).indexOf(path)) > -1 ? 'active' : ''
+    }
+    
+    
+    <li class="listing-head" ng-class="getClass('/v/bookings')"><a href="/v/bookings">MY BOOKING</a></li>
+    <li class="listing-head" ng-class="getClass('/v/fleets')"><a href="/v/fleets">MY FLEET</a></li>
+    <li class="listing-head" ng-class="getClass('/v/adddriver')"><a href="/v/adddriver">ADD DRIVER</a></li>
+    <li class="listing-head" ng-class="getClass('/v/bookings')"><a href="/v/invoice">INVOICE</a></li>
+    <li class="listing-head" ng-class="getClass('/v/profile')"><a href="/v/profile">MY PROFILE</a></li>
+    <li class="listing-head"><a href="/v/logout">LOG OUT</a></li>
+    
+
+I found the easiest solution. just to compare indexOf in HTML
+
+var myApp = angular.module('myApp', []);
+
+    
+    
+    myApp.run(function($rootScope) {
+        $rootScope.$on("$locationChangeStart", function(event, next, current) { 
+             $rootScope.isCurrentPath = $location.path();  
+        });
+    });
+    
+    
+    
+    <li class="{{isCurrentPath.indexOf('help')>-1 ? 'active' : '' }}">
+    <a href="/#/help/">
+              Help
+            </a>
+    </li>
+    
+

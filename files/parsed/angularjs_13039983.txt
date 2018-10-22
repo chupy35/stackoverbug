@@ -1,0 +1,155 @@
+13039983 angular.js : how to pass ngclick from original dom to directive's
+dom?
+
+Hi there I have this "confirmable" button directive which I am working on,
+
+The html code that will trigger the directive 'confirmable'
+
+    
+    
+          <span confirmable ng-click='users.splice($index,1)'></span>
+    
+
+the directive: (coffeescript)
+
+    
+    
+      angular.module('buttons',[])
+    
+      .directive 'confirmable', () ->
+        template: """
+          <button class='btn btn-mini btn-danger'>
+            Destroy
+          </button>
+        """
+        replace: yes
+    
+
+So the end result I'd like to see generated with this directive is
+
+    
+    
+          <button class='btn btn-mini btn-danger' ng-click='users.splice($index,1)'>
+            Destroy
+          </button>
+    
+
+So far I got it to work with a linking function inside the directive
+
+    
+    
+      angular.module('buttons',[])
+    
+      .directive 'confirmable', () ->
+        template: """
+          <button class='btn btn-mini btn-danger'>
+            Destroy
+          </button>
+        """
+        replace: yes
+        link: (scope, el, attrs) ->               <---------- linking function
+          $(el).attr 'ng-click', attrs.ngClick
+    
+
+But I've gone through the directive documentation again, and found the scope
+property with the =, @, & operators but I am really unsure if they are what I
+need. Then there's this transclude properties which I still need to understand
+but at the moment doesn't seem to be helpful either. So while my linking
+function does the trick for now, but I thought I should ask to see if angular
+provides a more elegant solution.
+
+Thanks!
+
+It sounds to me like you want to call a method from a parent scope from within
+your directive...
+
+I've put together a [Plunk here](http://plnkr.co/edit/L18XIU)
+
+(Sorry, I like JavaScript... so here goes)
+
+Here's you're parent controller.
+
+    
+    
+    app.controller('ParentCtrl', function($scope) {
+        $scope.fooCalled = 0;
+        $scope.foo = function() {
+            $scope.fooCalled++;
+        };
+    });
+    
+
+Then your mark up
+
+    
+    
+    <div ng-controller="ParentCtrl">
+       Foo Called: {{fooCalled}}<br/>
+       <button ng-click="foo()">Call From Parent</button><br/>
+       <custom-control custom-click="foo()"></custom-control>
+    </div>
+    
+
+And your directive declaration:
+
+    
+    
+    app.directive('customControl', function(){
+       return {
+         restrict: 'E',
+         scope: {
+            innerFoo: '&customClick'
+         },
+         template: '<button ng-click="innerFoo()">Call From Control</button>'
+       };
+    });
+    
+
+The bit in the `scope` declaration in your directive definition is what ties
+the parent scope function reference to your directive's scope so it can be
+called on click. That's what the `&` is for there.
+
+You're doing it right. Controllers are for sharing common functionality among
+directives; you don't need one here. Also this case is so simple you don't
+even need a link function:
+
+<http://jsfiddle.net/V7Kpb/12/>
+
+Copying the directive attributes over in the link stage doesn't do anything as
+far as Angular is concerned. You'll just have a button with an `ng-click`
+attribute but that was added after Angular processed the DOM.
+
+Also note, `element` as the second parameter to the link function already is
+jQLite (and presumably full jQuery if you have that linked in too.) No need to
+jQuerify it.
+
+Also, regarding isolate scopes (the =, @ and & you mention). It's a lovely
+elegant syntax but the big downside is any other directives on the same
+element get isolated from scope too. So if you want to work with ngModel which
+is a common thing to do you can't use an isolate scope. Actually even in this
+case, if you use an isolate scope ng-click stop working. Because it will try
+to evaluate the expression which contains things not explicitly declared in
+the scope{} property.
+
+If you manipulate the DOM in the link stage and want to add angular logic to
+its element(s) it's required to compile the effected element(s). Let angular
+inject `$compile` and invoke it after you have finished processing the DOM and
+added your `ng-*` directives.
+
+    
+    
+    function MyDirective($compile)
+    {
+        return {
+            
+            restrict: "AE",
+            templateUrl: "/path",
+            link: (scope, element, attributes) => 
+            {
+                // Add your directives
+    
+                $compile(element.contents())(scope);
+            }
+        };
+    }
+

@@ -1,0 +1,105 @@
+12916188 Elastic search - Query won't execute
+
+After briefly reading the elastic search tutorial, I'm trying to make the
+following query work for a while now :
+
+    
+    
+    {
+    "query" :
+    { 
+        "size" : "10",
+        "query" : {
+            "bool" : {
+                "must" : {
+                    "custom_score" : {
+                        "query" : {
+                            "text" : { "phrase" : {"query" : "iphone4", "type" : "phrase_prefix"}}
+                        },
+                        "params" : {
+                                "param1" : 1000
+                         },
+                        "script" : "_score * param1 "
+                    }
+                },
+                "should" : [{ 
+                    "custom_score" : {
+                        "query" : { "match_all" : {}},
+                        "params" : {
+                                "param2" : 0.001
+                         },
+                        "script" : "_score * doc['matches'].value * param2 "
+                    }
+                },{
+                    "custom_score" : {
+                        "query" : {"match_all" : {}},
+                        "params" : {
+                                "param3" : 0.001
+                         },
+                        "script" : "_score * doc['hits'].value * param3 "
+                    }
+                }]
+    
+            }
+        }
+    }
+    }
+    
+
+When I try to run it, I get the following error :
+
+    
+    
+    {
+        "error": "SearchPhaseExecutionException[Failed to execute phase [query], total failure; shardFailures {[jJz-l-ENSV-0inWp2Sf8Bw][searches][2]: SearchParseException[[searches][2]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n\"query\" :\n{ \n \t\"size\" : \"10\",\n \t\"query\" : {\n\t\t\"bool\" : {\n\t\t\t\"must\" : {\n\t\t\t\t\"custom_score\" : {\n\t\t\t\t\t\"query\" : {\n\t\t\t\t\t\t\"text\" : { \"phrase\" : {\"query\" : \"iphone4\", \"type\" : \"phrase_prefix\"}}\n\t\t\t\t\t},\n\t\t\t\t\t\"params\" : {\n        \t\t\t\t\t\"param1\" : 1000\n   \t\t\t\t\t },\n\t\t\t\t\t\"script\" : \"_score * param1 \"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"should\" : [{ \n\t\t\t\t\"custom_score\" : {\n\t\t\t\t\t\"query\" : { \"match_all\" : {}},\n\t\t\t\t\t\"params\" : {\n        \t\t\t\t\t\"param2\" : 0.001\n   \t\t\t\t\t },\n\t\t\t\t\t\"script\" : \"_score * doc['matches'].value * param2 \"\n\t\t\t\t}\n\t\t\t},{\n\t\t\t\t\"custom_score\" : {\n\t\t\t\t\t\"query\" : {\"match_all\" : {}},\n\t\t\t\t\t\"params\" : {\n        \t\t\t\t\t\"param3\" : 0.001\n   \t\t\t\t\t },\n\t\t\t\t\t\"script\" : \"_score * doc['hits'].value * param3 \"\n\t\t\t\t}\n\t\t\t}]\n\t     \t\n\t\t}\n\t}\n}\n}]]]; nested: QueryParsingException[[searches] [_na] query malformed, no field after start_object]; }{[jJz-l-ENSV-0inWp2Sf8Bw][searches][4]: SearchParseException[[searches][4]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n\"query\" :\n{ \n \t\"size\" : \"10\",\n \t\"query\" : {\n\t\t\"bool\" : {\n\t\t\t\"must\" : {\n\t\t\t\t\"custom_score\" : {\n\t\t\t\t\t\"query\" : {\n\t\t\t\t\t\t\"text\" : { \"phrase\" : {\"query\" : \"iphone4\", \"type\" : \"phrase_prefix\"}}\n\t\t\t\t\t},\n\t\t\t\t\t\"params\" : {\n        \t\t\t\t\t\"param1\" : 1000\n   \t\t\t\t\t },\n\t\t\t\t\t\"script\" : \"_score * param1 \"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"should\" : [{ \n\t\t\t\t\"custom_score\" : {\n\t\t\t\t\t\"query\" : { \"match_all\" : {}},\n\t\t\t\t\t\"params\" : {\n        \t\t\t\t\t\"param2\" : 0.001\n   \t\t\t\t\t },\n\t\t\t\t\t\"script\" : \"_score * doc['matches'].value * param2 \"\n\t\t\t\t}\n\t\t\t},{\n\t\t\t\t\"custom_score\" : {\n\t\t\t\t\t\"query\" : {\"match_all\" : {}},\n\t\t\t\t\t\"params\" : {\n        \t\t\t\t\t\"param3\" : 0.001\n   \t\t\t\t\t },\n\t\t\t\t\t\"script\" : \"_score * doc['hits'].value * param3 \"\n\t\t\t\t}\n\t\t\t}]\n\t     \t\n\t\t}\n\t}\n}\n}]]]; nested: QueryParsingException[[searches] [_na] query malformed, no field after start_object]; }]",
+        "status": 500
+    }
+    
+
+Where do you think is my fault ? Any suggestions over how I should proceed ?
+
+You need to "merge" nested query with outer query. Try this:
+
+    
+    
+    {
+        "query" : { 
+            "bool" : {
+                "must" : {
+                    "custom_score" : {
+                        "query" : {
+                            "text" : { "phrase" : {"query" : "iphone4", "type" : "phrase_prefix"}}
+                        },
+                        "params" : {
+                                "param1" : 1000
+                         },
+                        "script" : "_score * param1 "
+                    }
+                },
+                "should" : [{ 
+                    "custom_score" : {
+                        "query" : { "match_all" : {}},
+                        "params" : {
+                                "param2" : 0.001
+                         },
+                        "script" : "_score * doc['matches'].value * param2 "
+                    }
+                },{
+                    "custom_score" : {
+                        "query" : {"match_all" : {}},
+                        "params" : {
+                                "param3" : 0.001
+                         },
+                        "script" : "_score * doc['hits'].value * param3 "
+                    }
+                }]
+    
+            }
+        },
+        "size" : "10"
+    }
+    
+
+If you are running it using curl, you might also need to replace `'` with
+`'\''`
+

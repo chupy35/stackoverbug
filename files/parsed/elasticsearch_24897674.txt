@@ -1,0 +1,201 @@
+24897674 Elasticsearch: search against _all field with boosting
+
+I am new to Elasticsearch.
+
+I have the following mapping:
+
+    
+    
+    {
+        "mappings": {
+    
+            "book": {
+    
+                "properties": {         
+                    "title": {
+                        "properties": {
+                            "en": {
+                                "type": "string",
+                                "analyzer": "standard"
+                            },
+                            "ar": {
+                                "type": "string",
+                                "analyzer": "standard"
+                            }
+                        }
+                    },
+    
+                    "keyword": {
+                        "properties": {
+                            "en": {
+                                "type": "string",
+                                "analyzer": "standard"
+                            },
+                            "ar": {
+                                "type": "string",
+                                "analyzer": "standard"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+A sample document may have two languages for the same field of the same book.
+Here are two example documents:
+
+    
+    
+    {
+        "title" : {
+            "en": "hello",
+            "ar": "مرحبا"
+        },
+        "keyword" : {
+            "en": "world",
+            "ar": "عالم"
+        }   
+    }
+    
+    {
+        "title" : {
+            "en": "Elasticsearch"
+        },
+        "keyword" : {
+            "en": "full-text index"
+        }   
+    }
+    
+
+Now I want to do a search against the _all field. Here is my query:
+
+    
+    
+    "query": { 
+        "match" : {
+            "_all" : {
+                "query" : "hello",
+                "operator" : "OR"
+            }
+        }
+    }
+    
+
+Is this correct mapping? One of the reasons that I want to use _all field
+instead of listing the specific fields in query is that I will include more
+languages.
+
+The thing I am not sure about is how to add boost to the title.en, title.ar
+fields in the above query? Any better way of doing so in case of more
+languages?
+
+Thanks and regards.
+
+You can do that by using function_score query
+
+    
+    
+    {
+       "query": {
+          "function_score": {
+             "functions": [
+                {
+                   "boost_factor": "500",
+                   "filter": {
+                      "term": {
+                         "title.en": "hello"
+                      }
+                   }
+                },
+                {
+                   "boost_factor": "200",
+                   "filter": {
+                      "term": {
+                         "title.ar": "hello"
+                      }
+                   }
+                }
+             ],
+             "query": {
+                "match": {
+                   "_all": {
+                      "query": "hello",
+                      "operator": "OR"
+                   }
+                }
+             },
+             "score_mode": "sum"
+          }
+       }
+    }
+    
+
+adding title.*
+
+    
+    
+    {
+       "query": {
+          "function_score": {
+             "functions": [
+                {
+                   "boost_factor": "500",
+                   "filter": {
+                       "query": {
+                          "query_string": {
+                               "default_field": "title.*",
+                                "query": "hello"
+                           }
+                       }
+                   }
+                }
+             ],
+             "query": {
+                "match": {
+                   "_all": {
+                      "query": "hello",
+                      "operator": "OR"
+                   }
+                }
+             },
+             "score_mode": "sum"
+          }
+       }
+    }
+    
+
+You should add this in the mapping:
+
+    
+    
+    _all" : {"enabled" : true}
+    
+
+For an example mapping check
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+all-field.html).
+
+You can use _all field in your case as it is suitable for your requirement.
+ElasticSearch Documentation states that:
+
+> The idea of the _all field is that it includes the text of one or more other
+fields within the document indexed. It can come very handy especially for
+search requests, where we want to execute a search query against the content
+of a document, without knowing which fields to search on. This comes at the
+expense of CPU cycles and index size.
+
+You are using a match query. It will work only if there is an exact match in
+_all field. By default, _all field is analyzed using standard analyzer. so a
+search for hello world using a match might won't return a hit. I'll advise in
+that case using a query_string or multi_match is much better. You can specify
+a custom analyser for _all field like:
+
+    
+    
+    "_all" : {"type" : "string", "analyzer" : "your_custom_analyzer"}
+    
+
+Thanks
+

@@ -1,0 +1,53 @@
+19259427 Why is IE8 getting a script error when using Facebook's React.js
+
+I'm using facebook's react. Not sure whats causing this error, seams to be
+react itself?
+
+I'm getting an IE8 script error: Object doesn't support this property or
+method on line 10898 for react.js
+
+I'm not using the minified version, this is the dev version that is commented.
+Anyone else having an issue with facebook's react not working in IE8?
+Wondering if there's some sort of setting that has to be used for react to
+work in IE???
+
+Make sure to add the polyfills listed at the end of this page:
+
+<http://facebook.github.io/react/docs/working-with-the-browser.html#browser-
+support-and-polyfills>
+
+Note also that JSXTransformer.js is currently incompatible with IE8, so you do
+need to precompile your JSX.
+
+I had this same issue and it turns out it was because of how I was building
+the bundle.
+
+If you're using webpack or browserify you need to "envify" it. There are
+places in the code base that look like this:
+
+    
+    
+    if (process.env.NODE_ENV !== "production") {
+      doSomethingNotIE8Compatible()
+    }
+    
+
+To remove these, the react build uses the envify browserify transform to go
+and replace the `process.env.NODE_ENV` instances with the string with the
+value of your local terminal environmental variable.
+
+For example, the first line becomes:
+
+    
+    
+    if ("production" !== "production") 
+    
+
+After this you should use uglify to remove the dead code to save size.
+
+Finally, you need to run the code through an ES3-ifer to get rid of some small
+things that are legal in ES5 but not ES3. For example, `catch` function calls.
+
+TLDR: at my company we have had a lot more success just using the CDN build
+rather than trying to get it bundling correctly.
+

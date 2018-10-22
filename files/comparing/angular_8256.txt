@@ -1,0 +1,2 @@
+b'fix(ngTouch): leaving an swipe element must not terminate swiping'
+b'when user leaves the area of the swiped element, it must keeps on swiping until until mouse is up.\n\ncloses: #6821\n'

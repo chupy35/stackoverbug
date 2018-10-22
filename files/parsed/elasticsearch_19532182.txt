@@ -1,0 +1,58 @@
+19532182 ElasticSearch nested: NullPointerException during has_parent query
+
+I am having weird issue
+
+    
+    
+    http://  machinename:9200/1_exposureindex/riskitemsearch/_search/
+    
+        {
+      "query": {
+        "has_parent": {
+          "parent_type": "contractsearch",
+          "query": {
+            "term": {
+              "Name": "4l4"
+            }
+          }
+        }
+      }
+    }
+    
+
+when I execute this query I get null pointer exception
+
+    
+    
+    {
+    error: SearchPhaseExecutionException[Failed to execute phase [query], total failure; shardFailures {[zohpYnUKQNSpROOg6eER9Q][1_exposureindex][1]: SearchParseException[[1_exposureindex][1]: from[-1],size[-1]: Parse Failure [Failed to parse source [{"query":{"has_parent":{"parent_type":"contractsearch","query":{"term":{"Name":"4l4"}}}}}]]]; nested: NullPointerException; }{[zohpYnUKQNSpROOg6eER9Q][1_exposureindex][0]: SearchParseException[[1_exposureindex][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{"query":{"has_parent":{"parent_type":"contractsearch","query":{"term":{"Name":"4l4"}}}}}]]]; nested: NullPointerException; }]
+    status: 500
+    }
+    
+
+but same query works when I do has_child
+
+    
+    
+    e.g. 
+    http://   machinename:9200/1_exposureindex/contractsearch/_search/
+    
+        {
+      "query": {
+        "has_child": {
+          "type": "riskitemsearch",
+          "query": {
+            "term": {
+              "Name": "4l4"
+            }
+          }
+        }
+      }
+    }
+    
+
+I figured out the issue, it was mapping issue. I had _parent set to InitCase
+where as actual parent is lowercase.
+
+Regards, VB
+

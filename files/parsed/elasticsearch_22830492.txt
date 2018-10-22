@@ -1,0 +1,91 @@
+22830492 Mixing bool and multi match/function score query
+
+I'm currently doing a query that's a mix of multi match and function score.
+The important bit of the JSON looks like this:
+
+    
+    
+    "function_score":{
+        "query":{
+            "query_string":{
+                "query":"some query",
+                "fields":["id","name","strippedDescription","colourSearch","sizeSearch"]
+            }
+        }
+    }
+    
+
+However, I also want to include results that don't necessarily match the query
+but have a particular numeric value that's greater than 0. I think a bool
+query would do this, but I don't know how to use a bool query with a function
+score query.
+
+I understand that a multi match query is just shorthand for a bool query, and
+I could expand out the multi match query into its bool counter-part, however,
+I then don't know how I would do function score within that.
+
+Any ideas? I'm on version 1.1.0 by the way.
+
+Figured it out! I was missing the fact that you can nest multi field queries
+within bool queries! My final solution looks like this:
+
+    
+    
+    {
+        "query":{
+            "function_score":{
+                "query":{
+                    "bool":{
+                        "should": [
+                           {
+                               "range": {
+                                  "allBoost": {
+                                     "gt": 0
+                                  }
+                               }
+                           },{
+                                "multi_match":{
+                                    "query":"some search query",
+                                    "fields":[
+                                        "id",
+                                        "name",
+                                        "description",
+                                        "category"
+                                    ]
+                                }
+                           }
+                        ]
+                    }
+                },
+                "functions":[
+                    {
+                        "filter":{
+                            "range": {
+                                "allBoost": {
+                                    "gt": 0
+                                }
+                            }
+                        },
+                        "script_score":{
+                            "script":"doc['allBoost'].value"
+                        }
+                    },
+                    {
+                        "filter":{
+                            "range": {
+                                "allBoost": {
+                                    "lte": 0
+                                }
+                            }
+                        },
+                        "script_score":{
+                            "script":"_score"
+                        }
+                    }
+                ],
+                "boost_mode": "replace"
+            }
+        }
+    }
+    
+

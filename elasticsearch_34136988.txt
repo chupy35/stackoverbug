@@ -1,0 +1,4 @@
+34136988
+Elasticsearch - configure lowercase analyzer with no tokenizer
+<p>Is there a way to configure an analyzer that will only lower case the input before indexing?</p>&#xA;&#xA;<p>So for example if I get:</p>&#xA;&#xA;<pre><code>"name": "Foo Bar"&#xA;</code></pre>&#xA;&#xA;<p>The output term should be "foo bar", so I can use a term query to query that exact term.</p>&#xA;&#xA;<p>My use case is to index an entity that I am going to query later with a term query, so I want every thing to be index after lowercased.</p>&#xA;&#xA;<p>Thanks!</p>&#xA;
+<p>Ok, found it!</p>&#xA;&#xA;<p>Looks like the keyword tokenizer is the right tokenizer to use.</p>&#xA;&#xA;<pre><code>"analysis": {&#xA;  "analyzer": {&#xA;    "lowercase": {&#xA;      "type": "custom",&#xA;      "tokenizer": "keyword",&#xA;      "filter": [&#xA;        "lowercase"&#xA;      ]&#xA;    }&#xA;  }&#xA;}&#xA;</code></pre>&#xA;

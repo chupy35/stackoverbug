@@ -1,0 +1,20 @@
+17970028 How to see the value of the _all field
+
+I am using Elasticsearch. Do we have any way to view the value of `_all`
+field, like other fields viewed in `_source`?
+
+Based on javanna's answer here
+(<https://stackoverflow.com/a/16526383/382774>), the answer is no, you can't
+view the _all field. It is an indexed field, not a stored field.
+
+Simplified, it's just the aggregated contents of the applicable fields from
+your document, and is the default field that ES uses for searching, when a
+target field isn't specified in your queries.
+
+Actually you can, but you'd have to peek into the index directly to see what
+is stored there, using an index analyzer tool such as luke:
+
+<https://code.google.com/p/luke/>
+
+Hope this helps ;)
+

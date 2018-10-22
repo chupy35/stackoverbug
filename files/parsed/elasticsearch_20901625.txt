@@ -1,0 +1,38 @@
+20901625 ElasticSearch bulk update
+
+Say we have an documents to index all students information (fields city &
+name) .  
+
+At a point If I want to update city of all students with prefix like "NY -"
+all in one strech. Can this be done?  
+
+eg:  
+David Auburn  
+Jack Jamestown  
+Claire Newburgh  
+
+Now I need an Single API or ES call which changes all the above documents to
+
+eg:  
+David NY-Auburn  
+Jack NY-Jamestown  
+Claire NY-Newburgh  
+
+I know there is way we can do it one update for each document. but i need ALL
+DOCUMENTS IN ONE GO
+
+Thanks Mahesh
+
+Update by query does not exist in ES. I don'think the underlying lucene
+indices have a way to update, they delete and re-add always.
+
+[There is some talk about it becoming a thing, maybe in
+1.0?](https://github.com/elasticsearch/elasticsearch/issues/1607)
+
+There is a [plugin that can do update by
+query](https://github.com/yakaz/elasticsearch-action-updatebyquery/)
+
+You could write a quick script to read and re-post all your docs using any of
+the [ES clients](http://www.elasticsearch.org/blog/unleash-the-clients-ruby-
+python-php-perl/).
+

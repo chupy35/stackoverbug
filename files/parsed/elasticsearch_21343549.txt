@@ -1,0 +1,51 @@
+21343549 Can I specify the result fields in elasticsearch query?
+
+In my dataset, a document contains 20+ fields with nested objects. Most of
+them are long text fields. These fields are important for full-text search but
+we only need to show the title, short-description and Id in output.
+
+Is it possible to specify the output fields in ElasticSearch for a full text
+query? (like projection in MongoDB)
+
+I think you're looking for the
+[`fields`](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-fields.html) property of a search request:
+
+> Allows to selectively load specific fields for each document represented by
+a search hit. Defaults to load the internal `_source` field.
+
+>  
+>  
+>     {
+
+>         "fields" : ["user", "postDate"],
+
+>         "query" : {
+
+>             "term" : { "user" : "kimchy" }
+
+>         }
+
+>     }
+
+>  
+>
+
+> The fields will automatically load stored fields (store mapping set to yes),
+or, if not stored, will load the `_source` and extract it from it (allowing to
+return nested document object).
+
+Take care in ElasticSearch 1.0.0.RC1 the fields return values now are always
+lists, if need the result to be a long instead of a list of longs (which might
+be a single value list for you most of the time) you can limit those with
+_source
+
+    
+    
+    {"_source" : ["field1", "field2", ...],
+         "query" : {
+            "term" : { "user" : "kimchy" }
+        }
+    }
+    
+

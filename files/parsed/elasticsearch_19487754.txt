@@ -1,0 +1,102 @@
+19487754 why are stop_words not supported in Elasticsearch 0.90
+more_like_this_field query?
+
+Contrary to the current ES documentation
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-mlt-field-query.html>, stop_words is an unsupported field for
+more_like_this_field queries in my ES installation.
+
+    
+    
+    version: 0.90.5
+    build_hash: c8714e8e0620b62638f660f6144831792b9dedee
+    build_timestamp: 2013-09-17T12:50:20Z
+    build_snapshot: false
+    lucene_version: 4.4
+    
+
+can anyone confirm this?
+
+This is what I am sending to the server
+
+    
+    
+    {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "match_all": {
+                            "boost": 1
+                        }
+                    },
+                    {
+                        "more_like_this_field": {
+                            "FieldA": {
+                                "like_text": "House",
+                                "boost": 1,
+                                "min_doc_freq": 0,
+                                "min_word_len": 0,
+                                "min_term_freq": 0
+                            }
+                        }
+                    }
+                ],
+                "should": [
+                    {
+                        "more_like_this_field": {
+                            "Equipped": {
+                                "like_text": "pool garage",
+                                "boost": 0,
+                                "min_doc_freq": 0,
+                                "min_word_len": 0,
+                                "min_term_freq": 0,
+                                "stop_words": "garden"
+                            }
+    
+                        }
+                    },
+                    {
+                        "more_like_this_field": {
+                            "Neighbourhood": {
+                                "like_text": "school",
+                                "boost": 5,
+                                "min_doc_freq": 0,
+                                "min_word_len": 0,
+                                "min_term_freq": 0
+                            }
+                        }
+                    }
+                ],
+                "minimum_number_should_match": 2
+            }
+        }
+    }
+    
+
+and this is what I get back
+
+    
+    
+    QueryParsingException[[data] [mlt_field] query does not support [stop_words]];
+    
+
+Same happens with the `more_like_this` query, the reason is that `stop_words`
+must be an array.
+
+    
+    
+    {
+        "more_like_this_field": {
+            "Equipped": {
+                "like_text": "pool garage",
+                "boost": 0,
+                "min_doc_freq": 0,
+                "min_word_len": 0,
+                "min_term_freq": 0,
+                "stop_words": ["garden"]
+            }
+        }
+    }
+    
+

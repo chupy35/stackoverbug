@@ -1,0 +1,34 @@
+20417575 How to implement "or" operator in elasticsearch?
+
+I have been trying to implement the `"or"` operator in elasticsearch query.  
+i have 3 documents with field and value as given below
+
+    
+    
+    dummyText : birthday party
+    
+    dummyText : birthday morning one
+    
+    dummyText : birthday evening two
+    
+
+I use the match query as
+
+    
+    
+    {
+       "query": {
+            "match": {
+              "dummyText": {
+                 "operator": "or",
+                 "query": "birthday evening"
+                 }
+               }
+           }
+    }
+    
+
+It returns only one document which matches `"birthday evening"`. why isn't it
+returning all the documents which has value "birthday"? Please, guide me on
+this.
+

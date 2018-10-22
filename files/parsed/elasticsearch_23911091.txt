@@ -1,0 +1,70 @@
+23911091 How to search exact text in nested document in elasticsearch
+
+I have a index like this,
+
+    
+    
+            "_index": "test",
+            "_type": "products",
+            "_id": "URpYIFBAQRiPPu1BFOZiQg",
+            "_score": null,
+            "_source": {
+    
+               "currency": null,
+               "colors": [],
+               "api": 1,
+               "sku": 9999227900050002,               
+               "category_path": [
+                  {
+                     "id": "cat00000",
+                     "name": "B1"
+                  },
+                  {
+                     "id": "abcat0400000",
+                     "name": "Cameras & Camcorders"
+                  },
+                  {
+                     "id": "abcat0401000",
+                     "name": "Digital Cameras"
+                  },
+                  {
+                     "id": "abcat0401005",
+                     "name": "Digital SLR Cameras"
+                  },
+                  {
+                     "id": "pcmcat180400050006",
+                     "name": "DSLR Package Deals"
+                  }
+               ],
+               "price": 1034.99,              
+               "status": 1,
+               "description": null,               
+            }
+    
+
+And i want to search only exact text ["Camcorders"] in category_path field. I
+did some match query, but it search all the products which has "Camcorders" as
+a part of the text. Can some one help me to solve this.
+
+Thanks
+
+you could add one more nested field `raw_name` with `not_analyzed` analyzer
+and match against it.
+
+To search in nested field use like following query
+
+    
+    
+     {
+      "query": {
+        "term": {
+           "category_path.name": {
+              "value": "b1"
+           }
+        }
+      }
+    }
+    
+
+HOpe it helps..!
+

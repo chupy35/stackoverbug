@@ -1,0 +1,69 @@
+25218159 Running Elasticsearch server on a mobile device (android / iphone /
+ios)
+
+I would like to know if it is possible to run an Elasticsearch server on a
+mobile device (android / iphone / ios) and if so, how I should go about doing
+it.
+
+In my case, the reason for doing it is to have an offline database on the
+device that is easily searchable (with all elasticsearch advanced functions)
+
+Optionally, I would maybe also use elasticsearch's cluster/replication
+capacities to keep the offline data on the device synced with a server.
+
+No, you can't , at least for now there is no official build that can run in
+mobile devices.
+
+Well, maybe (at least on Android, for iPhone the answer is no). Others have
+discussed it not certain that anyone has succeeded. The Android Dalvik is a
+JVM, just missing some things that are typically not required for mobile apps.
+In theory you should be able to try to compile ES and run it on Android.
+However, you are likely to run into issues with missing libraries and apis
+that ES requires, so it all depends on how comfortable you are diving in to ES
+source code to resolve them.
+
+This previous discussion might be of help, you might try to reach out to those
+on the thread to see if anyone succeeded:
+
+<http://elasticsearch-users.115913.n3.nabble.com/ElasticSearch-HTTP-Server-on-
+Android-td4056423.html>
+
+Can you not use regular ajax calls in your app to connect to elasticsearch?
+I'm not sure if it would be the best way but that's how I have it going.
+
+I'm also looking for a fulltext search engine for Offline First mobile apps.
+
+I haven't developped anything yet, but I think the easiest solution can be
+using the [Clucene](http://clucene.sourceforge.net/) Library (a C++ version of
+Lucene) as fulltext search engine instead of ElasticSearch (which is based on
+Lucene - Java).
+
+In fact, we don't need all the features of Elasticsearch for the mobile, such
+as webserver, restfull api, etc...
+
+You can find some work around on Google:
+
+  * <https://github.com/asheeshv/CLucene-iOS-Android-Win8>
+  * <https://github.com/saturnman/clucene-iOS>
+  * <https://github.com/hurongliang/clucene-ios-example>
+
+Still looking for a Cordova/Phonegap solution...
+
+Hope it can help.
+
+**Edit:**
+
+I have found this tool that provide Offline First capabilities in Javascript.
+It will work with Cordova/Phone Gap and maybe with ReactNative:
+
+<http://elasticlunr.com/>
+
+There is the
+[ElasticSearch4Android](https://github.com/karussell/ElasticSearch4Android)
+project that seems to try to do just that, but I am not sure it is not dead.
+It has total 6 commits 3 years ago.
+
+Maybe we can put one shoulder there, and help build it.
+
+I will contact the author to see what is the state of the project.
+

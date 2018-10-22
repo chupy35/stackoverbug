@@ -1,0 +1,83 @@
+24140773 Could not simulate mouseEnter event using React Test Utils
+
+I was able to simulate click events using React test utils, but I couldn't
+simulate mouseEnter events
+
+I added sample component and it tests in jsfiddle to show this problem
+<http://jsfiddle.net/kirana/Uf4e2/2/>
+
+    
+    
+    var Events = React.createClass({
+        getInitialState: function () {
+            return {
+                event: ''
+            };
+        },
+        clickHandler: function () {
+            this.setState({
+                event: 'click'
+            });
+        },
+        mouseEnterHandler: function () {
+            this.setState({
+                event: 'mouseenter'
+            });
+        },
+        render: function () {
+            return React.DOM.div(null, React.DOM.button({
+                ref: 'button',
+                onClick: this.clickHandler,
+                onMouseEnter: this.mouseEnterHandler
+            }, 'click or mouseenter'), React.DOM.div(null, this.state.event));
+        }
+    });
+    
+    
+    var ReactTestUtils = React.addons.TestUtils;
+    
+    describe('Events', function () {
+        it('should have click event state', function (done) {
+            var events = Events();
+            ReactTestUtils.renderIntoDocument(events);
+            ReactTestUtils.Simulate.click(events.refs.button.getDOMNode());
+            events.state.event.should.equal('click');
+            done();
+        });
+    
+        // This test is failing 
+        it('should have mouseenter event state', function (done) {
+            var events = Events();
+            ReactTestUtils.renderIntoDocument(events);
+            ReactTestUtils.Simulate.mouseEnter(events.refs.button.getDOMNode());
+            events.state.event.should.equal('mouseenter');
+            done();
+        });
+    
+    });
+    
+
+I couldn't figure out what I am missing to simulate mouseEnter.
+
+Currently mouseenter/mouseleave can't be simulated directly using
+ReactTestUtils; see this open issue:
+
+<https://github.com/facebook/react/issues/1297>
+
+As a workaround for now, you can use `SimulateNative.mouseOver` and
+`SimulateNative.mouseOut` (making sure to specify `relatedTarget`
+appropriately on each) and together they will cause React to fire onMouseEnter
+and onMouseLeave events.
+
+This answer is a bit different now as the mouseOver event works in React since
+v0.11.1 - see [here](http://qiita.com/kimagure/items/cf5200b0a2a516ca68f8)
+
+That means you can now use
+
+    
+    
+    ReactTestUtils.Simulate.mouseEnter(events.refs.button.getDOMNode());
+    
+
+just as you tried in your example.
+

@@ -1,0 +1,4 @@
+21958061
+Getting root elements props in reactjs
+<p>If I have the components structured as below in ReactJS</p>&#xA;&#xA;<pre><code>&lt;Root clickHandler={this.handleClick}&gt;&#xA;   &lt;Parent&gt;&#xA;     &lt;Children&gt;&lt;/Children&gt;&#xA;   &lt;/Parent&gt;&#xA;&lt;/Root&gt;&#xA;</code></pre>&#xA;&#xA;<p>can I have access to the 'Root' components clickHandler using this.props on the 'Children' component or does the clickHandler needs to be passed all the way from Root to Parent to Children in order for the Children component to have access to it.</p>&#xA;
+<p>Documentation at:&#xA;<a href="http://facebook.github.io/react/tips/communicate-between-components.html" rel="nofollow">http://facebook.github.io/react/tips/communicate-between-components.html</a>&#xA;says that whatever from Parent or Root you want to access in the Child, it needs to be passed as <code>props</code></p>&#xA;

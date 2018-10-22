@@ -1,0 +1,144 @@
+28049831 Spring Boot Setup: org.hibernate.HibernateException: No
+CurrentSessionContext configured
+
+Hi there i have a small Spring Boot Setup and Problems accessing my database.
+
+This is my Setup starting with Controller:
+
+    
+    
+    @Controller
+    @RequestMapping("/myproject/users")
+    public class UserController {
+    
+    private static Logger logger = LoggerFactory
+            .getLogger("UserController.class");
+    
+    private UserService userService;
+    
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+    ....
+    
+
+This is my DAO he extends an abstract DAO with all CRUD methods:
+
+    
+    
+    @Repository
+    @Transactional
+    public class UserDaoImpl<T> extends AbstractDAO<User, Integer> implements
+        UserDao {
+    
+    @Autowired
+    public UserDaoImpl(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
+    
+    protected Class<User> getEntityClass() {
+        return User.class;
+    }
+    
+    public User getUserByMail(String email) {
+        User result = null;
+        Criteria criteria = getCriteria();
+        criteria.add(Restrictions.eq("email", email));
+        if (criteria.uniqueResult() != null) {
+            result = (User) criteria.uniqueResult();
+        }
+        return result;
+    }
+    protected final Session getCurrentSession() {
+        return this.sessionFactory.getCurrentSession();
+    }
+    
+    .....
+    
+
+And finally the service:
+
+    
+    
+    @Component
+    @Transactional
+    public class UserServiceImpl implements UserService {
+    
+    private UserDao userDao;
+    
+    @Autowired
+    public UserServiceImpl(UserDao userDao) {
+        this.userDao = userDao;
+    }
+    
+    
+    public List<User> getAllUsers() {
+        return this.userDao.findAll();
+    }
+    ....
+    
+
+Here are my application settings:
+
+    
+    
+    spring.datasource.url=jdbc:mysql://10.0.0.15:3306/schema
+    spring.datasource.username=test
+    spring.datasource.password=test
+    
+    # Hibernate
+    spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+    spring.jpa.show-sql=true
+    spring.jpa.hibernate.ddl-auto=create
+    
+    # Tomcat
+    server.port = 9080
+    
+
+And this is my Application.java:
+
+    
+    
+    @Configuration
+    @ComponentScan({"core", "controller"})
+    @EnableAutoConfiguration
+    public class Application
+    {
+       public static void main(String[] args) {
+       ....
+       }
+    @Bean
+    public SessionFactory sessionFactory(HibernateEntityManagerFactory hemf) {
+       return hemf.getSessionFactory();
+    }
+    ....
+    
+
+My Problem is now, that the Sessionfactory is correctly constructed, all beans
+are loaded, but when my DAO tries to access the database i get an Exception:
+
+'org.hibernate.HibernateException: No CurrentSessionContext configured'
+
+I was searching on Stackoverflow very much and found out, that the problem is
+that Spring is not able to open the CurrentSessionContext. I am able to do
+this manually, but i want Spring-Boot handling my transactions. Does anyone
+recognize my mistake in the setup?
+
+I already tried to stick to this solution:
+[Stackoverflow](https://stackoverflow.com/questions/26667910/no-
+currentsessioncontext-configured)
+
+Thanks a lot!
+
+Adding the following to my application settings worked for me:
+
+    
+    
+    spring.jpa.properties.hibernate.current_session_context_class=org.springframework.orm.hibernate4.SpringSessionContext
+    
+
+Refer to the following: [No CurrentSessionContext
+configured](https://stackoverflow.com/questions/26667910/no-
+currentsessioncontext-configured)
+

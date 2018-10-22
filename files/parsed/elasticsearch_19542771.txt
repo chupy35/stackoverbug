@@ -1,0 +1,58 @@
+19542771 Elasticsearch doesn't return results
+
+I am facing a strange issue in elasticsearch query. I don't know much about
+elasticsearch. My query is:
+
+    
+    
+        {
+          "query":
+          {
+            "bool":
+            {
+              "must":
+                [
+                  {
+                     "text":
+                     {
+                       "countryCode2":"DE"
+                     }
+                  }
+                ],
+              "must_not":[],
+              "should":[]
+            }
+        },"from":0,"size":1,"sort":[],"facets":{}
+      }
+    
+
+The issues is for "DE". It is giving me results but for "BE" or "IN" it
+returns empty result.
+
+You are indexing using the default mapping, which by default removes english
+stopwords. The country codes "IN", "BE", and many more are stopwords which
+don't even get indexed, therefore it's not possible to have matching
+documents, nor get back those country codes when faceting on that field.
+
+The solution is to reindex after having submitted your own mapping for the
+country code field:
+
+    
+    
+    {
+        "your_type_name" : {
+            "country" : {
+                "type" : "string", "index" : "not_analyzed"
+            }
+        }
+    }
+    
+
+If you already tried to do this but nothing changed, the mapping didn't get
+submitted properly. I would suggest to double check that its json structure is
+correct and that you can actually get it back using the get mapping api.
+
+As this is a common problem the defaults are probably going to change in the
+future to be less intrusive and avoid applying any language dependent text
+analysis.
+

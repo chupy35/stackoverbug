@@ -1,0 +1,46 @@
+29776668 spring-jdbc doesn't seem to work with spring-boot-starter
+
+I'm following along the 15 min guide for sprint-boot ([gs-relational-data-
+access](http://spring.io/guides/gs/relational-data-access/))
+
+As such the guide works which uses H2-database. So now I'm changing that to
+use DB2 by providing the jars at runtime.
+
+Modified build.gradle
+
+    
+    
+    dependencies {
+        compile("org.springframework.boot:spring-boot-starter")
+        compile("org.springframework:spring-jdbc")
+        runtime fileTree(dir: 'libs', include: '*.jar')
+        //compile("com.h2database:h2")
+        testCompile("junit:junit")
+    }
+    
+
+Now application fails complaining JdbcTemplate bean definitions not found or
+something along the lines.
+
+So now I further modified the build.gradle to comment out the spring-jdbc, and
+use spring-boot-starter-jdbc
+
+    
+    
+    dependencies {
+        compile("org.springframework.boot:spring-boot-starter-jdbc")
+        //compile("org.springframework:spring-jdbc")
+        runtime fileTree(dir: 'libs', include: '*.jar')
+        //compile("com.h2database:h2")
+        testCompile("junit:junit")
+    }
+    
+
+Now the application works again. I'm interested in knowing why the spring-jdbc
+dependency didn't work with just the sprint-boot-starter?
+
+`spring-jdbc` has all classes that spring support for JDBC API but `spring-
+boot-starter-jdbc` allow to enable all the auto-configuration needed. Thanks
+to the auto-configuration you can autowired `JdbcTemplate` and
+`JdbcOperations` with a simple configuration in application.properties
+

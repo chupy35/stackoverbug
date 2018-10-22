@@ -1,0 +1,82 @@
+12925505 Angularjs table cell iteration
+
+I have a feeling I am doing something wrong, but this behavior seems odd. I
+dynamically create a table based on data in the controller. When I enter a
+character one of the cells in the table it immediately changes focus to the
+next cell and adds the character there as well.
+
+I have very simple example that reproduces the issue in jsfiddle.
+
+<http://jsfiddle.net/rgaskill/Aksec/15/>
+
+    
+    
+     <div ng-app="miniapp">
+    <div ng-controller="Matrix">
+        <h1>Enter a value in the fist cell.</h1>
+       <table>
+    <thead>
+        <tr>
+            <th>Row Name</th>
+            <th>0</th>
+            <th>1</th>
+            <th>2</th>
+            <th>3</th>
+            <th>4</th>
+            <th>5</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat="(row, values) in valueMap">
+            <td>{{row}}</td>
+            <td ng-repeat="(col, val) in values" ><input type="text" ng-model="valueMap[row][col]"></input></td>
+        </tr>
+    
+    </tbody>
+    </table>                      
+    </div>    
+     </div>​
+    
+
+* * *
+    
+    
+     var app = angular.module('miniapp', []);
+    
+     function Matrix($scope) {
+    $scope.valueMap = {
+        aRow: {
+            '0': '',
+            '1': '',
+            '2': '',
+            '3': '',
+            '4': '',
+            '5': ''
+        }
+       };
+     }​
+    
+
+What is causing this strange behavior?
+
+Ok, I found the issue. This post added some clarity.
+
+<https://groups.google.com/forum/#!topic/angular/VD77QR1J6uQ/discussion>
+
+> when the ngRepeat unrolls it copies the primitive into a local scope under
+item. Then ng-model binds to it. When you update the model you are updating a
+copy, not the original. but when you update the original it couses the
+repeater to realized that something changed in the items array and it then
+recreates the ng-model, which means ti re-copies it over to items. Hence the
+strange behavior but it is expected.
+
+>
+
+> Short answer: never iterate and input bind to primitives in ngRepeat, as you
+are making a copy of value rather the reference and any updates are written to
+local scope rather then the original location.
+
+and I updated the fiddle which works now
+
+<http://jsfiddle.net/rgaskill/Aksec/16/>
+

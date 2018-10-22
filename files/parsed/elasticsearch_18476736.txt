@@ -1,0 +1,104 @@
+18476736 How to dynamically change synonyms for ElasticSearch
+
+My synonyms are stored in a database and, when the synonyms are changed in the
+database, I want to update any values in the index which may be changed as a
+result of the synonym change.
+
+There are two parts to this that I can think of. One, figuring out which
+documents to re-index. Two, figuring out how to tell ElasticSearch that the
+synonyms have changed. I am struggling with the 2nd one - telling
+ElasticSearch that the synonyms have changed.
+
+A similar question has been asked - see [Change dynamically elasticsearch
+synonyms](https://stackoverflow.com/questions/7272368/change-dynamically-
+elasticsearch-synonyms) \- but from reading the answers in that issue, I have
+not been able to figure out what I need.
+
+Currently, my configuration file looks something like the following:
+
+    
+    
+    index :
+      analysis :
+        analyzer :
+          myanalyzer :
+            filter: [standard, mysynonymfilter]
+    filter :
+      mysynonymfilter :      
+        type : synonym
+        synonyms : synonyms.txt
+        ignore_case : false
+        expand : true
+        format : solr
+    
+
+My idea was to do something like the following:
+
+    
+    
+    curl -XPUT 'http://127.0.0.1:9200/foo/_settings'  -d '
+    {
+        "filter" : {
+            "synonym" : {
+                "type" : "mysynonymfilter",
+                "synonyms" : [
+                    "cosmos, universe"
+                ] 
+            }
+        }
+    }
+    '
+    
+
+but that doesn't seem to do what I want. That is, the index settings do not
+get updated as far as I can tell.
+
+Is what I am trying to do possible? And if so, any idea what I am doing wrong?
+
+Also, I am fairly sure I could get this to work by updating the synonym file
+(if I have to use a file), but that's a bit more complicated and something I'd
+like to avoid.
+
+Thanks for your help, Eric
+
+There is a project for reloading the synonym file
+[lindstromhenrik/elasticsearch-analysis-file-watcher-
+synonym](https://github.com/lindstromhenrik/elasticsearch-analysis-file-
+watcher-synonym) Although I don't know if it works in the latest versions.
+Maybe you can start by using the plugin and expanding synonyms at query time,
+since at query time you will have all the synonyms updated instead of
+reindexing documents that you guess that should be updated because of changes
+in the synonyms file.
+
+It turns out that you can tell ElasticSearch programmatically that the
+synonyms have changed. That is, it is not necessary to update the synonym
+file. Here's the basic steps that are necessary:
+
+  * Close the index.
+  * Update the index settings with the new synonym list. To be safe, I am updating all of the analyzers, tokenizers and char filters for the index (not just the synonym filter) - but I am not sure that is necessary.
+  * Open the index.
+
+You've flipped `mysynonymfilter` and `synonym` in your final curl command. The
+type should be `synonym`.
+
+I know this is an old thread, but in case it helps someone. The answer can be
+found
+[here](https://www.elastic.co/guide/en/elasticsearch/guide/current/using-
+stopwords.html#updating-stopwords):
+
+> If you specify stopwords inline with the stopwords parameter, your only
+option is to close the index and update the analyzer configuration with the
+update index settings API, then reopen the index.
+
+>
+
+> Updating stopwords is easier if you specify them in a file with the
+stopwords_path parameter. You can just update the file (on every node in the
+cluster) and then force the analyzers to be re-created by either of these
+actions:
+
+>
+
+> Closing and reopening the index (see open/close index), or Restarting each
+node in the cluster, one by one
+

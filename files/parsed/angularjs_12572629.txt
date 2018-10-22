@@ -1,0 +1,112 @@
+12572629 AngularJS calls $http constantly
+
+Im very new to AngularJS (4 hours new) and I'm trying to get an http call
+working, however what it seems like its happening is Angular keeps calling the
+http get request over and over again. I'm sure this is because my approach is
+wrong. This is what I'm trying to do.
+
+snippet of my controller file **The webservice works fine. I am running this
+in a node.js app**
+
+    
+    
+     function peopleController($scope,$http){
+      $scope.getPeople = function(){
+        $scope.revar = {};
+        $http.get('/location/-79.18925/43.77596').
+        success(function(data){
+          console.log(data);
+          $scope.revar = data;
+        });
+      }
+    }
+    
+
+My list.html file
+
+    
+    
+       <div ng-controller="busController">
+            <div class="blueitem">{{getPeople()}}</div>
+       </div>
+    
+
+**I know I will not see the results since im not returing anything in my
+getPeople Method** but I wanted to see the log output of the result which I
+did see in chrome, but a million times and counting since angular keeps
+calling that url method over and over again. Instead it keeps hitting.
+
+How do I get angular to return the response just once?
+
+The problem you are experiencing is linked to the way AngularJS works and - to
+be more precise - how it decides that a template needs refreshing. Basically
+AngularJS will refresh a template based on a dirty-checking of a model. Don't
+want to go into too much details here as there is an excellent post explaining
+it ([How does data binding work in
+AngularJS?](https://stackoverflow.com/questions/9682092/databinding-in-
+angularjs)) but in short it will keep changing for model changes till it
+stabilizes (no more changes in the model can be observed). In your case the
+model never stabilizes since you are getting new objects with each call to the
+`getPeople()` method.
+
+The proper way of approaching this would be (on of the possible solutions):
+
+    
+    
+    function peopleController($scope,$http){
+        $http.get('/location/-79.18925/43.77596').
+        success(function(data){
+          $scope.people = data;
+        });      
+    } 
+    
+
+and then, in your template:
+
+    
+    
+       <div ng-controller="busController">
+            <div class="blueitem">{{people}}</div>
+       </div>
+    
+
+The mentioned template will get automatically refreshed upon data arrival.
+
+Once again, this is just one possible solution so I would suggest following
+AngularJS tutorial to get better feeling of what is possible:
+<http://docs.angularjs.org/tutorial/>
+
+Couple of things. Welcome to angularjs, its a great framework. You probably
+shouldn't be calling getPeople from the webpage. Instead,
+
+    
+    
+     function peopleController($scope,$http){
+      var getPeople = function(){
+        $scope.revar = {};
+        $http.get('/location/-79.18925/43.77596').
+        success(function(data){
+          console.log(data);
+          $scope.revar = data;
+        });
+      }
+      getPeople();
+    }
+    
+
+and then in html
+
+    
+    
+    <div ng-controller="busController">
+            <div class="blueitem">{{revar|json}}</div>
+    </div>
+    
+
+Also, I would recommend you looking into the ngResource, especially if you are
+doing CRUD type applications.
+
+Hope this helps
+
+\--dan
+

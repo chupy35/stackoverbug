@@ -1,0 +1,36 @@
+24433038 elasticsearch subtract numeric fields between two datasets
+
+Some statistical data present, the task is to display for timespan latest
+value and delta (initial value - latest value).
+
+Is there any way how this can be done via elasticsearch, not running 2 queries
+and making subtraction manually?
+
+For instance, we have this data:
+
+    
+    
+    {
+     downloads: 100,
+     purchases: 100,
+     data: '01/01/2014'
+    },
+    {
+     downloads: 120,
+     purchases: 120,
+     data: '01/02/2014'
+    }
+    
+
+And timespan specified is `01/01/2014` \- `01/02/2014`
+
+Query should return all data for `01/02/2014`, 20 as delta for downloads and
+20 as delta for purchases.
+
+Thanks!
+
+You should use date histogram aggregations with nested stats aggregation and
+manually calculate difference from result.
+
+You could explore this gist <https://gist.github.com/mikeasick/8734117>
+

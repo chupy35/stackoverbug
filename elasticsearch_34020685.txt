@@ -1,0 +1,4 @@
+34020685
+Snowball analyzer vs language analyzer
+<p>Just trying to understand what is the better approach for morphological search with <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html" rel="nofollow">multi-fields</a>?</p>&#xA;
+<p>Both do the same thing - normalize words to some level.</p>&#xA;&#xA;<p>There's just one difference - snowball analyzer is pretty much tokenizer + snowball filter, while english language analyzer is using <code>porter_stem</code> and <code>possessive_english</code> stemmers + other filters.</p>&#xA;&#xA;<p>I, myself, wouldn't use both of these OOB since they're too aggressive and normalize words way too much and words with different meaning are indexed identically.</p>&#xA;&#xA;<p>In order to fix that, I'd recommend to switch to <code>kstem</code>, dictionary stemmers or a combination of both of them to get desired result.</p>&#xA;

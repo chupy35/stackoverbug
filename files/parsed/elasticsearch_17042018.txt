@@ -1,0 +1,10 @@
+17042018 Can I change a field from "not indexed" to "indexed" in
+elasticsearch?
+
+If I have a field that has "index":"no" and i already inserted some documents,
+Is there a way to change the index settings (to "analyzed" or "not_analyzed")
+and let the nodes crunch a little until they create the index?
+
+No, elasticsearch won't "reindex" internally if you update the mappings. You
+have to reindex all documents.
+

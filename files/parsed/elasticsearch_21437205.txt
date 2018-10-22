@@ -1,0 +1,133 @@
+21437205 Match object keys with Elasticsearch
+
+I have documents containing a field like so:
+
+    
+    
+    ...
+    placements: [
+        "<id0>",
+        "<id1>",
+        "<id2>"
+    ]
+    ...
+    
+
+In order to get all documents for which placements contains id0, I can do:
+
+    
+    
+    {
+        "constant_score" : {
+            "filter" : {
+                "term" : { "placements" : "<id0>"}
+            }
+        }
+    }
+    
+
+Now, I need to change this array to an object, in order to map ids to a state
+(string):
+
+    
+    
+    ...
+    placements: {
+        "<id0>": "active",
+        "<id1>": "active",
+        "<id2>": "paused"
+    }
+    ...
+    
+
+I would like to knwo if there is a way to still be able to check if a given id
+is one o the keys of the placements object ?
+
+I think the [exists
+filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-exists-filter.html) is what you're looking for.
+
+I created an index and added two docs, one that has the `"<id2>"` property and
+one that doesn't:
+
+    
+    
+    curl -XPUT "http://localhost:9200/test_index/"
+    
+    curl -XPUT "http://localhost:9200/test_index/docs/1" -d'
+    {
+       "name": "doc1",
+       "placements": {
+          "<id0>": "active",
+          "<id1>": "active",
+          "<id2>": "paused"
+       }
+    }'
+    
+    curl -XPUT "http://localhost:9200/test_index/docs/2" -d'
+    {
+       "name": "doc2",
+       "placements": {
+          "<id0>": "paused",
+          "<id1>": "active"
+       }
+    }'
+    
+
+and then I can query with the `"exists"` filter:
+
+    
+    
+    curl -XPOST "http://localhost:9200/test_index/_search" -d'
+    {
+       "query": {
+          "constant_score": {
+             "filter": {
+                "exists": {
+                   "field": "<id2>"
+                }
+             }
+          }
+       }
+    }'
+    
+
+and I get back the right result:
+
+    
+    
+    {
+       "took": 2,
+       "timed_out": false,
+       "_shards": {
+          "total": 1,
+          "successful": 1,
+          "failed": 0
+       },
+       "hits": {
+          "total": 1,
+          "max_score": 1,
+          "hits": [
+             {
+                "_index": "test_index",
+                "_type": "docs",
+                "_id": "1",
+                "_score": 1,
+                "_source": {
+                   "name": "doc1",
+                   "placements": {
+                      "<id0>": "active",
+                      "<id1>": "active",
+                      "<id2>": "paused"
+                   }
+                }
+             }
+          ]
+       }
+    }
+    
+
+Here is a runnable example you can play with:
+
+<http://sense.qbox.io/gist/e727360fc472a9c0a6a2a1cf7050d1b42f6cd773>
+

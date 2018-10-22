@@ -1,0 +1,37 @@
+26940863 Spring Boot 1.1.9+ addResourceHandler not working for static assets
+for absolute paths
+
+I have a spring boot application with static html, css, and img files we want
+to keep outside of the /static directory (during development) for purposes of
+modularity and easy reloading and developing. It is our front end component
+written in AngularJS. Problem is in 1.1.8, the following registration worked:
+
+    
+    
+    String userDir = System.getProperties().getProperty("user.dir");
+    String prefix = "file:";
+    
+    registry.addResourceHandler("/diagnostics/systemstatusng/**").addResourceLocations(prefix + userDir + "/myAngularFrontend1/app/**");
+    registry.addResourceHandler("/loginondemand/**").addResourceLocations(prefix + userDir + "/myAngularFrontEnd2/app/**");
+    
+
+But in spring-boot-starter 1.1.9 (and 1.2.0.RC1), this no longer works.
+
+Looking at this recent post [How to dynamically add static resources to
+spring-boot jar
+application?](https://stackoverflow.com/questions/25871131/how-to-dynamically-
+add-static-resources-to-spring-boot-jar-application), seems like it should
+work, but we've tried left and right and cant figure out why it doesnt work in
+spring boot starter 1.1.9 and later. Any insight would be appreciated.
+
+The resource locations need to be directories (not patterns) ending in "/",
+e.g.
+
+    
+    
+    registry.addResourceHandler("/diagnostics/systemstatusng/**").addResourceLocations(prefix + userDir + "/myAngularFrontend1/app/");
+    
+
+Nothing changed in Spring Boot (this is a core Spring MVC feature), so you
+must have just been doing it differently before.
+

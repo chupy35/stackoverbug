@@ -1,0 +1,218 @@
+29018892 How add Static Web Content in Spring-boot
+
+I am trying to add static web content in a spring-boot server using the info
+[here](http://spring.io/blog/2013/12/19/serving-static-web-content-with-
+spring-boot)
+
+I have tried adding the .js and .css files I need in the several Folders that
+the previous link says but it doesn't work:
+
+>
+
+>     /META-INF/resources/
+
+>     /resources/
+
+>  
+
+Note: I didn't created the `/static/` and `/public/` folders because I don't
+know the absolute Path in my project.
+
+I have added too the `addResourceHandlers` method:
+
+>
+
+>     @Override
+
+>     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+
+>     if (!registry.hasMappingForPattern("/webjars/**")) {
+
+>         registry.addResourceHandler("/webjars/**").addResourceLocations(
+
+>                 "classpath:/META-INF/resources/webjars/");
+
+>     }
+
+>     if (!registry.hasMappingForPattern("/**")) {
+
+>         registry.addResourceHandler("/**").addResourceLocations(
+
+>                 RESOURCE_LOCATIONS);
+
+>     }
+
+>     }
+
+>  
+
+And the reference in the HTML file are like this:
+
+`<script src="bootstrap-switch.js"></script>` Any idea how I can fix that?
+
+**UPDATED** :
+
+![enter image description here](https://i.stack.imgur.com/a0p2r.png)
+
+UPDATED 2: trying the @jfcorugedo
+
+Doesnt work. Take a look, is that what was you saying?
+
+![enter image description here](https://i.stack.imgur.com/Qo93L.png)
+
+UPDATED 3:trying the @jfcorugedo, second advice:
+
+![enter image description here](https://i.stack.imgur.com/hrRiJ.png)
+
+I think you should access static contents using `mydomain/<context>/<resource
+type>/resource`
+
+For instance:
+
+    
+    
+    http://mydomain/app/js/test.js
+    http://mydomain/app/img/test.jpg
+    
+
+You can write your resources using application context or simply using
+relative path:
+
+    
+    
+    <script src="js/bootstrap-switch.js"></script>
+    
+
+or
+
+    
+    
+    <script src="/<myapp>/js/bootstrap-switch.js"></script>
+    
+
+But if you are using bootstrap with a webjar you should write
+
+    
+    
+    <script src="/<myapp>/webjars/bootstrap/<version>/js/bootstrap-switch.js"></script>
+    
+
+There is a project on github to illustrate this <https://github.com/spring-
+projects/spring-boot/tree/master/spring-boot-samples/spring-boot-sample-web-
+static>
+
+UPDATE [1](https://i.stack.imgur.com/QnNmy.png)
+
+I created a test project with the follow structure:
+
+![enter image description here](https://i.stack.imgur.com/QnNmy.png)
+
+I could access style.css on <http://localhost:8080/css/style.css>
+
+You can use <http://start.spring.io/> to help you create new projects
+
+Another option is use Spring Tool Suite or IntelliJ IDEA. They can help you to
+create new project with right configurations (as the previous link).
+
+You don't need to add the method addResourceHandlers, Spring boot executes
+this method in its own code.
+
+**Don't put the files inside webapp folder**.
+
+You only need to put your files in one of these directories:
+
+`/META-INF/resources/ /resources/ /static /public`
+
+For instance, if you want to load the file `js/bootstrap-switch.js`, this file
+must be in one of those folders:
+
+`/META-INF/resources/js/bootstrap-switch.js /resources/js/bootstrap-switch.js
+...`
+
+I've created a folder META-INF/resources/js inside my /src/main/resources and
+everything works:
+
+![folder hierarchy in my test project](https://i.stack.imgur.com/pgayX.png)
+
+I've put a test.js file inside this folder and, when I've type the URL
+<http://localhost:8080/js/test.js> the application has given me the JS file.
+
+Are you sure you're creating this same folder hierarchy?
+
+There a good example tutorial for static content may be this will help you .
+Reference :- <https://www.mkyong.com/spring-boot/spring-boot-hello-world-
+example-jsp/>
+
+Create a folder anywhere with a /static folder on the root. This can be
+anywhere on your work space. Example C:\mywebapp\static. Add C:\mywebapp to
+the runtime classpath, or if using Intellij/Eclipse, add the folder
+C:\mywebapp as a library.
+
+This is different than adding your static html as a source folder, which will
+cause it be be copied to the output class folder with every build. If you have
+a large web app or single page app using angular or sencha, this is a pain.
+Instead add the folder C:\mywebapp as a library folder or run time classpath
+folder.
+
+The benefit of this is it will allow your javascript code to run on the same
+host/port as your spring boot rest,ajax, etc services without having to deal
+with jsonp or cors.
+
+Looking at `org.springframework.boot.autoconfigure.web.ResourceProperties`
+class, you can see this line of code:
+
+    
+    
+    private static final String[] CLASSPATH_RESOURCE_LOCATIONS = new String[]{"classpath:/META-INF/resources/", "classpath:/resources/", "classpath:/static/", "classpath:/public/"};
+    
+
+Meaning `/META-INF/resources/`, `/resources/`, `static/` and `public/`
+directories are available to serve static contents.
+
+So you can create a `static/` or `public/` directory under `resources/`
+directory and put your static contents there. And they will be accessible by:
+`http://localhost:8080/your-file.ext`. (assuming the `server.port` is 8080)
+
+You can customize these directories using `spring.resources.static-locations`
+in the `application.properties`.
+
+For example by providing this configuration:
+
+    
+    
+    spring.resources.static-locations=classpath:/custom/
+    
+
+You can use `custom/` folder under `resources/` for serving static files and
+access them through the URL above.
+
+By default Spring Boot serves static resources defined under the following
+paths:
+
+  * _/META-INF/resources/_
+  * _/resources/_
+  * _/static/_
+  * _/public/_
+
+In order to change the default paths of static resources, you can define
+**_“spring.resources.static-locations”_** attribute under
+**_application.properties_** as the following:
+
+    
+    
+    spring.resources.static-locations=/html/,/js/,/css/
+    
+
+Then in your application, you import your JS file as:
+
+    
+    
+    <script src="bootstrap-switch.js"></script>
+    
+
+Knowing that _"bootstrap-switch.js"_ exist under _/js/_.
+
+For further information about serving and loading static resources in Spring
+Boot application, check this: [Serve Static Resources with Spring
+Boot](http://www.programmergate.com/serve-static-resources-with-spring-boot/)
+

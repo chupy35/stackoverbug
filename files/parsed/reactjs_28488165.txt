@@ -1,0 +1,34 @@
+28488165 Architecturing a React application
+
+I have a question regarding the architecture of an React application.
+
+The application consists from main widget and a few other child widgets. Each
+of them may have other child widgets too. The widgets don't know what do they
+do, neither how many they are (they are provided by the user).
+
+Here is an example:
+
+In the picture below there are initially two widgets, each of them have
+several child widgets.
+
+  1. On step #1 the two widgets are visible and they have a few child widgets too.
+  2. On step #2 the user clicked somewhere on the page. Because of that, another child widget appeared in the first widget.
+  3. On step #3, user clicked in some of the child widgets in widget 2. In this case, only this widget should appear. The others in widget 2 should disappear.
+  4. On step #4 clicking on a child widget in widget 2 should cause that widget 1 will disappear entirely.
+
+The question is - how do we manage this situation? I imagine clicking on child
+widget or somewhere on the page should notify the root so it will add a new
+widget or skip rendering of the other ones. However, I can't really imagine
+what to put in the state and how exactly to achieve this.
+
+![Example](https://i.stack.imgur.com/HR1sB.jpg)
+
+So, here is how we did it in the end of the ends:
+
+We invented so called "exclusive mode" of an widget. The parent component
+passes a callback function via properties. Then, a child widget may request to
+be rendered in "exclusive mode". When rendering in exclusive more is being
+requested, the parent renders only those widget, which key matches with the
+key of the widget, requested exclusive access. In this way, only one Toolbar
+may be rendered or only some button may be rendered in given Toolbar.
+

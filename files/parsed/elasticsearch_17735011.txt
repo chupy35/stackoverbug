@@ -1,0 +1,18 @@
+17735011 Elasticsearch timeout problems
+
+I've just started indexing pdf/word documents and some of them can get rather
+big. To make things worse, I'm using n-grams in my index analyzer. I have 8GB
+of RAM dedicated to ElasticSearch but our index is presently about 45GB big
+(was only about 6GB without documents) Which leads me to my problem ...
+
+After we added documents to our index, reindexing everything started taking
+much longer, which is to be expected, but it also started failing randomly
+with a generic timeout error. I traced the problem to our http client
+(HTTParty ruby gem) which had a default timeout of 10s. I increased it to 480s
+and the reindex gets to more documents but still times out eventually.
+
+My question is,
+
+  1. should Elasticsearch take that long to respond to an index request?
+  2. What can I do to fix the problem?
+

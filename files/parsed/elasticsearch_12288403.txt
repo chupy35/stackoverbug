@@ -1,0 +1,48 @@
+12288403 elasticsearch query_string and term search syntax
+
+I would like to search for `query_string` that contains `Bob` and an
+`Industry_Type_ID` of either `8` OR `9`.
+
+I am getting a parse error: `Parse Failure [No parser for element
+[Industry_Type_ID]]`
+
+    
+    
+    {
+        "query" : {
+            "query_string":{"query":"Bob"},
+            "terms" : {
+                "Industry_Type_ID" : [ "8", "9" ],
+                "minimum_match" : 1
+            }
+        }
+    }
+    
+
+I am sure I am missing something obvious.
+
+You can do it using [bool
+query](http://www.elasticsearch.org/guide/reference/query-dsl/bool-query.html)
+with two `must` clauses:
+
+    
+    
+    {
+        "query" : {
+            "bool" : {
+                "must" : [
+                    {
+                        "query_string":{"query":"Bob"}
+                    },
+                    {
+                        "terms" : {
+                            "Industry_Type_ID" : [ "8", "9" ],
+                            "minimum_match" : 1
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+

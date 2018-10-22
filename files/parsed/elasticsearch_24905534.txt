@@ -1,0 +1,167 @@
+24905534 Elasticsearch find ONLY perfect match
+
+I've been trying to do this for some time, read and searched a lot and I
+haven't found any definitive answer or solution.
+
+Let's say we add some documents:
+
+    
+    
+    $ curl -XPUT http://localhost:9200/tm/entries/1 -d '{"item": "foo" }'
+    {"_index":"tm","_type":"entries","_id":"1","_version":1,"created":true}
+    
+    $ curl -XPUT http://localhost:9200/tm/entries/2 -d '{"item": "foo bar" }'
+    {"_index":"tm","_type":"entries","_id":"2","_version":1,"created":true}
+    
+    $ curl -XPUT http://localhost:9200/tm/entries/3 -d '{"item": "foo bar foo" }'
+    {"_index":"tm","_type":"entries","_id":"3","_version":1,"created":true}
+    
+
+After this, i want to find ONLY the document(s) that match perfectly the
+search query
+
+    
+    
+    $ curl -XGET http://localhost:9200/_search?q=foo
+    
+
+The result contains all 3 documents and I only want to get the one which
+matches "foo" only and nothing else.
+
+Also,
+
+    
+    
+    $ curl -XGET http://localhost:9200/_search?q=bar foo
+    
+
+Should not return any results.
+
+  1. Can Elasticsearch do that?
+  2. How? 
+
+Update:  Existing mapping:
+
+    
+    
+    {
+        "tm": {
+            "mappings": {
+                "entries": {
+                    "properties": {
+                        "item": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+You should use match query instead of query_string. It'll solve your issue.
+
+    
+    
+    {
+        "match" : {
+            "item" : "bar foo"
+        }
+    }
+    
+
+Take a look at
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-match-query.html):
+
+Also, make sure the terms you are searching is actually present in the indexed
+field. For that you need to use analyser "keyword".For more information take a
+look at
+[this](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+keyword-analyzer.html).
+
+Thanks
+
+Try adding `"index" : "not_analyzed"` in the mapping.
+
+And query should be something like
+
+    
+    
+    {
+      "match_phrase": {
+        "item": "foo"
+      }
+    } 
+    
+
+Use he following Mapping.
+
+    
+    
+    {
+    "tm": {
+        "mappings": {
+            "entries": {
+                "properties": {
+                    "item": {
+                        "type": "string", 
+                        "index" : "not_analyzed"
+                    }
+                }
+            }
+        }
+    }
+    }
+    
+
+And use term query to find exact match. Term queries are not
+analyzed.[refer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-term-query.html#query-dsl-term-query)
+
+    
+    
+    curl -XGET "http://localhost:9200/tm/entries/_search" -d'
+    {
+    "query": {
+       "term": {
+          "item": {
+             "value": "foo bar"
+          }
+       }
+      }
+     }'
+    
+
+If you are trying to search from GET request, I think this might help:
+
+    
+    
+    $ curl -XGET http://localhost:9200/tm/entries/_search?q=item:foo
+    
+
+so it is of syntax, `_search?q= <field>:<value>`
+
+You can find documentation here, [URI
+Search](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+uri-request.html)
+
+And, If you are trying to have filter, it is good to have mapping with
+not_analyzed (as described above).
+
+And for complex queries,
+
+    
+    
+    curl -XPOST "http://localhost:9200/tm/entries/_search" -d'
+    {
+        "filter": {
+            "term": {
+               "item": "foo"
+            }
+        }
+    }'
+    
+
+hope this helps.
+

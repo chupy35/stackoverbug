@@ -1,0 +1,288 @@
+15595560 querying elasticsearch multi-field
+
+I have the following settings configured for an 'asset_test' index in
+elasticsearch:
+
+    
+    
+    {
+      "settings" : {
+        "analysis" : {
+          "analyzer" : {
+            "str_filtered_search_analyzer" : {
+              "tokenizer" : "keyword",
+              "filter" : ["lowercase"]
+            },
+            "str_prefix_analyzer" : {
+              "tokenizer" : "keyword",
+              "filter" : ["lowercase", "prefix"]
+            },
+            "str_substring_analyzer" : {
+              "tokenizer" : "keyword",
+              "filter" : ["lowercase", "substring"]
+            },
+            "path_analyzer" : {
+              "type" : "custom",
+              "tokenizer" : "path_hierarchy"
+            }
+          },
+          "filter" : {
+            "prefix" : {
+              "type" : "edgeNGram",
+              "min_gram" : 2,
+              "max_gram" : 24,
+              "side": "front"
+            },
+            "substring" : {
+              "type" : "nGram",
+              "min_gram" : 2,
+              "max_gram" : 24
+            }
+          }
+        }
+      },
+      "mappings" : {
+        "asset" : {
+          "properties" : {
+            "_id": {
+              "type" : "string",
+              "index" : "not_analyzed"
+            },
+            "_rev": {
+              "type" : "string",
+              "index" : "not_analyzed"
+            },
+            "type": {
+              "type" : "string",
+              "index" : "not_analyzed"
+            },
+            "requiredBySystem": {
+              "type" : "boolean"
+            },
+            "attributes": {
+              "properties" : {
+                "id" : {
+                  "type" : "string"
+                },
+                "type" : {
+                  "type" : "string",
+                  "index" : "not_analyzed"
+                },
+                "heading" : {
+                  "type" : "string"
+                },
+                "text" : {
+                  "type" : "string"
+                },
+                "users" : {
+                  "type" : "string"
+                },
+                "categories" : {
+                  "type" : "multi_field",
+                  "fields" : {
+                    "categories" : {
+                      "type" : "string",
+                      "index" : "not_analyzed"
+                    },
+                    "path" : {
+                      "type" : "string",
+                      "analyzer" : "path_analyzer"
+                    }
+                  }
+                },
+                "choices" : {
+                  "properties" : {
+                    "text" : {
+                      "type" : "string"
+                    },
+                    "checked" : {
+                      "type" : "boolean"
+                    }
+                  }
+                },
+                "requiredBySystem": {
+                  "type" : "boolean"
+                },
+                "required": {
+                  "type" : "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+    
+
+I have this document in the index:
+
+    
+    
+    {
+       "_id": "9399fb27448b1e5dfdca0181620418d4",
+       "_rev": "14-173e71c77d32f0360f7afb2206b2a334",
+       "type": "entryForm",
+       "requiredBySystem": true,
+       "formName": "Basic",
+       "attributes": [
+           {
+               "id": "9399fb27448b1e5dfdca01816203d609",
+               "type": "text",
+               "heading": "Brand",
+               "text": "",
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816203dc61",
+               "type": "text",
+               "heading": "Model",
+               "text": "",
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816203decd",
+               "type": "text",
+               "heading": "Location",
+               "text": "",
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816203e68e",
+               "type": "userSelectMenu",
+               "heading": "Assigned To",
+               "users": [
+               ],
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816203e9c9",
+               "type": "categories",
+               "heading": "Categories",
+               "categories": [
+                   "/Airport/Hangar 1",
+                   "/Airport/Hangar 2"
+               ],
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816203ebdd",
+               "type": "text",
+               "heading": "Owner ID",
+               "text": "",
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816203f0da",
+               "type": "textarea",
+               "heading": "Description",
+               "text": "",
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816207uy5a",
+               "type": "radio",
+               "heading": "Radio Buttons",
+               "choices": [
+                   {
+                       "text": "Button 1",
+                       "checked": false
+                   },
+                   {
+                       "text": "Button 2",
+                       "checked": true
+                   }
+               ],
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca01816205tgh6",
+               "type": "checkboxes",
+               "heading": "Checkboxes",
+               "choices": [
+                   {
+                       "text": "Box 1",
+                       "checked": false
+                   },
+                   {
+                       "text": "Box 2",
+                       "checked": true
+                   }
+               ],
+               "requiredBySystem": true
+           },
+           {
+               "id": "9399fb27448b1e5dfdca0181620k81gt",
+               "type": "select",
+               "heading": "Select Menu",
+               "choices": [
+                   {
+                       "text": "Option 1",
+                       "checked": false
+                   },
+                   {
+                       "text": "Option 2",
+                       "checked": true
+                   }
+               ],
+               "requiredBySystem": true
+           }
+       ]
+    }
+    
+
+I'm trying to find the document with the following query but it is not being
+found:
+
+    
+    
+    {
+        "query": {
+            "field": {
+                "attributes.categories.path": "/Airport"
+            }
+        }
+    }
+    
+
+Kinda stuck on how to make this work.
+
+_*_ Update: I made 'attributes' a nested type and querying with the following
+query now appears to work:
+
+    
+    
+    {
+      "query" : {
+          "nested" : { 
+            "path" : "attributes",
+            "query" : {
+              "term" : {
+                "attributes.categories.path" : "/Airport/Hangar 1"  
+              } 
+            }
+          }
+      }
+    }
+    
+
+Am I going about this the right way?
+
+_*_ Update: I made 'attributes' a nested type and querying with the following
+query now appears to work:
+
+    
+    
+    {
+      "query" : {
+          "nested" : { 
+            "path" : "attributes",
+            "query" : {
+              "term" : {
+                "attributes.categories.path" : "/Airport/Hangar 1"  
+              } 
+            }
+          }
+      }
+    }
+    
+

@@ -1,0 +1,369 @@
+6467067 How to search for a part of a word with ElasticSearch
+
+I've recently started using ElasticSearch and I can't seem to make it search
+for a part of a word.
+
+Example: I have three documents from my couchdb indexed in ElasticSearch:
+
+    
+    
+    {
+      "_id" : "1",
+      "name" : "John Doeman",
+      "function" : "Janitor"
+    }
+    {
+      "_id" : "2",
+      "name" : "Jane Doewoman",
+      "function" : "Teacher"
+    }
+    {
+      "_id" : "3",
+      "name" : "Jimmy Jackal",
+      "function" : "Student"
+    } 
+    
+
+So now, I want to search for all documents containing "Doe"
+
+    
+    
+    curl http://localhost:9200/my_idx/my_type/_search?q=Doe
+    
+
+That doesn't return any hits. But if I search for
+
+    
+    
+    curl http://localhost:9200/my_idx/my_type/_search?q=Doeman
+    
+
+It does return one document (John Doeman).
+
+I've tried setting different analyzers and different filters as properties of
+my index. I've also tried using a full blown query (for example:
+
+    
+    
+    {
+      "query": {
+        "term": {
+          "name": "Doe"
+        }
+      }
+    }
+    
+
+) But nothing seems to work.
+
+How can I make ElasticSearch find both John Doeman and Jane Doewoman when I
+search for "Doe" ?
+
+**UPDATE**
+
+I tried to use the nGram tokenizer and filter, like Igor proposed, like this:
+
+    
+    
+    {
+      "index": {
+        "index": "my_idx",
+        "type": "my_type",
+        "bulk_size": "100",
+        "bulk_timeout": "10ms",
+        "analysis": {
+          "analyzer": {
+            "my_analyzer": {
+              "type": "custom",
+              "tokenizer": "my_ngram_tokenizer",
+              "filter": [
+                "my_ngram_filter"
+              ]
+            }
+          },
+          "filter": {
+            "my_ngram_filter": {
+              "type": "nGram",
+              "min_gram": 1,
+              "max_gram": 1
+            }
+          },
+          "tokenizer": {
+            "my_ngram_tokenizer": {
+              "type": "nGram",
+              "min_gram": 1,
+              "max_gram": 1
+            }
+          }
+        }
+      }
+    }
+    
+
+The problem I'm having now is that each and every query returns ALL documents.
+Any pointers? ElasticSearch documentation on using nGram isn't great...
+
+Nevermind.
+
+I had to look at the Lucene documentation. Seems I can use wildcards! :-)
+
+    
+    
+    curl http://localhost:9200/my_idx/my_type/_search?q=*Doe*
+    
+
+does the trick!
+
+Searching with leading and trailing wildcards is going to be extremely slow on
+a large index. If you want to be able to search by word prefix, remove leading
+wildcard. If you really need to find a substring in a middle of a word, you
+would be better of using ngram tokenizer.
+
+I'm using nGram, too. I use standard tokenizer and nGram just as a filter.
+Here is my setup:
+
+    
+    
+    {
+      "index": {
+        "index": "my_idx",
+        "type": "my_type",
+        "analysis": {
+          "index_analyzer": {
+            "my_index_analyzer": {
+              "type": "custom",
+              "tokenizer": "standard",
+              "filter": [
+                "lowercase",
+                "mynGram"
+              ]
+            }
+          },
+          "search_analyzer": {
+            "my_search_analyzer": {
+              "type": "custom",
+              "tokenizer": "standard",
+              "filter": [
+                "standard",
+                "lowercase",
+                "mynGram"
+              ]
+            }
+          },
+          "filter": {
+            "mynGram": {
+              "type": "nGram",
+              "min_gram": 2,
+              "max_gram": 50
+            }
+          }
+        }
+      }
+    }
+    
+
+Let's you find word parts up to 50 letters. Adjust the max_gram as you need.
+In german words can get really big, so I set it to a high value.
+
+Try the solution with is described here: [Exact Substring Searches in
+ElasticSearch](http://blog.rnf.me/2013/exact-substring-search-in-
+elasticsearch.html)
+
+    
+    
+    {
+        "mappings": {
+            "my_type": {
+                "index_analyzer":"index_ngram",
+                "search_analyzer":"search_ngram"
+            }
+        },
+        "settings": {
+            "analysis": {
+                "filter": {
+                    "ngram_filter": {
+                        "type": "ngram",
+                        "min_gram": 3,
+                        "max_gram": 8
+                    }
+                },
+                "analyzer": {
+                    "index_ngram": {
+                        "type": "custom",
+                        "tokenizer": "keyword",
+                        "filter": [ "ngram_filter", "lowercase" ]
+                    },
+                    "search_ngram": {
+                        "type": "custom",
+                        "tokenizer": "keyword",
+                        "filter": "lowercase"
+                    }
+                }
+            }
+        }
+    }
+    
+
+To solve the disk usage problem and the too-long search term problem short 8
+characters long _ngrams_ are used (configured with: _"max_gram": 8_ ). To
+search for terms with more than 8 characters, turn your search into a boolean
+AND query looking for every distinct 8-character substring in that string. For
+example, if a user searched for _large yard_ (a 10-character string), the
+search would be:
+
+_"arge ya AND arge yar AND rge yard_.
+
+without changing your index mappings you could do a simple prefix query that
+will do partial searches like you are hoping for
+
+ie.
+
+    
+    
+    {
+      "query": { 
+        "prefix" : { "name" : "Doe" }
+      }
+    }
+    
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-
+prefix-query.html>
+
+I think there's no need to change any mapping. Try to use **query_string** ,
+it's perfect. All scenarios will work with default standard analyzer:
+
+We have data:
+
+    
+    
+    {"_id" : "1","name" : "John Doeman","function" : "Janitor"}
+    {"_id" : "2","name" : "Jane Doewoman","function" : "Teacher"}
+    
+
+**Scenario 1:**
+
+    
+    
+    {"query": {
+        "query_string" : {"default_field" : "name", "query" : "*Doe*"}
+    } }
+    
+
+Response:
+
+    
+    
+    {"_id" : "1","name" : "John Doeman","function" : "Janitor"}
+    {"_id" : "2","name" : "Jane Doewoman","function" : "Teacher"}
+    
+
+**Scenario 2:**
+
+    
+    
+    {"query": {
+        "query_string" : {"default_field" : "name", "query" : "*Jan*"}
+    } }
+    
+
+Response:
+
+    
+    
+    {"_id" : "1","name" : "John Doeman","function" : "Janitor"}
+    
+
+**Scenario 3:**
+
+    
+    
+    {"query": {
+        "query_string" : {"default_field" : "name", "query" : "*oh* *oe*"}
+    } }
+    
+
+Response:
+
+    
+    
+    {"_id" : "1","name" : "John Doeman","function" : "Janitor"}
+    {"_id" : "2","name" : "Jane Doewoman","function" : "Teacher"}
+    
+
+EDIT - Same implementation with spring data elastic search
+<https://stackoverflow.com/a/43579948/2357869>
+
+One more explanation how query_string is better than others
+<https://stackoverflow.com/a/43321606/2357869>
+
+Elasticsearch has wildcard query which can be used in this case and is the
+easiest one. It will return both matching docs
+
+If you want to implement autocomplete functionality, then [Completion
+Suggester](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+suggesters-completion.html) is the most neat solution. The next [blog
+post](https://www.elastic.co/blog/you-complete-me) contains a very clear
+description how this works.
+
+In two words, it's an in-memory data structure called an FST which contains
+valid suggestions and is optimised for fast retrieval and memory usage.
+Essentially, it is just a graph. For instance, and FST containing the words
+`hotel`, `marriot`, `mercure`, `munchen` and `munich` would look like this:
+
+[![enter image description
+here](https://i.stack.imgur.com/wGUFs.png)](https://i.stack.imgur.com/wGUFs.png)
+
+you can use regexp.
+
+    
+    
+    { "_id" : "1", "name" : "John Doeman" , "function" : "Janitor"}
+    { "_id" : "2", "name" : "Jane Doewoman","function" : "Teacher"  }
+    { "_id" : "3", "name" : "Jimmy Jackal" ,"function" : "Student"  } 
+    
+
+if you use this query :
+
+    
+    
+    {
+      "query": {
+        "regexp": {
+          "name": "J.*"
+        }
+      }
+    }
+    
+
+you will given all of data that their name start with "J".Consider you want to
+receive just the first two record that their name end with "man" so you can
+use this query :
+
+    
+    
+    {
+      "query": { 
+        "regexp": {
+          "name": ".*man"
+        }
+      }
+    }
+    
+
+and if you want to receive all record that in their name exist "m" , you can
+use this query :
+
+    
+    
+    {
+      "query": { 
+        "regexp": {
+          "name": ".*m.*"
+        }
+      }
+    }
+    
+
+This works for me .And I hope my answer be suitable for solve your problem.
+

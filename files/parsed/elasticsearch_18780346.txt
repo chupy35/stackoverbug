@@ -1,0 +1,111 @@
+18780346 HTML Strip in Elastic Search
+
+I have a document with property that contains `html` tags. I want to remove
+`html` before indexing.
+
+I found this [htmlstrip-
+charfilter](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/htmlstrip-charfilter) but I can't find example in using this.
+I'm new to elastic search and analyzer concept.
+
+Thanks
+
+Please check the link below:
+
+    
+    
+    # Analyze text: "the <b>quick</b> brÃ¶wn <img src="fox"/> &quot;jumped&quot;"
+    
+    curl -XPUT 'http://127.0.0.1:9200/foo/'  -d '
+    {
+       "index" : {
+          "analysis" : {
+             "analyzer" : {
+                "test_1" : {
+                   "char_filter" : [
+                      "html_strip"
+                   ],
+                   "tokenizer" : "standard"
+                },
+                "test_2" : {
+                   "filter" : [
+                      "standard",
+                      "lowercase",
+                      "stop",
+                      "asciifolding"
+                   ],
+                   "char_filter" : [
+                      "html_strip"
+                   ],
+                   "tokenizer" : "standard"
+                }
+             }
+          }
+       }
+    }
+    '
+    
+    curl -XGET 'http://127.0.0.1:9200/foo/_analyze?format=text&text=the+%3Cb%3Equick%3C%2Fb%3E+br%C3%B6wn+%3Cimg+src%3D%22fox%22%2F%3E+%26quot%3Bjumped%26quot%3B&analyzer=standard' 
+    
+    #    "tokens" : "[b:5->6:<ALPHANUM>]
+    #    
+    #    3: 
+    #    [quick:7->12:<ALPHANUM>]
+    #    
+    #    4: 
+    #    [b:14->15:<ALPHANUM>]
+    #    
+    #    5: 
+    #    [brÃ¶wn:17->22:<ALPHANUM>]
+    #    
+    #    6: 
+    #    [img:24->27:<ALPHANUM>]
+    #    
+    #    7: 
+    #    [src:28->31:<ALPHANUM>]
+    #    
+    #    8: 
+    #    [fox:33->36:<ALPHANUM>]
+    #    
+    #    9: 
+    #    [quot:41->45:<ALPHANUM>]
+    #    
+    #    10: 
+    #    [jumped&quot:46->57:<COMPANY>]
+    #    "
+    # }
+    
+    curl -XGET 'http://127.0.0.1:9200/foo/_analyze?format=text&text=the+%3Cb%3Equick%3C%2Fb%3E+br%C3%B6wn+%3Cimg+src%3D%22fox%22%2F%3E+%26quot%3Bjumped%26quot%3B&analyzer=test_1' 
+    
+    # {
+    #    "tokens" : "[the:0->3:<ALPHANUM>]
+    #    
+    #    2: 
+    #    [quick:7->12:<ALPHANUM>]
+    #    
+    #    3: 
+    #    [brÃ¶wn:17->22:<ALPHANUM>]
+    #    
+    #    4: 
+    #    [jumped:46->52:<ALPHANUM>]
+    #    "
+    # }
+    
+    curl -XGET 'http://127.0.0.1:9200/foo/_analyze?format=text&text=the+%3Cb%3Equick%3C%2Fb%3E+br%C3%B6wn+%3Cimg+src%3D%22fox%22%2F%3E+%26quot%3Bjumped%26quot%3B&analyzer=test_2' 
+    
+    # {
+    #    "tokens" : "[quick:7->12:<ALPHANUM>]
+    #    
+    #    3: 
+    #    [brown:17->22:<ALPHANUM>]
+    #    
+    #    4: 
+    #    [jumped:46->52:<ALPHANUM>]
+    #    "
+    # }
+    
+
+<https://gist.github.com/clintongormley/780895>
+
+Thanks to clintongormley
+

@@ -1,0 +1,45 @@
+18136712 Can you do an elasticsearch geo_distance query (or a filter) as a uri
+request
+
+I would like to run an elasticsearch query to find items within 10mi of a
+given point.
+
+I know how to do it with a post, but I would like to use a get with everything
+in the uri.
+
+I found the below example but it does not work.
+
+    
+    
+    http://localhost:9200/items/item/_search?{%22query%22:{%22filtered%22:{%22query%22:{%22match_all%22:{}},%22filter%22:{%22geo_distance%22:{%22distance%22:%220.1km%22,%22location%22:{%22lat%22:46.884106,%22lon%22:-71.377042}}}}}}
+    
+
+Any way to do this or am I stuck using a post?
+
+The key is the **source=** parameter. Not to be confused with _source.
+
+    
+    
+    http://localhost:9200/items/item/_search?source={%22query%22:{%22filtered%22:{%22query%22:{%22match_all%22:{}},%22filter%22:{%22geo_distance%22:{%22distance%22:%220.1km%22,%22location%22:{%22lat%22:46.884106,%22lon%22:-71.377042}}}}}}
+    
+
+I had tried ?q= and a few other parameters listed on
+<http://www.elasticsearch.org/guide/reference/api/search/uri-request/> with no
+luck (source is not listed).
+
+I found <http://www.elasticsearch.org/guide/reference/api/> and at the very
+bottom it says
+
+> request body in query string
+
+>
+
+> For libraries that don’t accept a request body for non-POST requests, you
+can pass the request body as the source query string parameter instead.
+
+So structure your query/filter request, set it all on one line and send it
+into the source parameter.
+
+Do not use the q= parameter with source= or it will conflict and break the
+query, however I tried size= and from= and they work with source just fine.
+

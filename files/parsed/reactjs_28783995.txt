@@ -1,0 +1,134 @@
+28783995 ReactJS Passing Value to Google Map Component
+
+I have the following `GoogleMaps` React component:
+
+    
+    
+    var GoogleMaps = React.createClass({
+        getDefaultProps: function () {
+            return {
+                initialZoom: 6,
+                mapCenterLat: 53.5333,
+                mapCenterLng: -113.4073126
+            };
+        },
+        componentDidMount: function (rootNode) {
+            var mapOptions = {
+                center: this.mapCenterLatLng(),
+                zoom: this.props.initialZoom
+            },
+            map = new google.maps.Map(this.getDOMNode(), mapOptions);
+            var marker = new google.maps.Marker({position: this.mapCenterLatLng(), title: 'Hi', map: map});
+            this.setState({map: map});
+        },
+        mapCenterLatLng: function () {
+            var props = this.props;
+    
+            return new google.maps.LatLng(props.mapCenterLat, props.mapCenterLng);
+        },
+        render: function () {
+    
+            return (
+                <div className='map-gic'></div>
+            );
+        }
+    });
+    
+
+And then use it via the following declaration:
+
+    
+    
+    var myPage = React.createClass({
+      render: function() {
+        return (
+          <div>
+            <GoogleMaps mlat="55.0000" mlong="-113.0000" />
+          </div>
+        )
+      }
+    });
+    
+
+How do I access the passed values (`mlat` and `mlong`) so that the location
+would be marked on the rendered map? At the moment, the values in the
+`getDefaultProps` function are the ones being marked on the map.
+
+**Rephrase the question:** How do I replace the value of the variables
+`mapCenterLat` and `mapCenterLng` in the `getDefaultProps` function with the
+values I pass through the component rendering?
+
+When I check the value passed in the `render` function of the `GoogleMaps`
+component by adding some `console.log`s like this:
+
+    
+    
+    render: function () {
+      console.log(this.props.mlat);
+      console.log(this.props.mlong);
+      return (
+        <div className='map-gic'></div>
+      )
+    }
+    
+
+This is what registers in the browser console:
+
+    
+    
+    undefined
+    undefined
+    undefined
+    undefined
+    55.0000
+    113.000
+    
+
+The source code for this application is in [this GitHub
+repo](https://github.com/AngeloAnolin/ReactEdmontonCatholicSchools).
+
+[Here](http://jsfiddle.net/wiredprairie/kmktjgmb/) is a basic working example.
+
+I'm not sure what you're code is doing wrong as it does not entirely match
+what it would need to be to work or demonstrate the problem.
+
+I've not attempted to clean up the code further. It doesn't work if the
+`props` change (as `componentDidMount` only executes once), and doesn't
+properly remove the `Map` when React executes an `unmount` on the control.
+
+    
+    
+    var GoogleMap = React.createClass({  
+        getDefaultProps: function () {
+            return {
+                initialZoom: 8,
+                mapCenterLat: 41.8,    /* Chicago by default */
+                mapCenterLng: -87.6,
+            };
+        },
+        componentDidMount: function (rootNode) {
+            var mapOptions = {
+                center: this.mapCenterLatLng(),
+                zoom: this.props.initialZoom
+            };
+            var map = new google.maps.Map(this.getDOMNode(), mapOptions);
+            var marker = new google.maps.Marker({position: this.mapCenterLatLng(), map: map});
+            this.setState({map: map});
+        },
+        mapCenterLatLng: function () {
+            var props = this.props;
+            return new google.maps.LatLng(
+                   props.mapCenterLat, props.mapCenterLng);
+        },
+        render: function () {
+            return (
+                <div className="gmap"></div>
+            );
+        }
+    });
+    // Bay area override
+    React.renderComponent(
+        <GoogleMap mapCenterLat='37' mapCenterLng='-122' />, 
+        document.body);
+    
+

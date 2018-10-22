@@ -1,0 +1,128 @@
+10688977 How can ElasticSearch be used to implement social search?
+
+I’m trying to create a business search with social features using
+ElasticSearch. I have a business directory, and users can interact with those
+businesses in different ways: by reviewing them, checking into them, etc.
+
+When a user searches for a business, I'd like to be able to show them the
+businesses that their friends have interacted with at the top of the results
+(or filter based on those interactions). **What's the best way to set up my
+index to achieve this?**
+
+I can think have a few possible solutions, but I'm a beginner with ES and I'm
+not sure what will cause problems:
+
+  1. I could use multi-tennancy and create a separate index for each user. I've ruled this out because the number of users is much greater than the amount of businesses or the amount of user-specific content.
+
+  2. I could add a list of user/score pairs to each indexed business. Every user who has interacted with the business would be in there, and the score would represent the amount of interaction they'd had with the business (this is good enough for my filtering/sorting purposes). Every time they interact with the business, I would update the score in the index. The problem with this is that I only care about my friends' activity, so I would need to figure out some way to take into account who my friends are when creating a composite score for the business. I don't know how to do this in ES.
+
+  3. I could create a similar scheme, but instead of keeping score of my interactions with a business, the score would reflect my friends' interactions with the business. This takes away the need to model my social graph in ElasticSearch, but it does mean that any time a person interacts with a business, I would need to update all of their friends' scores. It would also mean that the list of user/score pairs for each business would be larger, since it'll need to include anybody who has a friend who has interacted with the business.
+
+  4. The final solution I can think of is to keep track of every individual interaction that happens to a business, and add it to business’s document in ES. This doesn’t seem realistic to me – it combines the problems from the other solutions. But it’s probably the most straightforward approach in terms of keeping the index up to date.
+
+Thanks for your help!
+
+I'm voting for a modified #2.
+
+Instead of storing each user/score pair inside of the business document
+itself, I would create a Parent/Child relationship. This lets you update the
+score of the child (the user scores) without having to reindex the entire
+business document (and all the other user scores).
+
+Check out this page for a great tutorial parent/children are about halfway
+down: <http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-children-
+and-nested-documents/>
+
+Then you can use a [has_child
+filter](http://www.elasticsearch.org/guide/reference/query-dsl/has-child-
+filter.html) or [top_children
+query](http://www.elasticsearch.org/guide/reference/query-dsl/top-children-
+query.html) to find only those businesses that your friends have scores for.
+There are a few caveats about ordering children documents, but it's covered by
+that tutorial so make sure you read to the bottom.
+
+Then I'd just perform a normal query for all "non-social" ranked searches.
+
+Alternatively, you could lump everything together and add boosts to the
+matches that your friends have scored, so that everything ranks appropriately.
+It may just be easier to perform two queries and combine them yourself.
+
+There's another set of solutions that have the upside of being extremely fast
+(i.e. taking advantage of what ES is best at), but looks terrible to anyone
+who knows even the first thing about designing data storage/retrieval systems.
+
+**If your 'business' index is smaller than your 'user' index (i.e. 10,000 biz,
+1,000,000 users)**
+
+  1. Create 2 indexes: _User_ and _Business_.
+  2. Business index should have an 'array' field that holds the ids of every user who has ever "interacted" with it (i.e. "users: 1,4,23,26,127,8678")
+  3. User index should have a nested array field with business IDs and reviews, checkins, etc in a nested object with meta information (i.e. "business_id:1233,rating: 7.5,checkins:21")
+
+When you search for a business, do a quick string query or filter query with
+the User's friend ids (OR of course) against the Business index. The tf-idf
+should automatically filter businesses that have been interacted with the most
+by your your friends to the top. If you need more info, just hit the User
+index to get the meta data for each of your friends (rating, checkins, etc).
+This should be lightening fast and super efficient, because ES is absolutely
+fantastic at matching arrays as individual terms. That's what its for yo!
+
+If your 'business' index is signifigantly larger than your 'user' index,
+reverse the pattern...putting an indexed array of business_ids a user has
+interacted with on the user index.
+
+Just spitballing here but I think I'd want to Use a graph database like Neo4J
+where it would be trivial to do such a query as "businesses that my friends
+have checked into" and query both that database and elasticsearch at the same
+time and return results from your graph database first. Or you could just get
+the results of that graph query and match the results in elasticsearch (match
+the ids) then apply a query time boost to the elastic search results so that
+they floated to the top of the returned results.
+
+Check out Titan <https://github.com/thinkaurelius/titan/wiki/Using-Elastic-
+Search>
+
+It has a graph engine that can work with Elasticsearch as a back end. You can
+do a graph traversal like (me) -> (friend) -[review]-> (business) to find all
+of these connections and adjust the rank of your searches.
+
+Solr can do this with the GraphQuery operator.
+
+<https://issues.apache.org/jira/browse/SOLR-7543>
+
+It allows you to put documents in your index that contain a field for the
+"node_id" and a (multivalued) field for the "edge_id"
+
+There are a few ways to structure this:
+
+  1. You can have a user document with a list of friend ids on it. Or
+  2. You can have a separate table that is a link table that links between user records.
+
+For case 1: Index a document for each user in the system with a field
+containing the "user_id" and another field containing "friend_ids".
+
+At that point to do a search for all friends for user 555 would be:
+
+    
+    
+    {!graph from="user_id" to="friend_ids" maxDepth=1}user_id:555
+    
+
+To find friends of friends of the user
+
+    
+    
+    {!graph from="user_id" to="friend_ids" maxDepth=2}user_id:555
+    
+
+If you have other metadata fields on the user records such as a location field
+you could add that as a traversal filter to find my friends that live in
+Boston. This traversal filter is applied to each hop.
+
+    
+    
+    {!graph from="user_id" to="friend_ids" maxDepth=2 traversalFilter="location:Boston"}user_id:555
+    
+
+The above query would find the friends that live in Boston that are friends
+User 555's that live in Boston.
+

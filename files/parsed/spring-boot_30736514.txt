@@ -1,0 +1,188 @@
+30736514 Spring Boot Actuator Health Returning DOWN
+
+When I access the `/health` endpoint from my Spring Boot application
+(1.2.4.RELEASE) it is returning a status of `DOWN`:
+
+    
+    
+    {
+        status: "DOWN"
+    }
+    
+
+Are there any starter projects or libraries that are known to overwrite the
+status? Is there any other reason (besides writing a custom one) why it would
+return `DOWN`?
+
+In your Spring properties, set `endpoints.health.sensitive = false`. The
+`/health` endpoint will then return the list of various health indicators and
+you can debug from there.
+
+For a production environment you should enable security around the `/health`
+endpoint.
+
+**Edit**
+
+As Vincent pointed out below, you'll also need `management.security.enabled =
+false` if the health endpoint is secured, which seems to be the default in
+more recent versions of Spring Boot.
+
+A common issue that I've seen with Spring Boot out of the box is that it auto-
+configures Solr, and without additional configuration the `/health` endpoint
+indicates that Solr is `DOWN`. An easy way to fix this is to disable the Solr
+auto configuration in your Application.java with this annotation: `
+@SpringBootApplication(exclude={SolrAutoConfiguration.class}) `
+
+in my case, I needed **both** these properties to get more details :
+
+    
+    
+    endpoints.health.sensitive: false
+    management.security.enabled: false
+    
+
+Otherwise, all I was getting was an DOWN status.
+
+I had an issue with RabbitMQ connection : my application is not using it yet,
+but we've started wiring some code related to it. The application works fine,
+but we were getting DOWN health status, which was quite puzzling : Spring Boot
+is surprisingly silent in the logs, as no error shows at startup (I'll
+probably need to change my config to make it more verbose)
+
+I added these 2 properties
+
+    
+    
+    endpoints.health.sensitive = false
+    management.security.enabled = false
+    
+
+No use the status is still down the `application.properties` are as below
+
+    
+    
+    server.port=8098
+    server.host=localhost
+    spring.application.name=school-service
+    spring.cloud.consul.host=http://dockerhost
+    spring.cloud.consul.port=8500
+    endpoints.health.sensitive=false
+    management.security.enabled=false
+    spring.cloud.consul.enabled=true
+    spring.cloud.consul.discovery.enabled=true
+    spring.cloud.consul.discovery.register=true
+    endpoints.restart.enabled= true
+    endpoints.shutdown.enabled=true
+    
+
+Any leads please ?
+
+The status is returned as down always
+
+    
+    
+    {"status":"DOWN","diskSpace":{"status":"UP","total":241207078912,"free":63632199680,"threshold":10485760},"refreshScope":{"status":"UP"},"consul":{"status":"DOWN","services":{"consul":[],"school-service":[],"student-service":[]},"error":"java.lang.IllegalArgumentException: Value must not be null"},"hystrix":{"status":"UP"}}
+    
+
+My pom.xml is as below
+
+    
+    
+    <?xml version="1.0" encoding="UTF-8"?>
+    
+
+http://maven.apache.org/xsd/maven-4.0.0.xsd"> 4.0.0
+
+    
+    
+    <groupId>com.example.howtodoinjava</groupId>
+    <artifactId>spring-cloud-consul-school</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    
+    <name>spring-cloud-consul-school</name>
+    <description>Demo project for Spring Boot</description>
+    
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>1.5.9.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+        <spring-cloud.version>Camden.SR7</spring-cloud.version>
+    </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-consul-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    
+    
+    </dependencies>
+    
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+    
+
+You guy are probably using Consul 1.0. There is a known issue in Spring Could
+Consul 1.1.0 or so with Consul 1.0. See this - <https://github.com/spring-
+cloud/spring-cloud-consul/issues/365> and this -
+<https://github.com/hashicorp/consul/issues/3635>
+
+You will have to upgrade to Spring Could Consul 1.3.0.RELEASE.
+
+As per this link : <https://github.com/indrabasak/spring-consul-
+example/blob/master/client/README.md>, we should strictly used below
+properties to avoid below error.
+
+    
+    
+    management.security.enabled=false
+    management.health.consul.enabled=false
+    
+
+[![enter image description
+here](https://i.stack.imgur.com/qV27S.png)](https://i.stack.imgur.com/qV27S.png)
+

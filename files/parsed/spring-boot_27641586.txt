@@ -1,0 +1,15 @@
+27641586 How to customize Spring Boot Actuator endpoints
+
+I'm trying to implement Spring Boot Actuator on a non "Boot Application", is
+there a way to configure a pattern to endpoints like
+`endpoint/health`,`endpoint/metrics`? Then I'll create a second realm in my
+existing Spring Security configuration, I tried the documentation but I could
+not find a thing about.
+
+Thanks.
+
+Did you mean `management.contextPath=/endpoint` ([docs
+here](http://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#production-ready-customizing-management-server-
+context-path))?
+

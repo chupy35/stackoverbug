@@ -1,0 +1,5 @@
+30635235
+User Interface for Elasticsearch
+<p>I am using Elasticsearch as my Database, I just want to see the elasticsearch indices in the form of tables. How to get it?</p>&#xA;
+<p>Yes you can, I suggest for you Kibana 4, you create your tables dashboards at first, and then you use the link in a html page.</p>&#xA;
+<p>Another option is to use <a href="https://github.com/YousefED/ElasticUI" rel="nofollow">ElasticUI</a> which has defined custom angularjs directives to directly access ES, provides the flexibility to create your own UI. Again it depends on how your ES docs look like: whether it has more data and fewer text or it has more text. <a href="https://github.com/fullscale/dangle" rel="nofollow">Dangle</a> has custom directive for creating visualization with D3.</p>&#xA;

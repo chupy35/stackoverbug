@@ -1,0 +1,21 @@
+13213371 Tokenizer that splits up words with underscores in them but also
+retains a full version
+
+I'm implementing an Elasticsearch search for content that has filesnames in
+it, such as  "golf_master_2009.xls". I'd like a tokenizer that splits this up
+into at least the following tokens: "golf", "master", "golf_master_2009.xml".
+Now I have to use wildcards (for example " _master_ ") if I want to search for
+it without specifying the full filename.
+
+You can apply differents analyzers using a multifield field. See
+<http://www.elasticsearch.org/guide/reference/mapping/multi-field-type.html>
+
+HTH
+
+You can use your own analyzer with [keyword
+tokenizer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/keyword-tokenizer.html) and [word delimiter token
+filter](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/word-delimiter-tokenfilter.html) (with options
+`generate_word_parts` and `preserve_original` set to `true`)
+

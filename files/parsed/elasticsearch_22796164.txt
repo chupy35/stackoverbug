@@ -1,0 +1,109 @@
+22796164 Elasticsearch Aggregation Query with multiple excludes
+
+I have a bunch of company data in an ES database. I am looking to pull counts
+of how many documents each occurs in, but I'm having some problems with the
+aggregation query. I am looking to exclude terms such as "Corporation" or
+"Inc." Thus far I have been able to do this successfully for one term at a
+time as per the code below.
+
+    
+    
+    {
+        "aggs" : {
+            "companies" : {
+                "terms" : {
+                    "field" : "Companies.name",
+                    "exclude" : "corporation"
+                }
+            }
+        }
+    }
+    
+
+Which returns
+
+    
+    
+    "aggregations": {
+        "assignee": {
+             "buckets": [
+                {
+                   "key": "inc",
+                   "doc_count": 375
+                },
+                {
+                   "key": "company",
+                   "doc_count": 252
+                }
+             ]
+         }
+    }
+    
+
+Ideally I'd like to be able to do something like
+
+    
+    
+    {
+        "aggs" : {
+            "companies" : {
+                "terms" : {
+                    "field" : "Companies.name",
+                    "exclude" : ["corporation", "inc.", "inc", "co", "company", "the", "industries", "incorporated", "international"],
+                }
+            }
+        }
+    }
+    
+
+But I haven't been able to find a way that doesn't throw an error
+
+I have looked at the "Terms" section of Aggregation in the ES documentation
+and can only find an example for a single exclude.I'm wondering if it's
+possible to exclude multiple terms and if so what is the correct syntax for
+doing so.
+
+Note: I know I could set the field to "not_analyzed" and get groupings for
+full company names rather than the split names. However, I'm hesitant to do
+this as analyzing allows a bucket to be more tolerant of name variations (ie
+Microsoft Corp & Microsoft Corporation)
+
+The [`exclude` parameter is a regular
+expression](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-aggregation.html#_filtering_values), so you could
+use a regular expression that exhaustively lists all choices:
+
+    
+    
+    "exclude" :
+        "corporation|inc\\.|inc|co|company|the|industries|incorporated|international"
+    
+
+Doing this generically, it's important to escape values (e.g., `.`). If it is
+not generically generated, then you could simplify some of these by grouping
+them (e.g., `inc\\.?` covers `inc\\.|inc`, or the more complicated:
+`co(mpany|rporation)?`). If this is going to run a lot, then it's probably
+worth testing how the added complexity effects performance.
+
+There are also optional `flags` that can be applied, which are the options
+that exist in Java `Pattern`. The one that might come in handy is
+[`CASE_INSENSITIVE`](http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html#CASE_INSENSITIVE).
+
+    
+    
+    "exclude" : {
+        "pattern" : "...expression as before...",
+        "flags" : "CASE_INSENSITIVE"
+    }
+    
+
+this is old question, but newer answer: array currently supported for
+`exclude` exact match of list items
+
+thus the array syntax in the OP is now valid and works as expected (in
+addition to valid regular expression answer too)
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-terms-
+aggregation.html#_filtering_values_with_exact_values>
+

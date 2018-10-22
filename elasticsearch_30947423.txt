@@ -1,0 +1,4 @@
+30947423
+Arithmetic on bucket results
+<p>So I am creating 2 buckets, Sale and Rent and I'd like to calculate their ratio but I'm unable to do so. </p>&#xA;&#xA;<pre><code>{&#xA;"size":"0",&#xA;"query":{&#xA;    "filtered":{&#xA;        "filter":{&#xA;                    "term":{"area":"Ireland"}&#xA;                 }&#xA;               }&#xA;        },&#xA;"aggs":{&#xA;"Sale":{"filter":{"term":{"type":"sale"}}, "aggs":{"price":{"percentiles":{"field":"price", "percents":[75]}}}}, &#xA;"Rent":{"filter":{"term":{"type":"rent"}}, "aggs":{"price":{"percentiles":{"field":"price", "percents":[75]}}}}&#xA;}}&#xA;</code></pre>&#xA;&#xA;<p>Appreciate the help. Thanks!</p>&#xA;
+<p>This is not possible, at the moment, with Elasticsearch.</p>&#xA;&#xA;<p>But it's being actively implemented and tracked in <a href="https://github.com/elastic/elasticsearch/issues/8110" rel="nofollow">this github issue</a>.</p>&#xA;

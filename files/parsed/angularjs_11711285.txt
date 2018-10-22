@@ -1,0 +1,83 @@
+11711285 Different kind of Angular Directives patterns
+
+    
+    
+    angular.directive('ppd:reset', function(e1,e2) {
+        return function(linkElement) {      
+            linkElement.wrap()....
+            });
+        };
+    });
+    
+
+And
+
+    
+    
+    angular.directive('ppd:reset', [function() {
+            return function(scope, elm, attrs) {   } 
+    
+    }]);
+    
+
+What is the difference between these two directives pattern ?
+
+The difference is that version #1 is a simple way that angular does support
+for writing directives that don't require any injectable modules. The version
+#2 is for having injectables. So, let's say your directive relied on the
+$timeout service, then you would have a definition like below. For me, its
+easier to not think and just use the array syntax even if there are no
+injectables.
+
+    
+    
+    angular.directive('ppd:reset', ['$timeout', function($timeout) { 
+           return function(scope, elm, attrs) {   } 
+    }]);  
+    
+
+If you declare your factories with the bracket notation, you can avoid
+problems when minifying your code:
+
+    
+    
+    angular.directive('ppd:reset', ["$compile", function(compile) {
+        return function(scope, elm, attrs) {   } 
+    
+    }]);
+    
+
+The injector looks at your function parameter names in order to know what to
+inject. If a minification process renames those, The injector doesn't know
+what to do anymore. Minification will of course not touch string values which
+is why the array notation works fine.
+
+The difference between the two is that the `[]` bracket notation is minifier-
+safe as minifiers don't minify strings. For instance, if you try to minify
+javascript without it, it will turn:
+
+    
+    
+    angular.module('myApp', [])
+    .controller('MainController', function($scope) {
+    });
+    
+
+into
+
+    
+    
+    angular.module("myApp",[]).controller("MainController",function(e){})
+    
+
+The issue in this case is that Angular doesn't know a thing about `e` as
+opposed to `$scope`, which it does know about. Using the `[]` bracket
+notation, we can tell the `$injector` in advance what we want the controller
+to get access. Since minifiers don't (and can't) minify strings, it's a safe
+way to use the **dependency injection** feature of Angular with or without
+minifiers.
+
+For a deeper understanding of the differences of syntax, you can check out ng-
+book (<https://www.ng-book.com/>). Disclaimer, I am the author of the book and
+of <http://www.ng-newsletter.com/>.
+

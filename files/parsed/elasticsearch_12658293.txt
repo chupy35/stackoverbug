@@ -1,0 +1,14 @@
+12658293 elasticsearch query string analyzer for different fields with
+different analyzers
+
+When performing a query on multiple fields which have different analyzers
+(stem, ngram, etc..), does elasticsearch perform specific analyzing on the
+query string for each field?
+
+Yes it does, unless you specify an analyzer within your query. The
+[query_string](http://www.elasticsearch.org/guide/reference/query-dsl/query-
+string-query.html) query gets translated to a bool or a dismax query depending
+on the `use_dis_max` parameter within your query. A different query will be
+generated for each field, and the `search_analyzer` related to each specific
+field will be used to analyze the query.
+

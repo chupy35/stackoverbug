@@ -1,0 +1,276 @@
+22924300 Removing Data From ElasticSearch
+
+I'm new to [ElasticSearch](http://www.elasticsearch.org/). I'm trying to
+figure out how to remove data from ElasticSearch. I have deleted my indexes.
+However, that doesn't seem to actually remove the data itself. The other stuff
+I've seen points to the [Delete by
+Query](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+delete-by-query.html) feature. However, I'm not even sure what to query on. I
+know my indexes. Essentially, I'd like to figure out how to do a
+
+    
+    
+    DELETE FROM [Index]
+    
+
+From PostMan in Chrome. However, I'm not having any luck. It seems like no
+matter what I do, the data hangs around. Thus far, I've successfully deleted
+the indexes by using the DELETE HTTP Verb in PostMan and using a url like:
+
+    
+    
+       http://localhost:9200/[indexName]
+    
+
+However, that doesn't seem to actually remove the data (aka docs) themselves.
+
+You have to send a `DELETE` request to
+
+    
+    
+    http://[your_host]:9200/[your_index_name_here]
+    
+
+You can also delete a single document:
+
+    
+    
+    http://[your_host]:9200/[your_index_name_here]/[your_type_here]/[your_doc_id]
+    
+
+I suggest you to use
+[elastichammer](http://elastichammer.exploringelasticsearch.com/).
+
+After deleting you can look up if the index still exists with the following
+URL: `http://[your_host]:9200/_stats/`
+
+Good luck!
+
+You can delete using `cURL` or visually using one of the many tools that open
+source enthusiasts have created for Elasticsearch.
+
+**Using cURL**
+
+    
+    
+    curl -XDELETE localhost:9200/index/type/documentID
+    
+
+e.g.
+
+    
+    
+    curl -XDELETE localhost:9200/shop/product/1
+    
+
+You will then receive a reply as to whether this was successful or not. You
+can delete an entire index or types with an index also, you can delete a type
+by leaving out the document ID like so -
+
+    
+    
+    curl -XDELETE localhost:9200/shop/product
+    
+
+If you wish to delete an index -
+
+    
+    
+    curl -XDELETE localhost:9200/shop
+    
+
+If you wish to delete more than one index that follows a certain naming
+convention (note the `*`, a wildcard), -
+
+    
+    
+    curl -XDELETE localhost:9200/.mar* 
+    
+
+**Visually**
+
+There are various tools as mentioned above, I wont list them here but I will
+link you to one which enables you to get started straight away, located
+[here](http://lmenezes.com/elasticsearch-kopf/). This tool is called KOPF, to
+connect to your host please click on the logo on top left hand corner and
+enter the URL of your cluster.
+
+Once connected you will be able to administer your entire cluster, delete,
+optimise and tune your cluster.
+
+If you ever need to delete all the indexes, this may come in handy:
+
+    
+    
+    curl -X DELETE 'http://localhost:9200/_all'
+    
+
+For mass-delete by query you may use special [delete by query
+API](https://www.elastic.co/guide/en/elasticsearch/reference/6.4/docs-delete-
+by-query.html):
+
+    
+    
+    $ curl -XDELETE 'http://localhost:9200/twitter/tweet/_query' -d '{
+        "query" : {
+            "term" : { "user" : "kimchy" }
+        }
+    }
+    
+
+# In history that API was deleted and then reintroduced again
+
+Who interesting it has long history.
+
+  1. In first version of that answer I refer to documentation of elasticsearch [version 1.6](https://www.elastic.co/guide/en/elasticsearch/reference/1.6/docs-delete-by-query.html). In it that functionality was marked as deprecated but works good.
+  2. In [elasticsearch version 2.0 it was moved to separate plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/2.0/plugins-delete-by-query.html). And even reasons why it became plugin [explained](https://www.elastic.co/guide/en/elasticsearch/plugins/2.0/delete-by-query-plugin-reason.html).
+  3. And it [again appeared in core API in version 5.0](https://www.elastic.co/guide/en/elasticsearch/plugins/5.0/plugins-delete-by-query.html)!
+
+The
+[documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-
+delete-index.html) (or [The Definitive
+Guide](https://www.elastic.co/guide/en/elasticsearch/guide/current/_deleting_an_index.html))
+says, that you can also use the next query to delete _all_ indices:
+
+`curl -XDELETE 'http://localhost:9200/*'`
+
+And there's an important note:
+
+> For some, the ability to delete all your data with a single command is a
+very scary prospect. If you want to eliminate the possibility of an accidental
+mass-deletion, you can set the following to `true` in your
+`elasticsearch.yml`:
+
+>
+
+> `action.destructive_requires_name: true`
+
+Deleting the index will delete the mapping and type along. you can delete all
+rows by the following query
+
+    
+    
+    curl -XDELETE 'localhost:9200/twitter/tweet/_query?pretty' -d'
+    {
+       "query": { 
+          "match_all": 
+       }
+    }'
+    
+
+However for above query you need to install delete-by-query plugin as of
+Elasticsearch's 2.0.0-beta1 delete-by-query was removed from main api
+
+    
+    
+    Install delete-by-query plugin
+    
+    sudo bin/plugin install delete-by-query
+    
+
+For more
+
+<http://blog.appliedinformaticsinc.com/how-to-delete-elasticsearch-data-
+records-by-dsl-query/>
+
+There are lots of good answers here, but there is also something i'd like to
+add:
+
+  * If you are running on **AWS ElasticSearch service** , **you can´t drop/delete indexes**. **_Instead of delete indexes, you must reindex them_**.
+
+You can delete an index in python as follows
+
+    
+    
+    from elasticsearch import Elasticsearch
+    
+    es = Elasticsearch([{'host':'localhost', 'port':'9200'}])
+    
+    es.index(index='grades',doc_type='ist_samester',id=1,body={
+        "Name":"Programming Fundamentals",
+        "Grade":"A"
+    })
+    
+    es.indices.delete(index='grades')
+    
+    
+    
+    #list all index:       curl -XGET http://localhost:9200/_cat/indices?v 
+    
+
+[![enter image description
+here](https://i.stack.imgur.com/7CK5P.png)](https://i.stack.imgur.com/7CK5P.png)
+
+    
+    
+    #delete index:         curl -XDELETE 'localhost:9200/index_name'
+    #delete all indices:   curl -XDELETE 'localhost:9200/_all'
+    #delete document   :   curl -XDELETE 'localhost:9200/index_name/type_name/document_id'
+    
+
+> Install [kibana](https://www.elastic.co/products/kibana). Kibana has a
+smarter dev tool which helps to build query easily.
+
+[![enter image description
+here](https://i.stack.imgur.com/kpXdU.png)](https://i.stack.imgur.com/kpXdU.png)
+
+I wanted to delete logstash index and searched a lot regarding different tools
+like curl. But found the solution at the end.  Login into Kibana. Go to Dev
+Tools tab and type `DELETE /logstash-*` in query field and hit green arrow
+button. if you get "acknowledged": true in response that means the data has
+been cleared.
+
+simplest way !
+
+    
+    
+    Endpoint :
+    http://localhost:9201/twitter/_delete_by_query
+    
+    Payload :
+    {
+      "query": { 
+        "match": {
+          "message": "some message"
+        }
+      }
+    }
+    
+
+where `twitter` is the index in elastic search
+
+ref ; <https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-
+delete-by-query.html>
+
+You can delete either whole index,doc-type or a perticular id data. these are
+the three ways:
+
+  1. curl -XDELETE localhost:9200/index_name
+
+  2. curl -XDELETE localhost:9200/index_name/doc-type
+
+  3. curl -XDELETE localhost:9200/index_name/doc-type/documentId
+
+and if you wish to delete all the index then go for wildcard.
+
+You can also delete the index using DELETE action in 'elasticsearch head'
+([Chrome
+plugin](https://chrome.google.com/webstore/search/elasticsearch%20head) ). Add
+it to your chrome and connect it to your host. There you will find all your
+indices and if you click on actions button below the index you want to delete,
+you will find a DELETE option in the drop down. click on it and enter DELETE
+in the pop-up. Your index will be deleted. 'Elasticsearch head' extension is
+an easy way to view and manage your indices and data.
+
+Use Curl -L localhost:9200/_cat/indices - To list down indices
+
+9200:default port[change the port if using some other port]
+
+You will likely find all indices starting with logstash-yyyy-mm-dd
+format.(logstash-*)
+
+You can now list down all the indices and use
+
+Curl -XDELETE localhost:9200/index_name (Which will remove the data and
+indices both).
+

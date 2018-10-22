@@ -1,0 +1,33 @@
+28688485 Why we use Bind method on onClick event
+
+I am learning React.js .In the tutorial the author use onClick with bind , but
+at some places he do not use the bind with the onClick. I can not get the
+difference between the two.
+
+    
+    
+     <button onClick={this.handleAdd}>Add Item</button>
+    
+
+You might use `bind` in order to pass in a certain argument to the handler
+method.
+
+For example:
+
+    
+    
+    render: function() {
+        return _.map(list, function(item) {
+            return <li onClick={this.clickItem.bind(this, item)}>{item.name}</li>;
+        });
+    },
+    clickItem: function(item, event) {
+        //do something with the clicked item
+    }
+    
+
+If you don't need to inject an argument, you don't need to `bind` since react
+always calls the handler method in the scope of the component - [although this
+is changing
+soon](http://facebook.github.io/react/blog/2015/01/27/react-v0.13.0-beta-1.html#autobinding)
+

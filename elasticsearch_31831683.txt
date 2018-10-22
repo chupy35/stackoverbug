@@ -1,0 +1,3 @@
+31831683
+For ElasticSearch-1.5.2 royrusso-elasticsearch monitoring tool is not working
+<p>Is there any free monitoring tool available for ElasticSerach-1.5.2 ? Royrusso-elasticsearch monitoring tool is not supporting in that version.Please suggest..</p>&#xA;

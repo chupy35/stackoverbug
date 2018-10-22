@@ -1,0 +1,141 @@
+17384279 can I prioritize more exact matches when using ngram filter in search
+results?
+
+When using the ngram filter with elasticsearch so that when I search for
+something like "test" I return a document "latest", "tests" and "test". Is
+there a way to make it so that the "document exactly matching the query "test"
+is always returned higher up in the search results?
+
+That is a bit of an issue with ngrams: you get a lot of false positives in
+your ranking. A solution is to combine ngrams with shingles. Basically in
+addition to the ngrams, you also index the full word as a separate term or
+even combinations of words. Shingles are basically like ngrams but with words
+rather than characters.
+
+That way, an exact match against the shingle terms scores higher than
+something that only matches the ngrams.
+
+**Update**. Here's an example of a custom analyzer. After you define it, you
+can use it in your mappings. In this case I use the icu_normalizer and folding
+and my suggestions_shingle. All this is set as the default analyzer so all my
+strings are handled this way.
+
+    
+    
+    {
+        "analyzer":{
+            "default":{
+                "tokenizer":"icu_tokenizer",
+                "filter":"icu_normalizer,icu_folding,suggestions_shingle"
+            }
+        },
+        "filter": {
+            "suggestions_shingle": {
+                "type": "shingle",
+                "min_shingle_size": 2,
+                "max_shingle_size": 5
+            }
+        }
+    }
+    
+
+You need multifield and multimatch query.
+
+I have similar issue. I needed to search by first name, so if I put search
+term 'And', I get first 'Andy', and than 'Mandy'. With just nGram, I was not
+able to achieve that.
+
+I added one more analyzer that uses front edgeNGram (code below is for Spring
+Data Elasticsearch, but you can get the idea).
+
+    
+    
+        setting.put("analysis.analyzer.word_parts.type", "custom");
+        setting.put("analysis.analyzer.word_parts.tokenizer", "ngram_tokenizer");
+        setting.put("analysis.analyzer.word_parts.filter", "lowercase");
+    
+        setting.put("analysis.analyzer.type_ahead.type", "custom");
+        setting.put("analysis.analyzer.type_ahead.tokenizer", "edge_ngram_tokenizer");
+        setting.put("analysis.analyzer.type_ahead.filter", "lowercase");
+    
+        setting.put("analysis.tokenizer.ngram_tokenizer.type", "nGram");
+        setting.put("analysis.tokenizer.ngram_tokenizer.min_gram", "3");
+        setting.put("analysis.tokenizer.ngram_tokenizer.max_gram", "50");
+        setting.put("analysis.tokenizer.ngram_tokenizer.token_chars", new String[] { "letter", "digit" });
+    
+        setting.put("analysis.tokenizer.edge_ngram_tokenizer.type", "edgeNGram");
+        setting.put("analysis.tokenizer.edge_ngram_tokenizer.min_gram", "2");
+        setting.put("analysis.tokenizer.edge_ngram_tokenizer.max_gram", "20");
+    
+
+I mapped the required fields as multiple field:
+
+    
+    
+    @MultiField(mainField = @Field(type = FieldType.String, indexAnalyzer = "word_parts", searchAnalyzer = "standard"),
+    otherFields = @NestedField(dotSuffix = "autoComplete", type = FieldType.String, searchAnalyzer = "standard", indexAnalyzer = "type_ahead"))
+    private String firstName;
+    
+
+For the query I am using multimatch were I first specify
+'firstName.autoComplete', and than just 'firstName'
+
+    
+    
+    QueryBuilders.multiMatchQuery(searchTerm, new String[]{"firstName.autoComplete", "firstName"})
+    
+
+This seems to be working properly.
+
+In your case, if you need exact match, perhaps instead of 'edgeNGram' you
+could use just 'standard'.
+
+You can copy the field content to fields via the mapping. Example:
+
+    
+    
+      "fullName": {
+        "type": "string",
+        "search_analyzer": "str_search_analyzer",
+        "index_analyzer": "str_index_analyzer",
+        "fields": {
+            "fullWord": { "type": "string" },
+            "raw": { 
+                "type":  "string",
+                "index": "not_analyzed"
+            }
+        }
+      }
+    
+
+Note that str_index_analyzer uses nGram here. Then you can build your search
+to also search against these fields. Example:
+
+    
+    
+    {
+        "query": {
+          "bool": {
+            "should": [{
+              "multi_match": {
+                "fields": [
+                  "firstName.fullWord",
+                  ...
+                "query": query,
+                "fuzziness": "0"
+              }
+            }],
+            "must": [{
+              "multi_match": {
+                "fields": [
+                  "firstName",...],
+                "query": query,
+                "fuzziness": "AUTO"
+              }
+            }]
+          }
+        }
+      };
+    }
+    
+

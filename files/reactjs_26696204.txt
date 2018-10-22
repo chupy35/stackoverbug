@@ -1,0 +1,4 @@
+26696204
+Does React.js require server side?
+<p>All React.js introductions seem to suggest that React uses a server to create virtual DOMs and sends diff operations over to client, but I just tried out the <a href="https://github.com/facebook/flux/tree/master/examples/flux-todomvc/" rel="noreferrer">flux-todomvc</a> which it didn't need a server at all. What's going on? Is the "server side" work done inside web worker thread?</p>&#xA;
+<p>React.js does not use a web server to create virtual DOMs. It builds the virtual DOM and does its diff operations on the client's browser.</p>&#xA;&#xA;<ul>&#xA;<li>People mostly use React.js to implement front-end Views (MVC View) of their web applications.</li>&#xA;<li><p>But you can use Node.js to render them on the server side if you like (for seo purposes etc.)</p></li>&#xA;<li><p><a href="http://facebook.github.io/react/" rel="noreferrer">http://facebook.github.io/react/</a></p></li>&#xA;</ul>&#xA;

@@ -1,0 +1,73 @@
+21479134 Combine two range filters inside a bool query
+
+In my ES index, documents have two fields, `score_min` and `score_max`, which
+I am trying to boost in a bool query.
+
+I want to boost all documents for which `score_min <= expected_score <=
+score_max` is true.
+
+I know that I can put two `range` queries in the must clause, but that would
+mean that other documents would get overlooked.
+
+Is there a way to do something like this
+
+    
+    
+    ..
+    ..
+    "should": [
+        ...
+        ...
+        "some_query": {
+            "and": [
+                "range": {
+                     "score_min": {
+                          "lte": expected_score
+                     },
+                },
+                "range": {
+                    "score_max": {
+                         "gte": expected_score
+                     }
+                 }
+                 "boost": 2
+             ]
+          }
+    ]
+    
+
+You can do this using the `function_score` query. One of the added benefits is
+that your `range` query can be written as a filter instead, and so take
+advantage of filter caching:
+
+    
+    
+    curl -XGET "http://localhost:9200/_search" -d'
+    {
+      "query": {
+        "function_score": {
+          "query": {
+            "match": { "some_field": "foo bar" }
+          },
+          "functions": [
+            {
+              "boost_factor": 1.2
+              "filter": {
+                "bool": {
+                  "must": [
+                    { "range": { "score_min": { "lte": 10 }}},
+                    { "range": { "score_max": { "gte": 10 }}}
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }'
+    
+
+All results matching the query are returned, but any results which
+additionally match the filter will have their score multiplied by
+`boost_factor`.
+

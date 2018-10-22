@@ -1,0 +1,48 @@
+17883936 Is there a way to "escape" ElasticSearch stop words?
+
+I am fairly new to ElasticSearch and have a question on stop words. I have an
+index that contains state names for the USA....ex: New York/NY,
+California/CA,Oregon/OR. I believe Oregon's abbreviation, 'OR' is a stop word,
+so when I insert the state data into the index, I cannot search on 'OR'. Is
+there a way I can set up custom stopwords for this or am I doing something
+wrong?
+
+Here is how I am building the index: ` curl -XPUT
+http://localhost:9200/test/state/1 -d '{"stateName": ["California","CA"]}'
+curl -XPUT http://localhost:9200/test/state/2 -d '{"stateName": ["New
+York","NY"]}' curl -XPUT http://localhost:9200/test/state/3 -d '{"stateName":
+["Oregon","OR"]}' `
+
+A search for 'NY', works fine. Ex:
+
+` curl -XGET 'http://localhost:9200/test/state/_search?pretty=1' -d ' {
+"query" : { "match" : { "stateName" : "NY" } } }' `
+
+But a search for 'OR', returns zero hits:
+
+` curl -XGET 'http://localhost:9200/test/state/_search?pretty=1' -d ' {
+"query" : { "match" : { "stateName" : "OR" } } }' `
+
+I believe this search returns no results because OR is stop word, but I don't
+know how to work around this. Thanks for you help.
+
+You can (and definitely should) control the way you index data by modifying
+your [mapping](http://www.elasticsearch.org/guide/reference/mapping/)
+according to your data and the way you want to search against it.
+
+In your case I would disable stopwords for that specific field rather than
+modifying the stopword list, but you could do the latter too if you wish to.
+The point is that you're using the default mapping which is great to start
+with, but as you can see you need to tweak it depending on your needs.
+
+For each field, you can specify what analyzer to use. An analyzer defines the
+way you split your text into tokens (tokenizer) that will be indexed and also
+additional changes you can make to each token (even remove or add new ones)
+using token filters.
+
+You can specify your mapping either while [creating your
+index](http://www.elasticsearch.org/guide/reference/api/admin-indices-create-
+index/) or update it afterwards using the [put mapping
+api](http://www.elasticsearch.org/guide/reference/api/admin-indices-put-
+mapping/) (as long as the changes you make are backwards compatible).
+

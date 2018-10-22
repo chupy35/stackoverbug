@@ -1,0 +1,272 @@
+25284609 Retrieve matched array element in Elastic Search query
+
+In a movie database, I store the ratings (0 to 5 stars) given by users to each
+of the movies. I have the following document structure indexed in Elastic
+Search (version 1.2.2)
+
+    
+    
+    "_index": "my_index"
+    "_type": "film",
+    "_id": "6629",
+    "_source": {
+      "id": "6629",
+      "title": "Fight Club",
+      "ratings" : [
+        { "user_id" : 1234, "rating_value" : 3 },
+        { "user_id" : 4567, "rating_value" : 2 },
+        { "user_id" : 7890, "rating_value" : 1 }
+        .....
+      ]
+    }
+    
+    "_index": "my_index"
+    "_type": "film",
+    "_id": "6630",
+    "_source": {
+      "id": "6630",
+      "title": "Pulp Fiction",
+      "ratings" : [
+        { "user_id" : 1234, "rating_value" : 1 },
+        { "user_id" : 7654, "rating_value" : 2 },
+        { "user_id" : 4321, "rating_value" : 5 }
+        .....
+      ]
+    }
+    
+
+etc ...
+
+My goal is to get, in a single search, all the movies rated by a user (let's
+say user 1234), **alongside with the rating_value**
+
+If I do the following search
+
+    
+    
+    GET my_index/film/_search
+    {
+      "query": {
+        "match": {
+          "ratings.user_id": "1234"
+        }
+      }
+    }
+    
+
+I get, for all matched movies, the whole document, and then, I have to parse
+the whole ratings array to find out which element of the array has matched my
+query and what is the rating_value associated with the user_id 1234.
+
+Ideally, I would like the result of this query to be
+
+    
+    
+    "hits": [ {
+      "_index": "my_index"
+      "_type": "film",
+      "_id": "6629",
+      "_source": {
+        "id": "6629",
+        "title": "Fight Club",
+        "ratings" : [
+          { "user_id" : 1234, "rating_value" : 3 }, // <= only the row that matches the query
+        ]
+      },
+      "_index": "my_index"
+      "_type": "film",
+      "_id": "6630",
+      "_source": {
+        "id": "6630",
+        "title": "Pulp Fiction",
+        "ratings" : [
+          { "user_id" : 1234, "rating_value" : 1 },  // <= only the row that matches the query
+        ]
+      }
+    } ]
+    
+
+Thanks in advance
+
+Store ratings as nested documents (or children), then you will be able to
+query them individually.
+
+A good explanation for the difference between nested documents and children
+can be found here: <http://www.spacevatican.org/2012/6/3/fun-with-
+elasticsearch-s-children-and-nested-documents/>
+
+I managed to retrieve the values using **aggregations** , as stated in my
+previous comment.
+
+Here follows how I did this.
+
+First, the mapping I used :
+
+    
+    
+    PUT test/movie/_mapping
+    {
+      "properties": {
+        "title":{
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "ratings": {
+          "type": "nested"
+        }
+      }
+    }
+    
+
+I chose not to index the title, but you could use **fields** attribute and
+keep it as a "raw" field.
+
+Then, the movies indexed :
+
+    
+    
+    PUT test/movie/6629
+    {
+      "title": "Fight Club",
+      "ratings" : [
+        { "user_id" : 1234, "rating_value" : 3 },
+        { "user_id" : 4567, "rating_value" : 2 },
+        { "user_id" : 7890, "rating_value" : 1 }
+      ]
+    }
+    
+    
+    PUT test/movie/4456
+    {
+      "title": "Jumanji",
+      "ratings" : [
+        { "user_id" : 1234, "rating_value" : 4 },
+        { "user_id" : 4567, "rating_value" : 3 },
+        { "user_id" : 4630, "rating_value" : 5 }
+      ]
+    }
+    
+    PUT test/movie/6547
+    {
+      "title": "Hook",
+      "ratings" : [
+        { "user_id" : 1234, "rating_value" : 4 },
+        { "user_id" : 7890, "rating_value" : 1 }
+      ]
+    }
+    
+
+The aggregation query is :
+
+    
+    
+    GET test/movie/_search
+    {
+      "aggs": {
+        "by_movie": {
+          "terms": {
+            "field": "title"
+          },
+          "aggs": {
+            "ratings_by_user": {
+              "nested": {
+                "path": "ratings"
+              },"aggs": {
+                "for_user_1234": {
+                  "filter": {
+                    "term": {
+                      "ratings.user_id": "1234"
+                    }
+                  },
+                  "aggs": {
+                    "rating_value": {
+                      "terms": {
+                        "field": "ratings.rating_value"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+Finally, here is the output produced when executing this query against the
+previous documents :
+
+    
+    
+    "aggregations": {
+      "by_movie": {
+         "buckets": [
+            {
+               "key": "Fight Club",
+               "doc_count": 1,
+               "ratings_by_user": {
+                  "doc_count": 3,
+                  "for_user_1234": {
+                     "doc_count": 1,
+                     "rating_value": {
+                        "buckets": [
+                           {
+                              "key": 3,
+                              "key_as_string": "3",
+                              "doc_count": 1
+                           }
+                        ]
+                     }
+                  }
+               }
+            },
+            {
+               "key": "Hook",
+               "doc_count": 1,
+               "ratings_by_user": {
+                  "doc_count": 2,
+                  "for_user_1234": {
+                     "doc_count": 1,
+                     "rating_value": {
+                        "buckets": [
+                           {
+                              "key": 4,
+                              "key_as_string": "4",
+                              "doc_count": 1
+                           }
+                        ]
+                     }
+                  }
+               }
+            },
+            {
+               "key": "Jumanji",
+               "doc_count": 1,
+               "ratings_by_user": {
+                  "doc_count": 3,
+                  "for_user_1234": {
+                     "doc_count": 1,
+                     "rating_value": {
+                        "buckets": [
+                           {
+                              "key": 4,
+                              "key_as_string": "4",
+                              "doc_count": 1
+                           }
+                        ]
+                     }
+                  }
+               }
+            }
+         ]
+      }
+    
+
+}
+
+It's a bit tedious because of the nested syntax, but you'll be able to
+retrieve the rating of the provided user (here, 1234) for each movie.
+
+Hope this helps!
+

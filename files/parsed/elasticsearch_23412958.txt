@@ -1,0 +1,83 @@
+23412958 Elastic search : how to query to return certain number products for
+different users
+
+I have a collection of products which belong to few users, (the system is with
+ElasicSearch(ES), MySQL, Scala and ES Play Framework APIs
+[link](https://github.com/cleverage/play2-elasticsearch)):
+
+    
+    
+    [
+      { id: 1, user_id: 'jason', product: [...] },
+      { id: 2, user_id: 'mike', product: [...] },
+      { id: 3, user_id: 'mike', product: [...] },
+      { id: 4, user_id: 'dan', product: [...] },
+      { id: 5, user_id: 'bill', product: [...] },
+      { id: 6, user_id: 'mike', product: [...] },
+      { id: 7, user_id: 'dan', product: [...] },
+      { id: 8, user_id: 'bill', product: [...] },
+      { id: 9, user_id: 'mike', product: [...] },
+      { id: 10, user_id: 'dan', product: [...] },
+      { id: 11, user_id: 'bill', product: [...] },
+      ...
+    ]
+    
+
+I'd like to retrieve some certain number (for example, top 2 with highest
+matching score) products of best matching document based upon the user's id:
+
+    
+    
+    [
+      { id: 2, user_id: 'mike', product: [...], _score: 100},
+      { id: 3, user_id: 'mike', product: [...], _score: 95},
+      { id: 4, user_id: 'dan', product: [...], _score: 90},
+      { id: 5, user_id: 'bill', product: [...], _score: 80},
+      { id: 7, user_id: 'dan', product: [...], _score: 70},
+      { id: 8, user_id: 'bill', product: [...], _score: 65},
+      ...
+    ]
+    
+
+I tried [term
+facets](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets-terms-facet.html) on user_id, but I cannot find equal number products
+for each user currently, for example,
+
+    
+    
+    [ 
+      { id: 2, user_id: 'mike', product: [...], _score: 100},
+      { id: 3, user_id: 'mike', product: [...], _score: 95},
+      { id: 4, user_id: 'dan', product: [...], _score: 90},
+      { id: 5, user_id: 'bill', product: [...], _score: 80},
+      { id: 6, user_id: 'mike', product: [...], _score: 75},
+      ...
+    ]
+    
+
+Term facets pseudo code:
+
+    
+    
+    /** query type is com.github.cleverage.elasticsearch.ScalaHelpers.IndexResults[Product]
+      * filtered is matching requirement filter, i.e. including keyword "fashion" 
+      * limit is the size of returned users with matching document, i.e. 10 
+      * finalQuery return 5 unique users based on tmpQuery result with 10 users
+      * each user has 2 products finally
+      */
+    tmpQuery = query.withBuilder(filtered).withSize(limit)
+    finalQuery = tmpQuery.addFacet(FacetBuilders.termsFacet("userId").field("user_id").size(5))
+    
+
+How to ensure everyone has 2 products, rather than mike has 3, dan has 1 and
+bill has 1?  I mean, addFacet doesn't work now because finalQuery is based on
+tmpQuery, and tmpQuery returns 10 results which are more from mike due to
+higher matching score, how to update tmpQuery to reach the limitation of 2?)
+
+Term facet cannot ensure unique users, it only return most frequent users.
+Actually, in this case, have to match products first, then retrieve its
+user_id then, so it cannot get users first and then their products.
+
+Appreciate.
+

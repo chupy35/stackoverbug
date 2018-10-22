@@ -1,0 +1,35 @@
+23380743 Elasticsearch array of nested objects with aggregation
+
+I have an object with structure shown below
+
+    
+    
+    {
+       "field1": "textual data",
+       "field2": "another data",
+       "services": [
+           {
+               "id": "123",
+               "type": "type1",
+               "price": 124.5
+           },
+           {
+               "id": "345",
+               "type": "type2",
+               "price": 321.5
+           },
+           {
+               "id": "47",
+               "type": "type4",
+               "price": 21.5
+           }
+       ]
+    }
+    
+
+Could anyone provide any ideas about creating index for addressing next use
+case: find all objects with services having types X1, X2, X3 and their total
+price lesser than M.
+
+Any advices on constructing a query also appreciated!
+

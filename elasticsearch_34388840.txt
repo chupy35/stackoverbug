@@ -1,0 +1,4 @@
+34388840
+Elastic search does have callback rails
+<p>What is my intention is,&#xA;When I do a bulk update to elastic search, I want to know when and whether it is finished successfully.&#xA;This is required when I am writing following <strong>rails test case</strong>:</p>&#xA;&#xA;<p><code>1. Make 100(out of 1000) items featured in my product index&#xA; 2. Get all items back&#xA; 3. Check the items are sorted and 100 featured item is on top</code></p>&#xA;&#xA;<p>After I update items to ES in step 1, I like to know whether it is finished before getting all items back </p>&#xA;
+<p>You can do a refresh after step 1. When the refresh completes, you know all the data you sent so far is indexed and ready for search.&#xA;<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-refresh.html" rel="nofollow">https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-refresh.html</a></p>&#xA;

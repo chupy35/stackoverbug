@@ -1,0 +1,4 @@
+34179580
+Sorting strings in elastic search
+<p>I have indexed a number of file paths into elastic search without without setting any mappings, so I'm letting elasticsearch detect the field types. It has detected this field as {"type" : "string"} which would appear to be ok. The file paths are:</p>&#xA;&#xA;<pre><code>/file/file1&#xA;/file/file2&#xA;/file/file5&#xA;/file/file3&#xA;/file/file4&#xA;</code></pre>&#xA;&#xA;<p>When I do a query and tell it to sort on the file path, the file paths are returned in their original order and it appears that they all receive the same sort value. Is this an issue caused by not setting a mapping? How can I get elasticsearch to sort these values in the correct order?</p>&#xA;
+<p>I think you can try mapping that filed to be </p>&#xA;&#xA;<pre><code>{&#xA;    "type":  "string",&#xA;    "index": "not_analyzed"&#xA;}&#xA;</code></pre>&#xA;

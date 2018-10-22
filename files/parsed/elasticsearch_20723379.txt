@@ -1,0 +1,193 @@
+20723379 Return the most recent record from ElasticSearch index
+
+I would like to return the most recent record (top 1) from ElasticSearch index
+similar to the sql query below;
+
+    
+    
+    SELECT TOP 1 Id, name, title 
+    FROM MyTable 
+    ORDER BY Date DESC;
+    
+
+Can this be done?
+
+You can use
+[sort](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-sort.html) on date field and
+[size=1](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-from-size.html) parameter. Does it help?
+
+Do you have
+[_timestamp](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+timestamp-field.html) enabled in your doc mapping?
+
+    
+    
+    {
+        "doctype": {
+            "_timestamp": {
+                "enabled": "true",
+                "store": "yes"
+            },
+            "properties": {
+                ...
+            }
+        }
+    }
+    
+
+You can check your mapping here:
+
+    
+    
+    http://localhost:9200/_all/_mapping
+    
+
+If so I think this might work to get most recent:
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "size": 1,
+      "sort": [
+        {
+          "_timestamp": {
+            "order": "desc"
+          }
+        }
+      ]
+    }
+    
+
+For information purpose, _timestamp is now deprecated since 2.0.0-beta2. Use
+[`date`](https://www.elastic.co/guide/en/elasticsearch/reference/current/date.html)
+type in your mapping.
+
+A simple date mapping JSON from
+[`date`](https://www.elastic.co/guide/en/elasticsearch/reference/current/date.html)
+datatype doc:
+
+    
+    
+    {
+      "mappings": {
+         "my_type": {
+            "properties": {
+              "date": {
+              "type": "date" 
+            }
+          }
+        }
+      }
+    }
+    
+
+You can also add a `format` field in `date`:
+
+    
+    
+    {
+      "mappings": {
+        "my_type": {
+          "properties": {
+            "date": {
+              "type":   "date",
+              "format": "yyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            }
+          }
+        }
+      }
+    }
+    
+
+Get the Last ID using by date (with out time stamp)
+
+> **Sample URL** : <http://localhost:9200/deal/dealsdetails/>  
+>  **Method** : POST
+
+Query :
+
+    
+    
+    {
+      "fields": ["_id"],
+      "sort": [{
+          "created_date": {
+            "order": "desc"
+          }
+        },
+        {
+          "_score": {
+            "order": "desc"
+          }
+        }
+      ],
+      "size": 1
+    }
+    
+
+result:
+
+    
+    
+    {
+      "took": 4,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+      },
+      "hits": {
+        "total": 9,
+        "max_score": null,
+        "hits": [{
+          "_index": "deal",
+          "_type": "dealsdetails",
+          "_id": "10",
+          "_score": 1,
+          "sort": [
+            1478266145174,
+            1
+          ]
+        }]
+      }
+    }
+    
+
+the _timestamp didn't work out for me,
+
+this query does work for me:
+
+(as in mconlin's answer)
+
+    
+    
+    {
+      "query": {
+        "match_all": {}
+      },
+      "size": "1",
+      "sort": [
+        {
+          "@timestamp": {
+            "order": "desc"
+          }
+        }
+      ]
+    }
+    
+
+Could be trivial but the _timestamp answer didn't gave an error but not a good
+result either...
+
+Hope to help someone...
+
+(kibana/elastic 5.0.4)
+
+S.
+

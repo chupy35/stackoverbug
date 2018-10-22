@@ -1,0 +1,54 @@
+20399922 ElasticSearch: How do I search by sth similar to SQLs
+"CHAR_LENGTH()"?
+
+In (my)SQL, I can filter data-sets by
+[CHAR_LENGTH()](https://dev.mysql.com/doc/refman/5.0/en/string-
+functions.html#function_char-length%20%2aCHAR_LENGTH%28%29%2a):
+
+    
+    
+    SELECT [...] FROM [...] WHERE CHAR_LENGTH(`some_table_field`) < '1000';
+    
+
+Is there a way to do this kind of search in ElasticSearch?
+
+I think you can use script filter
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-script-filter.html>
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html>
+
+    
+    
+    "filtered" : {
+          "query" : {
+              "match_all" : {}
+          },
+          "filter" : {
+              "script" : {
+                  "script" : "_source.some_table_field.length() < 1000"
+              }
+          }
+    }
+    
+
+Note that using `_source` is much slower compared to using `doc`, so you can
+rewrite the query to use `doc`, but be ensure that the analyzer of field
+`some_table_field` need to return the single original string, e.g.
+"non_analyzer", "keyword", or you will get wrong length(), and return wrong
+results.
+
+    
+    
+    "filtered" : {
+              "query" : {
+                  "match_all" : {}
+              },
+              "filter" : {
+                  "script" : {
+                      "script" : "doc['some_table_field'].value.length() < 1000"
+                  }
+              }
+        }
+    
+

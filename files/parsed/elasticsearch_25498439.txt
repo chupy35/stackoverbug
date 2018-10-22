@@ -1,0 +1,59 @@
+25498439 Elasticsearch terms query: less tags - more relevance
+
+I've got an index with products. Each product has it's own tags like this
+
+    
+    
+    {
+        "_id": 1,
+        "tags": ["red", "blue", "green"]
+        ...
+    },
+    {
+        "_id": 2,
+        "tags": ["red", "blue"]
+        ...
+    },
+    {
+        "_id": 3,
+        "tags": ["red"]
+        ...
+    }
+    
+
+How do I create a terms query against the "tags" field that considers the
+amount of tags the object associated with? I'd like to see the following
+results for the "red" tag query:
+
+    
+    
+    1: _id=3
+    2: _id=2
+    3: _id=1 
+    
+
+You can use a [script based
+sort](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-sort.html#_script_based_sorting)
+
+    
+    
+    {
+        "query": {
+            "match_all": {}
+        },
+        "sort": {
+            "_script": {
+                "script": "doc.containsKey('tags') == false ? 0 : doc['tags'].values.size()",
+                "order": "asc",
+                "type": "string"
+            }
+       }
+    }  
+    
+
+Security regarding scripts has changed in the more recent versions of
+ElasticSearch, for more information take a look at this page:
+
+<http://www.elasticsearch.org/blog/scripting-security/>
+

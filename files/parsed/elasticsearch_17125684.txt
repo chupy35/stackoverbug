@@ -1,0 +1,62 @@
+17125684 SearchPhaseExecutionException with Basic Embedded Elasticsearch
+
+I am trying out Elasticsearch with a basic Scala program, using the Java API:
+
+    
+    
+    object TestES {
+      var node:Node = NodeBuilder.nodeBuilder.node
+      var client:Client = node.client
+    
+      def insertDoc(id:String, doc:String) = {
+        client.prepareIndex("myindex", "test", id).
+               setSource(doc).execute.actionGet
+      }
+    
+      def countHits(qry:String) = {
+        client.prepareSearch("myindex").setTypes("test").
+               setQuery(queryString(qry)).execute.actionGet.
+               getHits.getTotalHits
+      }
+    
+      def waitForGreen = client.admin.cluster.prepareHealth().
+                         setWaitForGreenStatus.execute.actionGet
+    
+      def main(args: Array[String]): Unit = {
+        insertDoc("1", """{"foo":"bar"}""")
+        //waitForGreen
+        println(countHits("bar"))
+    
+        node.close
+      }
+    }
+    
+
+This works, and the insert + query run in under one second. If I comment out
+the insert, I get the following exception:
+
+    
+    
+    Exception in thread "main" org.elasticsearch.action.search.SearchPhaseExecutionException:
+    Failed to execute phase [query], total failure;
+    shardFailures {[_na_][myindex][0]: No active shards}
+    
+
+If I enable the `waitForGreen` line, it works again, but takes over half a
+minute to run both lines.
+
+This seems quite odd. Is inserting a document a must before running a query,
+or is there a better way?
+
+Inserting a document is not needed to run a query, but having the index
+created is required.  When you insert a document and the index doesn't exist,
+it will be automatically created.
+
+If you want to avoid document creation, you can create only the index using
+the API :
+
+    
+    
+    client.admin.indices.prepareCreate("myindex").execute.actionGet
+    
+

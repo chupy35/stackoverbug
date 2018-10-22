@@ -1,0 +1,55 @@
+11147851 Elasticsearch search time consistency
+
+I have a very simple question.
+
+I have an elasticsearch index containing 1600000 relatively large documents,
+and i need to scan the index to synchronize it with a classic sql database.
+
+My documents include the sql ID and timestamp.
+
+Then to synchronize the sql db and the elastic index, i simply read rows and
+documents sequentially, both sorted by id, and comparing the ids i can
+determine if i need to delete the document (comparison is negative), add a new
+document with the sql row (comparison is positive), and if comparison is 0 i
+compare the timestamps to know if i need to update the document.
+
+It works but i observe that reading the documents gets a lot slower as i
+advance reading.
+
+I retrieve my documents in chunks by repeating searches on the index, shifting
+the "from" field of the request each time, something like this :
+
+    
+    
+    {
+        "from" : 0, "size" : 10000,
+        "fields" : ["idannonce","ts"],
+        "sort" : ["idannonce"],
+        "query" : "match_all" {}
+    }
+    
+
+This simple query is a lot slower when "from" is 1000000 than when it is 0.
+
+Is this normal behaviour ? I thought that it should take aproximately the same
+time as the "idannonce" field should be indexed, no ?
+
+Any thought ? Is there a way to write the same query so that it runs in a
+constant time ?
+
+Thanks
+
+Search API wasn't designed for this use case. Besides getting suboptimal
+performance you are, probably, also missing some changes since your deletions
+and additions are interfering with elasticsearch results by "shifting" your
+retrieval window when changes are committed to the index. You should switch to
+[Scroll
+API](http://www.elasticsearch.org/guide/reference/api/search/scroll.html),
+which much better suited for this operation.
+
+I was also doing the similar thing but I found
+<https://github.com/jprante/elasticsearch-river-jdbc> more useful. It is very
+simple integration. Please try using this.  Please post your code gist. Also
+<https://github.com/lukas-vlcek/bigdesk> observe the graphs when you are
+running your queries.
+

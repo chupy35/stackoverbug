@@ -1,0 +1,44 @@
+16549001 Elasticsearch order responses and then facet
+
+Is it possible to order responses by a certain field and then apply faceting?
+My app contains workorder documents and activity log entries. Employees log
+time spent working on a workorder by creating activity log entries in separate
+documents that are then associated with the workorder document. I'd like to be
+able to query ES and have it return activity log entries ordered by
+workorderID and then compute a stats facet against the activity log entries
+for each workorder.
+
+From what I gather (glanced at the gist) you don't need info from Workorder-
+docs to fullfill this query right? i.e: all data you need exists in Activity-
+docs.
+
+If I understand your question correctly you can use Terms-Stats-field
+<http://www.elasticsearch.org/guide/reference/api/search/facets/terms-stats-
+facet/>
+
+Whereby you specify:
+
+  * `key_field` = workorderId
+  * `value_field` = numHours 
+
+From that url:
+
+    
+    
+    {
+        "query" : {
+            "match_all" : {  }
+        },
+        "facets" : {
+            "tag_price_stats" : {
+                "terms_stats" : {
+                    "key_field" : "tag",
+                    "value_field" : "price"
+                }
+            }
+        }
+    }
+    
+
+hth
+

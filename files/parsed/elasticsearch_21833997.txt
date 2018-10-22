@@ -1,0 +1,40 @@
+21833997 Elasticsearch: Versioning a document on revisions
+
+I currently have a document which gets revised regularly, I want to keep track
+of the document by keeping each old version of the document. So if document A
+has a summary and update date I want to, after every update, keep the previous
+version along with its update data.
+
+The problem is that I'm not sure how I should do this efficiently:
+
+    
+    
+    ...{
+            Title: A
+            Summary: {update_date:content, update_date:content, ...}
+        }
+    
+
+The problem is that if I take the key as value then the automatic generated
+schema will take all dates as possible keys. Which is not something you want.
+
+So my question is what's the most efficient way of tracking all revisions by
+date in ElasticSearch?
+
+Just like everything related to building an index, it highly depends on what
+you want to do with the data.
+
+Typically, keeping past revisions is done for auditing purposes, so it's an
+entirely different query flow. I would likely keep one index for the active
+documents, and a separate index (with possible date partitions) for the
+revisions.
+
+Each update requires to update the live document and an insertion of a new
+document in the revision index.
+
+It should also be noted that ElasticSearch has some [native support for
+versioning](http://www.elasticsearch.org/blog/elasticsearch-versioning-
+support/), which might be suitable for you. I personally use ES as an index
+only and not a data store, so I tend to drop indices and rebuild often, which
+would cause history to be lost.
+

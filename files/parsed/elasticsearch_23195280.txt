@@ -1,0 +1,30 @@
+23195280 elasticsearch slow log wont write to log file
+
+Im trying to to capture the index request by enabling the slow log option .
+
+I read this [search-slow-
+log](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-
+modules-slowlog.html#search-slow-log) and tried few configuration but in both
+cases nothing has been written to the slow log file.
+
+What is the correct way to configure slow log option in order to capture the
+query's that has been sent to the ES server ?
+
+Can you post your slow log configuration?
+
+There are two parts to enabling slow logs.
+
+The first is to enable the slow logs by providing the various thresholds in
+the elaticsearch.yml config file. The default config file does not have these
+thresholds and the default behavior is to disable slow logs if these
+thresholds are not provided.
+
+For example: index.search.slowlog.threshold.query: warn: 10s info: 5s debug:
+2s trace: 500ms
+
+To enable logging all requests, set at least one level (the choice is
+dependent on your logging preference) to 0ms.
+
+The second part is to enable the actual logging of the slow log events. The
+default logging.xml config file should log these events by default.
+

@@ -1,0 +1,47 @@
+23673322 Elasticsearch custom_filters_score not working
+
+I am trying to test with custom_filters_scores in elasticsearch but even the
+most basic versions are producing errors. Can anyone point out why the
+following error message is occurring?
+
+    
+    
+    {
+      "query": {
+        "custom_filters_score": {
+          "query": {
+            "match_all": {}
+          },
+          "filters": [
+            {
+              "filter": {
+                "range": {
+                  "Price": {
+                    "from": 0,
+                    "to": 200
+                  }
+               }
+             }
+           }
+         ],
+       }
+    }
+    
+
+The error is as follows:
+
+    
+    
+    nested: QueryParsingException[[index] No query registered for [custom_filters_score]]; }]", "status": 400
+    
+
+You're probably using elasticsearch 1.x that has a new query that handles all
+the different boosting usecases. It's called `function_score` and it replaced
+the `custom_filters_score` in 1.0, already deprecated since `0.90.4`.
+
+Have a look at the [documentation
+page](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-function-score-query.html), it's quite extensive and contains at the
+bottom of the page examples on how to migrate from previously available
+queries to `function_score`.
+

@@ -1,0 +1,219 @@
+11896732 Can I use ng-model with isolated scope?
+
+I am creating simple ui-datetime directive. It splits javascript Date object
+into _date, _hours and _minutes parts. _date uses jquery ui datepicker, _hours
+and _minutes - number inputs.
+
+    
+    
+    angular.module("ExperimentsModule", [])
+        .directive("uiDatetime", function () {
+        return {
+            restrict: 'EA',
+            replace: true,
+            template: '<div class="ui-datetime">' +
+                '<input type="text" ng-model="_date" class="date">' +
+                '<input type="number" ng-model="_hours" min="0" max="23" class="hours">' +
+                '<input type="number" ng-model="_minutes" min="0" max="59" class="minutes">' +
+                '<br />Child datetime1: {{datetime1}}' +
+                '</div>',
+            require: 'ngModel',
+            scope: true,
+            link: function (scope, element, attrs, ngModelCtrl) {
+                var elDate = element.find('input.date');
+    
+                ngModelCtrl.$render = function () {
+                    var date = new Date(ngModelCtrl.$viewValue);
+                    var fillNull = function (num) {
+                        if (num < 10) return '0' + num;
+                        return num;
+                    };
+                    scope._date = fillNull(date.getDate()) + '.' + fillNull(date.getMonth() + 1) + '.' + date.getFullYear();
+                    scope._hours = date.getHours();
+                    scope._minutes = date.getMinutes();
+                };
+    
+                elDate.datepicker({
+                    dateFormat: 'dd.mm.yy',
+                    onSelect: function (value, picker) {
+                        scope._date = value;
+                        scope.$apply();
+                    }
+                });
+    
+                var watchExpr = function () {
+                    var res = scope.$eval('_date').split('.');
+                    if (res.length == 3) return new Date(res[2], res[1] - 1, res[0], scope.$eval('_hours'), scope.$eval('_minutes'));
+                    return 0;
+                };
+                scope.$watch(watchExpr, function (newValue) {
+                    ngModelCtrl.$setViewValue(newValue);
+                }, true);
+            }
+        };
+    });
+    
+    function TestController($scope) {
+        $scope.datetime1 = new Date();
+    }
+    
+
+[`jsfiddle`](http://jsfiddle.net/andreev_artem/nWsZp/3/)
+
+On github: <https://github.com/andreev-
+artem/angular_experiments/tree/master/ui-datetime>
+
+As far as I understand - best practice when you create a new component is to
+use isolated scope.
+
+When I tried to use isolated scope - nothing works. ngModel.$viewValue ===
+undefined.
+
+When I tried to use new scope (my example, not so good variant imho) - ngModel
+uses value on newly created scope.
+
+Of course I can create directive with isolated scope and work with ngModel
+value through "=expression" ([example](https://github.com/andreev-
+artem/angular_experiments/blob/uiDatetime_impl2/ui-datetime/ui-datetime.js)).
+But I think that working with ngModelController is a better practice.
+
+My questions:
+
+  1. Can I use ngModelController with isolated scope?
+  2. If it is not possible which solution is better for creating such component?
+
+Make your directive run at a higher priority than ngModel and correct the
+model binding for your isolated scope. I chose a priority of '100' which is
+the same level as the input directive, after high priority template
+manipulations like ngRepeat but before the default of 0, which is what ngModel
+uses.
+
+Here's example code:
+
+    
+    
+    myDirective = function() {
+      return {
+        compile: function(tElement, tAttrs, transclude) {
+          // Correct ngModel for isolate scope
+          if (tAttrs.ngModel) {
+            tAttrs.$set('model', tAttrs.ngModel, false);
+            tAttrs.$set('ngModel', 'model', false);
+          }
+    
+          return {
+            post: function(scope, iElement, iAttrs, controller) {
+              // Optionally hook up formatters and parsers
+              controller.$formatters.push(function(value) {
+                 // ...
+              })
+    
+              // Render
+              return controller.$render = function() {
+                if (!controller.$viewValue) {
+                  return;
+                }
+                angular.extend(scope, controller.$viewValue);
+              };
+            }
+          };
+        },
+        priority: 100,
+        require: '^ngModel',
+        scope: {
+          model: '='
+        },
+      };
+    }
+    
+
+During compilation, the directive checks whether the ngModel attribute is
+present. This check works on the normalized value using Angular's
+[Attributes](http://docs.angularjs.org/api/ng.%24compile.directive.Attributes
+"Angular's Attributes"). If the attribute is present, it is replaced with
+'model' (not 'ngModel'), which is the name data-bound into our isolate.
+However, we must also create an attribute so that Angular can perform the data
+binding for us. Both attributes can be (at your option) modified with a
+`false` parameter which leaves the DOM unchanged.
+
+Replacing `scope: true` with `scope: { datetime1: '=ngModel'}` in your first
+fiddle seems to work fine -- [fiddle](http://jsfiddle.net/mrajcok/UKVGs/).
+Unfortunately, the link to your "example" fiddle is broken, so I'm not sure
+what you tried there.
+
+So, it would seem that ngModelController can be used with an isolate scope.
+
+Here's a smaller fiddle that uses ng-model in the HTML/view, an isolate scope,
+and $setViewValue in the link function:
+[fiddle](http://jsfiddle.net/mrajcok/AXBut/).
+
+**Update** : I just discovered something rather interesting: if the isolate
+scope property is given a different name -- e.g., say dt1 instead of datetime1
+-- `scope: { dt1: '=ngModel'}` \-- it no longer works! I'm guessing that when
+we `require: 'ngModel'`, the ngModelController uses the name in the HTML/view
+(i.e., the ng-model attribute value) to create a property on the isolate
+scope. So if we specify the same name in the object hash, all is well. But if
+we specify a different name, that new scope property (e.g., dt1) is not
+associated with the ngModelController we required.
+
+Here's an [updated fiddle](http://jsfiddle.net/mrajcok/AXBut/1/).
+
+I think I had the same problem, and I found partial yet usable solution.
+
+So, the problem has several parts:
+
+  1. your custom directive wants some private properties, i.e. isolated scope
+  2. DOM node can have only one scope, all directives share it
+  3. ngModel="something" binds to "something" in that shared (isolated) scope, and this is the actual problem
+
+So, my first step was to rewrite my directive to use `scope:true` instead of
+`scope:{...}` (actually, that was a requirement, because I wanted to use some
+global scope properties within my directive's transcluded content): things
+like `attrs.$observe()`, `$scope.$parent.$watch()`, etc. helped.
+
+Then in `compile()` I re-bound `ngModel` to parent scope's property:
+`attrs.$set('ngModel', '$parent.' + attrs.ngModel, false)`. And that's all.
+
+Here is my directive, with non-essential code stripped:
+
+    
+    
+    angular.module('App', []).directive('dir', function () {
+        return {
+            /* This one is important: */
+            scope:true,
+            compile:function (element, attrs, transclude) {
+                /* The trick is here: */
+                if (attrs.ngModel) {
+                    attrs.$set('ngModel', '$parent.' + attrs.ngModel, false);
+                }
+    
+                return function ($scope, element, attrs, ngModel) {
+                    // link function body
+                };
+            }
+        };
+    });
+    
+
+Try a version of this:
+
+    
+    
+    .directive('myDir', function() {
+        return {
+            restrict: 'EA',
+            scope:    {
+                        YYY: '=ngModel'
+                      },
+            require:  'ngModel',
+            replace:  true,
+            template: function render(element, attrs) {
+                var type = attrs.type || 'text';
+                var required = attrs.hasOwnProperty('required') ? " required='required'" : "";
+                return "<input ng-model='YYY' type="' + type + '" + required + ' />';
+                      }
+        };
+    });
+    
+

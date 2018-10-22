@@ -1,0 +1,10 @@
+31586115 How to reinitialize the LoggingSystem in Spring Boot?
+
+Spring Boots LoggingSystem abstraction has no reload/reinitialize method. Is
+there another way of reinitializing the LoggingSystem (regardless of the
+underlying implementation)?
+
+What I want to achieve: Registering a SIGHUP-signalhandler triggering a
+LoggigSystem-reinit so that the log-filhandles are closed and reopend so
+logrotate can rotate the logfiles.
+

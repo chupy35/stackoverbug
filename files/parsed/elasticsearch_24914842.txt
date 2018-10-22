@@ -1,0 +1,45 @@
+24914842 Elasticsearch: is caching Java client okay?
+
+I am new to Elasticsearch. I am testing it out. I have the following Java
+method to get client (Config is a Java object holding constants):
+
+    
+    
+    public Client getClient() {
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("cluster.name", Config.ELASTICSEARCH_CLUSTER).build();
+        Client client = new TransportClient(settings)
+                .addTransportAddress(new InetSocketTransportAddress(
+                        Config.ELASTICSEARCH_SERVER, Config.ELASTICSEARCH_SERVER_PORT));
+        return client;
+    }
+    
+
+Once the client is obtained, it is used as follows (search, also used in
+index, updating):
+
+    
+    
+    Client client = getClient();                                             
+    SearchResponse scrollResp = client.prepareSearch(Config.ELASTICSEARCH_DOC
+            .setTypes(Config.ELASTICSEARCH_DOC_TYPE)                         
+            .setQuery(query)                                                 
+            .setFrom(0)                                                      
+            .setSize(Config.ELASTICSEARCH_PAGE_SIZE).execute().actionGet(); 
+    
+
+I notice that getClient() takes quite some time in each call. I would like to
+catch the obtained client in the caller and reuse it each time when the next
+page of documents is retrieved. Does this make sense? Any side effect?
+
+Thanks and regards!
+
+Yes -- you want to re-use your `client` for multiple operations... the
+documentation ecourages this behavior --
+<http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/client.html#transport-client> \-- has an example that shows `//on
+startup`, and `// on shutdown`
+
+I believe that TransportClient is thread-safe (can't find any reference to
+that, but I use it in multi-threaded code currently without protecting it).
+

@@ -1,0 +1,67 @@
+21751668 What's the equivalent of "facet_filter" field of facets, but for
+aggregations?
+
+Consider this good request using **facets** :
+
+    
+    
+    {
+       "facets": {
+          "tag": {
+             "terms": {
+                "field": "text"
+             },
+             "facet_filter": {
+                "term": {
+                   "lang": "en"
+                }
+             }
+          }
+       }
+    }
+    
+
+How can I switch to `aggregations` instead of `facets` with the facet_filter
+feature?
+
+    
+    
+    {
+       "aggs": {
+          "tag": {
+             "terms": {
+                "field": "text"
+             },
+             "facet_filter": {       <--- Not working
+                "term": {            
+                   "lang": "en"
+                }
+             }
+          }
+       }
+    }
+    
+
+You can use a
+[filter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-filter-aggregation.html)
+
+    
+    
+    {
+       "aggs": {
+          "tag": {
+              "filter" : { "term" : { "lang" : "en" } },
+              "aggs" : {
+                "tag": {
+                  "terms" : { "field" : "text" }
+                }
+             }
+          }
+       }
+    }
+    
+
+Here's the request and response:
+<http://yaap.it/paste/14031049226e045a#jiVNZCVxVK++UJJMeBYcylIg1I7S2UNOExBxymlYpAo=>
+

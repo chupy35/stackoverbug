@@ -1,0 +1,112 @@
+24830248 Elasticsearch: _id based on document field?
+
+I am new to Elasticsearch. I have difficulty in using a field of the document
+for `_id`. Here is my mapping:
+
+    
+    
+    {
+      "product": {
+        "_id": {
+          "path": "id"
+        },
+        "properties": {
+          "id": {
+            "type": "long",
+            "index": "not_analyzed",
+            "store": "yes"
+          },
+          "title": {
+            "type": "string",
+            "analyzer": "snowball",
+            "store": "no",
+            "index": "not_analyzed"
+          }
+        }
+      }
+    }
+    
+
+Here is a sample document:
+
+    
+    
+    {
+      "id": 1,
+      "title": "All Quiet on the Western Front"
+    }
+    
+
+When indexing this document, I got something like:
+
+    
+    
+    {
+      "_index": "myindex",
+      "_type": "book",
+      "_id": "PZQu4rocRy60hO2seUEziQ",
+      "_version": 1,
+      "created": true
+    }
+    
+
+Did I do anything wrong? How should this work?
+
+EDIT: _id.path was deprecated in v1.5 and removed in v2.0.
+
+EDIT 2: on versions where this is supported, there is a performance penalty in
+that the coordinating node is forced to parse all requests (including bulk) in
+order to determine the correct primary shard for each document.
+
+Provide an _id.path in your mapping, as described here:
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+id-field.html>
+
+Here is a full, working demonstration:
+
+    
+    
+    #!/bin/sh
+    echo "--- delete index"
+    curl -X DELETE 'http://localhost:9200/so_id_from_field/'
+    echo "--- create index and put mapping into place"
+    curl -XPUT http://localhost:9200/so_id_from_field/?pretty=true -d '{
+        "mappings": {
+            "tweet" : {
+                "_id" : {
+                    "path" : "post_id"
+                },
+                "properties": {
+                    "post_id": {
+                        "type": "string"
+                    },
+                    "nickname": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "settings" : {
+            "number_of_shards" : 1,
+            "number_of_replicas" : 0
+        }
+    }'
+    echo "--- index some tweets by POSTing"
+    curl -XPOST http://localhost:9200/so_id_from_field/tweet -d '{
+        "post_id": "1305668",
+        "nickname": "Uncle of the month club"
+    }'
+    curl -XPOST http://localhost:9200/so_id_from_field/tweet -d '{
+        "post_id": "blarger",
+        "nickname": "Hurry up and spend my money"
+    }'
+    curl -XPOST http://localhost:9200/so_id_from_field/tweet -d '{
+        "post_id": "9",
+        "nickname": "Who is the guy with the shoe hat?"
+    }'
+    echo "--- get the tweets"
+    curl -XGET http://localhost:9200/so_id_from_field/tweet/1305668?pretty=true
+    curl -XGET http://localhost:9200/so_id_from_field/tweet/blarger?pretty=true
+    curl -XGET http://localhost:9200/so_id_from_field/tweet/9?pretty=true
+    
+

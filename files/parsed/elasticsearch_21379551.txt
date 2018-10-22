@@ -1,0 +1,35 @@
+21379551 logstash elasticsearch and kibana does not show results
+
+i have logstash elasticsearch and kibana3 in one machine. I have install it as
+bundle. Everything looks normal but no results in kibana interface.
+
+"No results There were no results because no indices were found that match
+your selected time span" Redis-cli Lpop shown proggress so i assume ti works>
+When i type in my browser
+`http://172.16.1.178:9200/logstash-2014.01.27/_mapping?pretty=true` I get
+
+    
+    
+    {
+      "error" : "RemoteTransportException[Failed to deserialize exception response from stream]; nested: TransportSerializationException[Failed to deserialize exception response from stream]; nested: StreamCorruptedException[unexpected end of block data]; ",
+      "status" : 500
+    }
+    
+
+Can you help?
+
+Thanks
+
+This is a known issue when you use different versions of java on different
+machines. It doesn't seem to be your case thought. [Take a look at
+it](https://github.com/elasticsearch/elasticsearch/issues/3145#issuecomment-27455667)
+for more details.
+
+> This is due to a bug in Java where they changed how InetAddress gets
+serialized over the wire sadly. ES uses Java serialization only when it
+serializes exception over the wire, and sadly that causes it.
+
+via [this post](http://jontai.me/blog/2013/06/elasticsearch-
+remotetransportexception-failed-to-deserialize-exception-response-from-
+stream/#comment-381).
+

@@ -1,0 +1,77 @@
+8826720 Elasticsearch restarts once every 10 min
+
+I'm having some problem with elasticsearch restarts once every 10 min.
+
+Here is the log file.
+
+    
+    
+    [2012-01-11 21:55:15,059][INFO ][node                     ] [Tyrannosaur] {0.18.7}[22401]: stopping ...
+    [2012-01-11 21:55:15,416][INFO ][node                     ] [Tyrannosaur] {0.18.7}[22401]: stopped
+    [2012-01-11 21:55:15,417][INFO ][node                     ] [Tyrannosaur] {0.18.7}[22401]: closing ...
+    [2012-01-11 21:55:15,443][INFO ][node                     ] [Tyrannosaur] {0.18.7}[22401]: closed
+    [2012-01-11 21:55:22,364][INFO ][node                     ] [Williams, Eric] {0.18.7}[22961]: initializing ...
+    [2012-01-11 21:55:22,376][INFO ][plugins                  ] [Williams, Eric] loaded [], sites []
+    [2012-01-11 21:55:26,245][INFO ][node                     ] [Williams, Eric] {0.18.7}[22961]: initialized
+    [2012-01-11 21:55:26,245][INFO ][node                     ] [Williams, Eric] {0.18.7}[22961]: starting ...
+    [2012-01-11 21:55:26,364][INFO ][transport                ] [Williams, Eric] bound_address {inet[/0:0:0:0:0:0:0:0:9300]}, publish_address {inet[/91.123.195.252:9300]}
+    [2012-01-11 21:55:29,421][INFO ][cluster.service          ] [Williams, Eric] new_master [Williams, Eric][xPA_opsKQGStNtubxelOQQ][inet[/91.123.195.252:9300]], reason: zen-disco-join (elected_as_master)
+    [2012-01-11 21:55:29,527][INFO ][discovery                ] [Williams, Eric] resp/xPA_opsKQGStNtubxelOQQ
+    [2012-01-11 21:55:29,903][INFO ][http                     ] [Williams, Eric] bound_address {inet[/0:0:0:0:0:0:0:0:9200]}, publish_address {inet[/91.123.195.252:9200]}
+    [2012-01-11 21:55:29,905][INFO ][node                     ] [Williams, Eric] {0.18.7}[22961]: started
+    [2012-01-11 21:55:32,511][INFO ][gateway                  ] [Williams, Eric] recovered [1] indices into cluster_state
+    [2012-01-11 21:56:56,137][INFO ][node                     ] [Williams, Eric] {0.18.7}[22961]: stopping ...
+    [2012-01-11 21:56:56,236][INFO ][node                     ] [Williams, Eric] {0.18.7}[22961]: stopped
+    [2012-01-11 21:56:56,237][INFO ][node                     ] [Williams, Eric] {0.18.7}[22961]: closing ...
+    [2012-01-11 21:56:56,262][INFO ][node                     ] [Williams, Eric] {0.18.7}[22961]: closed
+    [2012-01-11 21:57:03,026][INFO ][node                     ] [Carnivore] {0.18.7}[23075]: initializing ...
+    [2012-01-11 21:57:03,041][INFO ][plugins                  ] [Carnivore] loaded [], sites []
+    [2012-01-11 21:57:07,682][INFO ][node                     ] [Carnivore] {0.18.7}[23075]: initialized
+    [2012-01-11 21:57:07,683][INFO ][node                     ] [Carnivore] {0.18.7}[23075]: starting ...
+    [2012-01-11 21:57:07,841][INFO ][transport                ] [Carnivore] bound_address {inet[/0:0:0:0:0:0:0:0:9300]}, publish_address {inet[/91.123.195.252:9300]}
+    [2012-01-11 21:57:10,925][INFO ][cluster.service          ] [Carnivore] new_master [Carnivore][qFbBoUEeQEuqH5suILfsww][inet[/91.123.195.252:9300]], reason: zen-disco-join (elected_as_master)
+    [2012-01-11 21:57:10,987][INFO ][discovery                ] [Carnivore] resp/qFbBoUEeQEuqH5suILfsww
+    [2012-01-11 21:57:11,246][INFO ][http                     ] [Carnivore] bound_address {inet[/0:0:0:0:0:0:0:0:9200]}, publish_address {inet[/91.123.195.252:9200]}
+    [2012-01-11 21:57:11,248][INFO ][node                     ] [Carnivore] {0.18.7}[23075]: started
+    [2012-01-11 21:57:13,001][INFO ][gateway                  ] [Carnivore] recovered [1] indices into cluster_state
+    
+
+Config file
+
+    
+    
+    cluster:
+      name: resp
+    
+    path:
+      logs: /tmp/
+      data: /opt/www/resp/shared/elasticsearch
+    
+
+This is how elasticsearch is started
+
+    
+    
+    elasticsearch -f -Des.config=/opt/www/resp/current/config/elasticsearch.yml
+    
+
+Version
+
+    
+    
+    ElasticSearch Version: 0.18.7, JVM: 14.0-b16
+    
+
+Any one know what the problem may be?
+
+ElasticSearch require java 1.6 or greater.
+
+Consider upgrading your JVM
+
+<http://www.elasticsearch.org/guide/reference/setup/installation.html>
+
+I'm not sure why, but the problem was related to [god](http://godrb.com/). It
+restarted the elasticsearch daemon every 10 min.
+
+So the solution was to deactivate god.
+

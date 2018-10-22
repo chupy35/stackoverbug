@@ -1,0 +1,121 @@
+13614453 How to perform indices query in ElasticSearch?
+
+What URL do you use to perform an indices query?
+
+I see the following here, but what is the URL to do it too?
+<http://www.elasticsearch.org/guide/reference/query-dsl/indices-query.html>
+
+The only way I know how to query in elastic search is with the URI:
+
+    
+    
+    http://localhost:9200/myindex
+    
+
+The issue I am having is I have multiple indexes with different documents
+myindex1 myindex2 myindex3
+
+and I want to be able to just perform any query on myindex1 and myindex2 (or
+just myindex2 and myindex3)
+
+Is this possible? Also can you combine index query with QueryDSL like
+match_all query or Terms Query:
+
+<http://www.elasticsearch.org/guide/reference/query-dsl/terms-query.html>
+
+Please show an example of a sample URL, and what goes in the body of the
+request if possible so I can get an idea.
+
+You could try:
+
+    
+    
+     curl http://localhost:9200/myindex1,myindex2/_search?q=*
+    
+
+Or
+
+    
+    
+     curl -XPOST http://localhost:9200/myindex1,myindex2/_search -d '{
+        // your query here
+     }'
+    
+
+Is it what you are looking for?
+
+You could do this a couple of different ways.
+
+1) With an indices query on `myindex1` and `myindex2` with a terms query on
+the `title` field.
+
+    
+    
+    curl -XPOST http://localhost:9200/_search -d '{
+      "query": {
+        "indices": {
+          "indices": [
+            "myindex1",
+            "myindex2"
+          ],
+          "query": {
+            "terms": {
+              "title": [
+                "foo",
+                "bar"
+              ]
+            }
+          }
+        }
+      }
+    }'
+    
+
+2) By specifying the indices you want to search in the URI (with the same
+exact terms query).
+
+    
+    
+    curl -XPOST http://localhost:9200/myindex1,myindex2/_search -d '{
+      "query": {
+        "terms": {
+          "title": [
+            "cookies",
+            "cake"
+          ]
+        }
+      }
+    }'
+    
+
+And yes, you can swap out the terms query for a match_all query (or any other
+query [here](http://www.elasticsearch.org/guide/reference/query-dsl/), really)
+in either of the two examples. Here's how you would do a match_all query in
+the second example:
+
+    
+    
+    curl -XPOST http://localhost:9200/myindex1,myindex2/_search -d '{
+      "query": {
+        "match_all": {}
+      }
+    }'
+    
+
+I recommend installing the elastic-head plugin. The 3rd tab on that interface
+has a query builder. You can select an index, build a query, and take a look
+at the dsl query it produces. That's a quick way to get up to speed on the dsl
+query syntax.
+
+<http://mobz.github.io/elasticsearch-head/>
+
+If you are using sense plugin you can write like this
+
+    
+    
+     POST myindex1/_search
+    {
+    "query": {"match_all": {}}
+     }
+    
+

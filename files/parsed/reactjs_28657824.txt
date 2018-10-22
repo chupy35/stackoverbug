@@ -1,0 +1,85 @@
+28657824 How can I create a list of UI elements, each aligned differently?
+
+Say I want to create a list of UI elements, and I want each element to align
+differently. I was imagining something like:
+
+    
+    
+    <List>
+    <Button Alignment="right"/>
+    <Panel Alignment="left"/>
+    <Video Alignment="center"/>
+    </List>
+    
+
+How is this best achievable? Preferably by not adding special handling of the
+alignment property to each child element.
+
+There are a number of ways to accomplish something like that in React, with no
+particular way necessarily being the "best."
+
+I'd definitely recommend looking at:
+
+<http://facebook.github.io/react/docs/getting-started.html>
+
+Here's one idea using a simple mixin.
+
+    
+    
+    var List = React.createClass({
+        render: function() {
+            return (
+                <div>
+                    <Button alignment="right" />
+                    <Panel alignment="left" />
+                    <Video alignment="center" />
+                </div>
+            );
+        }
+    });
+    
+    var Button = React.createClass({
+        mixins: [AlignmentMixin],
+        render: function() {
+            return (            
+                <Button  { ... this.props } className={ this.renderAlignment() } />
+            );
+        }
+    });
+    
+    var AlignmentMixin = {
+        renderAlignment: {
+            // whatever you'd like, just an example
+            // of constructing a class name called box-right/left/center
+            return "box-" + this.props.alignment;
+        }
+    }
+    
+
+There isn't an equivalent to an Angular directive that could be applied
+globally to all types. React takes a different approach and by design
+(currently) expects that components present a well-known interface and cannot
+be arbitrarily extended by the consumer of the component. It means that a
+component in ReactJS is only what it says it is and can do, and a parent
+component can only affect its behavior by setting properties on the component
+instance.
+
+In the example I provided above, I've explicitly added the "alignment" mixin
+to the Button. Without it, the button would not have the feature of alignment.
+
+Of course, you could just add the necessary code to the Button to do the
+alignment if there wasn't a general pattern that could be applied as simply as
+I have shown above.
+
+Some might not even use a mixin as they would rather have the code that "is a"
+`Button` be only in a file called, `Button.js` (for example). The UI and
+behavior is not spread around multiple files potentially as it might be in an
+angular app (where directives may be in different files and difficult to
+discover what might be applied to any given element).
+
+In fact, from the "[why react page](http://facebook.github.io/react/docs/why-
+react.html)":
+
+> Since they're so encapsulated, components make code reuse, testing, and
+separation of concerns easy.
+

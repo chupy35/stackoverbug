@@ -1,0 +1,8 @@
+25283141 Elasticsearch | list all routing
+
+Is there any way to get all the routings I have already used to index
+different documents? For example I am using month to define the routing. All
+documents with value as July in response date would be moved to a single shard
+and so on. Now can I get all the months which are used as Routing value
+through some query?
+

@@ -1,0 +1,91 @@
+24373584 Passing environment values in application.properties
+
+I am new to spring-boot and trying to pass the Backend credentials as
+environment values into my application.properties.
+
+To set the Environment values in Tomcat and created a setenv.bat and setenv.sh
+Location: \apache-tomcat-7.0.53-windows-x64\apache-tomcat-7.0.53\bin
+
+    
+    
+    set username="ABC"
+    set password="xyz"
+    
+
+These Environment values are getting set and i am able to print it also using
+
+    
+    
+    @Autowired
+    private Environment env;
+    
+    String userName = env.getProperty("username");
+    String pwd = env.getProperty("password");
+    
+
+and trying to access these values in application.properties like
+
+    
+    
+    spring.datasource.username=${username}
+    spring.datasource.password=${password}
+    
+
+but that is not working.  I tried the different way and mentioned the
+environment variables name in setEnv.bat like
+
+    
+    
+    set spring.datasource.username="ABC"
+    set spring.datasource.password="xyz"
+    
+
+i was hoping that Spring Boot will read these values from Env and pass it to
+data source so that i do not have to mention explicitly in
+application.properties but that is also not working. please note, i do not
+have any bean.xml file and i am doing pure annotation based development. Any
+inputs here..
+
+If I understand correctly, then you want to access the variables written in
+your application.properties file
+
+This can be done in many ways, but one simple way is to do following in your
+.java file :
+
+    
+    
+    @PropertySource("classpath:application.properties")
+    class AppConfig {
+    
+        @Bean
+        public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+            return new PropertySourcesPlaceholderConfigurer();
+        }
+    }
+    
+    @Test
+    public void test_fetch_property() {
+    
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+        context.registerShutdownHook();
+        Environment environment = context.getBean(Environment.class);
+        String strWhoami = environment.getProperty("whoami.name").toString();
+        assertThat(strWhoami,equalTo("\"John Doe\""));
+    }
+    
+
+The whoami.name is the property that is fetched from application.properties
+file and tested
+
+application.properties file:
+
+    
+    
+    #----------------------------------------------------------
+    # Show your self
+    #----------------------------------------------------------
+    whoami.name="John Doe"
+    
+
+I hope that this can help a bit
+

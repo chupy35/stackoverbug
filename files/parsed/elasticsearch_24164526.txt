@@ -1,0 +1,141 @@
+24164526 Elastic search: Query for complex scenario
+
+We are working on job search portal, where data object is in following format
+(sample) is ingested in elasticsearch:
+
+    
+    
+    {
+      "Title": "web developer",
+      "Company": "ABC Corp",
+      "Pay": 100000,
+      "keywords": "web search wcf",
+      "Country": "USA"
+    }
+    
+
+Here user gives search word and country, We want to display based on following
+criteria:
+
+  1. All the jobs which match search word in `Title` or `keywords`, and match country in `Country` field. Results should have complete word match on top and partial word match on bottom. All complete match should be sorted by `Pay`.
+  2. We want to show 20 results to user, if there are less than 20 results in given country then we want to show results for other countries order by match type (complete/partial) and then by `Pay`.
+
+We have tried several way to query these data in one query, but nothing seems
+to work. We are not trying to get these results in two queries (one query for
+country filter and one without country filter), and combine results for both.
+
+Can anyone help us in building this query.
+
+**Edit**  
+I think I wasn't clear enough. The given Json is example of one record in ES.
+Now if user types search "wcf" and choose country "USA" then we need to show
+results in below order: 1\. All the results matching with keyword "wcf" in
+following order a. All results with country USA sorted by pay. b. Results that
+match keyword but from other country and sorted by pay.
+
+below is the query we are using:
+
+    
+    
+    GET resume/_search
+    {
+      "query": {
+        "function_score": {
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "bool": 
+                  {
+                    "must": [
+                      {
+                        "multi_match": {
+                          "query": "wcf",
+                          "fields": ["title", "keywords"]
+                        }
+                      }
+                    ]
+                    , "should": [
+                      {
+                        "match_phrase_prefix": {
+                          "title": "wcf"
+                        }
+                      }
+                    ]
+                    , "should": [
+                      {
+                        "match_phrase_prefix": {
+                          "keywords": "wcf"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ] 
+            }
+          },
+          "functions": [
+            {
+              "script_score": {
+                "script": "_score * (doc['Country'].value == 'USA' ? 100000*doc['pay'].value : 1*doc['pay'].value)"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+This works for our scenario. Please let me know if you can suggest any better
+alternative.
+
+For your first requirement query dsl are below
+
+`All the jobs which match search word in title or keyword, and match country
+in country field. Results should have complete word match on top and partial
+word match on bottom. All complete match should be sorted by pay`
+
+    
+    
+    {
+       "query": {
+          "filtered": {
+             "query": {
+                "query_string": {
+                   "default_field": "Title",
+                   "query": "Title:web developer or keywords:web search wcf"
+                }
+             },
+             "filter": {
+                "bool": {
+                   "must": [
+                      {
+                         "term": {
+                            "Country": "USA"
+                         }
+                      },
+                      {
+                         "term": {
+                            "Company": "ABC"
+                         }
+                      },
+                      {
+                         "term": {
+                            "Pay": "100000"
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       },
+      "sort": [
+          {
+             "Pay": {
+                "order": "desc"
+             }
+          }
+      ]
+    }
+    
+

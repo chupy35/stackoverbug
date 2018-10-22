@@ -1,0 +1,101 @@
+11850025 Recommended way of getting data from the server
+
+What is the recommended way to connect to server data sources in AngularJS
+without using `$resource`.
+
+The `$resource` has many limitations such as:
+
+  1. Not using proper futures
+  2. Not being flexible enough
+
+There are cases when $resource may not be appropriate when talking to backend.
+This shows how to set up $resource like behavior without using resource.
+
+    
+    
+    angular.module('myApp').factory('Book', function($http) {
+      // Book is a class which we can use for retrieving and 
+      // updating data on the server
+      var Book = function(data) {
+        angular.extend(this, data);
+      }
+    
+      // a static method to retrieve Book by ID
+      Book.get = function(id) {
+        return $http.get('/Book/' + id).then(function(response) {
+          return new Book(response.data);
+        });
+      };
+    
+      // an instance method to create a new Book
+      Book.prototype.create = function() {
+        var book = this;
+        return $http.post('/Book/', book).then(function(response) {
+          book.id = response.data.id;
+          return book;
+        });
+      }
+    
+      return Book;
+    });
+    
+
+Then inside your controller you can:
+
+    
+    
+    var AppController = function(Book) {
+      // to create a Book
+      var book = new Book();
+      book.name = 'AngularJS in nutshell';
+      book.create();
+    
+      // to retrieve a book
+      var bookPromise = Book.get(123);
+      bookPromise.then(function(b) {
+        book = b;
+      });
+    };
+    
+
+I recommend that you use
+[$resource](http://docs.angularjs.org/api/ngResource.%24resource).
+
+It may support (url override) in next version of Angularjs. Then you will be
+able to code like this:
+
+    
+    
+    // need to register as a serviceName
+    $resource('/user/:userId', {userId:'@id'}, {
+        'customActionName':    {
+            url:'/user/someURI'
+            method:'GET',
+            params: {
+                param1: '....',
+                param2: '....',
+            }
+        },
+         ....
+    });
+    
+
+And return callbacks can be handled in ctrl scope like this.
+
+    
+    
+    // ctrl scope
+    serviceName.customActionName ({
+        paramName:'param',
+        ...
+    }, 
+    function (resp) {
+        //handle return callback
+    }, 
+    function (error) {
+        //handler error callback
+    });
+    
+
+Probably you can handle code on higher abstraction level.
+

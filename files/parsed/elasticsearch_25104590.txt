@@ -1,0 +1,106 @@
+25104590 Elasticsearch: why Java client uses different query syntax?
+
+I am new to Elasticsearch. I have the following query:
+
+    
+    
+    {
+        "query": {
+            "filtered" : {
+                "query" : {
+                    "term" : {
+                        "title" : "crime"
+                    }
+                },
+                "filter" : {
+                    "term" : { "year" : 1961 }
+                }
+            }
+        }
+    }
+    
+
+It runs fine under Windows prompt as follows:
+
+    
+    
+    curl -XGET localhost:9200/book/_search?pretty -d @my-query.json
+    
+
+For the same query with Java client, I have the following:
+
+    
+    
+        SearchResponse sr = client.prepareSearch("book")
+                .setTypes("fiction")
+                .setQuery(query_string)
+                .setFrom(page)
+                .setSize(10).execute().actionGet(); 
+    
+
+However, I have to the following query string in order to run it without
+exception:
+
+    
+    
+    {
+    
+            "filtered" : {
+                "query" : {
+                    "term" : {
+                        "title" : "crime"
+                    }
+                },
+                "filter" : {
+                    "term" : { "year" : 1961 }
+                }
+            }
+    
+    }
+    
+
+Why is there such a difference? How can I retain the removed "query"
+property"? Suppose that I have to use query string in my Java client.
+
+Thanks and regards!
+
+Strictly speaking, the two variants you show are not the same: you don't
+specify the type, offset, or size parameters in your URI-based query (even
+though you can do it there too, according to the
+[docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+uri-request.html)). You can omit these parameters in Java query as well:
+
+    
+    
+    SearchResponse sr = client.prepareSearch("book")
+                .setQuery(query_string)
+                .execute().actionGet(); 
+    
+
+Regarding the argument for setQuery, it can be either the same JSON as you
+have in your URI variant:
+
+    
+    
+    String theQuery = String.join(System.getProperty("line.separator"),
+       "{\"filtered\" : {\"query\" : {\"term\" : {\"title\" : \"crime\"}},",
+        "\"filter\" : {\"term\" : { \"year\" : 1961 }}}}");
+    
+    SearchResponse sr = client.prepareSearch("book") 
+    .setTypes("fiction")
+    .setFrom(page)
+    .setQuery(queryString(theQuery)).execute().actionGet(); 
+    
+
+Or you can provide the analog of this query using Java methods:
+
+    
+    
+    SearchResponse sr = client.prepareSearch("book") 
+    .setTypes("fiction")
+    .setFrom(page)
+    .setQuery(filteredQuery(QueryBuilders.termQuery("title","crime"),
+                           FilterBuilders.termFilter("year","1961")))
+    .execute().actionGet(); 
+    
+

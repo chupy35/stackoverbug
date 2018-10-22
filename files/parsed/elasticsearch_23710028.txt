@@ -1,0 +1,51 @@
+23710028 Elastic Search: include multiple field in query
+
+I am new to Elastic Search.I want to include multiple field in my search query
+something like:
+
+    
+    
+          Title=my title and city=mycity or country = mycountry
+    
+
+How can I execute this kind of query using java client? I tried this
+
+    
+    
+    SearchResponse response = client.prepareSearch("titan")
+        .setTypes("vertex")
+        .setSearchType(SearchType.QUERY_AND_FETCH)
+        .setQuery(QueryBuilders.fieldQuery("title", "mytitle"))
+        .setQuery(QueryBuilders.fieldQuery("city", "mycity"))
+        .setFrom(0).setSize(60).setExplain(true)
+        .execute()
+        .actionGet();
+    
+
+but didn't work
+
+You have to do
+[booleanQuery](http://www.elasticsearch.org/guide/en/elasticsearch/client/java-
+api/current/query-dsl-queries.html#bool) there, I believe.
+
+Something like:
+
+    
+    
+    SearchResponse response = client.prepareSearch("titan")
+        .setTypes("vertex")
+        .setSearchType(SearchType.QUERY_AND_FETCH)
+        .setQuery(QueryBuilders.boolQuery()
+        .must(QueryBuilders.fieldQuery("title", "mytitle"))
+        .should(QueryBuilders.fieldQuery("city", "mycity"))
+        .should(QueryBuilders.fieldQuery("country", "mycountry")))
+        .setFrom(0).setSize(60).setExplain(true)
+        .execute()
+        .actionGet();
+    
+
+The rules for boolean queries, in a nutshell, are that all `must` clauses are
+expected to be true, and at least one from the `should` clauses are expected
+to be true (the amount of should clauses which has to be true can be changed,
+one is the default).
+

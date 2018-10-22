@@ -1,0 +1,4 @@
+31275278
+Map a value to a boolean at indexing time in ElasticSearch
+<p>I get JSON object with a string field that has 2 values of "yes" or "no".</p>&#xA;&#xA;<p>Is it possible to define a mapping that maps "yes" to "true" and "no" to "false"?</p>&#xA;&#xA;<p>What if the values are not yes/no but two other strings, such as "yep" and "nope"?</p>&#xA;
+<p>Yes for the use case in OP, from <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-core-types.html#boolean" rel="nofollow">documentation</a> :</p>&#xA;&#xA;<blockquote>&#xA;  <p>The boolean type also supports passing the value as a number or a&#xA;  string (in this case 0, an empty string, false, off and <strong>no</strong> are false,&#xA;  all other values are true).</p>&#xA;</blockquote>&#xA;&#xA;<p>So "<strong>no</strong>" would map to false and "<strong>yes</strong>" would map to true , just need to specify the field to be of type "boolean" in the mapping.</p>&#xA;

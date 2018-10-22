@@ -1,0 +1,164 @@
+18639754 Elasticsearch: search/order by overall tag weight
+
+I have to solve a problem that exeeds my very basic knowhow of elasticsearch.
+
+I have a set of objects - each one has a set of tags. Like:
+
+    
+    
+    obj_1 = ["a", "b", "c"]
+    obj_2 = ["a", "b"]
+    obj_3 = ["c", "b"]
+    
+
+I want to search the objects using **weighted tags**. For example:
+
+    
+    
+    search_tags = {'a': 1.0, 'c': 1.5}
+    
+
+I want the search tags to be an OR query. That is - I don't want to exclude
+documents that don't have all of the queried tags. But I want them to be
+ordered by the one that has the most weight (sort of: each matched tag
+multiplied by its weight).
+
+Using the example above the order of the ducuments returned would be:
+
+  * obj_1 (score: 1.0+1.5)
+  * obj_3 (score: 1.5) 
+  * obj_2 (score: 1.0)
+
+What would be the best approach to this regarding the document's structure and
+the correct way to query ES?
+
+There is a similar question here: [Elastic search - tagging strength
+(nested/child document
+boosting)](https://stackoverflow.com/questions/13095866/elastic-search-
+tagging-strength-nested-child-document-boosting) only that I do not want to
+specify the weight when indexing - I want it done when searching.
+
+My current setup is as follows.
+
+The objects:
+
+    
+    
+    [
+       "title":"1", "tags" : ["a", "b", "c"],
+       "title":"2", "tags" : ["a", "b"],
+       "title":"3", "tags" : ["c", "b"],
+       "title":"4", "tags" : ["b"]
+    ]
+    
+
+And my query:
+
+    
+    
+    { 
+        "query": {
+            "custom_filters_score": {
+                "query": { 
+                    "terms": {
+                        "tags": ["a", "c"],
+                        "minimum_match": 1
+                    }
+                },
+                "filters": [
+                    {"filter":{"term":{"tags":"a"}}, "boost":1.0},    
+                    {"filter":{"term":{"tags":"c"}}, "boost":1.5}    
+                ],
+                "score_mode": "total"
+            }
+        }
+    }
+    
+
+The problem is that it only returns object 1 and 3. It should match object 2
+(has tag "a") as well, or am I doing something wrong?
+
+**UPDATE AS SUGGESTED**
+
+Ok. Changed boost to script to calculate the minimum. Removed minimum match.
+My request:
+
+    
+    
+    {
+        "query": {
+            "custom_filters_score": {
+                "query": {
+                    "terms": {
+                        "tags": ["a", "c"]
+                    }
+                },
+                "filters": [
+                    {"filter":{"term":{"tags":"a"}}, "script":"1.0"},
+                    {"filter":{"term":{"tags":"c"}}, "script":"1.5"}
+                ],
+                "score_mode": "total"
+            }
+        }
+    }
+    
+
+Response:
+
+    
+    
+    {
+        "_shards": {
+            "failed": 0,
+            "successful": 5,
+            "total": 5
+        },
+        "hits": {
+            "hits": [
+                {
+                    "_id": "3",
+                    "_index": "test",
+                    "_score": 0.23837921,
+                    "_source": {
+                        "tags": [
+                            "c",
+                            "b"
+                        ],
+                        "title": "3"
+                    },
+                    "_type": "bit"
+                },
+                {
+                    "_id": "1",
+                    "_index": "test",
+                    "_score": 0.042195037,
+                    "_source": {
+                        "tags": [
+                            "a",
+                            "b",
+                            "c"
+                        ],
+                        "title": "1"
+                    },
+                    "_type": "bit"
+                }
+            ],
+            "max_score": 0.23837921,
+            "total": 2
+        },
+        "timed_out": false,
+        "took": 3
+    }
+    
+
+Still getting wrong order and one result missing. obj_1 should be before obj_3
+(because it has both tags) and obj_2 is still missing completely. How can this
+be?
+
+There were 2 problems with my example.
+
+  1. The "a" term is a stopword so it was discarded and only "c" term was being used.
+  2. The custom_filters_score query has to include "constant_score" query so that all terms have the same weight before boosting.
+
+Now it works!
+

@@ -1,0 +1,547 @@
+21314037 ElasticSearch: Filter on deeply nested data
+
+Our data is stored in MongoDB 2.4.8, and indexed to ElasticSearch 0.90.7 using
+the ElasticSearch MongoDB River 1.7.3.
+
+Our data indexes correctly, and I can successfully search the fields we want
+to search. But I also need to filter on permission - of course we only want to
+return results the calling user can actually read.
+
+In the code on our server, I have the calling user's authorizations as an
+array, for example:
+
+    
+    
+    [ "Role:REGISTERED_USER", "Account:52c74b25da06f102c90d52f4", "Role:USER", "Group:52cb057cda06ca463e78f0d7" ]
+    
+
+An example of the unit data we're searching follows:
+
+    
+    
+    {
+        "_id" : ObjectId("52dffbd6da06422559386f7d"),
+        "content" : "various stuff",
+        "ownerId" : ObjectId("52d96bfada0695fcbdb41daf"),
+        "acls" : [
+            {
+                "accessMap" : {},
+                "sourceClass" : "com.bulb.learn.domain.units.PublishedPageUnit",
+                "sourceId" : ObjectId("52dffbd6da06422559386f7d")
+            },
+            {
+                "accessMap" : {
+                    "Role:USER" : {
+                        "allow" : [
+                            "READ"
+                        ]
+                    },
+                    "Account:52d96bfada0695fcbdb41daf" : {
+                        "allow" : [
+                            "CREATE",
+                            "READ",
+                            "UPDATE",
+                            "DELETE",
+                            "GRANT"
+                        ]
+                    }
+                },
+                "sourceClass" : "com.bulb.learn.domain.units.CompositeUnit",
+                "sourceId" : ObjectId("52dffb54da06422559386f57")
+            }
+        ]
+    }
+    
+
+In the sample data above, I have replaced all the searchable content with
+`"content" : "various stuff"`
+
+The authorization data is in the "acls" array. The filter I need to write
+would do the following (in English):
+
+    
+    
+    pass all units where the "acls" array
+    contains an "accessMap" object
+    that contains a property whose name is one of the user's authorization strings
+    and whose "allow" property contains "READ"
+    and whose "deny" property does not contain "READ"
+    
+
+In the example above, the user has "Role:USER" authorization, and this unit
+has an accessMap that has "Role:USER", which contains "allow", which contains
+"READ", and "Role:USER" contains no "deny". So this unit would pass the
+filter.
+
+I am not seeing how to write a filter for this using ElasticSearch.
+
+I get the impression that there are two ways to deal with nested arrays like
+this: "nested", or "has_child" (or "has_parent").
+
+We are reluctant to use the "nested" filter because it apparently requires
+that the whole block be re-indexed when any of the data changes. Searchable
+content and authorization data can change at any time, in response to user
+actions.
+
+It looks to me as though in order to use "has_child" or "has_parent", the
+authorization data would have to be separate from the unit data (in a
+different collection?), and when a node is indexed, it would have to have its
+parent or child specified. I don't know whether the ElasticSearch MongoDB
+River is capable of doing this.
+
+So is this even possible? Or should we rearrange the authorization data?
+
+You need to restructure your data a bit.
+
+Having a value in a key is problematic with Elasticsearch. It'll end up as a
+separate field, and you'll have an ever-growing mapping and consequently also
+cluster state.
+
+You probably want to have accessMap be a list of objects, with what's
+currently a key as a value. Then, it'll have to be nested. Otherwise, you have
+no way of knowing which accessMap the matching allow belongs to.
+
+Whether the ACLs should be nested (resulting in two levels of nesting) or a
+parent-child depends a bit on how often you update the various objects. By
+having them as nested docs on the object, you pay the cost of joining every
+time something's updated. If you do parent-child, you'll need to pay the join-
+cost on every search.
+
+This quickly gets complicated, so I prepared a simplified runnable example you
+can play with: <https://www.found.no/play/gist/8582654>
+
+Note how the `nested`\- and `bool`-filters are, erm, nested. It wouldn't work
+to have two nested with a bool in it.
+
+    
+    
+    #!/bin/bash
+    
+    export ELASTICSEARCH_ENDPOINT="http://localhost:9200"
+    
+    # Create indexes
+    
+    curl -XPUT "$ELASTICSEARCH_ENDPOINT/play" -d '{
+        "settings": {
+            "analysis": {}
+        },
+        "mappings": {
+            "type": {
+                "properties": {
+                    "acls": {
+                        "type": "nested",
+                        "properties": {
+                            "accessMap": {
+                                "type": "nested",
+                                "properties": {
+                                    "allow": {
+                                        "type": "string",
+                                        "index": "not_analyzed"
+                                    },
+                                    "deny": {
+                                        "type": "string",
+                                        "index": "not_analyzed"
+                                    },
+                                    "key": {
+                                        "type": "string",
+                                        "index": "not_analyzed"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+    
+    # Index documents
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_bulk?refresh=true" -d '
+    {"index":{"_index":"play","_type":"type","_id":1}}
+    {"acls":[{"accessMap":[{"key":"Role:USER","allow":["READ"]},{"key":"Account:52d96bfada0695fcbdb41daf","allow":["READ","UPDATE"]}]}]}
+    {"index":{"_index":"play","_type":"type","_id":2}}
+    {"acls":[{"accessMap":[{"key":"Role:USER","allow":["READ"]},{"key":"Account:52d96bfada0695fcbdb41daf","deny":["READ","UPDATE"]}]}]}
+    {"index":{"_index":"play","_type":"type","_id":3}}
+    {"acls":[{"accessMap":[{"key":"Role:USER","allow":["READ"]},{"key":"Account:52d96bfada0695fcbdb41daf","allow":["READ","UPDATE"]}]}]}
+    '
+    
+    # Do searches
+    
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_search?pretty" -d '
+    {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "nested": {
+                        "path": "acls",
+                        "filter": {
+                            "bool": {
+                                "must": {
+                                    "nested": {
+                                        "path": "acls.accessMap",
+                                        "filter": {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "term": {
+                                                            "allow": "READ"
+                                                        }
+                                                    },
+                                                    {
+                                                        "terms": {
+                                                            "key": [
+                                                                "Role:USER",
+                                                                "Account:52d96bfada0695fcbdb41daf"
+                                                            ]
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                "must_not": {
+                                    "nested": {
+                                        "path": "acls.accessMap",
+                                        "filter": {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "term": {
+                                                            "deny": "READ"
+                                                        }
+                                                    },
+                                                    {
+                                                        "terms": {
+                                                            "key": [
+                                                                "Role:USER",
+                                                                "Account:52d96bfada0695fcbdb41daf"
+                                                            ]
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    '
+    
+
+For completeness, here is a similar example for the parent-child-approach:
+<https://www.found.no/play/gist/8586840>
+
+    
+    
+    #!/bin/bash
+    
+    export ELASTICSEARCH_ENDPOINT="http://localhost:9200"
+    
+    # Create indexes
+    
+    curl -XPUT "$ELASTICSEARCH_ENDPOINT/play" -d '{
+        "settings": {
+            "analysis": {}
+        },
+        "mappings": {
+            "acl": {
+                "_parent": {
+                    "type": "document"
+                },
+                "properties": {
+                    "acls": {
+                        "properties": {
+                            "accessMap": {
+                                "type": "nested",
+                                "properties": {
+                                    "key": {
+                                        "type": "string",
+                                        "index": "not_analyzed"
+                                    },
+                                    "allow": {
+                                        "type": "string",
+                                        "index": "not_analyzed"
+                                    },
+                                    "deny": {
+                                        "type": "string",
+                                        "index": "not_analyzed"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }'
+    
+    
+    # Index documents
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_bulk?refresh=true" -d '
+    {"index":{"_index":"play","_type":"document","_id":1}}
+    {"title":"Doc 1"}
+    {"index":{"_index":"play","_type":"acl","_parent":1}}
+    {"acls":[{"accessMap":[{"key":"Role:USER","allow":["READ"]},{"key":"Account:52d96bfada0695fcbdb41daf","allow":["READ","UPDATE"]}]}]}
+    {"index":{"_index":"play","_type":"document","_id":2}}
+    {"title":"Doc 2"}
+    {"index":{"_index":"play","_type":"acl","_parent":2}}
+    {"acls":[{"accessMap":[{"key":"Role:USER","allow":["READ"]},{"key":"Account:52d96bfada0695fcbdb41daf","deny":["READ","UPDATE"]}]}]}
+    '
+    
+    # Do searches
+    
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_search?pretty" -d '
+    {
+        "query": {
+            "filtered": {
+                "filter": {
+                    "has_child": {
+                        "type": "acl",
+                        "filter": {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "nested": {
+                                            "path": "acls.accessMap",
+                                            "filter": {
+                                                "bool": {
+                                                    "must": [
+                                                        {
+                                                            "terms": {
+                                                                "key": [
+                                                                    "Role:USER",
+                                                                    "Account:52d96bfada0695fcbdb41daf"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "term": {
+                                                                "allow": "READ"
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                ],
+                                "must_not": [
+                                    {
+                                        "nested": {
+                                            "path": "acls.accessMap",
+                                            "filter": {
+                                                "bool": {
+                                                    "must": [
+                                                        {
+                                                            "terms": {
+                                                                "key": [
+                                                                    "Role:USER",
+                                                                    "Account:52d96bfada0695fcbdb41daf"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "term": {
+                                                                "deny": "READ"
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    '
+    
+
+Thanks, @Alex Brasetvik, your suggestion to make the subject IDs data instead
+of keys, and your explanation that nested is "join-per-update", but parent-
+child is "join-per-query", were most helpful.
+
+I see that I would have to "un-nest" the data to use the parent-child
+approach, and we prefer to keep the authorization data nested.
+
+I don't understand what you meant by "It wouldn't work to have two nested with
+a bool in it."
+
+Here's how I refactored the data:
+
+    
+    
+    {
+        "_id" : ObjectId("52dffbd6da06422559386f7d"),
+        "content" : "various stuff",
+        "ownerId" : ObjectId("52d96bfada0695fcbdb41daf"),
+        "accessMaps" : [
+            {
+                "sourceClass" : "com.bulb.learn.domain.units.PublishedPageUnit",
+                "sourceId" : ObjectId("52dffbd6da06422559386f7d")
+            },
+            {
+                "allow" : {
+                    "CREATE" : [
+                        "Account:52d96bfada0695fcbdb41daf"
+                    ],
+                    "READ" : [
+                        "Account:52d96bfada0695fcbdb41daf",
+                        "Role:USER"
+                    ],
+                    "UPDATE" : [
+                        "Account:52d96bfada0695fcbdb41daf"
+                    ],
+                    "DELETE" : [
+                        "Account:52d96bfada0695fcbdb41daf"
+                    ],
+                    "GRANT" : [
+                        "Account:52d96bfada0695fcbdb41daf"
+                    ]
+                },
+                "deny" : {},
+                "sourceClass" : "com.bulb.learn.domain.units.CompositeUnit",
+                "sourceId" : ObjectId("52dffb54da06422559386f57")
+            }
+        ]
+    }
+    
+
+The new mapping looks like this:
+
+    
+    
+    {
+      "unit": {
+        "properties": {
+          "accessMaps": {
+            "type": "nested",
+            "properties": {
+              "allow": {
+                "type": "nested",
+                "properties": {
+                  "CREATE": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  },
+                  "DELETE": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  },
+                  "GRANT": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  },
+                  "READ": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  },
+                  "UPDATE": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  }
+                } 
+              },    
+              "deny": {
+                "type": "nested",
+                "properties": {
+                  "CREATE": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  },
+                  "DELETE": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  },
+                  "GRANT": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  },
+                  "READ": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  },
+                  "UPDATE": {
+                    "type": "string",
+                    "index": "not_analyzed",
+                  } 
+                }   
+              },    
+              "sourceClass": {
+                "type": "string"
+              },
+              "sourceId": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+And the filtered query looks like this:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "bool": {
+              "must": {
+                "nested": {
+                  "path": "accessMaps.allow",
+                  "filter": {
+                    "terms": {
+                      "accessMaps.allow.READ": [
+                        "Role:REGISTERED_USER",
+                        "Account:52e6a361da06e4eb64172519",
+                        "Role:USER",
+                        "Group:52cb057cda06ca463e78f0d7"
+                      ]
+                    }
+                  }
+                }
+              },
+              "must_not": {
+                "nested": {
+                  "path": "accessMaps.deny",
+                  "filter": {
+                    "terms": {
+                      "accessMaps.deny.READ": [
+                        "Role:REGISTERED_USER",
+                        "Account:52e6a361da06e4eb64172519",
+                        "Role:USER",
+                        "Group:52cb057cda06ca463e78f0d7"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+The biggest problem I had was figuring out how to use the "path" property in
+the nested filter, and that the field name in the terms filter must be fully-
+qualified. I wish ElasticSearch would put more effort into their
+documentation.
+

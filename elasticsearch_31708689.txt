@@ -1,0 +1,4 @@
+31708689
+"Join query" in ElasticSearch
+<p>Let's say we have two index types: members and restaurants. Both contain city attribute.</p>&#xA;&#xA;<p>I want to filter members (e.g. by name) and would like to include list of restaurant names from the members' hometown/city in the results.</p>&#xA;&#xA;<p>Is it possible to do this using just one ES query? I guess it should be similar to DB join.</p>&#xA;&#xA;<p>Thanks.</p>&#xA;
+<p>ES doesn't have the concepts of joins. This is due to it being an index rather than a relational database. Your best best to make two calls. One to get the member's documents, then another to get the restaurants. </p>&#xA;&#xA;<p>Unless you have odd circumstances, this should still be very efficient. </p>&#xA;

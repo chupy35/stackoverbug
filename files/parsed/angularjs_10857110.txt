@@ -1,0 +1,61 @@
+10857110 AngularJS and generated elements
+
+We have some third party javascript components that are generating some html
+elements. I'd like to couple it with AngularJS.
+
+I've tried this code
+
+    
+    
+    <div ng-controller="ExpensesCtrl">
+        <form id="expensesform">
+            <input type="text" ng-model="expense.name" />
+            <input type="text" ng-model="expense.amount" />
+        </form>
+        <button ng-click="add()">Add</button>expense | json
+    </div>
+    
+
+* * *
+    
+    
+    function ExpensesCtrl($scope) {
+    
+        $scope.expense = {};
+        $scope.add = function () {
+            $("#expensesform").append("<input type='text' ng-model='expense.age' />");
+        };
+    }
+    
+
+<http://jsfiddle.net/tChNh/>
+
+but it doesn't work like excepted.
+
+Is there any chance to get this working ?
+
+This is the wrong way to do it, but for this particular scenario you'd want to
+do something like this: <http://jsfiddle.net/wXZL7/1>. Inject the $compile
+service.
+
+Again, this isn't the right way to do it with Angular. Angular's thing is 'You
+don't have to mess with the DOM in your controller, let the HTML and
+directives do that'.
+
+You want to create a directive to wrap whatever is generating your elements
+and let that do it. Read the directives guide for examples:
+<http://docs.angularjs.org/guide/directive>
+
+The angular way, to have your model perfectly synced, and to dynamically add
+or remove input types would be with <http://jsfiddle.net/3BVMm/1/>
+
+you should provide the plugin we are talking about here, maybe angular blows
+this plugin away with just a few codes...
+
+I have found this answer: [Compiling dynamic HTML strings from
+database](https://stackoverflow.com/questions/18157305/angularjs-compiling-
+dynamic-html-strings-from-database)
+
+Maybe it helps others. It describes how to use the `$compile` service to get
+Angular to know about the knew Code.
+

@@ -1,0 +1,54 @@
+19664501 Full-text schema in ElasticSearch
+
+I'm (extremely) new to ElasticSearch so forgive my potentially ridiculous
+question. I currently use MySQL to perform full-text searches, and want to
+move this to ElasticSearch. Currently my table has a fulltext index spanning
+three columns:
+
+    
+    
+    title,description,tags
+    
+
+In ES, each document would therefore have `title`, `description` and `tags`
+fields, allowing me to do a fulltext search for a general phrase, or filter on
+a given tag.
+
+I also want to add further searchable fields such as `username` (so I can
+retrieve posts by a given user). So, how do I specify that a fulltext search
+should match `title` OR `description` OR `tags` but not `username`?
+
+From the OR filter example, I'd assume I'd have to use something like this:
+
+    
+    
+    {
+        "filtered" : {
+            "query" : {
+               "match_all" : {}
+            },
+            "filter" : {
+                "or" : [
+                    {
+                        "term" : { "title" : "foobar" }
+                    },
+                    {
+                        "term" : { "description" : "foobar" }
+                    },
+                    {
+                        "term" : { "tags" : "foobar" }
+                    }
+                ]
+            }
+        }
+    }
+    
+
+Coming at this new, it doesn't seem like this is very efficient. Is there a
+better way of doing this, or do I need to move the `username` field to a
+separate index?
+
+This is fine.  I general I would suggest getting familiar with ElasticSearch
+mapping types and options.
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping.html>
+

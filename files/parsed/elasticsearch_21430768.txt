@@ -1,0 +1,24 @@
+21430768 While creating an aliases in elasticsearch
+
+I'm new to elastic search. Now I've created aliases for 2 index. What is the
+internal process of elsasticsearch? will it create seperate or it will refer
+existing index.Seperate index means, will it occupy extra space?
+
+    
+    
+     i ve 2 index "index1" and "index2". now i create "indexaliasis" as a aliasis for index1  
+     and index2.Now, will the elastic search create new index called in name "indexaliasis" and      
+     occupy seperate space, or it ll jus refer two index and search.
+    
+
+i am asking because we can have filters in aliasis. when will that filter
+applied. during search or while creating aliasis.
+
+Thanks in advance..!
+
+Alias does not create another index. It's just a mapping.
+
+More Information:
+
+  * <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html>
+

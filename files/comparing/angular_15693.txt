@@ -1,0 +1,2 @@
+b'fix(angular.copy): copy own non-enumerable properties'
+b'**What kind of change does this PR introduce? (Bug fix, feature, docs update, ...)**\r\n\r\nBug fix\r\n\r\n**What is the current behavior? (You can also link to an open issue here)**\r\n\r\nhttps://github.com/angular/angular.js/issues/15692\r\n\r\n**Does this PR introduce a breaking change?**\r\n\r\nnot sure if this can be called a breaking change\r\n'

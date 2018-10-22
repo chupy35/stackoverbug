@@ -1,0 +1,28 @@
+23006324 elasticsearch: How to set custom record count based on a type in
+search result
+
+I have a search request like this:
+
+My docs have a type, and the types like "sport", "health", "news" and etc, and
+now I want the result count is mapping percent by types: sport 10%, health
+30%, news 60%.
+
+Eg: if I search to get 200 records, I expect that the 200 records include 20
+news records, 60 health records and 120 news records.
+
+thanks for any suggest!
+
+johnson
+
+the percent like
+
+Based on your comment, I think the best approach to this is to
+[Facet](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets.html) on the doc types, using a [Terms
+Facet](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+facets-terms-facet.html). You can then calculate the percentages based on
+count for each facet (doc type) in combination with the total hits and this
+calculated percentage will be valid across all paged hits. Only when the query
+itself is updated will you need to update the percentages. Hope this makes
+sense.
+

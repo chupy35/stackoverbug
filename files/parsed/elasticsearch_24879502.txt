@@ -1,0 +1,118 @@
+24879502 Elasticsearch: multiple languages in two fields when the query's
+language is unknown or mixed
+
+I am new to Elasticsearch, and I am not sure how to proceed in my situation.
+
+I have the following mapping:
+
+    
+    
+    {
+        "mappings": {
+    
+            "book": {
+    
+                "properties": {         
+                    "title": {
+                        "properties": {
+                            "en": {
+                                "type": "string",
+                                "analyzer": "english"
+                            },
+                            "ar": {
+                                "type": "string",
+                                "analyzer": "arabic"
+                            }
+                        }
+                    },
+    
+                    "keyword": {
+                        "properties": {
+                            "en": {
+                                "type": "string",
+                                "analyzer": "english"
+                            },
+                            "ar": {
+                                "type": "string",
+                                "analyzer": "arabic"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+
+A sample document may have two languages for the same field of the same book.
+Here are two example documents:
+
+    
+    
+    {
+        "title" : {
+            "en": "hello",
+            "ar": "مرحبا"
+        },
+        "keyword" : {
+            "en": "world",
+            "ar": "عالم"
+        }   
+    }
+    
+    {
+        "title" : {
+            "en": "Elasticsearch"
+        },
+        "keyword" : {
+            "en": "full-text index"
+        }   
+    }
+    
+
+When I know what language is used in query, I am able to build query as
+follows (when English is used):
+
+    
+    
+    "query": { 
+        "multi_match" : {
+            "query" : "keywords",
+            "fields" : [ "title.en", "keyword.en" ]
+        }
+    }
+    
+
+Based on my current document mapping, how can I build a query if
+
+  1. the query language is unknown or
+  2. is mixed with English and Arabic?
+
+Thanks for any input!
+
+Regards.
+
+p.s. I am also open to any improvement to the above mapping.
+
+**the query language is unknown**
+
+You can use same multi match query but on all the fields.for eg, Assuming you
+are using keyword analyzer
+
+    
+    
+    "query": { 
+        "multi_match" : {
+            "query" : "keywords",
+            "fields" : [ "title.en", "keyword.en", "title.ar", "keyword.ar" ]
+        }
+    }
+    
+
+**is mixed with English and Arabic**
+
+You need to change the analyzer to standard and then you can perform the same
+query.
+
+Thanks
+

@@ -1,0 +1,14 @@
+25297682 how to avoid elasticsearch process being swapped on Windows servers?
+
+From elasticsearch's
+website(<http://www.elasticsearch.org/guide/en/elasticsearch/referenc>…), it
+recommends to disable memory swapping for better performance . But the
+approaches are for Linux only. We are planning to run the elasticsearch on
+Windows servers. Can we simply disable the page file on Windows? Any tips how
+to do this?
+
+ElasticSearch team is working (as of 2015-04-06) on implementing VirtualLock
+on Windows:
+<https://github.com/elastic/elasticsearch/issues/9714#issuecomment-90182019>
+<https://github.com/elastic/elasticsearch/pull/9186>
+

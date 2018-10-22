@@ -1,0 +1,94 @@
+25299535 Cant index document with multipolygon field in elasticsearch 1.3 but
+works in 1.0 - NoSuchMethodError: com.spatial4j.core.shape.jts.JtsGeometry
+
+Works perfectly in 1.0.3, however when i upgrade to 1.3.1 i'm not able to
+index the 'location' field and it gives a NoSuchMethodError.
+
+If i switch back to 1.0.3 it works again.
+
+This is the document that i'm trying to index
+
+    
+    
+    {
+      "location" : { "coordinates" : [ [ [ [ 0.44340355238491003,
+                    51.447780163517997
+                  ],
+                  [ 0.86259117505726002,
+                    51.180082750148003
+                  ],
+                  [ 1.0082709471378,
+                    50.816892583551997
+                  ],
+                  [ 0.84721779622765003,
+                    50.456505242372998
+                  ],
+                  [ 0.42802525366600003,
+                    50.194415245157998
+                  ],
+                  [ -0.13716299999998999,
+                    50.098842883365002
+                  ],
+                  [ -0.70235125366599005,
+                    50.194415245157998
+                  ],
+                  [ -1.1215437962276,
+                    50.456505242372998
+                  ],
+                  [ -1.2825969471376999,
+                    50.816892583551997
+                  ],
+                  [ -1.1369171750574001,
+                    51.180082750148003
+                  ],
+                  [ -0.71772955238489999,
+                    51.447780163517997
+                  ],
+                  [ 0.44340355238491003,
+                    51.447780163517997
+                  ]
+                ] ] ],
+          "type" : "multipolygon"
+        },
+      "modified" : 1388708645,
+      "text" : "My profile"
+    }
+    
+
+The field mapping for location looks like this:
+
+    
+    
+    'location' => [
+        'type'      => 'geo_shape',
+        'tree'      => 'quadtree',
+        'precision' => '1m'
+    ],
+    
+
+The stacktrace during indexing in 1.3.1 is:
+
+    
+    
+    org.elasticsearch.index.mapper.MapperParsingException: failed to parse
+            at org.elasticsearch.index.mapper.DocumentMapper.parse(DocumentMapper.java:555)
+            at org.elasticsearch.index.mapper.DocumentMapper.parse(DocumentMapper.java:483)
+            at org.elasticsearch.index.shard.service.InternalIndexShard.prepareIndex(InternalIndexShard.java:397)
+            at org.elasticsearch.action.index.TransportIndexAction.shardOperationOnPrimary(TransportIndexAction.java:191)
+            at org.elasticsearch.action.support.replication.TransportShardReplicationOperationAction$AsyncShardOperationAction.performOnPrimary(TransportShardReplicationOperationAction.java:527)
+            at org.elasticsearch.action.support.replication.TransportShardReplicationOperationAction$AsyncShardOperationAction$1.run(TransportShardReplicationOperationAction.java:426)
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+            at java.lang.Thread.run(Thread.java:744)
+    Caused by: java.lang.NoSuchMethodError: com.spatial4j.core.shape.jts.JtsGeometry.<init>(Lcom/vividsolutions/jts/geom/Geometry;Lcom/spatial4j/core/context/jts/JtsSpatialContext;ZZ)V
+            at org.elasticsearch.common.geo.builders.ShapeBuilder.jtsGeometry(ShapeBuilder.java:85)
+            at org.elasticsearch.common.geo.builders.MultiPolygonBuilder.build(MultiPolygonBuilder.java:76)
+            at org.elasticsearch.index.mapper.geo.GeoShapeFieldMapper.parse(GeoShapeFieldMapper.java:234)
+            at org.elasticsearch.index.mapper.object.ObjectMapper.serializeObject(ObjectMapper.java:549)
+            at org.elasticsearch.index.mapper.object.ObjectMapper.parse(ObjectMapper.java:491)
+            at org.elasticsearch.index.mapper.DocumentMapper.parse(DocumentMapper.java:534)
+            ... 8 more
+    
+
+and in 1.0.3 it works perfectly
+

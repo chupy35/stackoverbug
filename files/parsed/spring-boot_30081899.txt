@@ -1,0 +1,36 @@
+30081899 Extending DataSourcePublicMetrics to get additional metrics
+
+We are using a custom DataSource which achieves multi-tenancy. (We have a
+single DataSource bean which acts like a proxy to other datasources, and the
+tenant context is set using ThreadLocal variables. My requirement is to get
+the metrics of the individual datasources proxied by that single DataSource
+Bean.) Basically, i need to somehow add additional metrics. It seems like the
+best way would be to extend `DataSourcePublicMetrics`, since
+`PublicMetricsAutoConfiguration` conditionally creates this bean. The problem
+is that the fields in `DataSourcePublicMetrics` are all private making reuse
+difficult. The only solution i see is hide all the internal variables and
+override the public methods. Is there a better way? I'm using spring-boot
+1.2.2.RELEASE.
+
+Use composition instead of inheritance.
+
+    
+    
+    MyCustomMetrics implements PublicMetrics
+    
+
+Any bean the implements PublicMetrics is picked up by the actuator to be
+exposed at /metrics. DataSourcePublicMetrics implements this interface.
+
+You then inject the DataSourcePublicMetrics bean into MyCustomMetrics (this
+could even be your custom DataSource, but probably better to create a
+different class). Implement the contract of PublicMetrics.
+
+    
+    
+    public Collection<Metric<?>> metrics()
+    
+
+Just defer it to the DataSourcePublicMetrics implementation, and also add
+whatever custom metrics you want.
+

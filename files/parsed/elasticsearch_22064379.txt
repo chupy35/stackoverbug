@@ -1,0 +1,43 @@
+22064379 Deleting all documents of a type and keeping the type
+
+I am trying to delete all indices of one type. Tried to execute this :
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/myindex/mytype/_query' -d '{"query": {"match_all": {}}}'
+    
+
+But this doesn't delete anything. The following query shows that my index is
+still there.
+
+    
+    
+    curl -XGET 'http://localhost:9200/myindex/mytype/_search' | json -i
+    
+
+What am I doing wrong?
+
+Nevermind. I found this answer myself from this question [Delete records from
+Elasticsearch by query](https://stackoverflow.com/questions/17676022/delete-
+records-from-elasticsearch-by-query)
+
+The body to send with the request is **just** the query. So basically the
+right request is :
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/myindex/mytype/_query' -d '{"match_all": {}}'
+    
+
+to delete the whole type you call `DELETE` on it
+
+    
+    
+    curl -XDELETE localhost:9200/myindex/mytype
+    
+
+this deletes the type `mytype` in the index `myindex`.
+
+be aware, that this deletes also any mappings etc with the type. but i would
+consider this a more resource-friendly way (but can not proove it)
+

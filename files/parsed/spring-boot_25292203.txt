@@ -1,0 +1,15 @@
+25292203 Do spring boot profiles play nicely with env variables?
+
+I know it's possible to set the "profile" for springboot by using a switch at
+the command line (great for tests) but is it possible to set this "profile"
+using a system env variable also/ instead?
+
+I'm doing deployments and I'd prefer to have a env var on the box that states
+what profile spring boot should be using / etc
+
+thank you in advance!
+
+You can use the `SPRING_PROFILES_ACTIVE` environment variable to specify
+specific profiles or `SPRING_PROFILES_DEFAULT` to specify the default profile
+to use if none are active.
+

@@ -1,0 +1,23 @@
+30446286 spring boot dependency not found
+
+I have spring boot application with documentum dependency (dfc.jar). The
+application works fine in debug mode (by specifying jvmArguments in spring-
+boot-maven-plugin and attaching a debugger through IDE). But the bundled
+application throws error when I put it on a different box. Please help.
+
+If you installed _DFC_ then the installer changed the `Classpath` environment
+variable. This may be the reason why it works on your first box and not the
+second.
+
+If that is the case, then you need to define the `Classpath` in all the places
+where your run it.
+
+It really depends on your error
+
+As m4ktub said you need your dfc's (and depending) libraries in the classpath
+of the JVM running your application. In case of web application you would
+probably bundle this in your webapp's lib folder.
+
+Also you might not referencing your dfc.properties - it should also be in your
+VM's classpath.
+

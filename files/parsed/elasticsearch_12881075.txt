@@ -1,0 +1,44 @@
+12881075 Not analysed query on analysed field
+
+I have certain document which stores the brand names in analysed form for ex:
+{"name":"Samsung"} {"name":"Motion Systems"}. There are cases where i would
+want a term search starting with "s" which should result in both the
+documents. and another case where i want only the complete field starting with
+"s" query which results in only "samsung" returned. I have analysed the name
+field and stored it. Is there any way in which i can do the complete field
+starting with query in elastic search?
+
+You should index your field in two different ways using a
+[multi_field](http://www.elasticsearch.org/guide/reference/mapping/multi-
+field-type.html). If you tokenize it as you already do you have a match based
+on the tokens produced by the tokenizer. For the second tye of match that you
+want you need to either disable analyzing the field and indexing it as it is,
+or use the [Keywork
+tokenizer](http://www.elasticsearch.org/guide/reference/index-
+modules/analysis/keyword-tokenizer.html) which produce the same result. Your
+mapping would look like this:
+
+    
+    
+    {
+        "your_type" : {
+            "properties" : {
+                "brand" : {
+                    "type" : "multi_field",
+                    "fields" : {
+                        "brand" : {"type" : "string", "index" : "analyzed"},
+                        "untouched" : {"type" : "string", "index" : "not_analyzed"}
+                    }
+                }
+            }
+        }
+    }
+    
+
+Then you can search on both fields. When you search on `brand` you get the
+matches that you already have, while searching on `brand.untouched` you would
+get the second tye of matches. There are different ways to put together
+multiple queries, you can have a look for instance at the [bool
+query](http://www.elasticsearch.org/guide/reference/query-dsl/bool-
+query.html).
+

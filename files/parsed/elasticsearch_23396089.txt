@@ -1,0 +1,119 @@
+23396089 Elasticsearch analyzer selection on multi-field
+
+Note: I originally posted this
+[here](https://groups.google.com/forum/#!topic/elasticsearch/YWCd7R_FfYY) but
+I got no responses so I thought I would try here.
+
+I'm trying to index a single field three different ways depending on the
+language of the text. I'm using a field named "analyzer" to determine the
+analyzer for the primary sub-field using the built-in "_analyzer" field. I set
+this analyzer in the document based on the language of the document. The
+"secondary" sub-field uses the "simple" analyzer. The third sub-field is
+called "bigram". I want the system to use the custom "word_bigram" analyzer if
+it the language of the document uses whitespace between words, otherwise I
+want it to use the "character_bigram" analyzer (e.g., Chinese).
+
+I can't figure out how to specify the analyzer for this third field when the
+document is added. My only idea right now is to break the bigram sub-field out
+of the multi-field into two separate fields (see below). Only one of them
+would be included in the document depending on the language. Depending on the
+answer of [my other
+question](https://stackoverflow.com/questions/23395958/the-effect-of-multi-
+fields-and-copy-to-on-storage-size-in-elasticsearch) I'm not crazy about this
+idea because this may require me to store the contents of this field 3 to 4
+times.
+
+    
+    
+    "body_word_bigram": {
+        "type": "string",
+        "store": true,
+        "analyzer": "word_bigram",
+        "boost": 2.0
+    },
+    "body_char_bigram":{
+        "type": "string",
+        "store": true,
+        "analyzer": "char_bigram",
+        "boost": 2.0
+    }
+    
+
+I've included the relevant portions of my schema below.
+
+Settings:
+
+    
+    
+    {
+        "text_document": {
+            "analysis": {
+                "analyzer": {
+                    "word_bigram": {
+                        "type": "custom",
+                        "tokenizer": "standard",
+                        "filter": ["lowercase", "truncate_5", "word_bigram"]
+                    },
+                    "char_bigram": {
+                        "type": "custom",
+                        "tokenizer": "pattern",
+                        "filter": ["lowercase", "char_bigram"]
+                    }
+                },
+                "filter": {
+                    "truncate_5": {
+                        "type": "truncate",
+                        "length": 5                 
+                    },
+                    "word_bigram": {
+                        "type": "shingle",
+                        "min_shingle_size": 2,
+                        "max_shingle_size": 2,
+                        "output_unigrams": false
+                    },
+                    "char_bigram": {
+                        "type": "nGram",
+                        "min_gram": 2,
+                        "max_gram": 2
+                    }
+                }
+            }
+        }
+    }
+    
+
+Mapping:
+
+    
+    
+    {
+        "text_document": {
+            "_analyzer": {
+                "path": "analyzer"
+            },
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "store": true,
+                    "fields": {
+                        "secondary": {
+                            "type": "string",
+                            "analyzer": "simple"
+                        },
+                        "bigram": {
+                            "type": "string",
+                            "analyzer": "?",
+                            "boost": 2.0
+                        }
+                    }
+                },
+                "analyzer": {
+                    "type": "string",
+                    "store": "true",
+                    "index": false
+                }
+            }
+        }
+    }
+    
+

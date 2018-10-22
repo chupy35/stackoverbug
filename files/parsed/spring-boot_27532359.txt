@@ -1,0 +1,24 @@
+27532359 Spring-Boot : Referencing another Spring Boot Project
+
+I created two spring boot projects, one is with JPA and the other with Web. I
+initially combined both of them into one project and everything works
+perfectly.
+
+I now want to separate the JPA portion from the Web. So I added the JPA
+project as a dependency of the Web. But spring-boot is unable to detect the
+beans on JPA.
+
+Is there any examples on how to implement this?
+
+I am getting the exception when I tried to autowire the beans from the JPA
+project.
+
+    
+    
+     BeanCreationException: Could not autowire field:
+    
+
+The `@EntityScan` and `@EnableRestRepository` by default only scan the sub
+packages of the current project so if you want to have two projects you should
+implicitly set the path of the other project to be scanned.
+

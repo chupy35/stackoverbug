@@ -1,0 +1,30 @@
+26821165 ReactJS: When should setState be guarded by isMounted?
+
+The documentation for the reactjs `isMounted` API mentions that:
+
+> You can use this method to guard asynchronous calls to `setState()` or
+`forceUpdate()`.
+
+My primary question is when _should_ a call to `setState()` by guarded by a
+call to `isMounted()`?
+
+In the [Initial AJAX Tutorial ](http://facebook.github.io/react/tips/initial-
+ajax.html "Initial AJAX
+Tutorial")<http://facebook.github.io/react/tips/initial-ajax.html> the
+`setState` used in the XHR callback uses the `isMounted()` guard, but is this
+required?
+
+A secondary question is, if it is required why is it so? It seems the check
+itself is very simple and could be inlined into the `setState()` without any
+significant performance penalty, but with a large simplification in API usage.
+
+Logically, isMounted is needed if the component could be unmounted when the
+callback is called.
+
+The best practice is to avoid this in componentWillUnmount e.g. aborting an
+ajax request, canceling a timeout, or unsubscribing from an event.
+
+Arguably the api is simpler this way because setState doesn't silently fail if
+it's called at an inappropriate time. Silently failing causes a lot of bugs
+that are difficult to track down.
+

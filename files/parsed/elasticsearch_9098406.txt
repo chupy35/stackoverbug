@@ -1,0 +1,52 @@
+9098406 ElasticSearch, how to search for a document containing a specific
+array element
+
+I am having a little problem with elasticsearch and wonder if someone can help
+me solve it.
+
+I have a document containing an array of tuples (publications).
+
+Something like :
+
+    
+    
+        {
+           ....
+    
+           publications: [
+             {
+               item1: 385294,
+               item2: 11
+             },
+             {
+               item1: 395078,
+               item2: 1
+             }
+           ]
+    
+           ....
+        }
+    
+
+The problem i have is for retrieving documents who contain a specific tuple,
+for exemple (item1 = 395078 AND item2 = 1).
+
+Whatever i try, it seems to always treat item1 and item2 separately, i fail to
+tell elasticsearch that item1 and item2 must have a specific value inside the
+same tuple, not accross the whole array...
+
+Is there something i'm missing here ?
+
+Thanks
+
+This is not possible in the straight way. ElasticSearch flattens the array
+before checking for condition. Which mean  elasticSearch matches  a=x AND b=y1
+to [{a=x,b=y},{a=x1,b=y1}] which doesnt happen in the conventianal array
+checking.
+
+What you can do here is
+
+  * Usage of nested type - <https://www.elastic.co/guide/en/elasticsearch/reference/current/nested.html> (but for each element in array , an extra document would be created)
+  * Store the array as  
+publications: [ { 385294:11 }, { 395078:1 } ]
+

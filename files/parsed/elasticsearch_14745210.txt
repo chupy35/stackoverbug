@@ -1,0 +1,206 @@
+14745210 Create Elasticsearch curl query for not null and not empty("")
+
+How can i create Elasticsearch curl query to get the field value which are not
+null and not empty(""),
+
+Here is the mysql query:
+
+    
+    
+    select field1 from mytable where field1!=null and field1!="";
+    
+
+Wrap a [Missing Filter](http://www.elasticsearch.org/guide/reference/query-
+dsl/missing-filter.html) in the Must-Not section of a [Bool
+Filter](http://www.elasticsearch.org/guide/reference/query-dsl/bool-
+filter.html). It will only return documents where the field exists, and if you
+set the "null_value" property to true, values that are explicitly not null.
+
+    
+    
+    {
+      "query":{
+         "filtered":{
+            "query":{
+               "match_all":{}
+            },
+            "filter":{
+                "bool":{
+                  "must":{},
+                  "should":{},
+                  "must_not":{
+                     "missing":{
+                        "field":"field1",
+                        "existence":true,
+                        "null_value":true
+                     }
+                  }
+               }
+            }
+         }
+      }
+    }
+    
+
+A null value and an empty string both result in no value being indexed, in
+which case you can use the `exists` filter
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/test/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "constant_score" : {
+             "filter" : {
+                "exists" : {
+                   "field" : "myfield"
+                }
+             }
+          }
+       }
+    }
+    '
+    
+
+Or in combination with (eg) a full text search on the `title` field:
+
+    
+    
+    curl -XGET 'http://127.0.0.1:9200/test/test/_search?pretty=1'  -d '
+    {
+       "query" : {
+          "filtered" : {
+             "filter" : {
+                "exists" : {
+                   "field" : "myfield"
+                }
+             },
+             "query" : {
+                "match" : {
+                   "title" : "search keywords"
+                }
+             }
+          }
+       }
+    }
+    '
+    
+
+You can use **not** filter on top of **missing**.
+
+    
+    
+    "query": {
+      "filtered": {
+         "query": {
+            "match_all": {}
+         },
+         "filter": {
+            "not": {
+               "filter": {
+                  "missing": {
+                     "field": "searchField"
+                  }
+               }
+            }
+         }
+      }
+    }
+    
+
+As @luqmaan pointed out in the comments, the
+[documentation](https://www.elastic.co/guide/en/elasticsearch/reference/1.6/query-
+dsl-exists-filter.html) says that the filter `exists` **doesn't filter out
+empty strings as they are considered non-null values**.
+
+So adding to @DrTech's answer, to effectively filter null and empty string
+values out, you should use something like this:
+
+    
+    
+    {
+        "query" : {
+            "constant_score" : {
+                "filter" : {
+                    "bool": {
+                        "must": {"exists": {"field": "<your_field_name_here>"}},
+                        "must_not": {"term": {"<your_field_name_here>": ""}}
+                    }
+                }
+            }
+        }
+    }
+    
+
+We are using Elasticsearch version 1.6 and I used this query from a co-worker
+to cover not null and not empty for a field:
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          },
+          "filter": {
+            "bool": {
+              "must": [
+                {
+                  "exists": {
+                    "field": "myfieldName"
+                  }
+                },
+                {
+                  "not": {
+                    "filter": {
+                      "term": {
+                        "myfieldName": ""
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+
+On elasticsearch 5.6, I have to use command below to filter out empty string:
+
+    
+    
+        GET /_search
+        {
+            "query" : {
+                "regexp":{
+                    "<your_field_name_here>": ".+"
+                }
+            }
+        }  
+    
+
+You can do that with bool query and combination of must and must_not like
+this:
+
+    
+    
+    GET index/_search
+    {
+        "query": {
+            "bool": {
+                "must": [
+                    {"exists": {"field": "field1"}}
+                ],
+                "must_not": [
+                    {"term": {"field1": ""}}
+                ]
+            }
+        }
+    }
+    
+
+I tested this with Elasticsearch 5.6.5 in Kibana.
+

@@ -1,0 +1,46 @@
+25842808 JacksonAutoConfiguration is pulled in although excluded
+
+I have a simple REST service which is using spring-boot-jersey. My Application
+looks like this:
+
+    
+    
+    @EnableAutoConfiguration(exclude = {JacksonAutoConfiguration.class, SecurityAutoConfiguration.class,
+        MongoAutoConfiguration.class, JmxAutoConfiguration.class})
+    @ComponentScan
+    public class Application extends SpringBootServletInitializer {
+    
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(Application.class);
+    }
+    
+    public static void main(String[] args) {
+        new Application().configure(new SpringApplicationBuilder(Application.class)).run(args);
+    }
+    
+    }
+    
+
+However if I start the service with `-Ddebug` I can see that these
+autoconfiguration classes are still pulled in:
+
+    
+    
+    JacksonAutoConfiguration
+      - @ConditionalOnClass classes found: com.fasterxml.jackson.databind.ObjectMapper (OnClassCondition)
+    
+    JacksonAutoConfiguration.JacksonObjectMapperAutoConfiguration
+      - @ConditionalOnClass classes found: com.fasterxml.jackson.databind.ObjectMapper (OnClassCondition)
+    
+    JacksonAutoConfiguration.JacksonObjectMapperAutoConfiguration#jacksonObjectMapper
+      - @ConditionalOnMissingBean (types: com.fasterxml.jackson.databind.ObjectMapper; SearchStrategy: all) found no beans (OnBeanCondition)
+    
+
+Any ideas why is this happening?
+
+Yes. The `HttpMessageConvertersAutoConfiguration` imports the
+`JacksonAutoConfiguration`, so you have to exclude that one as well. Probably
+a bug really, but at least the workaround is obvious. Why did you want to
+exclude `JacksonAutoConfiguration` though?
+

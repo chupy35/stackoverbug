@@ -1,0 +1,81 @@
+22576383 ElasticSearch real time GET API doesn't seem to work
+
+I'm trying to access a doc using the GET API of ElasticSearch but eventhough
+the documentation claims to be real time I cannot seem to make it work.
+
+Here's what I tried:
+
+Indexing an event with a custom id:
+
+    
+    
+    POST: http://hostname.com:9200/events/purchase/<custom_id>
+    
+
+Immediatedly retrieving the doc using:
+
+    
+    
+    GET: http://hostname.com:9200/events/purchase/<custom_id>
+    
+
+The problem is that the document is not found.
+
+UPDATE:
+
+It seems that the problem only occurs if the index is initially empty and
+that's the first doc to be written. Subsequent requests are indexed and
+retrieved just fine.
+
+this might not be the best code but I think this shows what you want. If
+possible switch to the elasticsearch.js client. That is what is used in this
+sample code.
+
+    
+    
+    var elasticsearch = require('elasticsearch');
+    var config = {host:'localhost:9200'};
+    
+    var client = new elasticsearch.Client({
+        host: config.host,
+        log:'trace'
+    });
+    
+    storeEvent({"title":"My Event"}, 1);
+    
+    function storeEvent(myEvent, id) {
+    
+        client.create({
+            "index":"events",
+            "type":"purchase",
+            "id":id,
+            "body":myEvent
+        }, function(error,response) {
+            if (error) {
+                console.log("Error during creating event");
+                console.log(error);
+            } else {
+                console.log("Submitted event");
+            }
+            client.get({
+                "index":"events",
+                "type":"purchase",
+                "id":id
+            }, function (error,response) {
+                if (error) {
+                    console.log("Error during obtaining event");
+                    console.log(error);
+                } else {
+                    console.log(response);
+                }
+            })
+        });
+    }
+    
+
+Which version are you using? 1.2.0 had a bug involving routing:
+<http://www.elasticsearch.org/blog/elasticsearch-1-2-1-released/>
+
+If you fixed things by reindexing your data it's worth noting that it won't be
+compatible with future versions.
+

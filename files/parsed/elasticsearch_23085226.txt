@@ -1,0 +1,51 @@
+23085226 ElasticSearch AngularJS Client - when i include space in search
+result is not correct
+
+I am new to ElasticSearch.I found that when I search with "2" it gives
+following record but when I search "2 liter" it gives empty result. It seems
+that ElasticSearch Server is not considering space between words.
+
+_suso orange quality flavour in 2 liter can ERP2_
+
+Can anybody please help me that what I need to change ?
+
+Thank You.
+
+**One Field in my indexed JSON**
+
+Product Detail : suso orange quality flavour in 2 liter can ERP2
+
+**ElasticSearch AngularJS Client code.**
+
+    
+    
+    EsConnector.controller('QueryController', function($scope, es) {
+     $scope.change = function() {
+    console.log($scope.searchProduct);
+    
+    // search for documents
+        es.search({
+        index: 'test_index',
+        size: 50,
+        body: {
+        "query":
+            {
+                "regexp": {
+    
+                   "productDetail":$scope.searchProduct+".*",
+                } ,
+                "analyzer": "whitespace"
+            },
+        }
+    
+        }).then(function (response) {
+          $scope.hits = response.hits.hits;
+        });
+    }
+    });
+    
+
+  1. You could use simple query string request, not regexp; change query to $scope.searchProduct+"*".
+  2. "Whitespace analyzer" breaks your query into terms on whitespace - it means, elasticsearch will look up documents with terms "suso" and "orange" for query string "suso orange".
+  3. Another important thing you didn't mention is index analyzer; it's the setting which tells elasticsearch how to break your document fields on terms it woll later be searching and how to "preprocess" them - for instance, lowercase or change one symbols to another.
+

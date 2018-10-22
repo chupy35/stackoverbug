@@ -1,0 +1,76 @@
+11872927 Why doesn't an input modify a value outside of an ng-repeat (and ng-
+switch)?
+
+I am assuming a scope problem is the reason the input in this example can
+modify the value next to it, but not the other value. If this is the case, how
+do I hook up the model to right scope? If it isn't a scope problem, what am I
+doing wrong?
+
+    
+    
+    <html ng-app>
+        <head>
+            <script type="text/javascript" src="angular-1.0.1.min.js"></script>
+            <script type="text/javascript">
+                function ExampleCtrl($scope) {
+                    $scope.list = [
+                        { name: "a" },
+                        { name: "b" },
+                    ];
+    
+                    $scope.value = 5;
+                }
+            </script>
+        </head>
+        <body ng-controller="ExampleCtrl">
+            <ul ng-repeat="item in list">
+                <li>{{ item.name }}
+                    <ng-switch on="item.name">
+                        <span ng-switch-when="b">
+                            <input type="number" ng-model="value" />
+                            {{ value }}
+                        </span>
+                    </ng-switch>
+                </li>
+            </ul>
+    
+            value is {{ value }}
+        </body>
+    </html>
+    
+
+You're right both
+[ngRepeat](http://docs.angularjs.org/api/ng.directive%3angRepeat) and
+[ngSwitch](http://docs.angularjs.org/api/ng.directive%3angSwitch) create
+different scopes. You can use the awesome [AngularJS
+Batarang](https://github.com/angular/angularjs-batarang) developer tool for
+Chrome to see the different scopes in action.
+
+One change you can make to reference the same value in your code is to
+reference an object property instead of a primitive type like:
+
+    
+    
+    $scope.value = { val: 5 };
+    
+
+and bind to:
+
+    
+    
+    <input type="number" ng-model="value.val"/>
+    {{ value.val }}
+    
+
+I'll be interested to see if there are better ways to handle this with the
+different scopes.
+
+Another way - you can access parent scope using $parent.
+
+    
+    
+    <input type="number" ng-model="$parent.$parent.value" />
+    
+
+See example: <http://jsfiddle.net/7Hh2R/>
+

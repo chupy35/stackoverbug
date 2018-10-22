@@ -1,0 +1,64 @@
+12945067 weird issue with hyphens in elasticsearch using snowball analyzer
+
+So I have this situation where we have a lot of documents that have titles
+like US-2343 or FX-4321 .... I'm using the snowball analyzer as the default
+analyzer for the index, however I have this weird problem.
+
+Say I have the following docs US-4321, US-2343, US-2300 ...  When I search for
+"us-2300" the one document shows up as expected (hyphens are escaped in the
+search) however when I do a search for "us-23*" ... nothing shows up, but if I
+do a search for "us 23*" (note the space) then us-2343 and us-2300 show up
+
+I'm trying to understand why it works this way. Any ideas?
+
+You can check how your documents are indexed using [Analyze
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+analyze.html). As you can see your documents are indexed as two tokens: `us`
+and `2343`.
+
+    
+    
+    $ curl "localhost:9200/your_index/_analyze?analyzer=snowball&pretty=true" -d "US-2343"   
+    {
+      "tokens" : [ {
+        "token" : "us",
+        "start_offset" : 0,
+        "end_offset" : 2,
+        "type" : "<ALPHANUM>",
+        "position" : 1
+      }, {
+        "token" : "2343",
+        "start_offset" : 3,
+        "end_offset" : 7,
+        "type" : "<NUM>",
+        "position" : 2
+      } ]
+    }
+    
+
+When you are searching for `us-23*`, elasticsearch is trying to find documents
+with tokens that start with `us-23`. It happens because wildcard expressions
+are not analyzed. As you can see, `snowball` parser doesn't generate such
+tokens, so no results are return. When you are searching for two tokens `us`
+and tokens with prefix `23`, you get results.
+
+Take a look at [`text_phrase_prefix`
+query](http://www.elasticsearch.org/guide/reference/query-dsl/text-
+query.html). It might be more suitable for your needs.
+
+If you use the [Analyze
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+analyze.html), you will find how your title is broken into terms.
+
+I think that US-4321 is indexed as us and 4321. When you search for "us 4321"
+(with a QueryString or a MatchQuery), it will find all us terms and all 4321
+terms.
+
+To answer more, it could be nice to have more details on your query.
+
+If your title contains a "-" and it's important in your use case, you should
+use another analyzer. BTW, using wildcards is more expensive (from the
+performance POV) than using a ngram or edgengram analyzer.
+
+HTH David
+

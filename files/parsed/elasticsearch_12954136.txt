@@ -1,0 +1,77 @@
+12954136 How to set Memory limits to elasticsearch in Debian?
+
+I need to increase the memory limits of elasticsearch in debian..Please let me
+know in which file should i make changes to increase it's memory..also how to
+check whether the memory limits are set or not...as I was getting an error
+something like: Too many Files Open Plz help...
+
+Thanks in advance.
+
+Rajni is absolutely right. I had the same question as OP and found all of the
+values set within the service script near the beginning:
+
+    
+    
+    ES_HOME=/opt/elasticsearch
+    ES_MIN_MEM=256m
+    ES_MAX_MEM=2g
+    DAEMON=$ES_HOME/bin/elasticsearch
+    NAME=elasticsearch
+    DESC=elasticsearch
+    PID_FILE=/var/run/$NAME.pid
+    LOG_DIR=/var/log/$NAME
+    DATA_DIR=/var/lib/$NAME
+    WORK_DIR=/tmp/$NAME
+    CONFIG_FILE=$ES_HOME/config/elasticsearch.yml
+    
+
+Lol, my rep is too low simply answer: but I just want to confirm that the file
+/etc/init.d/elasticsearch contains startup info. MIN and MAX_MEM are min and
+max heap size
+
+I'm pretty sure if you're on systemd the equivalent file will be under
+/etc/default/
+
+Restart elasticsearch for your settings to take effect. If you're on systemd:
+sudo systemctl restart elasticsearch. If it fails to restart due to bad
+settings, sudo systemctl status elasticsearch
+
+This answer discusses a few other options [How to change Elasticsearch max
+memory size](https://stackoverflow.com/questions/18132719/how-to-change-
+elasticsearch-max-size)
+
+The best way to set the memory is to set the ES_HEAP_SIZE parameter, and let
+that dictate the min and max values.
+
+For Ubuntu just open the elasticsearch file in /etc/default:
+
+    
+    
+    sudo vim /etc/default/elasticsearch
+    
+
+and make sure that the following line is either set or uncommented, and set it
+to half of your total ram:
+
+    
+    
+    ES_HEAP_SIZE=4g
+    
+
+Then save your file, and restart elasticsearch:
+
+    
+    
+    sudo service elasticsearch restart
+    
+
+For more info on setting the heap size you can check out [this article
+here](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/heap-
+sizing.html). Granted the guide tells you to just create an environmental
+variable using the export command; however, that did not work for me, though
+the /etc/default/elasticsearch file will work, even after a restart.
+
+Note: do not set the heap size over 32Gb. Using decimals for your heap_size
+will break Elasticsearch. If you need to use partial Gb's then use Mb like
+this: `ES_HEAP_SIZE=3750m`. Works like a charm.
+

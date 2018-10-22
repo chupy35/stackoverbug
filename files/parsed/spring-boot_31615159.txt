@@ -1,0 +1,96 @@
+31615159 Spring Boot Tutorial doesn't work with multi project gradle setup
+
+i get a strange behaviour (at least for me :D) when I switch from the gradle
+file located in <https://spring.io/guides/gs/serving-web-content/> to a multi
+project gradle file setup.
+
+build.gradle in root directory
+
+    
+    
+    //Applied to all projects.
+    allprojects {
+        apply plugin: 'eclipse'
+        apply plugin: 'idea'
+    
+    
+        group = 'de.test.platform'
+        version = '0.1'
+    }
+    
+    subprojects {
+    
+        //Currently all subprojects are also java projects. If this changes we
+        //need to move it into the corresponding projects
+        apply plugin: 'java'
+    
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    
+        repositories {
+            mavenLocal()
+            mavenCentral()
+        }
+    
+        idea {
+            module {
+                downloadSources = true
+                downloadJavadoc = false
+            }
+        }
+    }
+    
+    idea {
+        project {
+            jdkName = '1.8'
+            languageLevel = '1.8'
+        }
+    }
+    
+
+build.gradle in sub directory frontend (thus sub project called :frontend)
+
+    
+    
+    buildscript {
+        repositories {
+            mavenCentral()
+        }
+        dependencies {
+            classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.5.RELEASE")
+        }
+    }
+    
+    apply plugin: 'war'
+    apply plugin: 'spring-boot'
+    
+    jar {
+        baseName = 'crowdio-frontend'
+        version = '0.1.0'
+    }
+    
+    dependencies {
+        compile("org.springframework.boot:spring-boot-starter-web")
+        testCompile("junit:junit")
+    }
+    
+
+when I run gradle bootRun and navigate to <http://localhost:8080/greeting> as
+in the tutorial i get a infinite loop error. If i change the template from
+greeting.html to hello.html and return hello instead of greeting in the
+controller greeting() action i get an 404 Error.
+
+The template is stored in
+project_root/frontend/src/main/resources/templates/greeting.html
+
+It seems like that for whatever Reason spring boot can decide on thymeleaf
+with the exact structure of the gradle build file like in the tutorial.
+However if you switch to a multi project setup you need to add
+
+    
+    
+    compile("org.thymeleaf:thymeleaf-spring4")
+    
+
+as a dependency.
+

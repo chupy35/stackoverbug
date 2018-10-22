@@ -1,0 +1,177 @@
+22793120 elasticsearch syntax error for filter using both 'and' and 'or'
+
+I am trying to perform a filter using `elasticsearch`, and am getting a syntax
+error that I cannot seem to correct. I have tested the individual classes, and
+they seem to work fine. What am I doing wrong?
+
+The intention here is to find documents that satisfy three simultaneous
+conditions: `(field1 == VAL1)`, `(field2 == VAL2)`, and `((field3 == VAL3) ||
+(field3 == VAL4))`.
+
+The message I get is:
+
+> "nested: QueryParsingException[[xxxx] Failed to parse]; nested:
+JsonParseException[Unexpected character (':' (code 58)): was expecting comma
+to separate ARRAY entries\n at [Source: [B@1acfee60; line: 13, column: 26]];
+}]","status":400}"
+
+Thanks!
+
+    
+    
+    curl -XGET 'localhost:9200/xxxx/yyyy/_search' -d '
+    {
+        "query":
+        {
+            "filtered":
+            {
+                "filter":
+                {
+                    "and":
+                    [
+                        { "term": { "field1":"VAL1" } },
+                        { "term": { "field2":"VAL2" } },
+                        "or":
+                        [
+                            { "term": { "field3":"VAL3" } },
+                            { "term": { "field3":"VAL4" } }
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+    '
+    
+
+Thanks to Paige Cook, the syntax error is now gone (see below). But the filter
+still does not match the document. And I have tested both the "and" clause and
+the "or" clause separately and they both work. I'm confused.
+
+    
+    
+    curl -XGET 'localhost:9200/xxxx/users/_search' -d '
+    {
+        "query":
+        {
+            "filtered":
+            {
+                "filter":
+                {
+                    "and":
+                    [
+                        { "term": { "field1":"VAL1" } },
+                        { "term": { "field2":"VAL2" } }
+                    ],
+                    "or":
+                    [
+                        { "term": { "field3":"VAL3" } },
+                        { "term": { "field3":"VAL4" } }
+                    ]
+                }
+            }
+        }
+    }
+    '
+    
+
+Thank you very much Geert-Jan. The final working example is:
+
+    
+    
+    curl -XGET 'localhost:9200/xxxx/yyyy/_search' -d '
+    {
+        "query":
+        {
+            "filtered":
+            {
+                "filter":
+                {
+                    "and":
+                    [
+                        { "term": { "field1":"VAL1" } },
+                        { "term": { "field2":"VAL2" } },
+                        {
+                            "or":
+                            [
+                                { "term": { "field3":"VAL3" } },
+                                { "term": { "field3":"VAL4" } }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    '
+    
+
+Based on the json query you have posted above, you are missing a `],` after
+the last and term and before your `"or:"` entry. The `"and"` and `"or"` arrays
+need to be defined separately.
+
+Try this:
+
+    
+    
+    curl -XGET 'localhost:9200/xxxx/yyyy/_search' -d '
+    {
+        "query":
+        {
+            "filtered":
+            {
+                "filter":
+                {
+                    "and":
+                        [
+                            { "term": { "field1":"VAL1" } },
+                            { "term": { "field2":"VAL2" } }
+                        ],
+                    "or":
+                        [
+                            { "term": { "field3":"VAL3" } },
+                            { "term": { "field3":"VAL4" } }
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+    
+
+be careful with the parentheses!
+
+A base filter can only contain 1 filter in this case the `and`. Within that
+compound-filter you should have 2 base-filters (both `term`) and a compound
+filter `or`.
+
+Here it is (untested)
+
+    
+    
+    curl -XGET 'localhost:9200/xxxx/users/_search' -d '
+    {
+        "query":
+        {
+            "filtered":
+            {
+                "filter":
+                {
+                    "and":
+                    [
+                        { "term": { "field1":"VAL1" } },
+                        { "term": { "field2":"VAL2" } },
+                        {
+                            "or":
+                            [
+                                { "term": { "field3":"VAL3" } },
+                                { "term": { "field3":"VAL4" } }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    
+

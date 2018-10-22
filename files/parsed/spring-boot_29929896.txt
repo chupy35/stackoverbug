@@ -1,0 +1,128 @@
+29929896 How to get local server host and port in Spring Boot?
+
+I'm starting up a Spring Boot application with `mvn spring-boot:run`.
+
+One of my `@Controller`s needs information about the host and port the
+application is listening on, i.e. `localhost:8080` (or `127.x.y.z:8080`).
+Following the [Spring Boot documentation](http://docs.spring.io/spring-
+boot/docs/1.2.3.RELEASE/reference/html/common-application-properties.html), I
+use the `server.address` and `server.port` properties:
+
+    
+    
+    @Controller
+    public class MyController {
+    
+        @Value("${server.address}")
+        private String serverAddress;
+    
+        @Value("${server.port}")
+        private String serverPort;
+    
+        //...
+    
+    }
+    
+
+When starting up the application with `mvn spring-boot:run`, I get the
+following exception:
+
+    
+    
+    org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'myController': Injection of autowired dependencies failed; nested exception is 
+    org.springframework.beans.factory.BeanCreationException: Could not autowire field: ... String ... serverAddress; nested exception is java.lang.IllegalArgumentException: Could not resolve placeholder 'server.address' in string value "${server.address}"
+    
+
+Both `server.address` and `server.port` cannot be autowired.
+
+How can I find out the (local) host/address/NIC and port that a Spring Boot
+application is binding on?
+
+### IP Address
+
+You can get network interfaces with `NetworkInterface.getNetworkInterfaces()`,
+then the IP addresses off the NetworkInterface objects returned with
+`.getInetAddresses()`, then the string representation of those addresses with
+`.getHostAddress()`.
+
+### Port
+
+If you make a `@Configuration` class which implements
+`ApplicationListener<EmbeddedServletContainerInitializedEvent>`, you can
+override `onApplicationEvent` to get the port number once it's set.
+
+    
+    
+    @Override
+    public void onApplicationEvent(EmbeddedServletContainerInitializedEvent event) {
+        int port = event.getEmbeddedServletContainer().getPort();
+    }
+    
+
+You can get port info via
+
+    
+    
+    @Value("${local.server.port}")
+    private String serverPort;
+    
+
+One solution mentioned in a reply by @M. Deinum is one that I've used in a
+number of Akka apps:
+
+    
+    
+    object Localhost {
+    
+      /**
+       * @return String for the local hostname
+       */
+      def hostname(): String = InetAddress.getLocalHost.getHostName
+    
+      /**
+       * @return String for the host IP address
+       */
+      def ip(): String = InetAddress.getLocalHost.getHostAddress
+    
+    }
+    
+
+I've used this method when building a callback URL for Oozie REST so that
+Oozie could callback to my REST service and it's worked like a charm
+
+An easy workaround, at least to get the running port, is to add the parameter
+_javax.servlet.HttpServletRequest_ in the signature of one of the controller's
+methods. Once you have the _HttpServletRequest_ instance is straightforward to
+get the baseUrl with this: _request.getRequestURL().toString()_
+
+Have a look at this code:
+
+    
+    
+    @PostMapping(value = "/registration" , produces = "application/json")
+    public StringResponse register(@RequestBody RequestUserDTO userDTO, 
+        HttpServletRequest request) {
+    request.getRequestURL().toString();
+    //value: http://localhost:8080/registration
+    ------
+    return "";
+    }
+    
+
+To get the port number in your code you can use the following:
+
+    
+    
+    @Autowired
+    Environment environment;
+    
+    @GetMapping("/test")
+    String testConnection(){
+        return "Your server is up and running at port: "+environment.getProperty("local.server.port");      
+    }
+    
+
+To understand the Environment property you can go through this [Spring boot
+Environment](https://docs.spring.io/spring/docs/5.0.0.BUILD-SNAPSHOT/javadoc-
+api/org/springframework/core/env/Environment.html)
+

@@ -1,0 +1,70 @@
+13427434 one-to-many relationships in Elastic Search
+
+Suppose I have 2 tables called "twitter_user" and "twitter_comments".
+
+**twitter_users** has the fields: username and bio **twitter_comments** has
+the fields: username and comment
+
+Obviously, an user has 1 entry in twitter_users and potentially many in
+twitter_comments
+
+I want to model both twitter_users and twitter_comments in Elastic Search,
+have ES search both models when I query, knowing that a comment counts towards
+the overall relevancy score for a twitter user.
+
+I know I can mimic this with just 1 model, by creating a single extra field
+(in addition to username and bio) with all the comments concatenated. But is
+there another "cleaner" way?
+
+It depends.
+
+If you just want to be able to search for a users comments ,full-text and over
+all fields, simply store all comments within the user object (no need to
+concatenate anything):
+
+    
+    
+    {
+        "user" : {
+            "username" : "TestUser",
+            "bio" : "whatever",
+    
+            "comments" : [
+            {
+                "title" : "First comment",
+                "text" : "My 1st comment"
+            },
+            {
+                "title" : "Second comment",
+                "text" : "My 2nd comment"
+            }
+            ]
+        }
+    }
+    
+
+If you need per-comment-based queries you need to map the comments as
+[nested](http://www.elasticsearch.org/guide/reference/mapping/nested-
+type.html) (before submitting any data), so that every comment gets treated as
+a single item.
+
+For your scoring, simply add another field "comment_count" and use this for
+your boost/scoring.
+
+As Thorsten already suggested you can use nested query and it's a good
+approach.
+
+Alternatively, you can index comments as children of users. Then you can can
+search users as you do now, search comments using
+[top_children](http://www.elasticsearch.org/guide/reference/query-dsl/top-
+children-query.html) query to find all relevant to your search comments, and
+finally combine scores from both of them together using
+[bool](http://www.elasticsearch.org/guide/reference/query-dsl/bool-query.html)
+or [dis_max](http://www.elasticsearch.org/guide/reference/query-dsl/dis-max-
+query.html) queries.
+
+Nested approach would be more efficient during search, but you will have to
+reindex the user and all comments every time an additional comment is added.
+With child/parent approach you will need to index only new comments, but
+search will be slower and it will require more memory.
+

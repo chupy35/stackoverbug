@@ -1,0 +1,75 @@
+23681241 Elasticsearch query dates while using the querystring
+
+I want to to query in the dats while using the querystring.
+
+From what I can read
+[here](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html) this should work.
+
+    
+    
+    {
+        "query": {
+            "query_string": {
+                "query": "date:[20100101 TO 20141231]"
+    
+            }
+        },
+        "size": 10
+    
+    }
+    
+
+I get no errors but no results either.
+
+I have date fields in the mapping (shortened for your convenience).
+
+    
+    
+    {
+       "cases": {
+          "mappings": {
+             "texcaseelastic": {
+                "properties": {
+                   "dateIn": {
+                      "type": "date",
+                      "format": "dateOptionalTime"
+                   },
+                   "type": {
+                      "type": "string"
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+
+And I have at least a few that should fall in that range.
+
+    
+    
+    "dateIn": "2011-11-21T00:00:00",
+    
+
+Any help would be welcome. Thanks.
+
+There is a typo in your query. You are doing a search by specific field and
+your field name is incorrect.
+
+Change `date` to `dateIn`, like the following:
+
+    
+    
+    {
+        "query": {
+            "query_string": {
+                "query": "dateIn:[20100101 TO 20141231]"
+    
+            }
+        },
+        "size": 10
+    
+    }
+    
+

@@ -1,0 +1,25 @@
+22124195 analyzed vs not_analyzed index search performance in elasticsearch
+
+I use elasticsearch with one shard one replica for each indices. Each day I
+create 3-5 indices and one of indices store approximately 1 million docs. Each
+docs has 6-10 columns. My question is that is there a huge difference between
+search performance of analyzed and not_analyzed indices in my db?
+
+Analysed fields would have a minor performance impact, but only when you index
+a document and not when you search. This is because the fields set to
+`analyzed` would have to run through the configured analyser chain
+(tokenisers, filters) when indexed.
+
+The question is - how you search? Is it matching queries or just filtering?
+
+If field is not analyzed, it is like filter. i.e. yes or no. I mean if field
+is not analyzed, we can use those fields for filters [exact value match].
+
+Normally we analyse the fields which contains unstructured data. If field is
+analysed, we can do full text search for the content which is available in
+fields value, and obviously full text search is slower than filters.
+
+In general, before doing the full text search [analysed fileds], we need to
+apply the filters [use, non analyzed fields], so number of documents on which
+we need to apply the full test search query will be less.
+

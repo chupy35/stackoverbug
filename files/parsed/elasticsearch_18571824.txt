@@ -1,0 +1,57 @@
+18571824 Using term query with Or operator
+
+I am trying to use the term query the following way!!
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": {
+                "technology": "Space"
+              }
+            },
+            {
+              "term": {
+                "Person": "Steve Simon"
+              }
+            }
+          ]
+        }
+      }
+    }
+    
+
+Which returns me a response of feeds which has both fields present in single
+feed like an intersection operation. Can I use the term query to get UNION
+result for the above query like, I want all feeds which has `space`, `Steve
+Simon` present individually with feeds which has both present.
+
+Use `should` instead of `must`. Also you have to set `minimum_should_match` to
+1 which means that only one `should` clause is needed for matching a document.
+
+    
+    
+    {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "term": {
+                "technology": "Space"
+              }
+            },
+            {
+              "term": {
+                "Person": "Steve Simon"
+              }
+            }
+          ],
+          "minimum_should_match": 1
+        }
+      }
+    }
+    
+

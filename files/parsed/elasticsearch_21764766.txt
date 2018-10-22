@@ -1,0 +1,78 @@
+21764766 Determining which words were matched in a fuzzy search
+
+I'm running a fuzzy search, and need to see which words were matched. For
+example, if I am searching for the query `testing`, and it matches a field
+with the sentence `The boy was resting`, I need to be able to know that the
+match was due to the word `resting`.
+
+I tried setting the parameter `explain = true`, but it doesn't seem to contain
+the information I need. Any thoughts?
+
+Using `explain` should give you some clues, although not very easily
+available.
+
+If you run the following, also available at
+<https://www.found.no/play/gist/daa46f0e14273198691a> , you should see e.g.
+`description: "weight(text:nesting^0.85714287 in 1) […]`, `description:
+"weight(text:testing in 1) [PerFieldSimilarity] […]` and so on in the hit's
+`_explanation`.
+
+    
+    
+    #!/bin/bash
+    
+    export ELASTICSEARCH_ENDPOINT="http://localhost:9200"
+    
+    # Create indexes
+    
+    curl -XPUT "$ELASTICSEARCH_ENDPOINT/play" -d '{}'
+    
+    # Index documents
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_bulk?refresh=true" -d '
+    {"index":{"_index":"play","_type":"type"}}
+    {"text":"The boy was resting"}
+    {"index":{"_index":"play","_type":"type"}}
+    {"text":"The bird was testing while nesting"}
+    '
+    
+    # Do searches
+    
+    curl -XPOST "$ELASTICSEARCH_ENDPOINT/_search?pretty" -d '
+    {
+        "query": {
+            "match": {
+                "text": {
+                    "query": "testing",
+                    "fuzziness": 1
+                }
+            }
+        },
+        "explain": true
+    }
+    '
+    
+
+Alright, this is what I was looking for:
+
+After a bit of research, I found the [Highlighting
+feature](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-highlighting.html) of elasticsearch.
+
+By default it returns a snippet of context surrounding the match, but you can
+set the fragment size to the query length to return only the exact match. For
+example:
+
+    
+    
+    {
+        query : query,
+        highlight : {
+            "fields" : {
+                'text' : {
+                    "fragment_size" : query.length
+                }
+            }
+        }
+    }
+    
+

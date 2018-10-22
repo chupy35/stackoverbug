@@ -1,0 +1,4 @@
+32013606
+Elastic Search Phrase Suggestor - Custom Dictionary
+<p>I understand that the ElasticSearch phrase suggester can get suggestions for terms based on a field of a document but what happens when that word doesn't exist in the text of a document? Is it possible to hook up the phrase suggester to a custom dictionary in addition to using the text from the document?</p>&#xA;
+<p>You can just create a document manually inject these values into the same index and same field. Also make sure your search does not consider these documents for search.</p>&#xA;

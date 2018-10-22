@@ -1,0 +1,16 @@
+19313104 Keeping tokens that shorter than minLength in ngram filter
+(ElasticSearch)
+
+Is there anyway to keep the tokens that shorter than minLength of ngram in
+ElasticSearch?
+
+For example: The data is "abc x" ==> ngram(2,4) will generate tokens: ab, bc,
+abc.  "x" was removed because its length < 2 (minLength).
+
+I want to keep "x" because it still a keyword in original data.
+
+What filters I need to use in order to keep it (using ES 0.90) ?
+
+Is it good if ngram filter have an option to keep shorter tokens like in this
+case?
+

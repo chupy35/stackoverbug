@@ -1,0 +1,33 @@
+20222093 elasticsearch listen to multiple ips
+
+Is it possible to listen to multiple host adresses so that I can listen to
+localhost requests AND private IP requests?
+
+something like:
+
+    
+    
+    network.host: "127.0.0.1", "192.168.1.4"
+    
+
+In fact yes it is. Use the JSON notation.
+
+This is what I used in my configuration: `network.bind_host: ["yourhost",
+"localhost"]` and `network.publish_host: yourhost` as you don't want to send
+multicast packets on the loopback interface.
+
+I tested the given solution and it did not work. I concluded that Elastic
+cannot listen on _specific_ interfaces using `network.bind_host` in the
+configuration.
+
+However you **can** tell elastic to listen on _all_ interfaces by specifying:
+
+    
+    
+    network.bind_host: 0.0.0.0
+    network.publish_host: <your external address>
+    
+
+This will make sure one address is published (to the cluster) but all
+addresses are accessible. Tested and verified with Elastic 2.1.1.
+

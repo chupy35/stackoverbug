@@ -1,0 +1,96 @@
+19691138 Elasticsearch - which type of query should be used
+
+I have an elasticsearch document with source like below:
+
+    
+    
+    {
+        "_source": {
+            "id": {
+                "value": 1
+            },
+            "make": "Ford",
+            "model": "Mustang",
+            "color": "Red"
+        }
+    }
+    
+
+I would like to write a query that will match phrases like below:
+
+  * Ford 
+  * Ford Mustang 
+  * Mustang
+  * Mustang Ford
+  * ford mustang
+
+but will not match phrase like:
+
+  * Ford Audi Mustang
+  * Audi Mustang
+
+What type of query should be used in such case?
+
+You can use boolean musts:
+
+Search any field:
+
+    
+    
+    curl -XPOST 'http://localhost:9200/cars_index/car_type/_search' -d '{"query":{"bool":{"must":[{"query_string":{"query":"Ford"}}, {"query_string":{"query":"mustang"}}]}}}'
+    
+
+Search specific fields:
+
+    
+    
+    curl -XPOST 'http://localhost:9200/cars_index/car_type/_search' -d '{"query":{"bool":{"must":[{"query_string":{"query":"make:Ford"}}, {"query_string":{"query":"model:mustang"}}]}}}'
+    
+
+You can use combination of musts, shoulds, must_not etc. as well as do
+negations on fields:
+
+    
+    
+    {"query":"-make:Ford"} (not make == Ford)
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-bool-query.html>
+
+I managed to make it work with:
+
+    
+    
+    BoolQueryBuilder q = boolQuery();
+    for (String word : phrase.split("\\s+")) {
+        q.must(boolQuery()
+            .should(matchQuery("make", word))
+            .should(matchQuery("model", word))
+            .minimumNumberShouldMatch(1)
+        );
+    }
+    
+
+but I'm splitting search phrase and use its words to build a query.
+
+Is there a better way to do it?
+
+I think, first you need to query only on **make** and **model** fields. Next
+you need to set a proper analyzer for the query string that you pass. In this
+case, [whitespace
+analyzer](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/analysis-
+whitespace-analyzer.html) makes more sense. So here is the query that you can
+use:
+
+    
+    
+    query_string: {
+      query: {
+        fields: ['make', 'model']
+        analyzer: 'whitespace'
+        query: 'Ford Mustang'   
+      }
+    }
+    
+

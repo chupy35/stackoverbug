@@ -1,0 +1,59 @@
+17424937 Verify database is indexed by Elasticsearch
+
+I'm using Elasticsearch to index and search my db...
+
+  1. How can I verify that the database is indexed? 
+  2. If I use the following command:
+
+curl -XGET '<http://localhost:9200/_search?q=whatever>'
+
+the results are:
+
+    
+    
+    {
+      "took": 4,
+      "timed_out": false,
+      "_shards": {
+        "total": 6,
+        "successful": 6,
+        "failed": 0
+      },
+      "hits": {
+        "total": 0,
+        "max_score": null,
+        "hits": []
+      }
+    }
+    
+
+How should these results be interpreted?
+
+  1. To check if your db has been indexed, you can try the command:
+
+`curl -XGET 'http://localhost:9200/_aliases'?pretty=true` where you can see
+the list of indices and check if yours has been indexed.
+
+  2. The command you used basically searches for the keyword "whatever" in all of the indices.  But it was not able to find anything. Hence you get the following output: The search was successful (depicted by "took":4, "timed_out":false, "_shards":"total":6, "successful":6, "failed":0}) but it did not find anything (depicted by "hits":{"total":0,"max_score":null,"hits":[]})
+
+You can get the list of indices present in your database using the command.
+You can see if your index is present in the list. That shows that index has
+been created.
+
+    
+    
+    curl -XGET 'localhost:9200/_cat/indices?v&pretty'
+    
+
+To check if there are any entries present in your Index. You can get the list
+of all the documents using this command.
+
+    
+    
+    curl -XGET 'localhost:9200/INDEX_NAME/_search?v&pretty'
+    
+
+In the question that you posted.  "_shards" { "total" : gives how many entries
+are present in your index (6 here) } "hits" : { "total" : gives you the
+entries that matched your search with keyword whatever (0 here) }
+

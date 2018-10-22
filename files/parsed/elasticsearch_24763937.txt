@@ -1,0 +1,73 @@
+24763937 JsonParseException while importing JSON to elasticsearch
+
+I am trying to import some json data into my elasticsearch instance and
+getting the following error:
+
+    
+    
+    {
+      "error" : "JsonParseException[Unexpected end-of-input: expected close marker for ARRAY (from [Source: [B@7110db07; line: 1, column: 0])\n at [Source: [B@7110db07; line: 1, column: 3]]",
+      "status" : 500
+    }
+    
+
+I am using an Ubuntu (14.04) running on VirtualBox and this is the command I
+used to import the data:
+
+    
+    
+    url -XPOST 'localhost:9200/mydata/fields/_bulk?pretty' --data-binary @mydata.json
+    
+
+And here is my JSON sample:
+
+    
+    
+    [
+      {
+        "field1":"sometext",
+        "field2":"O",
+        "field3":"TEXT",
+        "field4":"CR",
+        "field5":"09:38.0",
+        "field6":"09:38.0",
+        "field7":"14:13.0",
+        "field8":"NULL",
+        "field9":"NULL",
+        "field10":"0",
+        "field11":"5",
+        "field12":"NULL",
+        "field13":"NULL",
+        "field14":"4",
+        "field15":"0"
+      },
+      {
+        "field1":"othertext",
+        "field2":"O",
+        "field3":"TEXT",
+        "field4":"CR",
+        "field5":"09:38.0",
+        "field6":"09:38.0",
+        "field7":"14:13.0",
+        "field8":"NULL",
+        "field9":"NULL",
+        "field10":"0",
+        "field11":"5",
+        "field12":"NULL",
+        "field13":"NULL",
+        "field14":"4",
+        "field15":"0"
+      },
+    ]
+    
+
+Is is possible to import a JSON array using the bulk API?
+
+Your json doesnt have to contain line breaks in the bulk API, since the API
+uses the line break as a delimiter. From elasticsearch documentation here
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-
+bulk.html>
+
+> Because this format uses literal \n's as delimiters, please be sure that the
+JSON actions and sources are not pretty printed.
+

@@ -1,0 +1,182 @@
+16788553 Returning a partial nested document in ElasticSearch
+
+I'd like to search an array of nested documents and return only those that fit
+a specific criteria.
+
+An example mapping would be:
+
+    
+    
+    {"book":
+        {"properties":
+            {
+             "title":{"type":"string"},
+             "chapters":{
+                         "type":"nested",
+                         "properties":{"title":{"type":"string"},
+                                       "length":{"type":"long"}}
+                                      }
+                         }
+              }
+         }
+    }
+    
+
+So, say I want to look for chapters titled "epilogue".  Not all the books have
+such a chapter, but If I use a nested query I'd get, as a result, all the
+chapters in a book that _has_ such a chapter. While all I'm interested is the
+chapters themselves that have such a title.
+
+I'm mainly concerned about i/o and net traffic since there might be a lot of
+chapters.
+
+Also, is there a way of retrieving ONLY the nested document, without the
+containing doc?
+
+This is a very old question I stumbled upon, so I'll show two different
+approaches to how this can be handled.
+
+Let's prepare index and some test data first:
+
+    
+    
+    PUT /bookindex
+    {
+      "mappings": {
+        "book": {
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "chapters": {
+              "type": "nested",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "length": {
+                  "type": "long"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    PUT /bookindex/book/1
+    {
+      "title": "My first book ever",
+      "chapters": [
+        {
+          "title": "epilogue",
+          "length": 1230
+        },
+        {
+          "title": "intro",
+          "length": 200
+        }
+      ]
+    }
+    
+    PUT /bookindex/book/2
+    {
+      "title": "Book of life",
+      "chapters": [
+        {
+          "title": "epilogue",
+          "length": 17
+        },
+        {
+          "title": "toc",
+          "length": 42
+        }
+      ]
+    }
+    
+
+Now that we have this data in Elasticsearch, we can retrieve just the relevant
+hits using an
+[`inner_hits`](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+request-inner-hits.html). This approach is very straightforward, but I prefer
+the approach outlined at the end.
+
+    
+    
+    # Inner hits query
+    POST /bookindex/book/_search
+    {
+      "_source": false,
+      "query": {
+        "nested": {
+          "path": "chapters",
+          "query": {
+            "match": {
+              "chapters.title": "epilogue"
+            }
+          },
+          "inner_hits": {}
+        }
+      }
+    }
+    
+
+The `inner_hits` nested query returns documents, where each hit contains an
+`inner_hits` object with all of the matching documents, including scoring
+information. You can see the
+[response](https://gist.github.com/anonymous/04de9d3e4b8c29bbdde29887f8b07f2b).
+
+My preferred approach to this type of query is using a [nested
+aggregation](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-nested-aggregation.html) with
+[filtered](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-
+aggregations-bucket-filter-aggregation.html) sub aggregation which contains
+`top_hits` sub aggregation. The query looks like:
+
+    
+    
+    # Nested and filter aggregation
+    POST /bookindex/book/_search
+    {
+      "size": 0,
+      "aggs": {
+        "nested": {
+          "nested": {
+            "path": "chapters"
+          },
+          "aggs": {
+            "filter": {
+              "filter": {
+                "match": { "chapters.title": "epilogue" }
+              },
+              "aggs": {
+                "t": {
+                  "top_hits": {
+                    "size": 100
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+
+The `top_hits` sub aggregation is the one doing the actual retrieving of
+nested documents and supports `from` and `size` properties among others. From
+the documentation:
+
+> If the `top_hits` aggregator is wrapped in a `nested` or `reverse_nested`
+aggregator then nested hits are being returned. Nested hits are in a sense
+hidden mini documents that are part of regular document where in the mapping a
+nested field type has been configured. The `top_hits` aggregator has the
+ability to un-hide these documents if it is wrapped in a `nested` or
+`reverse_nested` aggregator. Read more about nested in the nested type
+mapping.
+
+The [response from
+Elasticsearch](https://gist.github.com/anonymous/5d2e78520dcbaacdca224a455a9a3311)
+is (IMO) prettier (and it seems to return it faster (though this is not a
+scientific observation)) and "easier" to parse.
+

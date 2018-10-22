@@ -1,0 +1,124 @@
+23514456 How to subtract aggregate min from aggreagate max(difference) in ES?
+
+How to write an ES query to find the difference between max and min value of a
+field?
+
+I am a newbee in elastic search, In my case I feed lot of events along with
+session_id and time in to elastic search. My event structure is
+
+    
+    
+    Event_name string    `json:"Event_name"`
+    Client_id  string    `json:"Client_id"`
+    App_id     string    `json:"App_id"`
+    Session_id string    `json:"Session_id"`
+    User_id    string    `json:"User_id"`
+    Ip_address string    `json:"Ip_address"`
+    Latitude   int64     `json:"Latitude"`
+    Longitude  int64     `json:"Longitude"`
+    Event_time time.Time `json:"Time"`
+    
+
+I want to find the life time of a session_id based the feeded events. For that
+I can retrive the maximum Event_time and minimum Event_time for a particular
+session_id by the following ES query.
+
+    
+    
+    {  
+      "size": 0,
+      "query": {
+         "match": {
+            "Session_id": "dummySessionId"
+         }
+      },
+       "aggs": {
+          "max_time": {
+             "max": {
+               "field": "Time"
+              }
+           },
+           "min_time":{
+              "min": {
+                "field": "Time"
+              }
+           }
+        }
+      }
+    
+
+But what I exact want is (max_time - min_time) How to write the ES query for
+the same????
+
+Giving directly the query will not help you much, so I suggest you read the
+documentation about [Script
+Fields](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-script-fields.html) and
+[Scripting](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-
+scripting.html).
+
+Up to elasticsearch 1.1.1, **this is not possible** to do any arithmetic
+operation upon two aggregate function's reasult from elasticsearch side. If
+you want then, you should do that from client side.
+
+That is neither possible through scripts, as @eliasah suggests.
+
+In the upcoming versions they may be add such facility.
+
+in the 1.5.1 using the [Scripted Metric
+Aggregation](http://www.elastic.co/guide/en/elasticsearch/reference/1.5/search-
+aggregations-metrics-scripted-metric-aggregation.html) you can do this. Not
+sure about the performance, but it looks to work. **This functionality is
+experimental and may be changed or removed completely in a future release.**
+
+    
+    
+    POST test_time
+    
+    POST test_time/data/1
+    {"Session_id":1234,"Event_time":"2014-01-01T12:00:00"}
+    
+    POST test_time/data/3
+    {"Session_id":1234,"Event_time":"2014-01-01T14:00:00"}
+    
+    GET /test_time/_search
+    {
+      "size": 0,
+      "aggs": {
+        "by_user": {
+          "terms": {
+            "field": "Session_id"
+          },
+          "aggs": {
+            "session_lenght_sec": {
+              "scripted_metric": {
+                "map_script": "_agg['v'] = doc['Event_time'].value",
+                "reduce_script": "min = null; max = null; for (a in _aggs) {if (min == null || a.v < min) { min = a.v}; if (max == null || a.v > max) { max = a.v }}; return (max-min)/1000"
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    ###### RESPONSE #######
+    {
+       ...,
+       "aggregations": {
+          "by_user": {
+             "doc_count_error_upper_bound": 0,
+             "sum_other_doc_count": 0,
+             "buckets": [
+                {
+                   "key": 1234,
+                   "doc_count": 2,
+                   "session_lenght_sec": {
+                      "value": "7200"
+                   }
+                }
+             ]
+          }
+       }
+    }
+    
+

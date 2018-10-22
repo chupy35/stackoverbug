@@ -1,0 +1,4 @@
+28571366
+Retrieve list of inverse document frequencies from words in Elasticsearch index
+<p>I'm interested in retrieving a list of inverse document frequency (idf) for all words available in a certain index. Is this possible to do by querying the index, or should I rather do this outside of elasticsearch? If so, do how do you propose I do this?</p>&#xA;&#xA;<p>Thanks</p>&#xA;
+<p>I have a same issue, searched and found interesting feature <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.3/search-aggregations-metrics-top-hits-aggregation.html#search-aggregations-metrics-top-hits-aggregation" rel="nofollow">Top hits Aggregation</a>. This maybe your answer.</p>&#xA;

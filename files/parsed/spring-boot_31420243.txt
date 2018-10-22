@@ -1,0 +1,42 @@
+31420243 How can you extend behavior of the spring boot autoconfiguration?
+
+I am looking to extend JacksonAutoConfiguration specifically when the builder
+is created, i would like to set that ObjectMapper to a Util class which has
+static setter for the ObjectMapper. Look at the line before returning builder
+where I would like to set ObjectMpper to a static class.
+
+    
+    
+    @Bean
+            @ConditionalOnMissingBean(Jackson2ObjectMapperBuilder.class)
+            public Jackson2ObjectMapperBuilder jacksonObjectMapperBuilder() {
+                Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+                builder.applicationContext(this.applicationContext);
+                if (this.jacksonProperties.getSerializationInclusion() != null) {
+                    builder.serializationInclusion(this.jacksonProperties
+                            .getSerializationInclusion());
+                }
+                configureFeatures(builder, this.jacksonProperties.getDeserialization());
+                configureFeatures(builder, this.jacksonProperties.getSerialization());
+                configureFeatures(builder, this.jacksonProperties.getMapper());
+                configureFeatures(builder, this.jacksonProperties.getParser());
+                configureFeatures(builder, this.jacksonProperties.getGenerator());
+                configureDateFormat(builder);
+                configurePropertyNamingStrategy(builder);
+                configureModules(builder);
+                **ObjectMapperUtils.setObjectMapper( builder.build() );**
+                return builder;
+            }
+    
+
+The `ObjectMapper` created from the auto-configured
+`Jackson2ObjectMapperBuilder` is exposed as a bean in the
+`JacksonAutoConfiguration`. You could simply create another `@Configuration`
+class, get a reference to the `ObjectMapper` (via auto-wiring) and use an
+`@PostConstruct` method to set the `ObjectMapper` in your `ObjectMapperUtils`
+class.
+
+Another suggestion would be to refactor `ObjectMapperUtils` so that it is
+created as a Spring bean itself, then you can auto-wire `ObjectMapper`
+directly into it.
+

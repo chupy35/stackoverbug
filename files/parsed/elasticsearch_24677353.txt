@@ -1,0 +1,43 @@
+24677353 Is there any performance gain from making an elasticsearch index
+read-only
+
+Though a trivial easy task, am curious as to whether or not this has a
+positive performance benefit.
+
+    
+    
+    curl -XPUT 'localhost:9200/my_index/_settings' -d '
+    {
+        "index" : {
+            "blocks" {
+                "read_only" : "true"
+        } } }
+    '
+    
+
+I assume you mean 'search performance' (search time) since you try to make
+your index read-only.
+
+Without any changes to index (add/delete), the search performance (search
+time) should be the same whether it's set to read-only or not.
+
+In both cases, a shard may be optimized to have only one segment. There is no
+overhead to maintain/search increasing number of segments inside a shard.
+Also, there is no need to merge segments and refresh/flush as well.
+
+Please refer to ElasticSearch official document: [Dynamically updatable
+indices](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/dynamic-
+indices.html) to understand how an index update is done by ElasticSearch.
+
+Also, according to this [discussion in
+Github](https://github.com/elasticsearch/curator/issues/150), Aaron
+Mildenstein mentioned:
+
+> It has no improvement on performance whatever.
+
+>
+
+> Technically speaking, once an index has been optimized to 1 segment per
+shard, and had bloom filters disabled, there's not really anything else at the
+software level that will improve performance in any way.
+

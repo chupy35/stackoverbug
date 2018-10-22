@@ -1,0 +1,4 @@
+33278865
+elastic search aggregation and filter in R
+<p>How do I create a bucket aggregation based on a field value, and then run a query that gives me hits for each bucket (and not each document) with filters?</p>&#xA;&#xA;<p>New in elastic search and I will appreciate any help!</p>&#xA;
+<p>I'm working my way through this currently.  So far, I've figured out how to aggregate on a field, but haven't been able to apply filters yet.  Please let me know if you've made progress as I see this was posted a while ago...</p>&#xA;&#xA;<pre><code># connect to elastic search&#xA;elastic::connect('connection_string',&#xA;                 es_port = 9200)&#xA;&#xA;# define aggregation&#xA;aggs &lt;- list(&#xA;  aggs = list(&#xA;    field_name = list(&#xA;      terms = list(&#xA;        field = "field_name"&#xA;      )&#xA;    )&#xA;  )&#xA;)&#xA;&#xA;# search&#xA;Search(index = 'index_name', &#xA;       body = aggs,&#xA;       asdf = T)&#xA;</code></pre>&#xA;

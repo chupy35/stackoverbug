@@ -1,0 +1,4 @@
+30289856
+Why doesn't the timeout terminate the search request processing in elasticsearch?
+<p>As they say it in the <a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/empty-search.html#_timeout" rel="nofollow">docs</a>:</p>&#xA;&#xA;<blockquote>&#xA;  <p>It should be noted that this timeout does not halt the execution of the query; it merely tells the coordinating node to return the results collected so far and to close the connection. In the background, other shards may still be processing the query even though results have been sent.</p>&#xA;</blockquote>&#xA;&#xA;<p>Wondering why shouldn't the processing be terminated right after the result is returned due to timeout; if its known that any more results accrued wouldn't matter?</p>&#xA;
+<p>Coordinating such a thing is non-trivial in a distributed system. The developers simply decided other stuff is more important and left this one out for now. </p>&#xA;

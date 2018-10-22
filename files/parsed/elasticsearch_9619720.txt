@@ -1,0 +1,26 @@
+9619720 How to run a single specific analyzer or filter in Elasticsearch?
+
+I would like to see how different analyzers and filters respond to my input. I
+don't want to run all analyzers defined for a field in my index mapping, I
+want to be able to run them 1) individually and 2) without reindexing.
+
+It looks like it should be done this way:
+
+    
+    
+    curl -XGET 'localhost:9200/_analyze?analyzer=standard' -d 'this is a test'
+    
+
+as described at [Elasticsearch Analyze
+API](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+analyze.html), but it doesn't work for me. Has the API changed in some way?
+
+This is what I am getting:
+
+    
+    
+    No handler found for uri [/_analyze?analyzer=standard] and method [GET]
+    
+
+Solved, it works in Elasticsearch v 0.19 only.
+

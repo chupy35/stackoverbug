@@ -1,0 +1,41 @@
+20742944 Elastic Search - Having clause equivalent
+
+I have written a faceted query which returns the faceted results (equivalent
+to Group by in the SQL World).
+
+Now, I would like to get only the faceted results where the count is greater
+than a particular number (Equivalent to Having clause in SQL)
+
+Any suggestions on the same?
+
+Update : added the query.
+
+I need only the locations where the count is greater than 5. For e.g. US has
+7, UK has 5 , and rest has 3 each. So want to return US and UK only in the
+result.
+
+    
+    
+    "facets": 
+    {
+       "locations":
+       {
+            "terms": 
+            {
+            "field": "location"
+            },      
+            "facet_filter":
+            {         
+                "terms": { "location": [ "US", "UK", "DE", "FR", "JP"  ]} 
+            }
+       }
+    }
+    
+
+`HAVING` clauses are not implemented in Elasticsearch yet. You have to handle
+that client-side.
+
+See <https://github.com/elastic/elasticsearch/issues/8110>
+
+There are plans to add it, but it has not been done as of May 2015.
+

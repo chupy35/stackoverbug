@@ -1,0 +1,73 @@
+31712535 Prevent caching index.html file using spring-boot
+
+I am using spring-boot and want to prevent caching of index.html but cache all
+other resources, I have put the resource files on my classpath and prevented
+caching using the following.
+
+Currently I am doing the following which is caching all files.
+
+    
+    
+    @Configuration
+    public class StaticResourceConfig extends WebMvcConfigurerAdapter {
+    
+        private static final int SEVEN_DAYS_IN_SECONDS = 604800;
+    
+        @Override
+        public void addResourceHandlers(final ResourceHandlerRegistry registry) {
+            registry.addResourceHandler("/**")
+                    .addResourceLocations("classpath:frontend/dist/")
+                    .setCachePeriod(SEVEN_DAYS_IN_SECONDS);
+            super.addResourceHandlers(registry);
+        }
+    
+    }
+    
+
+The index.html file is located at frontend/dist/index.html
+
+I managed to do it this way:
+
+    
+    
+    @Override
+    public void addResourceHandlers(final ResourceHandlerRegistry registry) {
+    
+       registry.addResourceHandler("/index.html")
+                .addResourceLocations("classpath:frontend/dist/index.html")
+                .setCachePeriod(0);
+    
+       registry.addResourceHandler("/assets/**")
+                .addResourceLocations("classpath:frontend/dist/assets")
+                .setCachePeriod(SEVEN_DAYS_IN_SECONDS);
+    
+        super.addResourceHandlers(registry);
+    }
+    
+
+You can use `MappedInterceptor` and `WebContentInterceptor` as more flexible
+solution of configuring `Cache-Control` headers to different static resources.
+
+    
+    
+        @Bean
+        public MappedInterceptor cacheControlInterceptor() {
+            WebContentInterceptor webContentInterceptor = new WebContentInterceptor();
+            webContentInterceptor.setCacheControl(CacheControl.maxAge(0, TimeUnit.SECONDS).cachePublic());
+            webContentInterceptor.addCacheMapping(CacheControl.noStore().mustRevalidate(), "/index.html");
+            // if using Spring Security CacheControlHeadersWriter:
+            // webContentInterceptor.addCacheMapping(CacheControl.empty(), "/", "/index.html");
+            return new MappedInterceptor(null, webContentInterceptor);
+        }
+    
+
+Why is bean needed? Please see
+[Note](https://docs.spring.io/spring/docs/current/javadoc-
+api/org/springframework/web/servlet/config/annotation/WebMvcConfigurerAdapter.html#addInterceptors-
+org.springframework.web.servlet.config.annotation.InterceptorRegistry-)
+
+See also: [SPR-10655](https://jira.spring.io/browse/SPR-10655) and
+[SPR-13780](https://jira.spring.io/browse/SPR-13780) (it can be strange
+because even Spring Security CacheControlHeadersWriter use chain of 4
+directives such as "no-cache, no-store, max-age=0, must-revalidate")
+

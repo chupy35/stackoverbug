@@ -1,0 +1,50 @@
+16688578 Indexing and searching tree structures with elasticsearch
+
+I want to index a catalog structure with folders and objects. Each folder can
+contain subfolder and objects.
+
+Mapping:
+
+    
+    
+    {
+        "mappings" : {
+            "folder" : {    
+                "_parent" : {
+                    "type" : "folder"
+                },
+                "properties" : {
+                    "name" : {
+                        "type" : "string"
+                    }
+                }
+            },
+            "object" : {    
+                "_parent" : {
+                    "type" : "folder"
+                },
+                "properties" : {
+                    "name" : {
+                        "type" : "string"
+                    }
+                }
+            }
+        }
+    }
+    
+
+The depth of the tree structure is unknown.
+
+The search should match all objects which match a specified query and all
+items whereby at least one folder in the path match a specified query. This
+last part I don't know how to do without nesting the `has_parent` query many
+times (which would put a limit on the tree depth).
+
+I think a `match_all` and filter based solution wouldn't work either.
+
+Is there any workable solution for this problem? (With one query - maybe with
+a different mapping?)
+
+PS: Duplicating the information of the folders on the item (or vice versa) is
+not an option since it's to much information.
+

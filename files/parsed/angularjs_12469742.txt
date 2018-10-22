@@ -1,0 +1,41 @@
+12469742 Angularjs list and detail view
+
+this is my basic scenario. For a list of items (summary view) i want to show
+details view of item that got clicked on the same page.
+
+I took this jsfiddle
+[example](http://jsfiddle.net/pkozlowski_opensource/65Cxv/7/) and transformed
+it into this [jsfiddle](http://jsfiddle.net/ptGWr/8/). If you look at the
+behavior it does work for first time but it is not consistent.
+
+Maybe someone can help me with this, or suggest a better approach. I would
+like to have a different controller for managing the list and a different
+controller to handle the detail view.
+
+One way of transforming the example (provided that you want to use ngSwitch)
+would be:
+
+    
+    
+    <ul ng-controller="ListController">
+        <li ng-repeat="item in items" ng-controller="ItemController">
+            <div ng-click="open(item)">{{item.content}}</div>        
+        </li>
+        <hr>
+        <ng-switch on="anyItemOpen()">
+         <div ng-switch-when="true">
+             <div ng-controller="ItemController">
+                 {{opened.name}}: overlay: tweet, share, pin
+             </div>  
+             <a ng-click="close()">close</a>         
+         </div>
+        </ng-switch>   
+    </ul>
+    
+
+And here is the working jsFiddle:
+<http://jsfiddle.net/pkozlowski_opensource/sJdzt/4/>
+
+Your jsFiddle didn't work since you were trying to reference `item` created in
+the ngRepeat scope (and thus not available outside of the ngRepeat).
+

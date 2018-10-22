@@ -1,0 +1,9 @@
+22449811 Indexing multilingual content in elastisearch
+
+What is the best way to index multilingual content (blog post) in
+[elasticsearch](http://elasticsearch.org/). Should I use a different index for
+each language? Different type or create multiple field?
+
+I end up using different types one for each language. This solution works
+pretty well.
+

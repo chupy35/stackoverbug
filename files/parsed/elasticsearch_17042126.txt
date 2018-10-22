@@ -1,0 +1,165 @@
+17042126 settings the "index" property of an elasticsearch object
+
+say I have a mapping of objects as such the mapping is:
+
+    
+    
+    {"my_type":
+        {"properties":
+            {"name":{"type":"string","store":"yes","index":"not_analyzed"},
+             "more":{"type":"object",
+                     "properties":{"a_known_number":{"type":"long","index":"yes"},
+                                   "some_json_object":{"type":"object"}
+                                  }
+                    }
+            }
+        }
+    }
+    
+
+I do not know what sub fields the "some_json_object" will have, but i DO know
+that I only want to store this object, but not index any of it's sub-fields.
+Can I do:
+
+    
+    
+        {"my_type":
+        {"properties":
+            {"name":{"type":"string","store":"yes","index":"not_analyzed"},
+             "more":{"type":"object",
+                     "properties":{"a_known_number":{"type":"long","index":"yes"},
+                                   "some_json_object":{"type":"object","store":"yes","index":"no"}
+                                  }
+                    }
+            }
+        }
+    }
+    
+
+and affect all of the resulting sub-fields?
+
+No, you can't specify the entire "object" as not indexed. However you can use
+dynamic_templates (<http://www.elasticsearch.org/guide/reference/mapping/root-
+object-type/>) to do this:
+
+    
+    
+    {
+       "my_type":{
+          "properties":{
+             "name":{
+                "type":"string",
+                "store":"yes",
+                "index":"not_analyzed"
+             }
+          },
+          "dynamic_templates":[
+             {
+                "stored_json_object_template":{
+                   "path_match":"some_json_object.*",
+                   "mapping":{
+                      "store":"yes",
+                      "index":"no"
+                   }
+                }
+             }
+          ]
+       }
+    }
+    
+
+This tells the mapper to map all properties for "some_json_object" as stored
+strings.
+
+**Update** Removed type from mapping in order to match all property types
+(match_path => path_match).
+
+**Update 2** If you then create an index:
+
+    
+    
+    {
+       "mappings":{
+          "my_type":{
+             "properties":{
+                "name":{
+                   "type":"string",
+                   "store":"yes",
+                   "index":"not_analyzed"
+                }
+             },
+             "dynamic_templates":[
+                {
+                   "stored_json_object_template":{
+                      "path_match":"some_json_object.*",
+                      "mapping":{
+                         "store":"yes",
+                         "index":"no"
+                      }
+                   }
+                }
+             ]
+          }
+       }
+    }
+    
+
+and index an object:
+
+    
+    
+    {
+       "Name":"Henrik",
+       "some_json_object":{
+          "string":"string",
+          "long":12345
+       }
+    }
+    
+
+it will then get the following mapping:
+
+    
+    
+    {
+       "testindex":{
+          "my_type":{
+             "dynamic_templates":[
+                {
+                   "stored_json_object_template":{
+                      "mapping":{
+                         "index":"no",
+                         "store":"yes"
+                      },
+                      "path_match":"some_json_object.*"
+                   }
+                }
+             ],
+             "properties":{
+                "name":{
+                   "type":"string",
+                   "index":"not_analyzed",
+                   "store":true,
+                   "omit_norms":true,
+                   "index_options":"docs"
+                },
+                "some_json_object":{
+                   "properties":{
+                      "long":{
+                         "type":"long",
+                         "index":"no",
+                         "store":true
+                      },
+                      "string":{
+                         "type":"string",
+                         "index":"no",
+                         "store":true
+                      }
+                   }
+                }
+             }
+          }
+       }
+    }
+    
+

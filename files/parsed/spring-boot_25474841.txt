@@ -1,0 +1,52 @@
+25474841 How to configure default DispatcherServlet?
+
+`throwExceptionIfNoHandlerFound` was introduced in `DispatcherServlet` in
+Spring 4.0.
+
+I have tried to figure out how to set this property in the autoconfigured
+`DispatcherServlet` provided by Spring Boot, but no luck.
+
+Some digging suggests the snippet below should work, but it doesn't.
+
+    
+    
+    @Bean
+    public ServletContextInitializer servletContextInitializer() {
+        return new ServletContextInitializer() {
+            @Override
+            public void onStartup(ServletContext servletContext) throws ServletException {
+                servletContext.setInitParameter("throwExceptionIfNoHandlerFound", "true");
+    
+            }
+        };
+    }  
+    
+
+Try adding a `@Bean` of type `DispatcherServlet` and setting whatever
+properties you need directly.
+
+With a `BeanPostProcessor` you can modify a bean after its construction/init
+phase. You could write a `BeanPostProcessor` which only modifyes the
+`DispatcherServlet`.
+
+    
+    
+    
+    public class DispatcherServletConfigurer implements BeanPostProcessor {
+    
+        public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+             if (bean instanceof DispatcherServlet) {
+                 ((DispatcherServlet) bean).setThrowExceptionIfNoHandlerFound(true);
+             }
+             return bean;
+        }
+    
+        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+            return bean;
+        }
+    }
+    
+    
+
+Then simply add this as a `@Bean` to your configuration.
+

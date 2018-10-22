@@ -1,0 +1,276 @@
+23634687 ElasticSearch nested [AND OR] filter
+
+I have a query that I'm struggling with in ElasticSearch. In fact, I have two
+queries, the first works, but the second doesn't.
+
+Here's the basics 1st query, which is fine (the query is actually quite a bit
+bigger than this, I've stripped it down for ease of understanding):
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all":{}
+                },
+                "filter": {
+                    "and": [{
+                        "term":{
+                            "relatedID":"214"
+                        }
+                    },
+                    {
+                        "term":{
+                            "relatedType":"deal"
+                        }
+                    }]
+                }
+            }
+        }
+    }
+    
+
+So basically, grab all items where relatedID == 214 && relatedType == "deal"
+
+However, what I'd also like to do, is this:
+
+    
+    
+    {
+        "query": {
+            "filtered": {
+                "query": {
+                    "match_all":{}
+                },
+                "filter": {
+                    "and": [{
+                        {
+                            "or":[{
+                                    "and":[{
+                                        "relatedID":"528"
+                                    },
+                                    {
+                                        "relatedType":"company"
+                                     }]
+                                },{
+                                    "and":[{
+                                        "relatedID":"214"
+                                     },
+                                     {
+                                        "relatedType":"deal"
+                                      }
+                                      ]}
+                                 ]}
+                            ]}
+                        }
+                    }                
+                }
+            }
+        }
+    }
+    
+
+So basically, grab everything where either deal AND 214, or company AND 528.
+
+This is where I seem to be getting stuck.
+
+As I said, there's a lot more in the query (see full query below, which might
+help understand why I've tried to structure it above):
+
+    
+    
+    {
+    "query":{
+        "filtered":{
+            "query":{
+                "match_all":{}
+             },
+             "filter":{
+                "and":[
+                    {
+                        "or":[
+                            {
+                                "term":{
+                                    "timeSensitive":false
+                                }
+                            }
+                            ,
+                            {
+                                "range":{
+                                    "validTo":{
+                                        "gt":"20140513T153030Z"
+                                     },
+                                     "validFrom":{
+                                        "lt":"20140513T153030Z"
+                                     }
+                                }
+                            }
+                            ]
+                        }
+                        ,
+                        {
+                            "term":{
+                                "categoryTree.NAME":"Promotions"
+                             }
+                         }
+                         ,
+                         {
+                            "or":[
+                                {
+                                    "and":[
+                                        {
+                                            "relatedID":"528"
+                                        }
+                                        ,
+                                        {
+                                            "relatedType":"company"
+                                        }
+                                    ]
+                                }
+                                ,
+                                {
+                                    "and":[
+                                        {
+                                            "relatedID":"214"
+                                        }
+                                        ,
+                                        {
+                                            "relatedType":"deal"
+                                         }
+                                      ]
+                                 }
+                             ]
+                         }
+                         ,
+                         {
+                            "terms":{
+                                "permissions": ["member","supplier"]
+                            }
+                         }
+                         ,
+                         {
+                            "term":{
+                                "siteID":6
+                             }
+                          }
+                       ]
+                    }
+                 }
+              }
+           }
+       }
+    
+
+}
+
+Its syntax error.The problem is You didn't mentions term filter inside
+(and,or)filter.
+
+try to use boolean filter and query its more faster than (and or) filter.
+
+**[AND OR] Filter**
+
+    
+    
+    {
+    "query": {
+      "filtered": {
+         "query": {
+            "match_all": {}
+         },
+         "filter": {
+            "and": [
+               {
+                  "or": [
+                     {
+                        "and": [
+                           {
+                              "term": {
+                                 "relatedID": "528"
+                              }
+                           },
+                           {
+                              "term": {
+                                 "relatedType": "company"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "and": [
+                           {
+                              "term": {
+                                 "relatedID": "214"
+                              }
+                           },
+                           {
+                              "term": {
+                                 "relatedType": "deal"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               }
+            ]
+         }
+       }
+       }
+      }
+    
+
+**Same Query i converted in to bool filter**
+
+    
+    
+    curl -XPOST "http://localhost:9200/try/_search" -d'
+    {
+    "query": {
+    "filtered": {
+       "query": {
+       "match_all": {}
+       },
+       "filter": {
+           "bool": {
+               "should": [
+                  {
+                      "bool": {
+                          "must": [
+                             {
+                                 "term": {
+                                    "relatedID":"528"
+                                 }
+                             },
+                              {
+                                 "term": {
+                                    "relatedType":"company"
+                                 }
+                             }
+                          ]
+                      }
+                  },
+                  {
+                      "bool": {
+                          "must": [
+                             {
+                                 "term": {
+                                    "relatedID":"214"
+                                 }
+                             },
+                              {
+                                 "term": {
+                                    "relatedType":"deal"
+                                 }
+                             }
+                          ]
+                      }
+                  }
+               ]
+           }
+       }
+    }
+    }
+    }'
+    
+

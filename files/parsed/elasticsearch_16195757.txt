@@ -1,0 +1,49 @@
+16195757 Elasticsearch: _count give strange result
+
+$ curl -XGET '<http://test.server.es:9200/index/test/_count?pretty>'
+
+    
+    
+    {
+      "count" : 229594,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      }
+    }
+    
+
+try again:
+
+$ curl -XGET '<http://test.server.es:9200/index/test/_count?pretty>'
+
+    
+    
+    {
+      "count" : 226967,
+      "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+      }
+    }
+    
+
+The "count" value is smaller than the previous _count, yet no delete operation
+between the two _count.
+
+One of your nodes went crazy and has uncomplete shards on it.
+
+Ask for stats and find the faulty node:
+
+    
+    
+    curl -XGET 'http://localhost:9200/_cluster/nodes/stats'
+    
+
+If you had replica set to at least 1, then just stop this node, remove the
+data dir and restart the node.
+
+My 2 cents
+

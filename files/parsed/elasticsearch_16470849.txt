@@ -1,0 +1,80 @@
+16470849 Elasticsearch equivalent to Map-Reduce
+
+What is the equivalent of map-reduce in ElasticSearch when the processing is
+too much for the client-side? Is there something like "streaming" so the
+client can reduce data to output as it comes in?
+
+Assume I need to do a join, or complex filtering at client side, the type that
+might not fit in memory without some map-reduce scheme. I don't mind waiting a
+long time for the response, but I dont want to crush the machine (client
+and/or server).
+
+How should I go about this?
+
+Example, mappings:
+
+    
+    
+    {"book":{"properties":{
+                           "title":{"type":"string", "index":"analyzed"},
+                           "author":{"type":"string", "index":"analyzed"},
+    }
+    
+    {"character":{"properties":{
+                           "book_id":{"type":"string", "index":"not_analyzed"},
+                           "name":{"type":"string", "index":"analyzed"},
+                           "age":{"type":"integer"},
+                           "catch-phrase":{"type":"string", "index":"analyzed"},
+    }
+    
+
+Say I want to find all the books that have at least M characters that have a
+catch phrase no longer than N (where N is a parameter supplied at client side)
+
+so it would be `get_books_with_short_phrases(M,N)`
+
+I could of course add fields such as "phrase-length" to the "character" type,
+but let's assume the processing on "catch-phrase" might be changing all the
+time.
+
+I'd like to stream the "characters" and "books" to the client, go over each
+client and output a key-value of `<book>-<character,len(phrase)>` then reduce
+it further to `<book>-<num_of_chars_with_short_phrase>`
+
+If I load all documents into the client memory, that might be a disaster. If
+the client processes each book and reduces it to a k,v it might be better.
+
+Am I going wrong about it?
+
+Is the solution running scripts on the server somehow, so it performs the map-
+reduce?
+
+afaik you can't do streaming with ES.
+
+As I'm sure you know it's best to get into a different mindset in which
+'joins' do not exist. Instead denormalize and try to cover your usecase with 1
+query to ES of course this doesn't always work.
+
+In the above case however, I invite you to take a look at the script-filter,
+which allows complex computations (akin to sql stored procedures) which allow
+query-time parameters.
+
+I'm pretty confident this should give you the tools to do the query in 1 go on
+the server, although I only didn't look deep into it.
+
+<http://www.elasticsearch.org/guide/reference/query-dsl/script-filter/>
+<http://www.elasticsearch.org/guide/reference/modules/scripting/>
+
+Yes, data should probably be denormalized so you have everything in one
+document.
+
+Then I would look at [scripted
+metrics](https://www.elastic.co/guide/en/elasticsearch/reference/1.4/search-
+aggregations-metrics-scripted-metric-aggregation.html), which allows you to
+use either in-query groovy scripts or native Java scripts to perform a
+map/reduce like distributed processing on the Elasticsearch nodes themselves
+where you only return the resulting reduced values. See e.g. [this
+example](https://github.com/imotov/elasticsearch-native-script-
+example/tree/master/src/main/java/org/elasticsearch/examples/nativescript/script/stockaggs)
+for a sample Java implementation.
+

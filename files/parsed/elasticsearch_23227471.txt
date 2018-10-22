@@ -1,0 +1,47 @@
+23227471 Elasticsearch - [fuzzy] query does not support [fuzziness]
+
+I am receiving an error when querying elasticsearch - [fuzzy] query does not
+support [fuzziness]
+
+    
+    
+    curl -XGET "http://localhost:9200/searches_development_20140329164207570/search_term/_search/?pretty=true" -d '{
+    "query": {
+      "fuzzy": {
+        "displayname": {
+          "value": "altanta",
+          "fuzziness": 2
+        }
+      }
+    }
+    }'
+    
+
+Examining the query DSL this is the correct way to go about performing a fuzzy
+query
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-fuzzy-query.html>
+
+It is not immediately clear to me what I am doing wrong - if i remove the
+'fuzziness' option, the query validates but it is supported according to the
+documentation. Why is exception being thrown?
+
+Here is some sample data I hope to match on
+<https://gist.github.com/lfender6445/b4fba20c2736a017584e>
+
+Here is the complete error message:
+
+    
+    
+    {
+      "error" : "SearchPhaseExecutionException[Failed to execute phase [query], all shards failed; shardFailures {[1daKAcneQXeFsEfxPwKEmg][searches_development_20140329164207570][4]: SearchParseException[[searches_development_20140329164207570][4]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n\"query\": {\n  \"fuzzy\": {\n    \"displayname\": {\n      \"value\": \"altanta\",\n      \"fuzziness\": 2\n    }\n  }\n}\n}]]]; nested: QueryParsingException[[searches_development_20140329164207570] [fuzzy] query does not support [fuzziness]]; }{[1daKAcneQXeFsEfxPwKEmg][searches_development_20140329164207570][2]: SearchParseException[[searches_development_20140329164207570][2]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n\"query\": {\n  \"fuzzy\": {\n    \"displayname\": {\n      \"value\": \"altanta\",\n      \"fuzziness\": 2\n    }\n  }\n}\n}]]]; nested: QueryParsingException[[searches_development_20140329164207570] [fuzzy] query does not support [fuzziness]]; }{[1daKAcneQXeFsEfxPwKEmg][searches_development_20140329164207570][3]: SearchParseException[[searches_development_20140329164207570][3]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n\"query\": {\n  \"fuzzy\": {\n    \"displayname\": {\n      \"value\": \"altanta\",\n      \"fuzziness\": 2\n    }\n  }\n}\n}]]]; nested: QueryParsingException[[searches_development_20140329164207570] [fuzzy] query does not support [fuzziness]]; }{[1daKAcneQXeFsEfxPwKEmg][searches_development_20140329164207570][0]: SearchParseException[[searches_development_20140329164207570][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n\"query\": {\n  \"fuzzy\": {\n    \"displayname\": {\n      \"value\": \"altanta\",\n      \"fuzziness\": 2\n    }\n  }\n}\n}]]]; nested: QueryParsingException[[searches_development_20140329164207570] [fuzzy] query does not support [fuzziness]]; }{[1daKAcneQXeFsEfxPwKEmg][searches_development_20140329164207570][1]: SearchParseException[[searches_development_20140329164207570][1]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n\"query\": {\n  \"fuzzy\": {\n    \"displayname\": {\n      \"value\": \"altanta\",\n      \"fuzziness\": 2\n    }\n  }\n}\n}]]]; nested: QueryParsingException[[searches_development_20140329164207570] [fuzzy] query does not support [fuzziness]]; }]",
+      "status" : 400
+    }  
+    
+    
+    elasticsearch -v
+    Version: 0.90.11, Build: 11da1ba/2014-02-03T15:27:39Z, JVM: 1.6.0_65
+    
+
+Fixed by upgrading to `ES 1.1.1`
+

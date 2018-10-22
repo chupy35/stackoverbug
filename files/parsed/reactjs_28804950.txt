@@ -1,0 +1,36 @@
+28804950 Developing a simple table
+
+I am trying to develop a simple table in React.js. I seen this code from a
+site but can not understand what this actually does.
+
+    
+    
+    var React = __webpack_require__(2);
+    var GridTable = __webpack_require__(5);
+    var GridFilter = __webpack_require__(6);
+    var GridPagination = __webpack_require__(7);
+    var GridSettings = __webpack_require__(8);
+    var GridNoData = __webpack_require__(9);
+    var CustomRowComponentContainer = __webpack_require__(10);
+    var CustomPaginationContainer = __webpack_require__(11);
+    var ColumnProperties = __webpack_require__(4);
+    var _ = __webpack_require__(3);
+    
+
+Does underscore has a predefined meaning or function in React.js
+
+I think you misunderstood it,[
+**webpack_require**](http://webpack.github.io/docs/api-in-
+modules.html#__webpack_require__) is a function for requiring modules.
+
+> **webpack_require**
+
+>
+
+> The raw require function. This expression isn’t parsed by the Parser for
+dependencies.
+
+>
+
+> Style: webpack
+

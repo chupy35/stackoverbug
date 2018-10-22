@@ -1,0 +1,71 @@
+28303722 how to append new component in reactjs not being bundled
+
+I am new to ReactJS and had been through some examples: [flux-todo-
+mvc](https://github.com/facebook/flux/tree/master/examples/flux-todomvc/).
+Since react keeps component in a tree structure and updates on state change.
+
+How can I add a new child component (not bundled) at specific node of tree
+without page refresh?
+
+**More Description**
+
+Suppose component `X` can have three types of child: `A`, `B` and `C`. At
+first GET request it is always `A` so `X -> A` is rendered and to make it fast
+we did not include `B` and `C`. For example:
+
+    
+    
+    X = React.createClass({
+        render: function() {
+            return (
+                <A />
+            );
+        }
+    });
+    React.render( <X />, document.getElementById('_x') );
+    
+
+After this, with some change in state can we change child of `X` to `B` or `C`
+using AJAX request
+
+You can write conditional logic inside your render function to set a variable
+to null or a component instance. And inject that inside the returned render
+JSX.
+
+Such as:
+
+    
+    
+    render: function() {
+      var subComponent = null;
+      if (this.state.showSub) {
+        subComponent = <Child />;
+      }
+      return (
+        <div>{subComponent}</div>
+      );
+    }
+    
+
+Only way to do it with state changes in real time. Can't update the render
+code in real time without an actual refresh.
+
+you can do something like this:
+
+    
+    
+    render: function() {
+      var child = function(){
+          if(this.state.ajax_result ==1) {return <B/>
+          else if(this.state.ajax_result ==2) {return <C/>}
+          else {return <A/>}
+      }
+    
+    
+    return ( {child} );
+    }
+    
+
+now outside of render, listen to your ajax calls. every time the state will
+change, your component will re-render
+

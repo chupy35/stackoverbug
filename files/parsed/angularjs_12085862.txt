@@ -1,0 +1,73 @@
+12085862 How to load language-specific templates in AngularJS?
+
+I have a route defined as
+
+$routeProvider.when('/:culture/:gameKey/:gameId/closed', { templateUrl:
+'/templates/tradingclosed', controller: TradingClosedCtrl });
+
+I would like angular to include the "culture" parameter when requesting the
+template somehow, so I can serve a translated template.
+
+Is this possible?
+
+If I'm reading this correctly you'd like to somehow use the `culture`
+parameter from the url route to determine which location to retrieve your
+template.
+
+There may be a better way but [this
+post](https://stackoverflow.com/a/11535887/1207991) describes retrieving the
+`$routeParams` inside a centralized controller with `ng-include` to
+dynamically load a view.
+
+Something similar to this:
+
+    
+    
+    angular.module('myApp', []).
+        config(function ($routeProvider) {
+            $routeProvider.when('/:culture/:gameKey/:gameId/closed', {
+                templateUrl: '/templates/nav/urlRouter.html',
+                controller: 'RouteController'
+            });
+        });
+    
+    function RouteController($scope, $routeParams) {
+            $scope.templateUrl = 'templates/tradingclosed/' + $routeParams.culture + '_template.html';
+        }
+    
+
+With this as your **urlRouter.html** :
+
+    
+    
+    <div ng-include src="templateUrl"></div>
+    
+
+You can define the controller you want to load in your views using ng-
+controller and access the `$routeParams` for the additional route parameters:
+
+    
+    
+    <div ng-controller="TradingClosedCtrl">
+    </div>
+    
+
+I've posted [similar
+question](https://stackoverflow.com/questions/14053939/how-to-get-localized-
+templates-templateurl-in-routing-with-angularjs) with working [Plnkr
+example](http://plnkr.co/edit/3oCumxsJPld4XTE4ZpAQ?p=preview) of solution like
+@Gloopy suggested.
+
+The reason why you can't implement that without ng-include is that routing is
+done in 'configuration' block, where you can't inject any values (you can read
+about these blocks in [Modules
+documentation](http://docs.angularjs.org/guide/module), section **Module
+Loading & Dependencies**
+
+If you want not to introduce new scope, you can replace ng-include with my
+stripped version of ng-include directive, that do absolutely same that ng-
+include does, but do not create new scope: [source of rawInclude
+directive](https://gist.github.com/4387706)
+
+Hope that solution will satisfy your use case.
+

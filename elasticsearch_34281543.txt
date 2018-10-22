@@ -1,0 +1,4 @@
+34281543
+Elasticsearch: Do I need to index '_id' filed specifically?
+<p>Looks like _id field is automatically mapped to <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-uid-field.html" rel="nofollow">_uid</a> by the Elasticsearch.</p>&#xA;&#xA;<p>I have below query to get a document by passing document's _id</p>&#xA;&#xA;<pre><code>query: {&#xA;    match: {&#xA;      _id: myDocumentId&#xA;    }&#xA;  }&#xA;</code></pre>&#xA;&#xA;<p>Should I specify indexing for _id field to make above query work fast or is it taken care by using _uid filed internally?</p>&#xA;
+<p>You can just use </p>&#xA;&#xA;<pre><code>GET /&lt;index_name&gt;/&lt;type_name&gt;/&lt;myDocumentId&gt;&#xA;</code></pre>&#xA;

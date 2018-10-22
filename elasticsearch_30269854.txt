@@ -1,0 +1,4 @@
+30269854
+Elastic search - english query
+<p>I have two type in a index called customer and address. custoemr id is foreign key in address table. but they are not nested types. is it possible to write query like "John live in London" which should fetch customers who live in london..?</p>&#xA;
+<p>If you want/need to have them in separate types, this is what <a href="https://www.elastic.co/guide/en/elasticsearch/guide/master/parent-child.html" rel="nofollow">Parent-Child Relationship</a> is for.</p>&#xA;&#xA;<p>Another common practice is simply to have the data de-normalized. If addresses are not often shared between customers you could just include it with the customer. Probably directly unless you have multiple addresses in which nested likely makes more sense.</p>&#xA;

@@ -1,0 +1,30 @@
+24837970 Elasticsearch - How to secure (lock) mapping from accidental deletion
+
+let us say here is the mapping
+
+localhost:9200/index/mapping
+
+now
+
+    
+    
+    curl -XDELETE 'localhost:9200/index/mapping/id'
+    
+
+this will delete the record with the given id
+
+but if we miss the /id by mistake that is
+
+    
+    
+    curl -XDELETE 'localhost:9200/index/mapping'
+    
+
+then elasticsearch will delete the mapping completely.
+
+How to avoid this? is there any configuration option available in
+elasticsearch to lock the mapping from deletion?
+
+There is no configuration setting, index setting, or map setting that will
+prevent disallow this operation.
+

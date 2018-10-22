@@ -1,0 +1,77 @@
+10542691 How do I observe transcluded elements of a directive?
+
+I trying to write a pagination directive, but to do that, I need to know how
+many elements are being transcluded, so the HTML can look something like this
+
+    
+    
+    <pagelister>
+        <div ng-repeat="name in searchResults">{{name}}</div>
+    </pagelister>
+    
+
+(That's a simple case -- the code transcluded might be arbitrarily
+complicated.)
+
+The directive has to watch... something, so it can recalculate the number of
+pages.
+
+**EDIT** Sorry, the code wasn't called out _as_ code. I want the above code to
+break up the names in the list into pages of, say, 10 long and add some nice
+next/prev buttons.
+
+The problem is when the `link` function of the directive is called, the divs
+have not yet been expanded. I "fixed" that by just deferring the alteration to
+the DOM -- but that only works the _first_ time. If $scope.searchResults (or
+anything else observed by the transcluded code) changes, I need to re-adjust
+the DOM. I just need to know when that is.
+
+If your directive is not creating its own child scope or its own isolate
+scope, the directive will have access to the searchResults array. The link
+function can simply watch the length:
+
+    
+    
+    link: function(scope, element, attrs) {
+        scope.$watch('searchResults.length', function(newLength) { ... } );
+    
+
+What about passing nessasry information to directive using directive scope
+binging.
+
+kind of:
+
+    
+    
+    <pagelister pages="searchResults"> ... transcluded template</pagelister>
+    ...
+    scope: { pages: '=' },
+    link: function(scope, element, attrs) { 
+      scope.$watch('pages', ...)
+    
+
+I achieved this by setting an attribute on the directive to tell it what to
+watch - therefore there were no dependencies within the directive (except the
+attr).
+
+    
+    
+     :parent controller
+     $scope.searchResultsLength = searchResults.length (or anything you choose || or an empty object)
+    
+    :html
+     <pagelister pages="searchResults" watch="searchResultsLength">
+    
+    :inside directive controller
+    return {        
+        replace: false,
+        transclude: true,
+        scope: true, //important
+        controller: function($scope, $element) {
+                $scope.$watch($element[0].getAttribute("watch"), fn);
+     ...
+    
+
+It's far from idea but it means I could drop this directive in anywhere and it
+would wrap my ng-repeat and manage the automatic updates
+

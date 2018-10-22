@@ -1,0 +1,75 @@
+21571216 is sending state of current component as a parameter to another
+external method possible in react
+
+    
+    
+    /** @jsx React.DOM */
+    
+    // create a login component
+    var Login = React.createClass({
+      displayName: 'loginComp',
+      getInitialState: function () {
+        return {
+          id_uname: 'u',
+          id_pwd: 'p'
+        };
+      },
+      onChange: function(e){
+        if(e.target.name=="username")
+          this.setState({id_uname: e.target.value});
+        else
+          this.setState({id_pwd: e.target.value});
+      },
+      handleSubmit: function (e) {
+        console.log(this.state.id_uname);
+        console.log(this.state.id_pwd);
+      },
+      render: function () {
+        var objState = this.state;
+        var asd = "asd";
+    
+        return (
+          <fieldset>
+            <input ref='username' type="text" name="username" onChange={this.onChange}/>
+            <input ref='password' type="password"  name="password" onChange={this.onChange}/>
+            <button ref='password' type="submit" onClick={this.props.handleSubmit(this.state) ||  this.handleSubmit}>Submit</button>
+          </fieldset>
+        );
+      }
+    });
+    
+    var sub = function(state){
+      console.log('-- OUTSIDE--');
+      console.log('-- --',state);
+    };
+    
+    React.renderComponent(
+      <Login handleSubmit={sub}/>,
+      document.body
+    );
+    
+
+When i click the button, it should go to sub method .. instead sub method
+responds to every state change and in the end when i press button it goes to
+default handleSubmit method .. Help !!
+
+When you write
+
+    
+    
+    onClick={this.props.handleSubmit(this.state) ||  this.handleSubmit}
+    
+
+you're calling the `this.props.handleSubmit` handler immediately and setting
+its _result_ as the onClick handler. I'm guessing you want to instead do a
+partial application, which you can do using `.bind`:
+
+    
+    
+    onClick={this.props.handleSubmit.bind(null, this.state)}
+    
+
+(Also, it's probably best to explicitly pass specific state keys to the
+handler, or else you may end up accidentally passing internal state on as you
+make future changes.)
+

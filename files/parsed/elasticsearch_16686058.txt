@@ -1,0 +1,121 @@
+16686058 ElasticSearch returns Zero Hits with MongoDB-River plugin
+
+I am trying make "elasticsearch-river-mongodb" plug-in with my local MongoDB
+instance.
+
+With help from <http://satishgandham.com/2012/09/a-complete-guide-to-
+integrating-mongodb-with-elastic-search/#comment-2871>
+
+I am able to get rid of 404 exception. However, all my queries to
+ElasticSearch index return NO hits.
+
+Following are the steps I have followed in sequence.
+
+  1. Installed MongoDB 2.4.3
+  2. Enabled ReplicaSet = rs0
+  3. Enabled oplogSize = 100
+  4. Restarted MongoDB Server
+  5. Configured the rsConf variable on MongoShell
+  6. Initiated the ReplicaSet
+
+* * *
+    
+    
+    rs0:PRIMARY> rs.status()
+    {
+        "set" : "rs0",
+        "date" : ISODate("2013-05-21T17:42:41Z"),
+        "myState" : 1,
+        "members" : [
+            {
+                "_id" : 0,
+                "name" : "127.0.0.1:27017",
+                "health" : 1,
+                "state" : 1,
+                "stateStr" : "PRIMARY",
+                "uptime" : 865,
+                "optime" : {
+                    "t" : 1369157994,
+                    "i" : 1
+                },
+                "optimeDate" : ISODate("2013-05-21T17:39:54Z"),
+                "self" : true
+            }
+        ],
+        "ok" : 1
+    }
+    
+
+* * *
+
+  7. Installed ES
+  8. Installed attachment plugin `(ES_HOME/bin/plugin -install elasticsearch/elasticsearch-mapper-attachments/1.4.0)`
+  9. Installed River plugin `(ES_HOME/bin/plugin -install richardwilly98/elasticsearch-river-mongodb/1.4.0)`
+  10. Restarted ES
+  11. Curl ES to index documents from MongoDB with following command successfully.
+
+* * *
+    
+    
+    purl -XPUT 'http://`127.0.0.1`:9200/_river/mongodb/_meta' -d '{ 
+        "type": "mongodb", 
+        "mongodb": { 
+            "db": "players", 
+            "collection": "scores"
+        }, 
+        "index": {
+            "name": "scoresindex", 
+            "type": "score" 
+        }
+    }'
+    
+
+* * *
+
+  12. Added new documents to MongoDB 
+  13. On MongDB `db.oplog.rs.find()` collection returns new updates
+
+* * *
+    
+    
+    rs0:PRIMARY> db.oplog.rs.find()
+    { "ts" : { "t" : 1369152540, "i" : 1 }, "h" : NumberLong(0), "v" : 2, "op" : "n", "ns" : "", "o" : { "msg" : "initiating set" } }
+    { "ts" : { "t" : 1369152706, "i" : 1 }, "h" : NumberLong("7734203254950592529"), "v" : 2, "op" : "i", "ns" : "players.scores", "o" : { "_id" : ObjectId("519b9cc2871b3116f0b8006e"), "name" : "rohit", "score" : 20 } }
+    { "ts" : { "t" : 1369157720, "i" : 1 }, "h" : NumberLong("2546253279621321716"), "v" : 2, "op" : "i", "ns" : "test.scores", "o" : { "_id" : ObjectId("519bb058b6fd31855ec8b0af"), "name" : "karthik", "score" : 20 } }
+    { "ts" : { "t" : 1369157994, "i" : 1 }, "h" : NumberLong("-3356531630527802451"), "v" : 2, "op" : "i", "ns" : "test.scores", "o" : { "_id" : ObjectId("519bb16ab6fd31855ec8b0b0"), "name" : "dinesh", "score" : 20 } }
+    
+
+* * *
+
+The problem i am facing is : Searching on ElasticSearch using following
+command
+
+* * *
+    
+    
+    curl -XGET 'http://`127.0.0.1`:9200/scoresindex/_search?q=name:dinesh'
+    
+
+* * *
+
+for newly added document to scores collection on MongoDB does not return any
+results.
+
+I have tried posting document directly to ES and it DOES return the results
+but not from the documents in MongoDB.
+
+Is there something i am missing? Appreciate your help in advance.
+
+Thank You
+
+According to the [project](https://github.com/richardwilly98/elasticsearch-
+river-mongodb) [1](https://github.com/richardwilly98/elasticsearch-river-
+mongodb) MongoDB 2.4.3 is only supported in version 1.6.6 and above of the
+river. Which version of Elasticsearch are you running?
+
+Please take a look a the [wiki page "install guide"
+section](https://github.com/richardwilly98/elasticsearch-river-
+mongodb/wiki#install-guide).
+
+Thanks, Richard.
+

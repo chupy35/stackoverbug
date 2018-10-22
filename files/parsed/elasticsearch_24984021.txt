@@ -1,0 +1,22 @@
+24984021 Elasticsearch - startswith filter?
+
+I am trying to get a simple startswith functionality in Elasticsearch. For
+example, I want the query "char" to match "charlotte", but I don't want it to
+match "dacharlotte". Using an edgeNgram filter gave me the latter result. I
+only want it to match results that START with the query terms, not just have
+them in them.
+
+The simplest way to do what you want would be to use the prefix query:
+
+    
+    
+    {
+        "query": {
+             "prefix":{ "name" : "char" }
+         }
+    }
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-prefix-query.html>
+

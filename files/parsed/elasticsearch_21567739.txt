@@ -1,0 +1,63 @@
+21567739 suggestion completion across multiple types in an index
+
+Is it possible to do a suggestion completion on a type? I'm able to do it on
+an index.
+
+    
+    
+    POST /data/_suggest
+    {
+      "data" : {
+        "text" : "tr",
+        "completion" : {
+          "field" : "sattributes",
+          "size":50
+        }
+      }
+    }
+    
+
+when I do on a type:
+
+    
+    
+    POST /data/suggestion/_suggest
+    {
+      "data" : {
+        "text" : "tr",
+        "completion" : {
+          "field" : "sattributes",
+          "size":50
+        }
+      }
+    }
+    
+
+**`suggestion`** is the type.
+
+I don't get any results. I need to do suggestion on two different types
+articles and books. Do I need to create separate indexes to make them work or
+is there a way in elasticsearch to accomplish this? In case if I have to
+search on my index `data` is there way to get 50 results for type `article`
+and 50 results for type `book`.
+
+Any help is highly appreciated.
+
+Lucene has no concept of types, so in Elasticsearch they are simply
+implemented as a hidden field called `_type`. When you search on a particular
+type, Elasticsearch adds a filter on that field.
+
+The completion suggester doesn't use traditional search at all, which means
+that it can't apply a filter on the `_type` field. So you have a couple of
+options:
+
+  1. Use a different completion suggester field per type, eg `suggestion_sattributes`, `othertype_sattributes`
+
+  2. Index your data with the `_type` as a prefix, eg `type1 actual words to suggest`, then when you ask for suggestions, prepend `type1` to the query
+
+  3. Use separate indices
+
+In fact, option (2) above is being implemented at the moment as the new
+[ContextSuggester](https://github.com/elasticsearch/elasticsearch/pull/4044)
+which will allow you to do this (and more) automatically.
+

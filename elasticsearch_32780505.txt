@@ -1,0 +1,4 @@
+32780505
+How to retrieve documents with a broken parent->child relationship?
+<p>I'm currently working on scripts to manage an Elasticsearch cluster and ensure data integrity.</p>&#xA;&#xA;<p>The index use the parent > child relationship between documents. Is there a way to retrieve the list of child with invalid parents (parent id referencing deleted document) ?</p>&#xA;
+<p>You can probably use a query on the following lines to get the list of orphan child documents </p>&#xA;&#xA;<pre><code>POST /&lt;index_name&gt;/&lt;child_type&gt;/_search&#xA;{&#xA;   "filter": {&#xA;      "not": {&#xA;         "has_parent": {&#xA;            "parent_type": "&lt;parent_type&gt;",&#xA;             "query": {&#xA;                "match_all": {}&#xA;             }&#xA;         }&#xA;      }&#xA;   }&#xA;}&#xA;</code></pre>&#xA;

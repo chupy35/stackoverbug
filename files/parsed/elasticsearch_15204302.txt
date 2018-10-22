@@ -1,0 +1,101 @@
+15204302 Multiple term searches in elasticsearch vs. RDBMS
+
+### The status quo with RDBMS
+
+Say I have a legacy RDBMS table with 30-40 columns in it in an enterprise
+environment that is primarily used for search purposes. In real life there may
+be several tables, but let's keep it simple. I have dozens, maybe even
+hundreds of different programs each executing their own queries against this
+table, each looking at a slightly different set of fields.
+
+### Why the status quo hurts
+
+  1. Our DBAs work their tails off trying to ensure all of these different queries work well by tailoring indexes to work for each of them. 
+  2. Distrust brews between developers and DBAs because DBAs want to know what new queries will be executed so they can check their indexes and developers just want to push new features as fast as they can. 
+  3. Point 2 sometimes boils over into efforts to force developers to use all statically bound queries so that DBAs are sure to have a chance to evaluate performance first. 
+
+Ugh...
+
+### How does this compare to an ES index?
+
+So assuming I index all 30-40 columns in an elasticsearch index, is it true
+that I can search either just one term or many in a way that is roughly as
+performant as a set of RDBMS indexes?
+
+> So assuming I index all 30-40 columns in an elasticsearch index, is it true
+that I can search either just one term or many in a way that is roughly as
+performant as a set of RDBMS indexes?
+
+In short, yes.
+
+In Elasticsearch, the preferred way of doing it would be with **filter** ,
+assuming these fields/columns contain “enum” type of data (eg. `status`,
+`gender`, `department`, etc), and you don't want to use full-text search to
+query them. (Adding full-text search would be simple, but would require you to
+think in advance about topics such as proper analyzers, user search patterns,
+etc.)
+
+Let's say you'd use a `term` filter here:
+
+    
+    
+    curl localhost:9200 -d '{
+      "query" : {
+        "filtered" : {
+          "filter" : {
+            "term" : {
+              "department" : "marketing"
+            }
+          }
+        }
+      }
+    }'
+    
+
+Now, the terms filter generates a bitset which stores the information if a
+particular document matches this filter or not (1/0). This bitset has three
+important features: a) it's very compact, b) it's very cacheable, c) it allows
+bitset operations to combine filters.
+
+Elasticsearch will use a [**filter
+cache**](http://www.elasticsearch.org/guide/reference/index-
+modules/cache.html) for speeding up access to this filter.
+
+The nice thing about filters and bitsets is that if you were to do a slightly
+different query:
+
+    
+    
+    curl localhost:9200 -d '{
+      "query" : {
+        "filtered" : {
+          "filter" : {
+            "bool" : {
+              "must": [
+                "term" : {
+                  "department" : "marketing"
+                },
+                "term" : {
+                  "status" : "active"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }'
+    
+
+the filter on the _department_ field would be re-used and loaded from cache, a
+new cached bitset would be created on the _status_ field and next time, both
+would be loaded from cache and evaluated with bitset operations.
+
+Elasticsearch provides a [_Warmer
+API_](http://www.elasticsearch.org/guide/reference/api/admin-indices-
+warmers.html) so you can “pre-load” your caches very effectively with known
+queries.
+
+The statistics on the filter cache are part of the [_Nodes Stats
+API_](http://www.elasticsearch.org/guide/reference/api/admin-cluster-nodes-
+stats.html).
+

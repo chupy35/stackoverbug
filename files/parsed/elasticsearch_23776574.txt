@@ -1,0 +1,286 @@
+23776574 Dynamic Mapping for an object field that unwraps the parent path
+
+I am evaluating whether ElasticSearch can meet the needs of a new system I'm
+building. It looks amazing, so I'm really hopeful I can figure out a mapping
+strategy that works.
+
+In this system, administrators can define fields to be associated with
+documents dynamically. So a given type (in the elasticsearch sense of the
+word) can have any number of fields, which I do not know the name of ahead of
+time. And each field can be of any type: int, date, string, etc.
+
+An example document may look like:
+
+    
+    
+    {
+        "name": "bob",
+        "age": 22,
+        "title": "Vice Intern",
+        "tagline": "Ask not what your company can do for you, but..."
+    }
+    
+
+Notice that there are 2 string fields. Awesome. My problem though is that I
+want the "tagline" to be analyzed, but I do not want "title" to be analyzed.
+
+Remember I don't know the names of these fields ahead of time. And there could
+be multiple fields of each type. So there could be 10 string fields of various
+names, 3 of which should be analyzed and 7 of which should not.
+
+Another requirement I have is that the name the administrator gives the field
+should also be what they can search by. So, for example, if they want to find
+all the Vice Interns who have something to say, the lucene query may be:
+
+    
+    
+    +title:"Vice Intern" +tagline:"company"
+    
+
+So my thought was that I could define a dynamic mapping. Since I don't know
+the names of the fields ahead of time, it seems like a great approach. The key
+though is coming up with a way of differentiating string fields that should be
+analyzed and ones that shouldn't be!
+
+I thought, hey, I'll just put all the fields that need analyzing into a nested
+object, like this:
+
+    
+    
+    {
+        "name": "bob",
+        "age": 22,
+        "title": "Vice Intern",
+        "textfields": {
+            "tagline": "Ask not what your company can do for you, but...",
+            "somethingelse": "lorem ipsum",
+        }
+    }    
+    
+
+Then, in my dynamic mapping, I have a way of mapping those fields differently:
+
+    
+    
+    {
+        "mytype": {
+            "dynamic_templates": {
+                "nested_textfields": {
+                    "match": "textfields",
+                    "match_mapping_type": "string",
+                    "mapping": {
+                        "index": "analyzed",
+                        "analyzer": "default"
+                    }
+                }
+            }
+        }
+    }
+    
+
+I know that isn't right, I actually need some kind of nested mapping, but no
+matter, because if I understand it correctly, even if I got that working, it
+would mean those fields are searched for (via lucene syntax) like this:
+
+    
+    
+    +title:"Vice Intern" +textfields.tagline:"company"
+    
+
+And I don't want the "textfields" prefix. Since I'm the one providing the
+textfields object that wraps the text fields, I know that the fields within it
+are still uniquely named across the entire document.
+
+I thought of using a pattern match instead. So instead of wrapping them in a
+"textfields" object, I could prefix them, like "textfield_tagline". But when
+doing that, the {name} token in the dynamic mapping includes the prefix, I
+don't see a way to just pull out the "*" portion.
+
+Any solution which gets me the necessary behavior is a correct answer. Even if
+that involves nested mapping information into the documents themselves (can
+you do that? I've seen something like that, I think...).
+
+EDIT:
+
+I've attempted the following dynamic template. I'm trying to use index_name to
+remove the 'textfields.' in the index. This dynamic template just doesn't seem
+to match though, because after putting a document and looking at the mapping I
+see no analyzer specified.
+
+    
+    
+        {
+            "mytype" : {
+                "dynamic_templates":
+                [
+                {
+                    "textfields": {
+                        "path_match": "textfields.*",
+                        "match_mapping_type" : "string",
+                        "mapping": {
+                            "type": "string",
+                            "index": "analyzed",
+                            "analyzer": "default",
+                            "index_name": "{name}",
+                            "fields": {                 
+                                "sort": {
+                                    "type": "string",
+                                    "index": "not_analyzed",
+                                    "index_name": "{name}_sort"
+                                }
+                            }
+                        }
+                    }
+                }
+                ]
+            }
+        }
+    
+
+I was able to duplicate the results that you asked for specifically with the
+following index creation (with mappings), document, and search query. The type
+does vary a bit, but it serves the purpose of the example.
+
+**Index Settings**
+
+    
+    
+    PUT http://localhost:9200/sandbox
+    
+    {
+     "settings": { 
+       "index": {
+         "number_of_shards": 1,
+         "number_of_replicas": 0
+       }
+     },
+     "mappings": {
+       "mytype": {
+         "dynamic_templates": [
+            {
+                "indexedfields": {
+                    "path_match": "indexedfields.*",
+                    "match_mapping_type" : "string",
+                    "mapping": {
+                        "type": "string",
+                        "index": "analyzed",
+                        "analyzer": "default",
+                        "index_name": "{name}",
+                        "fields": {                 
+                            "sort": {
+                                "type": "string",
+                                "index": "not_analyzed",
+                                "index_name": "{name}_sort"
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "textfields": {
+                    "path_match": "textfields.*",
+                    "match_mapping_type" : "string",
+                    "mapping": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "index_name": "{name}"
+                    }
+                }
+            },
+            {
+                "strings": {
+                    "path_match": "*",
+                    "match_mapping_type" : "string",
+                    "mapping": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                    }
+                }
+    
+            }
+         ]
+       }
+     }
+    }
+    
+
+**Document**
+
+    
+    
+    PUT http://localhost:9200/sandbox/mytype/1
+    {
+       "indexedfields":{
+          "hello":"Hello world",
+          "message":"The great balls of the world are on fire"
+       },
+       "textfields":{
+          "username":"User Name",
+          "projectname":"Project Name"
+       }
+    }
+    
+
+**Search**
+
+    
+    
+    POST http://localhost:9200/sandbox/mytype/_search
+    {
+      "query": {
+        "query_string": {
+          "query": "message:\"great balls\""
+        }
+      },
+       "filter":{
+          "query":{
+             "query_string":{
+                "query":"username:\"User Name\""
+             }
+          }
+       },
+       "from":0,
+       "size":10,
+       "sort":[
+    
+       ]
+    }
+    
+
+The search returns the following response:
+
+    
+    
+    {
+       "took":2,
+       "timed_out":false,
+       "_shards":{
+          "total":1,
+          "successful":1,
+          "failed":0
+       },
+       "hits":{
+          "total":1,
+          "max_score":0.19178301,
+          "hits":[
+             {
+                "_index":"sandbox",
+                "_type":"mytype",
+                "_id":"1",
+                "_score":0.19178301,
+                "_source":{
+                   "indexedfields":{
+                      "hello":"Hello world",
+                      "message":"The great balls of the world are on fire"
+                   },
+                   "textfields":{
+                      "username":"User Name",
+                      "projectname":"Project Name"
+                   }
+                }
+             }
+          ]
+       }
+    }
+    
+

@@ -1,0 +1,74 @@
+23708785 Elasticseach script_score get value from a different index
+
+I am trying to use script_score to adjust the scoring of a particular result
+based on the ID value. It works with a basic run. I do not understand how to
+perform a lookup for the multiplication factor based on a different table. For
+example I have a MySQL table of ID's and their associated scaling factors.
+These factors change hourly so they need to be used at query time rather than
+indexing time. While this table is in MySQL I can put it into an index but how
+can I do a lookup. I guess it would be similar to a join in MySQL? Below is an
+idea of what I'm going for:
+
+    
+    
+    {
+      "query": {
+        "function_score": {
+          "functions": [
+            {
+              "script_score": {
+                "params": {
+                  "param1": 2,
+                  "param2": 3.1
+                },
+                "script": "_score * doc['ID'].value in associated table" //Get the scaling factor of the ID from external table/index
+              }
+            }
+          ],
+          "query": {
+            "filtered": {
+              "query": {
+                "match_all": {}
+              }
+            }
+          },
+          "boost_mode": "multiply"
+        }
+      },
+      "explain": true
+    }
+    
+
+I had this exact same issue. What I had to do was break this down into 2
+queries. The first query to the ES index or database table to get the boost
+factors I required, and then the second query was the main search query to ES.
+However, whilst constructing the query I built a portion of it dynamically
+with the data from the first query, thus setting the boost factor as a
+variable from the data you'd pulled out in the first query. It seems to work
+quite well for me and hasn't slowed down the search process that much really.
+
+A very cut-down example of this is as follows:
+
+    
+    
+    $searchParams['index']  = 'someindex';
+    $searchParams['type']   = 'sometype';
+    $searchParams['body']['min_score'] = 0.75;
+    $searchParams['body']['query']['function_score'] = array(
+        "query" => array(
+            "term" => array("someField"=>$query)
+        )
+    );
+    
+    foreach($boostFactors as $id=>$factor) {
+        $searchParams['body']['query']['function_score']['functions'][] = array(
+            "filter" => array(
+                "term" => array(
+                    "id" => $id
+                )
+            ),
+            "script_score" => array("script" => $factor)
+        );
+    }
+    
+

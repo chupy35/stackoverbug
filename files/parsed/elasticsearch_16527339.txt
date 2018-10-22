@@ -1,0 +1,62 @@
+16527339 Field not searchable in ES?
+
+I created an index myindex in elasticsearch, loaded a few documents into it.
+When I visit:
+
+    
+    
+    localhost:9200/myindex/mytype/1023
+    
+
+I noticed that my particular index has the following metadata for mappings:
+
+    
+    
+    mappings: {
+      mappinggroupname: {
+        properties: {
+          Aproperty: {
+            type: string
+          }
+          Bproperty: {
+            type: string
+          }
+        }
+      }
+    }
+    
+
+Is there some way to add "store:yes" and index: "analyzed" without having to
+reload/reindex all the documents?
+
+Note that when i want to view a single document...
+
+i.e. localhost:9200/myindex/mytype/1023
+
+I can see the _source field contains all the fields of that document are and
+when I go to the "Browser" section of the head plugin it appears that all the
+columns are correct and corresponding to my fieldnames. So why is it that
+"stored" is not showing up in metadata? I can even perform a _search on them.
+
+What is the difference between "stored":"true" versus the fact that I can see
+all my fields and values after indexing all my documents via the means I
+mention above?
+
+Nope, no way! That's how your documents got indexed in the underlying lucene.
+The only way to change it is to reindex them all!
+
+You see all those fields because you see the content of the special
+[`_source`](http://www.elasticsearch.org/guide/reference/mapping/source-
+field/) field in lucene, that's stored by default through elasticsearch. You
+are not storing all the fields separately but you do have the source document
+that you originally indexed through the `_source`, a single field that
+contains the whole document.
+
+Generally the `_source` field is just enough, you don't usually need to
+configure every field as stored.
+
+Also, the default is `"index":"analyzed"` if not specified for all the
+`string` fields. That means those fields are indexed and analyzed using the
+standard analyzer if not specified in the mapping. Therefore, as far as I can
+see from your mapping those two fields should be indexed, thus searchable.
+

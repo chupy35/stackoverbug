@@ -1,0 +1,33 @@
+25434736 Elasticsearch query to return all record programmatically throws out
+of memory exception
+
+I need to retrieve all records from elasticsearch and do statistical analysis
+on the data. The number of records are not that high 500000 records. Each
+record has 7 columns, 5 of these columns are type String (single word value).
+So the size of data to me is not that big at all. I am getting 'out of memory
+exception' when executing the following:
+
+    
+    
+    SearchResponse response = client.prepareSearch(indexFrom).setTypes(typeFrom)
+                .setQuery(matchAllQuery()).setSize(SIZE)
+                .execute().actionGet();
+    SIZE=500000
+    
+
+Any help/suggestions? I am setting Xmx10g.
+
+Thanks. -Vera
+
+If you just need to recover all documents unsorted like this, you should use a
+**[scan and
+scroll](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/scan-
+scroll.html)** search.
+
+To sum up, it combines the use of :
+
+  * search of type scan which disable sorting of results (thus save some memory)
+  * scroll API which is quite similar to a cursor for DB by allowing you to look through results by small batches.
+
+I think it could solve your memory problem.
+

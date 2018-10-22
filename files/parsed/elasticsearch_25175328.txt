@@ -1,0 +1,53 @@
+25175328 Elasticsearch: Query an array element
+
+How do I create a query to search for "TV antenna" in Elasticsearch that would
+return only the first object?
+
+    
+    
+    {
+        "name": "First",
+        "categories": ["Medium TV antennas and cables", "TV cables"]
+    },
+    {
+        "name": "Second",
+        "categories": ["antennas and cables", "TV and accessories"]
+    }
+    
+
+Could anyone assist?
+
+Try this one:
+
+    
+    
+    curl -XGET 'localhost:9200/indexxx/topic/_search?pretty=true' -d '{
+      "query": {
+        "match": {
+          "categories": {
+            "query": "TV antenna",
+            "operator": "and"
+          }
+        }
+      }
+    }'
+    
+
+Use a phrase match query:
+
+    
+    
+    {
+        "query": {
+            "match_phrase": {
+                "categories": {
+                    "query": "TV antennas"
+                }
+            }
+        }
+    }
+    
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/phrase-
+matching.html>
+

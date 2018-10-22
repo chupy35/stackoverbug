@@ -1,0 +1,83 @@
+10486769 Cannot get to $rootScope
+
+The following file "works" (the sense that it does not throw any errors):
+
+    
+    
+    <!doctype html>
+    <html ng-app="modx">
+        <script src="http://code.angularjs.org/angular-1.0.0rc7.js"></script> 
+        <script>
+            angular.module("modx", [], function($routeProvider) {
+            });
+        </script>
+    </html>
+    
+
+but this
+
+    
+    
+    <!doctype html>
+    <html ng-app="modx">
+        <script src="http://code.angularjs.org/angular-1.0.0rc7.js"></script>
+        <script>
+            angular.module("modx", [], function($routeProvider, $rootScope) {
+            });
+        </script>
+    </html>
+    
+
+gives the error:
+
+> Error: Unknown provider: $rootScope from modx  
+>  Source File: <http://code.angularjs.org/angular-1.0.0rc7.js>  
+>  Line: 2491
+
+WTF?
+
+You can not ask for instance during configuration phase - you can ask only for
+providers.
+
+    
+    
+    var app = angular.module('modx', []);
+    
+    // configure stuff
+    app.config(function($routeProvider, $locationProvider) {
+      // you can inject any provider here
+    });
+    
+    // run blocks
+    app.run(function($rootScope) {
+      // you can inject any instance here
+    });
+    
+
+See <http://docs.angularjs.org/guide/module> for more info.
+
+I've found the following "pattern" to be very useful:
+
+    
+    
+    MainCtrl.$inject = ['$scope', '$rootScope', '$location', 'socket', ...];
+    function MainCtrl (scope, rootscope, location, thesocket, ...) {
+    
+
+where, MainCtrl is a controller. I am uncomfortable relying on the parameter
+names of the Controller function doing a one-for-one mimic of the instances
+for fear that I might change names and muck things up. I much prefer
+explicitly using $inject for this purpose.
+
+I **don't suggest** you to use syntax like you did. AngularJs lets you to have
+different functionalities as you want (`run`, `config`, `service`, `factory`,
+etc..), which are more professional.In this function you don't even have to
+inject that by yourself like
+
+    
+    
+    MainCtrl.$inject = ['$scope', '$rootScope', '$location', 'socket', ...];
+    
+
+you can use it, as you know.
+

@@ -1,0 +1,49 @@
+14714036 ElasticSearch Crashing Repeatedly "HeapDumpOnOutOfMemoryError"
+despite 4GB ES_MAX_MEM
+
+I'm starting ElasticSearch via
+
+    
+    
+    echo "export ES_HEAP_SIZE = 4096" >> /root/setenv
+    echo "export ES_MAX_MEM = 4096" >> /root/setenv
+    echo "export ES_MAX_MEM = 4096" >> /root/setenv
+    
+    # finally,  we can start the app
+    echo 'Starting ElasticSearch...'
+    bin/elasticsearch -Xmx4g -Xms4g
+    
+
+However, after no time at all (20min), it becomes unresponsive, apparently due
+to `HeapDumpOnOutOfMemoryError`...
+
+    
+    
+    [root@ip-***** api]# ps -ax | grep elasticsearch
+     6225 ?        SLl    5:35 java -Xms256m -Xmx1g -Xss256k -Djava.awt.headless=true -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError -Delasticsearch -Des.path.home=/root/elasticsearch/elasticsearch-0.20.3 -cp :/root/elasticsearch/elasticsearch-0.20.3/lib/elasticsearch-0.20.3.jar:/root/elasticsearch/elasticsearch-0.20.3/lib/*:/root/elasticsearch/elasticsearch-0.20.3/lib/sigar/* -Xmx4g -Xms4g org.elasticsearch.bootstrap.ElasticSearch
+    
+
+EDIT -- I just noticed that the -Xms size of the output here is just 256m,
+despite passing 4g in the startup, above. Am I misunderstanding something?
+
+FWIW, I'm on Amazon EC2 (m1.large instances => 8GB of RAM) running CentOS and
+Java v1.6.0_14-b08
+
+First, setting `ES_HEAP_SIZE` won't help you prevent ouf-of-memory errors by
+itself. The amount of memory used by Elasticsearch is determined by the type
+of queries you do: whether you use faceting, sorting, filtering, on how many
+fields, how big are those fields, what is their cardinality, etc.
+
+Second, it's preferable to use the
+[`ES_INCLUDE`](https://github.com/elasticsearch/elasticsearch/blob/master/bin/elasticsearch.in.sh)
+script, or the [service
+wrapper](https://github.com/elasticsearch/elasticsearch-servicewrapper),
+instead of passing all the options you need on the command line to the
+`elasticsearch` script.
+
+Third, when you correctly set the `ES_HEAP_SIZE` environment variable, you
+don't need to pass the `-X` options to the _elasticsearch_ script. In fact,
+these options have no effect -- the script won't pass them to Java. Use the
+`ES_HEAP_SIZE` variable to control memory, and use the `ES_JAVA_OPTIONS` to
+control additional variables you would like to pass to Java.
+

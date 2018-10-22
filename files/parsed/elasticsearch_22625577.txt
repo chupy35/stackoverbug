@@ -1,0 +1,38 @@
+22625577 Facets and Multiple/Stable/Deterministic Sorting in Elasticsearch
+
+Do facets support either:
+
+  1. Deterministic/stable sorting if there are equal values
+  2. If not, a way to allow this using multiple sorts. Sort first by A, then if A's are equal, sort by B.
+
+This is my query:
+
+    
+    
+    POST /some_index/_search
+    {
+      "query": {
+        "filtered": {
+          "query": {
+            "match_all": {}
+          }
+        }
+      },
+      "facets": {
+        "facet_name": {
+          "terms_stats": {
+            "key_field": "bucket_id",
+            "value_field": "price",
+            "order": "mean",
+            "size": 100
+          }
+        }
+      }
+    }
+    
+
+If bucket_id 90 , 91 .... 100, 101.. 105 all have the same mean price, then
+
+  1. Would I potentially get a different result set each time because of a non-deterministic sort?
+  2. If so, how do I change this specific query to order first by mean price and then SECOND by bucket_id.
+

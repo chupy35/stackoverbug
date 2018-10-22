@@ -1,0 +1,15 @@
+23794930 Elasticsearch Return Only Geometry (location) field
+
+Does anyone know if it is possible in ElasticSearch to return only the
+location field?
+
+I have a need to perform a query and only return the geometries associated
+with each document; I dont need the rest of the attributes.
+
+I've tried the "fields", but that does not return the location field.
+
+"fields" : ["location"]
+
+<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-
+request-fields.html>
+

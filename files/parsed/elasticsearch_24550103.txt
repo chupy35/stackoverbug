@@ -1,0 +1,96 @@
+24550103 How to do multiple "match" or "match_phrase" values in ElasticSearch
+
+So ElasticSearch has the **terms** query, which lets me supply multiple values
+and return a ist of documents where field X matches any of those values.
+
+But I want to do the same thing with **match_phrase** \- i.e. return documents
+where field X contains a case insensitive match for a term with spaces. I
+currently do it my using an or filter (see below). But that seems like a very
+verbose way of doing what I want, considering that terms does something
+similar already.
+
+**Current method**
+
+It seems ridiculous that a query searching a single field for one of three
+values should be 33 lines long.
+
+    
+    
+    {
+      "query": {
+        "filtered": {
+           "filter": {
+               "or": {
+                  "filters": [
+                     {
+                         "query": {
+                             "match_phrase": {
+                                "myField1": "My first search phrase"
+                             }
+                         }
+                     },
+                     {
+                         "query": {
+                             "match_phrase": {
+                                "myField1": "My second search phrase"
+                             }
+                         }
+                     },
+                     {
+                         "query": {
+                             "match_phrase": {
+                                "myField1": "My third search phrase"
+                             }
+                         }
+                     }
+                  ]
+               }
+           }
+        }
+      }
+    }
+    
+
+[Query
+string](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-
+dsl-query-string-query.html#query-string-syntax) would be helpful here
+something on these lines
+
+    
+    
+       {
+          "query": {
+            "query_string": {
+              "default_field": "myField1",
+              "query": "\"My first search phrase\" OR \"My second search phrase\" OR \"My third search phrase\""
+            }
+          }
+        }
+    
+
+After a long night trying to figure this out myself I came up with this:
+
+    
+    
+    "query" : {
+            "bool": {
+                "should": [
+                   {
+                       "match_phrase": {
+                          "myField1": "My first search phrase"
+                       }
+                   },
+                   {
+                       "match_phrase": {
+                          "myField1": "My second search phrase"
+                       }
+                   }
+                ]
+            }
+        }
+    
+
+Reference:
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-
+bool-query.html>
+

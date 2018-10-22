@@ -1,0 +1,4 @@
+30870678
+Connect to a cluster with password through ES
+<p>How can I connect to a cluster that have a password through Elasticsearch? I use Sense to work with ES. Right now XGET  through ES returns me:&#xA;Authorisation required </p>&#xA;
+<p>You can include the username/password in your server address directly in Sense, i.e. instead of</p>&#xA;&#xA;<pre><code>localhost:9200&#xA;</code></pre>&#xA;&#xA;<p>use this:</p>&#xA;&#xA;<pre><code>username:password@localhost:9200&#xA;</code></pre>&#xA;

@@ -1,0 +1,4 @@
+34024474
+ElasticSearch document field size
+<p>I am trying to obtain metadata about the document types within an elasticsearch index. Any ideas on how I could retrieve the maximum length of a string field?</p>&#xA;
+<p>After enabling dynamic scripting the following did the trick for me (provided there where no nulls):</p>&#xA;&#xA;<pre><code>POST /myIndex/_search?Document' -d '&#xA;{&#xA;    "query" : {&#xA;        "filtered" : {&#xA;            "filter" : {&#xA;                "exists" : { "field" : "someField" }&#xA;            }&#xA;        }&#xA;    },    &#xA;    "aggs" : {&#xA;        "max_length" : { "max" : { "script" :doc['someField'].value.length()" } }&#xA;    }&#xA;}&#xA;</code></pre>&#xA;

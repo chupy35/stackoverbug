@@ -1,0 +1,58 @@
+22195911 Boosting Elasticsearch documents based on the query provided
+
+This is a bit of an odd one, although not really for those of us who work in
+the eCommerce world I suppose.
+
+I work for one of the largest children's retailers in the UK. We're currently
+knocking together a demonstration of our eCommerce platform with everything
+running off Elasticsearch rather than the 3rd party solution we currently use
+for our search. The 3rd party solution costs us thousands of £ every month,
+where as the architecture needed to run our entire site (search, range pages
+and product details pages) off ES actually costs a fraction of that.
+
+I currently have most of the functionality working via ES just fine. However,
+our content co-ordinators really require the ability (via a CMS of our design)
+to boost certain VIP products, but based on the query provided. They know the
+document ID, and they know the query string they want to boost products for. I
+can write the CMS with a connector to get this information into ES but I'm
+unsure of what to do next.
+
+Three options I have considered are as follows:
+
+  1. A separate ES index containing containing the document id (this is the product id), the query string to boost for and then the boost factor.
+  2. A property on the document itself that contains the query string to boost for and the boost factor.
+  3. Another index that has documents stored against a query to boost for, do this query first, and the normal query second as part of a multi-query and remove duplicates. This is my least favourite option... :(
+
+These boost factors would then be applied using the function_score mechanism.
+Which one would you choose? Why? Is there an option I'm missing?
+
+Ok, I managed to get this working, kind of... I had to split my query into 2
+queries. I created a new index, lets call it `boostvalues`. In `boostvalues` I
+had the following fields:
+
+  1. item_code (string, not analyzed)
+  2. query_string (string, analyzed with std analyzer)
+  3. boost_factor (integer, not analyzed)
+
+Then for every search query that comes in I do a search against the
+`boostvalues` index first. I then use any returned results to dynamically
+populate the function_score arguments like so:
+
+    
+    
+        if(isset($boostResults) && is_array($boostResults) && (int)$boostResults['hits']['total']>0) {
+            foreach($boostResults['hits']['hits'] as $boostValue) {
+                $searchParams['body']['query']['function_score']['functions'][] = array(
+                    "filter" => array("term" => array("id" => $boostValue['_source']['id'])),
+                    "script_score" => array("script" => $boostValue['_source']['boostFactor'])
+                );
+            }
+        }
+    
+
+I'm using the official Elasticsearch PHP library by the way. This gives the
+desired effect. The beaty of this mechanism that I didn't realise until I
+tried it is that when getting the boost values I can also use function scoring
+on that to modify the boost factor based on how close the query is to the
+stored query string.
+

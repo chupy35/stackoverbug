@@ -1,0 +1,81 @@
+21420193 How to query for elasticsearch entry's TTL?
+
+I have the following:
+
+    
+    
+    final settings = (ImmutableSettings.settingsBuilder()
+            .put('index._ttl.enabled', true)
+            .put('index.gateway.type', 'none')
+            .put('index.number_of_shards', 1)
+            .put('index.number_of_replicas', 0)
+            .put('index.store.type', 'memory')
+            .put('node.http.enabled', false)
+            .build())
+    node = (org.elasticsearch.node.NodeBuilder.nodeBuilder()
+            .clusterName(clusterName)
+            .local(true)
+            .settings(settings)
+            .node())
+    final Client client = node.client()
+    
+    client.prepareIndex('index', 'type')
+            .setSource(jsonBuilder()
+                    .startObject()
+                    .field('_ttl', '111111')
+                    .field('field', 'value')
+                    .endObject())
+            .setRefresh(true)
+            .execute()
+            .actionGet()
+    
+
+The following:
+
+    
+    
+    SearchResponse searchResponse = client.prepareSearch('builds')
+            .setQuery(boolQuery()
+                    .must(termQuery('_type', 'test')))
+            .execute()
+            .actionGet()
+    
+
+returns `searchResponse.internalResponse.hits.hits[0].source` as:
+
+    
+    
+    [0] = {java.util.HashMap$Entry@7024}"_ttl" -> "111111"
+    [1] = {java.util.HashMap$Entry@7027}"field" -> "value"
+    
+
+But the following returns `0L`:
+
+    
+    
+    client.prepareCount('index')
+            .setQuery(boolQuery()
+                    .must(fieldQuery('_ttl', '111111'))
+                    .must(termQuery('_type', 'type'))
+                    .must(fieldQuery('field', 'value')))
+            .execute()
+            .actionGet()
+            .count
+    
+
+How do I go about ensuring the TTL is being set?
+
+Haven't tested it, and it's not documented, but try adding this to the
+settings builder:
+
+    
+    
+    .put('index._ttl.index', 'not_analyzed')
+    
+
+You may want to consider setting `index._ttl.store` to `true` as well,
+depending on how you're querying.
+
+It seems a bit redundant to index that field explicitly, though. It's probably
+already indexed somewhere, even if you don't have direct access to it.
+

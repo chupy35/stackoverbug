@@ -1,0 +1,54 @@
+25249170 Spring Boot with Legacy tables
+
+I want to use Spring Boot with Legacy database and use hibernate for the same.
+I have to access both DB2 and Teradata as data sources.I would like to know if
+this is possible ? I'm a newbie to Spring , SpringBoot and have no idea how to
+configure data sources , should i still need multiple xml configs etc. The
+demos in spring io sites are good but they dont deal with any of my
+requirement. Kindly point me in the right direction.
+
+In Spring Boot it is very easy to configure multiple datasources.
+[This](http://docs.spring.io/spring-
+boot/docs/current/reference/htmlsingle/#howto-two-datasources) part of the
+documentation describes the procedure in detail.
+
+In essence, all you need to do is have the connection properties in a place
+where Spring boot can locate them (the easiest place is
+`application.properties`) and then configure the beans. The code would look
+like:
+
+**application.properties**
+
+    
+    
+    datasource.primary.url=jdbc:mysql://localhost/test
+    datasource.primary.username=dbuser
+    datasource.primary.password=dbpass
+    
+    datasource.secondary.url=jdbc:mysql://localhost/test2
+    datasource.secondary.username=dbuser2
+    datasource.secondary.password=dbpass2
+    
+
+**Spring configuration file**
+
+    
+    
+    @Bean
+    @Primary
+    @ConfigurationProperties(prefix="datasource.primary")
+    public DataSource primaryDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+    
+    @Bean
+    @ConfigurationProperties(prefix="datasource.secondary")
+    public DataSource secondaryDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+    
+
+You will notice that no XML configuration is used which the preferred style
+these days. Actually using Spring Boot means that you don't have to write
+almost any configuration :)
+

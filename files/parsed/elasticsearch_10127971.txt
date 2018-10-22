@@ -1,0 +1,55 @@
+10127971 Elasticsearch mapping for object with dynamic keys
+
+I have simple document with this mapping:
+
+    
+    
+    'product': {
+      'properties': {
+        'name': { 'type': 'string' },
+        'shops': { 
+          'type': 'object', 
+          'index_name': 'shop', 
+          'properties': {
+            'name': { 'type': 'string' },
+            'url': { 'type': 'string' },
+            'price': { 'type': 'integer' },
+          }
+        }
+      }
+    }
+    
+
+Document look like this:
+
+    
+    
+    { 
+      'name': 'Kindle', 
+      'shops': [ 
+        { 'name': 'amazon', 'url': 'http://...', 'price': 79 },
+        { 'name': 'ebay', 'url': 'http://...', 'price': 99 }
+    }
+    
+
+But I want store documents in this format:
+
+    
+    
+    {
+      'name': 'Kindle',
+      'shops': {
+        'amazon': { 'url': 'http://...', 'price': 79 },
+        'ebay': { 'url': 'http://...', 'price': 99 }
+      }
+    }
+    
+
+Is there any way to do mapping for this? Or I should create only object
+'shops' and keep it schema-less.
+
+You may be able to use a dynamic_template with a path_match ("shops.*") [1].
+
+[1] <https://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping-root-
+object-type.html>
+

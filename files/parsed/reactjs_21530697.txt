@@ -1,0 +1,17 @@
+21530697 forceUpdate VS forceReload
+
+I'm wondering what is the difference between `forceUpdate()` and
+`forceReload()` in ReactJS.
+
+Tried to find some documentation about that but couldn't find some on
+`forceReload()`-
+
+Thanks in advance!
+
+Not sure where you saw it, but `forceReload` isn't a part of React. You
+presumably couldn't find documentation because there isn't any -- if I search
+for `"forceReload" react` right now, this question comes up first.
+
+If you want to make a component rerender without changing its state or props,
+you should call `forceUpdate`.
+

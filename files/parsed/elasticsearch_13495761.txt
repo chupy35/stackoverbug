@@ -1,0 +1,18 @@
+13495761 ElasticSearch position in index
+
+I'm considering the use of Elasticsearch to build a rank. If I index a list of
+elements that is ordered according to a score. Can I query by an element name
+and get its position on the Index?
+
+e.g i build an index with two elements:
+
+"Element1", score: 8 "Element2", score: 7 "Element3", score: 10
+
+When I query by "Element2" I would like to obtain position = 3
+
+Elasticsearch doesn't know the place until it actually collects results and it
+collects results only to send them back to client. So, there is really no way
+to just get the place without going through results until you find the
+document you are looking for. If sending all these results to client doesn't
+work for you, you can write a plugin that will do it on the server side.
+

@@ -1,0 +1,146 @@
+24449042 ElasticSearch Relationships
+
+Hi Friends Please Help Me ...
+
+I Have some doubt regarding the relationships in elastic search.
+
+I will explain my doubt with the following example
+
+**Step 1: I have created an index named "books" in elastic search**
+
+example.com:9200/books/
+
+**Step 2: Then i created a type named 'author' and data inserted to it**
+
+POST example.com:9200/books/author/1 { "fname" : "David","lname":"Thomas" }
+
+POST example.com:9200/books/author/2 { "fname" : "Hamton","lname":"Vergo" }
+
+**Step 3: Then Created a mapping for another type 'authorbook' which is child
+of 'author'**
+
+POST example.com:9200/books/authorbook/_mapping
+
+{"authorbook":{"_parent":{"type":"author"}}}
+
+**Step 4 : Then i inserted data for authorbook**
+
+POST example.com:9200/books/authorbook/100?parent=1 { "bookname" : "Bookname1"
+}
+
+POST example.com:9200/books/authorbook/200?parent=1 { "bookname" : "Bookname2"
+}
+
+POST example.com:9200/books/authorbook/300?parent=2 { "bookname" : "Bookname3"
+}
+
+**step :5 Then i created a mapping for another type named 'publisher' , a
+child of authorbook**
+
+POST example.com:9200/books/publisher/_mapping
+
+{"publisher":{"_parent":{"type":"authorbook"}}}
+
+**Step 6: Then i inserted data for publisher
+
+POST example.com:9200/books/publisher/50?parent=200 { "publname" :
+"publisher1" }
+
+POST example.com:9200/books/publisher/51?parent=200 { "publname" :
+"publisher2" }
+
+POST example.com:9200/books/publisher/52?parent=100 { "publname" :
+"publisher3" }
+
+**Step 7 Now i have achieved in getting the 'authorbook' details by using a
+post request with following body**
+
+    
+    
+    {
+    "query": {
+        "has_parent": {
+            "type": "author",
+            "query": {
+                "filtered": {
+                    "query": {
+                        "match_all": {}
+                    },
+                    "filter": {
+                        "or": [
+                            {
+                                "term": {
+                                    "fname": "Hamton"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "fname": "David"     
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    
+    }   
+    
+
+My requirement is to get the publisher details also..how can achieve that? pls
+help..
+
+Try this:
+
+    
+    
+    {
+    "query": {
+        "constant_score": {
+             "filter": {
+                 "or": [
+                      {
+                          "has_parent": {
+                              "type": "author",
+                               "query": <your query above>
+                      },
+                      {
+                          "has_parent": {
+                              "type": "author"
+                              "query": {
+                                  "constant_score": {
+                                       "filter": {
+                                           "has_parent": {
+                                               "type": "authorbook",
+                                               "query": <some query you need for the publishers>
+                                           }
+                                       }
+                                  }
+                              }
+                          }
+                      }
+                  ]
+              }
+         }
+    }   
+    
+
+This should return you authorbooks and publishers in the same query.
+
+**First tip** : if you use `"query": {"match_all": {}}` in a `filtered` query
+you can also just use a `constant_score` query instead. Then you just have to
+provide the filter.
+
+**Second tip** : When indexing a grandchild like `publisher` you better
+provide the `routing` query parameter as well (which should point to the id of
+the `author`). This makes sure children and grandchildren are stored in the
+same shard which makes lookup faster.
+
+In general I would advice against a complicated relationship like this though.
+You can see that the query is hard to read and most likely hard to debug later
+on. Maybe keeping it simple could be better solution. Another idea is to have
+`authorbook` (or just `book` as a parent and `publisher` and `author` as
+normal (first level) children of the `book`. Reason is that `author` and
+`publisher` are not related, so you actually don't need this deep nesting.
+

@@ -1,0 +1,90 @@
+23360237 Error encountered when using the field_value_factor function in
+elasticsearch query
+
+everyone, I am using elasticsearch version 1.1.1, and I have verified the
+version correctly. In the elasticsearch documentation, there is a function
+score query which provides a function called field_value_factor, but when I
+try to use it, I get this error:
+
+    
+    
+    nested: QueryParsingException[[teindex] No function with the name [field_value_factor] is registered.]
+    
+
+Here is how I am using it:
+
+    
+    
+               "function_score": {
+                  "functions": [
+                     {
+                        "gauss": {
+                           "createVendor": {
+                              "scale": "2d",
+                              "offset": "5d",
+                              "decay" : 0.5
+                           }
+                        }
+                     },
+                     {
+                         "field_value_factor": {
+                             "field" : "ipscore",
+                             "modifier" : "log"
+                         }
+                     }
+                  ],
+                  "query": {
+                     "multi_match": {
+                        "query": "beach",
+                        "fields": ["title^12","description^5","tags^8" ]
+                     }
+                  },
+                  "score_mode": "multiply"
+               }
+    
+
+Any clues as to why it is failing? Thanks.
+
+I've been having the same problem. As was suggested by @Thorsten, I can
+confirm this is definitely not available in v1.1.1 (which at time of writing
+is the latest version in the official repositories). It looks to me like it
+will be in v1.2.0... hopefully.
+
+You can try something like this for now:
+
+    
+    
+           "function_score": {
+              "functions": [
+                 {
+                    "gauss": {
+                       "createVendor": {
+                          "scale": "2d",
+                          "offset": "5d",
+                          "decay" : 0.5
+                       }
+                    }
+                 },
+                 {
+                     "script_score": {
+                    "script": "_score * log(doc['ipscore'].value)"
+                }
+                 }
+              ],
+              "query": {
+                 "multi_match": {
+                    "query": "beach",
+                    "fields": ["title^12","description^5","tags^8" ]
+                 }
+              },
+              "score_mode": "multiply"
+           }
+    
+
+Field value factor seems to be available since Elasticsearch version 1.2.0,
+which has been released on May 22, 2014:
+
+<https://www.elastic.co/blog/elasticsearch-1-2-0-released>
+
+So upgrading to that version or a higher version should fix the issue.
+

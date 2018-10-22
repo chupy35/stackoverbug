@@ -1,0 +1,21 @@
+23710618 ElasticSearch: Pagination not working
+
+I am using below Elastic search using java client
+
+    
+    
+    SearchResponse response = client.prepareSearch("titan")
+    .setTypes("vertex")
+    .setSearchType(SearchType.QUERY_AND_FETCH)
+    .setQuery(QueryBuilders.queryString("title:mytitle"))
+    .setFrom(start).setSize(1)
+    .execute()
+    .actionGet();
+    
+
+if `start` value is `0` it returns 3 result but if `start` value is `1` it
+returns 0 result.
+
+I was expecting that if i pass 0 it will return first page , if 1 second
+page,2 third page ........ but its returning 3 result why?
+

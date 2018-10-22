@@ -1,0 +1,103 @@
+20378842 Searching a subset of nested objects within ElasticSearch documents
+
+Let's say I have users indexed with documents such as these:
+
+    
+    
+    {
+        "name": "Fred Jonsson",
+        "age": 24,
+        "emails": [
+            {
+                "active": false,
+                "address": "fred.jonsson@burnabyhighschool.ca",
+            },
+            {
+                "active": false,
+                "address": "fjonsson4@kpu.ca",
+            },
+            {
+                "active": true,
+                "address": "fred@engineeringcorp.com",
+            },
+            {
+                "active": false,
+                "address": "fred@jonsson.me",
+            },
+       }
+    }
+    
+
+Does the _ElasticSearch DSL_ allow me to construct a query where I could
+search for people by their e-mail address, but only if the address is active?
+In more abstract terms, search documents by nested objects conditioned on
+other properties of those objects.
+
+A search fulfilling this criterion would return this document for a search for
+`"fred@jonsson.me"` or `"engineeringcorp.com"`, but would not return this
+document when searching for `"fred.jonsson@burnabyhighschool.ca"`.
+
+Yes, you just need to initiate a nested query on your documents. In your
+mappings, you need to set "emails" as "type":"nested". This will create
+"hidden" documents of every object in your array that are associated with this
+parent document.
+
+    
+    
+    {
+       "query": {
+          "nested": {
+             "path": "emails",
+             "query": {
+                "bool": {
+                   "must": [
+                      {
+                         "term": {
+                            "active": {
+                               "value": "true"
+                            }
+                         }
+                      },
+                      {
+                         "match": {
+                            "address": "fred@jonsson.me"
+                         }
+                      }
+                   ]
+                }
+             }
+          }
+       }
+    }
+    
+
+For example, if you want to search for `email:
+fred.jonsson@burnabyhighschool.ca` which is `active`, you would do this:
+
+    
+    
+    {
+      query: {
+        nested: {
+          path: 'emails',
+          query: {
+            bool: {
+              must: [
+                {
+                  term: {
+                    'emails.active': true
+                  }
+                },
+                {
+                  term: {
+                    'emails.address': "fred.jonsson@burnabyhighschool.ca"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    
+

@@ -1,0 +1,68 @@
+21337032 ReactJS: Events in .map(array) not fired
+
+In my `render` function I want to display a list based on an array, while
+displaying it works fine, it seems that whatever event I bind to it is being
+ignored.
+
+    
+    
+    render: function() {
+      var language = function(language) {
+        return (
+          <li><label>
+            <input type="checkbox" value={language} onChange={this.onLanguageChange} /> 
+            {language} ({_languages_total[language]})
+          </label></li>
+        )
+      }
+    
+      return (
+        <ul className="filter__list">
+          <li><label>
+            <input type="checkbox" value="0" onChange={this.onLanguageChange} />
+            0 (2)
+          </label></li>
+          {this.state.languages.map(language)}
+        </ul>
+      )
+    }
+    
+
+I rendered one list item directly outside the `.map` to see if it would give
+any results, and this seems to be the only one that's working.
+
+Am I just missing something obvious, or are events ignored when placed outside
+the `return()`?
+
+Your problem is that the `this.onLanguageChange` doesn't refer to the right
+handler because `this` within the `language` function is unbound and so when
+it's executed points to the global object (i.e., `window`). You can do a few
+things to fix it:
+
+  1. Add `var self = this;` before defining `language` and refer to `self.onLanguageChange`.
+  2. Add `.bind(this)` after the function that you're assigning to `render`.
+  3. Call `.map(language, this)` to tell `map` what context to use when calling `language`. This is the simplest and cleanest solution.
+
+If you're not familiar with JavaScript's scoping rules and how `this` works, I
+suggest reading up on it.
+
+There is a really useful example in the reactjs docs
+<http://facebook.github.io/react/tips/communicate-between-components.html>
+
+They basically do something like this..
+
+    
+    
+    return (
+      {this.state.languages.map(function(langauge, i){
+       return (
+         <li><label>
+            <input type="checkbox" value={language} onChange={this.onLanguageChange.bind(this, i)} /> 
+            {language} ({_languages_total[language]})
+          </label></li>
+       )
+      }, this)
+     }
+    )
+    
+

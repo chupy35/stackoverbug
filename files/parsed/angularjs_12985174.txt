@@ -1,0 +1,82 @@
+12985174 AngularJS Json restructure
+
+I can get a json from some services in Angular function, however, there are
+too many unnecessary things so I am trying to restructure Json to include only
+data I need.
+
+    
+    
+    $http({
+                method: 'GET',
+                url: 'from some service'}   
+    
+            }).success(function(data, status) {
+    
+               //this is Json data where I need to remove many things
+               $scope.data = data;  
+    
+               //this is Json data I need
+               $scope.processedJson = [];
+          }
+    
+
+Let's say $scope.data is
+
+    
+    
+    {
+       "points":[
+          {
+             "address":"balh",
+             "lat":123,
+             "long":456
+          },
+          {
+             "address":"balh",
+             "lat":321,
+             "long":543
+          },
+          {
+             "address":"balh",
+             "lat":432,
+             "long":333
+          }
+       ]
+    }
+    
+
+And $scope.processedJson which is ultimately what I need to have is
+
+    
+    
+    [
+       {
+          "lat":123,
+          "long":456
+       },
+       {
+          "lat":321,
+          "long":543
+       },
+       {
+          "lat":432,
+          "long":333
+       }
+    ]
+    
+
+How do I need to run some looping to extract the data I need?
+
+You can use a [forEach](http://docs.angularjs.org/api/angular.forEach)
+
+    
+    
+    $scope.processedJson = [];
+    angular.forEach($scope.data.points, function (val) {
+        $scope.processedJson.push({
+            lat: val.lat,
+            long: val.long
+        });
+    });
+    
+

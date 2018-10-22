@@ -1,0 +1,21 @@
+10845153 Script in elasticsearch
+
+I am new to elasticsearch, and currently studying the scriptting in ES.It
+would be really great if anyone who knows scripting in elasticsearch can put
+some light over scripting and its use in ES ?
+
+You can start with reading elasticsearch documentation. Scripting is covered
+in the following topics on elasticsearch web site:
+
+  * [General information](http://www.elasticsearch.org/guide/reference/modules/scripting.html)
+  * [Script Fields](http://www.elasticsearch.org/guide/reference/api/search/script-fields.html)
+  * [Using script to filter the results](http://www.elasticsearch.org/guide/reference/query-dsl/script-filter.html)
+  * [Using script to sort the results](http://www.elasticsearch.org/guide/reference/api/search/sort.html)
+  * [Using scripts in facets](http://www.elasticsearch.org/guide/reference/api/search/facets/index.html) (see individual facet documentation pages)
+
+If after reviewing these pages, you still have concreate questions about
+scripting, don't hesitate to ask them in elasticsearch mailing list or on
+stackoverflow. Following guidelines on the
+[Help](http://www.elasticsearch.org/help/) page of elasticsearch website will
+significantly improve your chances of getting quick and useful answer.
+

@@ -1,0 +1,44 @@
+19562191 HeapDumpOnOutOfMemoryError ElasticSearch
+
+I am seeing this when i do ps -aef | grep elasticsearch
+**HeapDumpOnOutOfMemoryError**
+
+> 501 37347 1 0 2:29PM ttys004 0:04.14 /usr/bin/java -Xms4g -Xmx4g -Xss256k
+-Djava.awt.headless=true -XX:+UseParNewGC -XX:+UseConcMarkSweepGC
+-XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly
+-XX:+HeapDumpOnOutOfMemoryError -Delasticsearch
+-Des.path.home=/Users/abdullahmuhammad/elasticsearch -cp
+:/Users/abdullahmuhammad/elasticsearch/lib/elasticsearch-0.20.6.jar:/Users/abdullahmuhammad/elasticsearch/lib/
+_:/Users/abdullahmuhammad/elasticsearch/lib/sigar/_
+org.elasticsearch.bootstrap.ElasticSearch
+
+I have tried a few things. Playing with the size of initial heap. Increasing,
+decreasing it. I have also deleted my whole index but still i get no luck.
+
+I used following to delete the index.
+
+    
+    
+    curl -XDELETE 'http://localhost:9200/_all/'
+    
+
+Any help would be appreciated.
+
+If you use some plugins like Marvel you should check indexes count and their
+size. Because some plugins create big number of indixes and they can eat all
+your memory.
+
+For the heap, Elasticsearch recommands 50% of your available memory. General,
+Elasticsearch recommandations for memory: max. 64GB, min. 8GB.
+
+Important documentation:
+<https://www.elastic.co/guide/en/elasticsearch/guide/current/heap-sizing.html>
+<https://www.elastic.co/guide/en/elasticsearch/guide/current/hardware.html>
+
+A few recommendations: \- Adjust your ES_HEAP_SIZE environment variable. \-
+Set mlockall option (in config file) of ES to true. This will always allocate
+a concrete block of heap memory. \- If your system is not very strong, you
+decrease your shard number. Note that; while increasing the number of shards
+increases the insert performance, increasing number of replication increases
+the query performance.
+

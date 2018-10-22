@@ -1,0 +1,12 @@
+22846171 Updating _ttl in elasticsearch
+
+As I understood about _ttl in Elasticsearch, we could set _ttl at index level
+or (document) type level.
+
+Also, we could change _ttl by changing mapping but it wont affect already
+indexed documents but only new docs. I know there is an update API which let
+us change the _ttl for a document (and not for all docs in a type).
+
+How should I change the _ttl for all indexed docs in whole index or for all
+indexed documents in a type ?
+

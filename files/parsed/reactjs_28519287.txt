@@ -1,0 +1,210 @@
+28519287 What does 'Only a ReactOwner can have refs.' mean?
+
+I have a simple `react` component with a form in it:
+
+    
+    
+    var AddAppts = React.createClass({
+        handleClick: function() {
+            var title = this.refs.title.getDOMNode().value;
+            ....
+    
+            var appt = {
+                heading: title
+                ...
+            }
+    
+            CalendarActions.addAppointment(appt);
+        },
+    
+        render: function() {
+            return (
+                <div>
+                    <label>Description</label>
+                    <input ref="title"></input>
+                    ...
+                </div>
+            );
+        }
+    });
+    module.exports = AddAppts;
+    
+
+I am trying to `render` this component in another `react` component:
+
+    
+    
+      var AddAppt = require('./AddAppts');
+    
+      render: function() {
+        return (
+          <div>
+            <AddAppt />
+          </div>
+        );
+      }
+    
+
+but I get this error:
+
+    
+    
+     Uncaught Error: Invariant Violation: addComponentAsRefTo(...): Only a ReactOwner can have refs. This usually means that you're trying to add a ref to a component that doesn't have an owner (that is, was not created inside of another component's `render` method). Try rendering this component inside of a new top-level component which will hold the ref.
+    
+
+I have googled it, but cannot figure out what I need to do to fix this issue.
+
+I encountered this error when a component module I was using had it's own
+react dependency installed. So I was using multiple versions of React.
+
+Make sure NOT to list react under `dependencies` in your `package.json`.  
+This is why we have `peerDependencies` ;-)
+
+Just in case. Be aware of the React module name you are using (it is case-
+sensitive). I've got the same error when by coincidence I tried to `require`
+React dependency with different names in two separate modules.
+
+    
+    
+    //module1.js
+    var React = require('react');
+    ...
+    
+    //module2.js
+    var React = require('React');
+    ....
+    
+
+It works and even renders something but the _Only a ReactOwner can have
+refs..._ error appears.
+
+This is FYI for people using react and redux-devtools who are getting OP's
+message. Your structure looks like
+
+    
+    
+    project
+      client
+      node_modules
+        react
+        redux-devtools
+          node_modules
+            react
+    
+
+The code in client will require the first react module; that in redux-devtools
+will require the other react. The react module keeps state and assumes it has
+all the state.
+
+You get the OP's message because your state is split between the 2 react
+modules. This situation is what I believe @asbjornenge refers to.
+
+I was bundling the client code with webpack, so I used that to handle the
+issue. You can force all `require` and `import` to always use the first react
+by adding the following to webpack.config.js
+
+    
+    
+    module.exports = {
+      ...
+      resolve: {
+        alias: {
+          'react': path.join(__dirname, 'node_modules', 'react')
+        },
+        extensions: ['', '.js']
+      },
+      ...
+    );
+    
+
+I have not looked into what I would need to do if the situation occurred with
+unbundled code running on node.
+
+Rearranging the script resolved the issue.
+
+**Wrong.**
+
+    
+    
+    <script src="./lib/react.js"></script>
+    <script src="./lib/react-dom.js"></script>
+    <script src="./lib/react-with-addons.js"></script>
+    
+
+**Correct**
+
+    
+    
+    <script src="./lib/react.js"></script>
+    <script src="./lib/react-with-addons.js"></script>
+    <script src="./lib/react-dom.js"></script>
+    
+
+Reference <https://github.com/gcanti/tcomb-
+form/issues/107#issuecomment-150891680>
+
+am writing with my old pen. make sure in your project root package.json move
+react dependency as early as possible. still you are getting issue? & if you
+are using npm modules and grunt task, you can add below clean task to remove
+inner components react(duplicates).
+
+`clean: { react : ['node_modules/**/react','!node_modules/react'] },`
+
+I saw this error after I moved my `package.json` file up a level, so I had 2
+`node_modules` directories in my project (one in `./node_modules` and another
+in `./web/node_modules`). Removing the old directory fixed the problem.
+
+There is another situation.
+
+I set the React as external library in the webpack.config.js and import
+react.js from cdnjs.
+
+    
+    
+    externals: {
+      'react': 'React'
+    }
+    
+
+When I using an ui library depend on React,such as material-ui,react-
+bootstrap,this issue occurred.
+
+I saw this error while developing a react module that was linked to a test
+project using [`npm link`](https://docs.npmjs.com/cli/link). Switching to a
+regular dependency solved the problem.
+
+It seems that React doesn't like `npm link`.
+
+For me the reason for the same problem was that I've imported the `ReactDom`
+globally, as a property of the window object, like this:
+
+    
+    
+    import ReactDOM from 'react-dom'
+    window.ReactDOM = ReactDOM
+    
+
+removing `window.ReactDOM = ReactDOM` fixed the problem.
+
+Similar to [this answer](https://stackoverflow.com/a/39405375/1817064), I was
+seeing this error while using a separate module that I had been developing in
+a separate directory using `yarn link`.
+
+The solution was to run `yarn unlink module-name` in my project's working
+directory. I then removed `node_modules` and ran `yarn upgrade module-name`
+and `yarn` for good measure.
+
+Instead of
+
+    
+    
+    <input ref="title"></input>
+    
+
+Try this
+
+    
+    
+    <input ref={(title) => this.title = title}></input>
+    
+

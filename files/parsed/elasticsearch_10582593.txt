@@ -1,0 +1,25 @@
+10582593 are the numbers stored as strings in elasticsearch?
+
+I am loading my sql data tables into it and wish to get results depending upon
+various requirements. I am having a problem in rangequery. When I am writing
+this:
+
+    
+    
+    $ curl -X GET 'http://localhost:9200/sample/new/_search?pretty=true' -d '
+    { query:{range:{price_incl_tax:{gte:1000,lte:1500}}} }'
+    
+
+the results where `price_incl_tax=140.0000` as well as `13500.0000` are also
+coming.
+
+In your case, `price_incl_tax` seems to be stored as a string. It probably
+happend because the `price_incl_tax` field was initially added as a string
+instead of a number. You can verify field types in your index by running
+
+`$ curl -X GET 'http://localhost:9200/sample/new/_mapping?pretty=true'`
+
+Elasticsearch allows you to control individual field types by specifying
+[mapping](http://www.elasticsearch.org/guide/reference/mapping/) during index
+or type creation.
+

@@ -1,0 +1,42 @@
+10679727 AngularJS parser is not activatied when application name is provided
+
+Using AngularJS, the following html code prints {{1+1}} instead of 2
+
+    
+    
+    <!doctype html>
+    <html lang="en" ng-app="myApp">
+    <head>
+        <script src="/js/angular.min.js"></script>
+    </head>
+    <body>
+    {{1+1}}
+    </body>
+    </html>
+    
+
+While if I remove "myApp" like below, it prints 2 correctly.
+
+    
+    
+    <!doctype html>
+    <html lang="en" ng-app>
+    <head>
+        <script src="/js/angular.min.js"></script>
+    </head>
+    <body>
+    {{1+1}}
+    </body>
+    </html>
+    
+
+Because you don't specify the module `myApp` so it blows up on the error.
+
+Open web inspector console to see it.
+
+    
+    
+    // adding this will fix it
+    angular.module('myApp', []);
+    
+

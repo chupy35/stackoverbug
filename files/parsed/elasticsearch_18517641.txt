@@ -1,0 +1,39 @@
+18517641 Boosting search in specific fields and sorting by rank
+
+I have the following query:
+
+    
+    
+    {
+        "sort": [
+            {"actual_rank" : "desc"}
+        ],
+        "query": {
+            "multi_match" : {
+                "query" : term,
+                "fields" : [ "title^3" , "category^5" , "entities.name^5"]
+            }
+        }
+    }
+    
+
+The problem with this query is that the sorting by rank makes the specified
+fields boosting pretty irrelevant(a best ranked item in which the term doesn't
+appear in the specified fields will be higher placed than a worst ranked item
+in which the term appears).
+
+I'd like to decrease the importance of the sorting to get better results.
+
+Actually, according to the sorting docs
+(<http://www.elasticsearch.org/guide/reference/api/search/sort/>), you need to
+enable the `track_scores` setting if you want scores to be calculated at all
+when sorting on a field.
+
+However, I'm guessing you want to do some custom scoring (see
+<http://www.elasticsearch.org/guide/reference/query-dsl/custom-score-query/>
+and/or <http://www.elasticsearch.org/guide/reference/query-dsl/custom-filters-
+score-query/>). Examples of those are excellent in this blog post
+(<http://jontai.me/blog/2013/01/advanced-scoring-in-elasticsearch/>)
+
+I'd post code, but I think the blog post provides a thorough view.
+

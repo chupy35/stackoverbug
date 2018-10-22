@@ -1,0 +1,26 @@
+23424053 elastic search primary key and secondary key
+
+I have an index in elastics search with products. Every product has an article
+number in the form of a guid. To show this products on a webshop I don't want
+to show a guid (to long). I want an integer number.
+
+Now i have two keys. One to lookup the web request (the integer) and one to
+update the product (the guid)
+
+I know I can search on a field in elastic search. But is an exact match search
+on a field slower as an exact match on a key (_id)? I don't want to do a
+mapping search from one key to the other because that is another operation.
+
+_id field is just a primary key to documents.It will be stored separately.Yes
+there will be some lag.But its not that much lag you can find.If you want a
+field to search as fast as _id field. Then in mapping store the field
+externally. [refer store attribute for a
+field](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-
+core-types.html#string)
+
+Like other fields its also stored in ES.By default _id not analyzed.If you
+define a field as not_analyzed its also fast as _id field.ES indexes each and
+ever field as same.
+
+HOpe it helps..!
+

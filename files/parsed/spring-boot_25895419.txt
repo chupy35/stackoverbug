@@ -1,0 +1,53 @@
+25895419 Spring Boot profile specific properties
+
+I'm using Sprint Boot, and would like to have _multiple_ profile specific
+property files. The docs state:
+
+> In addition to application.properties files, profile specific properties can
+also be defined using the naming convention application-{profile}.properties.
+
+>
+
+> <http://docs.spring.io/spring-boot/docs/current-
+SNAPSHOT/reference/htmlsingle/#boot-features-external-config-profile-specific-
+properties>
+
+However I have multiple properties files (e.g. `db.properties`). I'm loading
+currently load this non-profile specific file as:
+
+    
+    
+    @Configuration
+    @PropertySource( {"classpath:db.properties"} )
+    class DataSourceConfig  {
+        @Value("db.server") String server;
+    ...
+    }
+    
+
+How can I combine these two things together, so it loads `db-dev.properties`
+like Spring Boot does for `application.properties`
+
+It sounds like it should be easy, but I can't work out how to do it?!
+
+I just saw that you use `@PropertySource`. The
+[docs](http://docs.spring.io/spring-
+boot/docs/1.1.6.RELEASE/reference/htmlsingle/#boot-features-profile-specific-
+configuration) say:
+
+> Profile specific variants of both application.properties (or
+application.yml) and files referenced via **@ConfigurationProperties** are
+considered as files are loaded.
+
+Java -jar my-spring-boot.jar --spring.profiles.active=test you can set
+profile.active=your environment via commandline
+
+There are multiple ways of doing this
+
+  1. Using -Dspring.profiles.active=prod in VM Arguments Use
+  2. spring.profiles.active=prod in application.properties
+  3. Programmatically Setting Profiles
+
+Follow [this article](http://techielogic.com/spring-boot-profile-
+configuration-example/)
+

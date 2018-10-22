@@ -1,0 +1,19 @@
+30135869 Clear /trace Spring Boot actuator endpoint
+
+Is it possible to clear out the contents of the `/trace` actuator endpoint in
+Spring Boot? It would be much easier to debug without wading through a ton of
+previous calls.
+
+Out of the box, Spring Boot uses an instance of `InMemoryTraceRepository` to
+store all of the trace events. This `TraceRepository` implementation doesn't
+provide a mechanism to clear all of its events, but does limit the number of
+events to, by default, 100.
+
+You can replace `InMemoryTraceRepository` with your own `@Bean` that
+implements `TraceRepository`. You're then free to implement any mechanism of
+your choosing to clear out the repository. One obvious way to do this would be
+to sub-class `InMemoryTraceRepository`, however its design doesn't lend itself
+to subclassing at the moment. If you'd like this to change, or if you'd like
+Spring Boot to provide its own mechanism for clearing the repository, please
+[open an issue](https://github.com/spring-projects/spring-boot/issues/new).
+

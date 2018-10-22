@@ -1,0 +1,20 @@
+18138449 Migrating large user to its own index in ElasticSearch
+
+In Shay's Berlin Buzzwords talk, in the "user data flow" portion, he talked
+about "very large users can be migrated to their own respective indices". Is
+this said migration a out-of-the-box supported operation with no user-visible
+disruption, or is it a custom migration that we'll have to implement
+ourselves?
+
+As Mike W said, we need more information to give you a better answer.
+
+But I think you are trying to migrate that specific user to his own index. If
+so, we should be using the alias feature elaticsearch gives you out-of-the-
+box. You can read more of it at this link
+
+<http://www.elasticsearch.org/blog/changing-mapping-with-zero-downtime/>
+
+I believe you need a mapping to support your idea. Mapping each user to the
+corresponding index, so very large users will go to their own index and others
+not so large can share the same index.
+
